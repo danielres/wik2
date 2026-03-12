@@ -3,7 +3,8 @@ defmodule Qblog.Blog.Post do
     otp_app: :qblog,
     domain: Qblog.Blog,
     data_layer: AshSqlite.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshPhoenix]
 
   sqlite do
     table "posts"
@@ -21,6 +22,10 @@ defmodule Qblog.Blog.Post do
 
   policies do
     policy action_type(:read) do
+      authorize_if always()
+    end
+
+    policy action_type(:create) do
       authorize_if always()
     end
   end

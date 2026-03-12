@@ -23,6 +23,7 @@ defmodule QblogWeb.Router do
 
   scope "/", QblogWeb do
     pipe_through :browser
+    live "/blog", BlogLive, :index
 
     ash_authentication_live_session :authenticated_routes do
       # in each liveview, add one of the following at the top of the module:

@@ -24,9 +24,17 @@ defmodule Qblog.Repo.Migrations.MigrateResources1 do
       add :subject, :text, null: false
       add :jti, :text, null: false, primary_key: true
     end
+
+    create table(:posts, primary_key: false) do
+      add :body, :text, null: false
+      add :title, :text, null: false
+      add :id, :uuid, null: false, primary_key: true
+    end
   end
 
   def down do
+    drop table(:posts)
+
     drop table(:tokens)
 
     drop_if_exists unique_index(:users, [:email], name: "users_unique_email_index")

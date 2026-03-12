@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <%= Application.get_env(:live_debugger, :live_debugger_tags) %>
+    {Application.get_env(:live_debugger, :live_debugger_tags)}
 
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -14,20 +14,28 @@
     </script>
     <script>
       (() => {
+        const root = document.documentElement;
+
         const setTheme = (theme) => {
-          if (theme === "system") {
+          const preference = theme || "system";
+
+          if (preference === "system") {
             localStorage.removeItem("phx:theme");
-            document.documentElement.removeAttribute("data-theme");
+            root.removeAttribute("data-theme");
           } else {
-            localStorage.setItem("phx:theme", theme);
-            document.documentElement.setAttribute("data-theme", theme);
+            localStorage.setItem("phx:theme", preference);
+            root.setAttribute("data-theme", preference);
           }
+
+          root.setAttribute("data-theme-preference", preference);
         };
-        if (!document.documentElement.hasAttribute("data-theme")) {
+
+        if (!root.hasAttribute("data-theme")) {
           setTheme(localStorage.getItem("phx:theme") || "system");
         }
+
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
-        
+
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
       })();
     </script>

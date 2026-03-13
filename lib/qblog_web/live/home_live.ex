@@ -2,33 +2,90 @@ defmodule QblogWeb.HomeLive do
   use QblogWeb, :live_view
 
   alias Qblog.Accounts
+  alias Qblog.Accounts.Group
+  alias AshPhoenix.Form
 
   on_mount {QblogWeb.LiveUserAuth, :live_user_required}
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, groups} = Accounts.list_groups()
-    socket = socket |> assign(groups: groups)
-    {:ok, socket}
+    {:ok,
+     socket
+     |> assign_groups_and_form()
+     |> assign(fields: Ash.Resource.Info.action(Group, :create).accept)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <div class="card-title">Your groups</div>
-          <div class="flex gap-2">
-            <%= for group <- @groups do %>
-              <.link navigate={~p"/#{group.name}/blog"} class="btn btn-soft">
-                {group.name}
-              </.link>
-            <% end %>
+      <h1 class="text-2xl font-[100]">Your groups</h1>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <ul class="space-y-2">
+          <li class="card bg-base-100 shadow">
+            <div class="card-body">
+              <%= for group <- @groups do %>
+                <.link class="btn btn-soft" navigate={~p"/#{group.name}/blog"}>{group.name}</.link>
+              <% end %>
+            </div>
+          </li>
+        </ul>
+
+        <.form for={@form} phx-change="validate" phx-submit="submit">
+          <div class="card bg-base-300">
+            <div class="card-body">
+              <.input
+                :for={field <- @fields}
+                type={Group.field_type_for(field)}
+                field={@form[field]}
+                label={field |> Phoenix.Naming.humanize()}
+              />
+              <.button type="submit" class="btn btn-primary mt-3">Create group</.button>
+            </div>
           </div>
-        </div>
+        </.form>
       </div>
     </Layouts.app>
     """
+  end
+
+  @impl true
+  def handle_event("validate", %{"form" => params}, socket) do
+    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
+  end
+
+  def handle_event("submit", %{"form" => params}, socket) do
+    case socket.assigns.form |> Form.submit(params: params) do
+      {:ok, _group} ->
+        {:noreply, socket |> assign_groups_and_form()}
+
+      {:error, form} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Something went wrong")
+         |> assign(form: form)}
+    end
+  end
+
+  defp assign_groups_and_form(socket) do
+    scope = socket.assigns.current_scope
+
+    socket
+    |> assign(groups: scope |> list_groups())
+    |> assign(form: scope |> init_form())
+  end
+
+  defp init_form(scope) do
+    Group |> Form.for_create(:create, scope: scope) |> to_form()
+  end
+
+  defp list_groups(nil), do: []
+
+  defp list_groups(scope) do
+    with {:ok, groups} <- Accounts.list_groups(scope: scope) do
+      groups
+    else
+      _ -> []
+    end
   end
 end

@@ -1,8 +1,17 @@
 defmodule Qblog.Accounts do
-  use Ash.Domain, otp_app: :qblog, extensions: [AshAdmin.Domain]
+  use Ash.Domain,
+    otp_app: :qblog,
+    extensions: [
+      AshAdmin.Domain,
+      AshPhoenix
+    ]
 
   admin do
     show? true
+  end
+
+  forms do
+    form :create_group, args: [:name]
   end
 
   resources do

@@ -18,6 +18,9 @@ defmodule Qblog.Accounts.Group do
     ]
   end
 
+  def field_type_for(:name), do: "text"
+  def field_type_for(_), do: nil
+
   attributes do
     uuid_v7_primary_key :id
     timestamps()

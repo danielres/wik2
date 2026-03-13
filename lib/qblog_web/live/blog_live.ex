@@ -35,6 +35,7 @@ defmodule QblogWeb.BlogLive do
             <div class="card-body">
               <.input
                 :for={field <- @fields}
+                type={Post.field_type_for(field)}
                 field={@form[field]}
                 label={field |> Phoenix.Naming.humanize()}
               />

@@ -20,6 +20,9 @@ defmodule Qblog.Blog.Post do
     ]
   end
 
+  def field_type_for(:body), do: "textarea"
+  def field_type_for(_), do: nil
+
   policies do
     policy action_type(:read) do
       authorize_if always()

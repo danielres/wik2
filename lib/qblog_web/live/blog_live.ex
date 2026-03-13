@@ -7,10 +7,11 @@ defmodule QblogWeb.BlogLive do
   alias Utils.Time
 
   def mount(_params, _session, socket) do
+    scope = socket.assigns.current_scope
+
     {:ok,
      socket
-     |> assign(form: init_form())
-     |> assign(posts: list_posts(socket.assigns.current_scope))
+     |> assign_posts_and_form()
      |> assign(fields: Ash.Resource.Info.action(Post, :create).accept)}
   end
 
@@ -59,11 +60,7 @@ defmodule QblogWeb.BlogLive do
   def handle_event("submit", %{"form" => params}, socket) do
     case socket.assigns.form |> Form.submit(params: params) do
       {:ok, _post} ->
-        {:noreply,
-         socket
-         |> put_flash(:success, "Post created successfully")
-         |> assign(posts: list_posts(socket.assigns.current_scope))
-         |> assign(form: init_form())}
+        {:noreply, socket |> assign_posts_and_form()}
 
       {:error, form} ->
         {:noreply,
@@ -73,14 +70,22 @@ defmodule QblogWeb.BlogLive do
     end
   end
 
-  defp init_form() do
-    Post |> Form.for_create(:create) |> to_form()
+  defp assign_posts_and_form(socket) do
+    scope = socket.assigns.current_scope
+
+    socket
+    |> assign(posts: scope |> list_posts())
+    |> assign(form: scope |> init_form())
+  end
+
+  defp init_form(scope) do
+    Post |> Form.for_create(:create, scope: scope) |> to_form()
   end
 
   defp list_posts(nil), do: []
 
-  defp list_posts(current_scope) do
-    with {:ok, posts} <- Blog.list_posts(scope: current_scope) do
+  defp list_posts(scope) do
+    with {:ok, posts} <- Blog.list_posts(scope: scope) do
       posts
     else
       _ -> []

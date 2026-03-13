@@ -49,8 +49,7 @@ defmodule QblogWeb.BlogLive do
   end
 
   def handle_event("validate", %{"form" => params}, socket) do
-    form = Form.validate(socket.assigns.form, params)
-    {:noreply, assign(socket, :form, form)}
+    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
   end
 
   def handle_event("submit", %{"form" => params}, socket) do
@@ -66,7 +65,7 @@ defmodule QblogWeb.BlogLive do
         {:noreply,
          socket
          |> put_flash(:error, "Something went wrong")
-         |> assign(:form, form)}
+         |> assign(form: form)}
     end
   end
 

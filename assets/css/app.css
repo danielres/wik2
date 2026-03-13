@@ -36,3 +36,12 @@
 }
 
 /* This file is for your main application CSS */
+
+@layer utilities {
+  .fieldset {
+    @apply text-base;
+    .label {
+      @apply font-bold;
+    }
+  }
+}

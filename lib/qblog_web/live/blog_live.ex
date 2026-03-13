@@ -16,7 +16,7 @@ defmodule QblogWeb.BlogLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <h1 class="text-2xl">Blog Posts</h1>
+      <h1 class="text-2xl font-[100]">Blog Posts</h1>
 
       <div class="grid sm:grid-cols-2 gap-4">
         <ul class="space-y-2">
@@ -31,7 +31,7 @@ defmodule QblogWeb.BlogLive do
         </ul>
 
         <.form for={@form} phx-change="validate" phx-submit="submit">
-          <div class="card bg-base-100/50 shadow">
+          <div class="card bg-base-300">
             <div class="card-body">
               <.input
                 :for={field <- @fields}

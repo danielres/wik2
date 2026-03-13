@@ -121,7 +121,7 @@
   --color-base-100: var(--brown-600);
   --color-base-200: var(--brown-700);
   --color-base-300: var(--brown-800);
-  --color-base-content: var(--beige-300);
+  --color-base-content: var(--beige-200);
 }
 
 @plugin "../vendor/daisyui-theme" {

@@ -47,9 +47,17 @@ defmodule QblogWeb.Layouts do
 
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <.theme_toggle />
+          <li class="flex gap-2 items-center">
+            <span class="opacity-50">{@scope.user}</span>
+
+            <.link navigate={~p"/sign-out"} class="btn btn-ghost btn-square rounded-full">
+              <.icon
+                name="hero-arrow-right-on-rectangle"
+                class="size-4 opacity-75 hover:opacity-100"
+              />
+            </.link>
           </li>
+          <li><.theme_toggle /></li>
         </ul>
       </div>
     </header>

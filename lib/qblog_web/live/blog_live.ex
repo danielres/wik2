@@ -6,8 +6,9 @@ defmodule QblogWeb.BlogLive do
   alias AshPhoenix.Form
   alias Utils.Time
 
-  def mount(_params, _session, socket) do
+  on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
 
+  def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign_posts_and_form()
@@ -18,7 +19,6 @@ defmodule QblogWeb.BlogLive do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
       <h1 class="text-2xl font-[100]">Blog Posts</h1>
-
       <div class="grid sm:grid-cols-2 gap-4">
         <ul class="space-y-2">
           <%= for post <- @posts do %>

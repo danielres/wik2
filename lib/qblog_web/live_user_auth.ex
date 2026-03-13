@@ -25,8 +25,14 @@ defmodule QblogWeb.LiveUserAuth do
     end
   end
 
-  def on_mount(:live_user_required, _params, _session, socket) do
+  def on_mount(:live_scope_required, params, _session, socket) do
     if socket.assigns[:current_user] do
+      socket =
+        assign(socket, :current_scope, %{
+          user: socket.assigns.current_user |> to_string(),
+          tenant: params["group"]
+        })
+
       {:cont, socket}
     else
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/sign-in")}

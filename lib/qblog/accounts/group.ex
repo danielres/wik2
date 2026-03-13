@@ -1,0 +1,34 @@
+defmodule Qblog.Accounts.Group do
+  use Ash.Resource,
+    otp_app: :qblog,
+    domain: Qblog.Accounts,
+    data_layer: AshSqlite.DataLayer
+
+  sqlite do
+    table "groups"
+    repo Qblog.Repo
+  end
+
+  actions do
+    defaults [
+      :read,
+      :update,
+      :destroy,
+      create: [:name]
+    ]
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+    timestamps()
+
+    attribute :name, :string do
+      public? true
+      allow_nil? false
+    end
+  end
+
+  identities do
+    identity :unique_name, :name
+  end
+end

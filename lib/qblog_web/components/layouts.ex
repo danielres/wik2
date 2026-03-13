@@ -50,7 +50,7 @@ defmodule QblogWeb.Layouts do
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li class="flex gap-2 items-center">
-            <span class="opacity-50">{@scope.user}</span>
+            <span class="opacity-50">{@scope.user |> to_string()}</span>
 
             <.link navigate={~p"/sign-out"} class="btn btn-ghost btn-square rounded-full">
               <.icon

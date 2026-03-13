@@ -97,6 +97,10 @@ defmodule Qblog.Accounts.User do
     end
   end
 
+  changes do
+    change Qblog.Changes.MakeFirstUserSuperadmin, on: :create
+  end
+
   attributes do
     uuid_primary_key :id
 

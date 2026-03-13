@@ -27,7 +27,7 @@ defmodule QblogWeb.Layouts do
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
-  attr :current_scope, :map,
+  attr :scope, :map,
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
@@ -40,8 +40,12 @@ defmodule QblogWeb.Layouts do
         <a href="/" class="flex-1 flex w-fit items-center gap-2">
           <img src={~p"/images/logo.svg"} width="36" />
           <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
+          <div class="opacity-80">
+            <span class="font-bold tracking-wider opacity-50">/{@scope.tenant}</span>
+          </div>
         </a>
       </div>
+
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>

@@ -4,6 +4,7 @@ defmodule QblogWeb.BlogLive do
   alias Qblog.Blog
   alias Qblog.Blog.Post
   alias AshPhoenix.Form
+  alias Utils.Time
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -23,7 +24,10 @@ defmodule QblogWeb.BlogLive do
           <%= for post <- @posts do %>
             <li class="card bg-base-100 shadow">
               <div class="card-body">
-                <div class="card-title">{post.title}</div>
+                <h3 class="card-title flex justify-between items-baseline">
+                  <div>{post.title}</div>
+                  <div class="text-sm font-thin opacity-80">{Time.relative(post.inserted_at)}</div>
+                </h3>
                 {post.body}
               </div>
             </li>

@@ -10,13 +10,13 @@ defmodule QblogWeb.BlogLive do
     {:ok,
      socket
      |> assign(form: init_form())
-     |> assign(posts: list_posts())
+     |> assign(posts: list_posts(socket.assigns.current_scope))
      |> assign(fields: Ash.Resource.Info.action(Post, :create).accept)}
   end
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} scope={@current_scope}>
       <h1 class="text-2xl font-[100]">Blog Posts</h1>
 
       <div class="grid sm:grid-cols-2 gap-4">
@@ -62,7 +62,7 @@ defmodule QblogWeb.BlogLive do
         {:noreply,
          socket
          |> put_flash(:success, "Post created successfully")
-         |> assign(posts: list_posts())
+         |> assign(posts: list_posts(socket.assigns.current_scope))
          |> assign(form: init_form())}
 
       {:error, form} ->
@@ -77,13 +77,13 @@ defmodule QblogWeb.BlogLive do
     Post |> Form.for_create(:create) |> to_form()
   end
 
-  defp list_posts() do
-    case Blog.list_posts() do
-      {:ok, posts} ->
-        posts |> Enum.reverse()
+  defp list_posts(nil), do: []
 
-      {:error, _reason} ->
-        []
+  defp list_posts(current_scope) do
+    with {:ok, posts} <- Blog.list_posts(scope: current_scope) do
+      posts
+    else
+      _ -> []
     end
   end
 end

@@ -61,7 +61,7 @@ config :qblog, QblogWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: QblogWeb.ErrorHTML, json: QblogWeb.ErrorJSON],
-    layout: false
+    layout: [html: {QblogWeb.Layouts, :root}]
   ],
   pubsub_server: Qblog.PubSub,
   live_view: [signing_salt: "uU+TCCbC"]

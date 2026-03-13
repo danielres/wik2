@@ -33,6 +33,12 @@ defmodule Qblog.Blog.Post do
     end
   end
 
+  multitenancy do
+    strategy :attribute
+    attribute :group_id
+    parse_attribute {Qblog.Accounts, :group_name_to_id, []}
+  end
+
   attributes do
     uuid_v7_primary_key :id
     timestamps()

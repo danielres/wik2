@@ -15,15 +15,27 @@ defmodule QblogWeb.Router do
     plug :load_from_session
   end
 
+  pipeline :group_tenant do
+    plug QblogWeb.Plugs.SetTenantFromGroup
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
     plug :load_from_bearer
     plug :set_actor, :user
   end
 
+  scope "/:group", QblogWeb do
+    pipe_through [:browser, :group_tenant]
+
+    live_session :group_tenant,
+      on_mount: [{QblogWeb.LiveUserAuth, :mount_current_scope}] do
+      live "/blog", BlogLive, :index
+    end
+  end
+
   scope "/", QblogWeb do
     pipe_through :browser
-    live "/blog", BlogLive, :index
 
     ash_authentication_live_session :authenticated_routes do
       # in each liveview, add one of the following at the top of the module:

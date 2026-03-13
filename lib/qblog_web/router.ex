@@ -29,6 +29,7 @@ defmodule QblogWeb.Router do
     ash_authentication_live_session :authenticated_routes do
       pipe_through [:browser]
       live "/", HomeLive, :index
+      live "/me", MeLive, :index
 
       scope "/:group" do
         pipe_through [:group_tenant]

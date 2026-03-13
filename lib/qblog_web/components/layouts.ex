@@ -47,10 +47,12 @@ defmodule QblogWeb.Layouts do
         </div>
       </div>
 
-      <div class="flex-none">
+      <div>
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li class="flex gap-2 items-center">
-            <span class="opacity-50">{@scope.user |> to_string()}</span>
+            <.link navigate={~p"/me"} class="opacity-50 hover:opacity-100">
+              {@scope.user |> to_string()}
+            </.link>
 
             <.link navigate={~p"/sign-out"} class="btn btn-ghost btn-square rounded-full">
               <.icon
@@ -59,7 +61,6 @@ defmodule QblogWeb.Layouts do
               />
             </.link>
           </li>
-          <li><.theme_toggle /></li>
         </ul>
       </div>
     </header>

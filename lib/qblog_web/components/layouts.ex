@@ -37,12 +37,14 @@ defmodule QblogWeb.Layouts do
     ~H"""
     <header class="navbar px-4 sm:px-6 lg:px-8">
       <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <div class="opacity-80">
-            <span class="font-bold tracking-wide opacity-50">/{@scope.tenant}</span>
-          </div>
-        </a>
+        <div class="flex-1 flex w-fit items-center">
+          <.link navigate={~p"/"} class="btn btn-circle btn-ghost">
+            <i class="hero-home-mini size-4 opacity-50" />
+          </.link>
+          <span :if={@scope.tenant} class="font-bold tracking-wide opacity-50">
+            / {@scope.tenant}
+          </span>
+        </div>
       </div>
 
       <div class="flex-none">

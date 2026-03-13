@@ -16,7 +16,13 @@ defmodule Qblog.Blog do
 
   resources do
     resource Qblog.Blog.Post do
-      define :list_posts, args: [], action: :read
+      define :list_posts,
+        args: [],
+        action: :read,
+        default_options: [
+          query: [sort: [inserted_at: :desc]]
+        ]
+
       define :create_post, action: :create, args: [:title, :body]
     end
   end

@@ -100,6 +100,13 @@ defmodule Qblog.Accounts.User do
   attributes do
     uuid_primary_key :id
 
+    attribute :role, :atom do
+      constraints one_of: [:user, :superadmin]
+      public? true
+      allow_nil? false
+      default :user
+    end
+
     attribute :email, :ci_string do
       allow_nil? false
       public? true

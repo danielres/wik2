@@ -47,4 +47,10 @@ defmodule Qblog.Blog.Post do
       allow_nil? false
     end
   end
+
+  relationships do
+    belongs_to :group, Qblog.Accounts.Group do
+      destination_attribute :id
+    end
+  end
 end

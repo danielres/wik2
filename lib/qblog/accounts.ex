@@ -11,6 +11,12 @@ defmodule Qblog.Accounts do
 
     resource Qblog.Accounts.Group do
       define :get_group_by_name, action: :read, get_by_identity: :unique_name
+
+      # TODO: filter by actor
+      define :list_groups,
+        action: :read,
+        args: [],
+        default_options: [query: [sort: [inserted_at: :desc]]]
     end
   end
 

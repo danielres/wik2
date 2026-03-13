@@ -26,18 +26,21 @@ defmodule QblogWeb.Router do
   end
 
   scope "/", QblogWeb do
-    scope "/:group" do
-      pipe_through [:browser, :group_tenant]
+    ash_authentication_live_session :authenticated_routes do
+      pipe_through [:browser]
+      live "/", HomeLive, :index
 
-      ash_authentication_live_session :authenticated_routes do
+      scope "/:group" do
+        pipe_through [:group_tenant]
         live "/blog", BlogLive, :index
+
         # in each liveview, add one of the following at the top of the module:
         #
         # If an authenticated user & tenant must be present:
         # on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
         #
-        # If an authenticated user *may* be present:
-        # on_mount {QblogWeb.LiveUserAuth, :live_user_optional}
+        # If an authenticated user must be present:
+        # on_mount {QblogWeb.LiveUserAuth, :live_user_required}
         #
         # If an authenticated user must *not* be present:
         # on_mount {QblogWeb.LiveUserAuth, :live_no_user}
@@ -48,7 +51,6 @@ defmodule QblogWeb.Router do
   scope "/", QblogWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
     auth_routes AuthController, Qblog.Accounts.User, path: "/auth"
     sign_out_route AuthController
 

@@ -28,7 +28,7 @@ defmodule QblogWeb.Layouts do
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
   attr :scope, :map,
-    default: nil,
+    default: %{tenant: nil, user: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
   slot :inner_block, required: true

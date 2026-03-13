@@ -7,7 +7,6 @@ defmodule QblogWeb.BlogLive do
   alias Utils.Time
 
   def mount(_params, _session, socket) do
-    scope = socket.assigns.current_scope
 
     {:ok,
      socket

@@ -110,3 +110,8 @@ defmodule Qblog.Accounts.User do
     identity :unique_email, [:email]
   end
 end
+
+defimpl String.Chars, for: Qblog.Accounts.User do
+  def to_string(%Qblog.Accounts.User{email: email}),
+    do: email |> Kernel.to_string() |> String.split("@") |> List.first()
+end

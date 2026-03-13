@@ -13,10 +13,6 @@ defmodule QblogWeb.LiveUserAuth do
     {:cont, AshAuthentication.Phoenix.LiveSession.assign_new_resources(socket, session)}
   end
 
-  def on_mount(:mount_current_scope, params, _session, socket) do
-    {:cont, assign(socket, :current_scope, %{tenant: params["group"]})}
-  end
-
   def on_mount(:live_user_optional, _params, _session, socket) do
     if socket.assigns[:current_user] do
       {:cont, socket}

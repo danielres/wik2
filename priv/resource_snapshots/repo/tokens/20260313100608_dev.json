@@ -72,11 +72,11 @@
     }
   ],
   "table": "tokens",
-  "hash": "E734ED724EEE829B2EC82E66A45009BA6F3422136476C8B29A37E2ACAA4B9E3F",
+  "hash": "CD803A7E8211053F70F2DE09AED7A1EEB2886FA8C22B03BDE175ADFE1D5531FE",
   "multitenancy": {
     "global": null,
-    "strategy": null,
-    "attribute": null
+    "attribute": null,
+    "strategy": null
   },
   "identities": [],
   "repo": "Elixir.Qblog.Repo",

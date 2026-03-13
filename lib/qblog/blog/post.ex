@@ -35,6 +35,7 @@ defmodule Qblog.Blog.Post do
 
   attributes do
     uuid_v7_primary_key :id
+    timestamps()
 
     attribute :title, :string do
       public? true

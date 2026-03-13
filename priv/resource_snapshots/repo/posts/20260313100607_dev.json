@@ -13,6 +13,26 @@
     {
       "default": "nil",
       "size": null,
+      "type": "utc_datetime_usec",
+      "source": "inserted_at",
+      "references": null,
+      "allow_nil?": false,
+      "generated?": false,
+      "primary_key?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "utc_datetime_usec",
+      "source": "updated_at",
+      "references": null,
+      "allow_nil?": false,
+      "generated?": false,
+      "primary_key?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
       "type": "text",
       "source": "title",
       "references": null,
@@ -32,11 +52,11 @@
     }
   ],
   "table": "posts",
-  "hash": "F246DE374A5E1303363E8871E263EAE478113E734833D76B83C9DA539BEA4A6D",
+  "hash": "D141C4F33C03319D9A922C902EB2CF0E164E0E3016F14B226D37BFAD81A9EBB0",
   "multitenancy": {
     "global": null,
-    "strategy": null,
-    "attribute": null
+    "attribute": null,
+    "strategy": null
   },
   "identities": [],
   "repo": "Elixir.Qblog.Repo",

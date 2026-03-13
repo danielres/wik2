@@ -28,6 +28,8 @@ defmodule Qblog.Repo.Migrations.MigrateResources1 do
     create table(:posts, primary_key: false) do
       add :body, :text, null: false
       add :title, :text, null: false
+      add :updated_at, :utc_datetime_usec, null: false
+      add :inserted_at, :utc_datetime_usec, null: false
       add :id, :uuid, null: false, primary_key: true
     end
   end

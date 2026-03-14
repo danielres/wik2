@@ -19,7 +19,7 @@ defmodule QblogWeb.LiveUserAuth do
         socket
         |> assign(
           current_scope: %{
-            user: socket.assigns.current_user,
+            actor: socket.assigns.current_user,
             tenant: nil
           }
         )
@@ -34,7 +34,7 @@ defmodule QblogWeb.LiveUserAuth do
     if socket.assigns[:current_user] do
       socket =
         assign(socket, :current_scope, %{
-          user: socket.assigns.current_user,
+          actor: socket.assigns.current_user,
           tenant: params["group"]
         })
 

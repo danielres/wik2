@@ -51,7 +51,7 @@ defmodule QblogWeb.Layouts do
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li class="flex gap-2 items-center">
             <.link navigate={~p"/me"} class="opacity-50 hover:opacity-100">
-              {@scope.user |> to_string()}
+              {@scope.actor |> to_string()}
             </.link>
 
             <.link navigate={~p"/sign-out"} class="btn btn-ghost btn-square rounded-full">

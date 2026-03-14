@@ -93,7 +93,9 @@ defmodule QblogWeb.BlogLive do
     with {:ok, posts} <- Blog.list_posts(scope: scope) do
       posts
     else
-      _ -> []
+      err ->
+        Log.scoped_error(scope, err, "list_posts failed")
+        []
     end
   end
 end

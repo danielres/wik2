@@ -20,6 +20,7 @@ defmodule Qblog.Blog do
         args: [],
         action: :read,
         default_options: [
+          load: [:author],
           query: [sort: [inserted_at: :desc]]
         ]
 

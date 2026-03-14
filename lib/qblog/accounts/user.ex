@@ -95,6 +95,11 @@ defmodule Qblog.Accounts.User do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end
+
+    policy action_type(:read) do
+      # TODO : implement proper read policies
+      authorize_if always()
+    end
   end
 
   changes do

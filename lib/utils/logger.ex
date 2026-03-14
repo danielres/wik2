@@ -6,13 +6,21 @@ defmodule Utils.Log do
 
     meta = [
       error_id: error_id,
-      details: details,
-      scope: scope 
+      details: details |> format_details(),
+      scope: scope
     ]
 
     Logger.error("#{title} #{inspect(meta, pretty: true)}")
 
     error_id
+  end
+
+  defp format_details({:error, err = %Ash.Error.Forbidden{}}) do
+    "Ash.Error.Forbidden: #{err.bread_crumbs}"
+  end
+
+  defp format_details(other) do
+    other
   end
 
   defp short_error_id do

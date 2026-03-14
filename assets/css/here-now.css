@@ -50,11 +50,11 @@
   --size-field: 0.25rem;
 
   /* border size */
-  --border: 2px;
+  --border: 0px;
 
   /* effects */
-  --depth: 1;
-  --noise: 1;
+  --depth: 0;
+  --noise: 0;
 
   /* colors */
   --beige-100: oklch(0.96 0.01 300);

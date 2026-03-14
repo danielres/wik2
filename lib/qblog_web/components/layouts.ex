@@ -38,8 +38,8 @@ defmodule QblogWeb.Layouts do
     <header class="navbar px-4 sm:px-6 lg:px-8">
       <div class="flex-1">
         <div class="flex-1 flex w-fit items-center">
-          <.link navigate={~p"/"} class="btn btn-circle btn-ghost">
-            <i class="hero-home-mini size-4 opacity-50" />
+          <.link navigate={~p"/"} class="btn btn-circle btn-sm opacity-50 hover:opacity-100">
+            <i class="hero-home-mini size-4" />
           </.link>
           <span :if={@scope.tenant} class="font-bold tracking-wide opacity-50">
             / {@scope.tenant}

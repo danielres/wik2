@@ -4,6 +4,7 @@ defmodule QblogWeb.HomeLive do
   alias Qblog.Accounts
   alias Qblog.Accounts.Group
   alias AshPhoenix.Form
+  alias Utils.Log
 
   on_mount {QblogWeb.LiveUserAuth, :live_user_required}
 
@@ -85,7 +86,9 @@ defmodule QblogWeb.HomeLive do
     with {:ok, groups} <- Accounts.list_groups(scope: scope) do
       groups
     else
-      _ -> []
+      err ->
+        Log.scoped_error(scope, err, "list_groups failed")
+        []
     end
   end
 end

@@ -25,10 +25,17 @@ defmodule QblogWeb.BlogLive do
           <%= for post <- @posts do %>
             <li class="card bg-base-100 shadow">
               <div class="card-body">
-                <h3 class="card-title flex justify-between items-baseline">
-                  <div>{post.title}</div>
-                  <div class="text-sm font-thin opacity-80">{Time.relative(post.inserted_at)}</div>
+                <h3 class="card-title items-baseline justify-between gap-1">
+                  <div class="leading-tight">
+                    {post.title}
+                  </div>
+
+                  <div class="text-sm font-thin opacity-80 text-end leading-tight">
+                    <div>{post.author |> to_string}</div>
+                    <div>{Time.relative(post.inserted_at)}</div>
+                  </div>
                 </h3>
+
                 {post.body}
               </div>
             </li>

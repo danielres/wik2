@@ -15,9 +15,13 @@ defmodule Qblog.Blog.Post do
     defaults [
       :read,
       :update,
-      :destroy,
-      create: [:title, :body]
+      :destroy
     ]
+
+    create :create do
+      accept [:title, :body]
+      change relate_actor(:author, allow_nil?: false)
+    end
   end
 
   def field_type_for(:body), do: "textarea"
@@ -56,6 +60,10 @@ defmodule Qblog.Blog.Post do
 
   relationships do
     belongs_to :group, Qblog.Accounts.Group do
+      destination_attribute :id
+    end
+
+    belongs_to :author, Qblog.Accounts.User do
       destination_attribute :id
     end
   end

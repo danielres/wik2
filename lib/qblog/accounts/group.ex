@@ -13,9 +13,13 @@ defmodule Qblog.Accounts.Group do
     defaults [
       :read,
       :update,
-      :destroy,
-      create: [:name]
+      :destroy
     ]
+
+    create :create do
+      accept [:name]
+      change relate_actor(:owner, allow_nil?: false)
+    end
   end
 
   def field_type_for(:name), do: "text"
@@ -28,6 +32,12 @@ defmodule Qblog.Accounts.Group do
     attribute :name, :string do
       public? true
       allow_nil? false
+    end
+  end
+
+  relationships do
+    belongs_to :owner, Qblog.Accounts.User do
+      destination_attribute :id
     end
   end
 

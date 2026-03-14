@@ -1,5 +1,6 @@
 defmodule QblogWeb.BlogLive do
   use QblogWeb, :live_view
+  require Logger
 
   alias Qblog.Blog
   alias Qblog.Blog.Post
@@ -62,6 +63,8 @@ defmodule QblogWeb.BlogLive do
         {:noreply, socket |> assign_posts_and_form()}
 
       {:error, form} ->
+        Logger.error(fn -> "Post create failed: #{inspect(form.errors, pretty: true)}" end)
+
         {:noreply,
          socket
          |> put_flash(:error, "Something went wrong")

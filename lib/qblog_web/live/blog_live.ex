@@ -1,11 +1,11 @@
 defmodule QblogWeb.BlogLive do
   use QblogWeb, :live_view
-  require Logger
 
   alias Qblog.Blog
   alias Qblog.Blog.Post
   alias AshPhoenix.Form
   alias Utils.Time
+  alias Utils.Log
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
 
@@ -63,12 +63,8 @@ defmodule QblogWeb.BlogLive do
         {:noreply, socket |> assign_posts_and_form()}
 
       {:error, form} ->
-        Logger.error(fn -> "Post create failed: #{inspect(form.errors, pretty: true)}" end)
-
-        {:noreply,
-         socket
-         |> put_flash(:error, "Something went wrong")
-         |> assign(form: form)}
+        Log.scoped_error(socket.assigns.current_scope, form.errors, "Post create failed")
+        {:noreply, socket |> assign(form: form)}
     end
   end
 

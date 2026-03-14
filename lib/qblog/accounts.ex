@@ -25,7 +25,10 @@ defmodule Qblog.Accounts do
       define :list_groups,
         action: :read,
         args: [],
-        default_options: [query: [sort: [inserted_at: :desc]]]
+        default_options: [
+          query: [sort: [inserted_at: :desc]],
+          load: [:owner]
+        ]
     end
   end
 

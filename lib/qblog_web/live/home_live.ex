@@ -26,7 +26,13 @@ defmodule QblogWeb.HomeLive do
           <li class="card bg-base-100 shadow">
             <div class="card-body">
               <%= for group <- @groups do %>
-                <.link class="btn btn-soft" navigate={~p"/#{group.name}/blog"}>{group.name}</.link>
+                <.link
+                  class="btn btn-soft justify-between"
+                  navigate={~p"/#{group.name}/blog"}
+                >
+                  {group.name}
+                  <span class="font-thin">{group.owner |> to_string}</span>
+                </.link>
               <% end %>
             </div>
           </li>

@@ -38,6 +38,7 @@ defmodule Qblog.Accounts.Group do
   relationships do
     belongs_to :owner, Qblog.Accounts.User do
       destination_attribute :id
+      allow_nil? false
     end
   end
 

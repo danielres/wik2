@@ -61,10 +61,12 @@ defmodule Qblog.Blog.Post do
   relationships do
     belongs_to :group, Qblog.Accounts.Group do
       destination_attribute :id
+      allow_nil? false
     end
 
     belongs_to :author, Qblog.Accounts.User do
       destination_attribute :id
+      allow_nil? false
     end
   end
 end

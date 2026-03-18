@@ -9,4 +9,8 @@ defmodule Qblog.Wiki do
   admin do
     show? true
   end
+
+  resources do
+    resource Qblog.Wiki.PageTree
+  end
 end

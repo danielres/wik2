@@ -41,6 +41,7 @@ defmodule Qblog.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:mix_test_interactive, "~> 5.1", only: :dev, runtime: false},
       {:picosat_elixir, "~> 0.2"},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:live_debugger, "~> 0.6", only: [:dev]},

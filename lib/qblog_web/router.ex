@@ -34,6 +34,7 @@ defmodule QblogWeb.Router do
       scope "/:group" do
         pipe_through [:group_tenant]
         live "/blog", BlogLive, :index
+        live "/tree", PageTreeLive, :index
 
         # in each liveview, add one of the following at the top of the module:
         #

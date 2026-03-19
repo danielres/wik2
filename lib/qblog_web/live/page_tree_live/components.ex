@@ -74,23 +74,6 @@ defmodule QblogWeb.PageTreeLive.Components do
             style="--size-field: 0.22rem;"
           >
             <.action_buttons root?={@root?} node={@node} flat_nodes={@flat_nodes} />
-            <form phx-submit="move_node" class="flex items-center gap-1">
-              <input type="hidden" name="node_id" value={@node.id} />
-
-              <select
-                name="new_parent_id"
-                class="select select-xs select-bordered w-32"
-              >
-                <option :if={!@root?} value="">top level</option>
-                <%= for candidate <- Helpers.parent_options(@flat_nodes, @node.id) do %>
-                  <option value={candidate.id}>node {candidate.id}</option>
-                <% end %>
-              </select>
-
-              <.button type="submit" class="btn btn-xs">
-                Move
-              </.button>
-            </form>
           </div>
         </div>
 
@@ -109,11 +92,11 @@ defmodule QblogWeb.PageTreeLive.Components do
   defp action_buttons(assigns) do
     ~H"""
     <.button
+      :if={@node.children == []}
       phx-click="remove_node"
       phx-value-node_id={@node.id}
-      disabled={@node.children != []}
       class={[
-        "btn btn-xs btn-error btn-circle",
+        "btn btn-xs btn-circle hover:btn-error",
         "tooltip"
       ]}
       data-tip="delete"
@@ -123,24 +106,64 @@ defmodule QblogWeb.PageTreeLive.Components do
     </.button>
 
     <.button
-      disabled={@root?}
-      phx-click="move_to_root"
-      phx-value-node_id={@node.id}
-      class={[
-        "btn btn-xs btn-circle",
-        "tooltip"
-      ]}
-      data-tip="move to top"
+      phx-click={JS.add_class("modal-open", to: "#move-node-#{@node.id}")}
+      class={["btn btn-xs btn-circle hover:btn-primary", "tooltip"]}
+      data-tip="move"
     >
-      <.icon name="hero-chevron-double-up-mini" />
-      <span class="sr-only">Move to top</span>
+      <.icon name="hero-arrow-turn-down-right-mini" />
+      <span class="sr-only">
+        Move
+      </span>
     </.button>
+
+    <dialog id={"move-node-#{@node.id}"} class="modal xmodal-open">
+      <div class="modal-box min-w-sm">
+        <form
+          phx-submit={
+            JS.remove_class("modal-open", to: {:closest, "dialog"})
+            |> JS.push("move_node")
+          }
+          class="space-y-4"
+        >
+          <h3 class="">Move <span class="font-bold">node {@node.id}</span> under:</h3>
+
+          <input type="hidden" name="node_id" value={@node.id} />
+
+          <div class="card space-y-1 overflow-y-auto max-h-96">
+            <button :if={!@root?} class="btn btn-sm" type="submit" name="new_parent_id" value="">
+              Top level
+            </button>
+            <button
+              :for={candidate <- Helpers.parent_options(@flat_nodes, @node.id)}
+              class="btn btn-sm"
+              type="submit"
+              name="new_parent_id"
+              value={candidate.id}
+            >
+              Node {candidate.id}
+            </button>
+          </div>
+
+          <div class="modal-action">
+            <.button
+              phx-click={JS.remove_class("modal-open", to: "#move-node-#{@node.id}")}
+              type="button"
+              class="btn"
+            >
+              Cancel
+            </.button>
+
+            <.button type="submit" class="btn btn-primary">Move</.button>
+          </div>
+        </form>
+      </div>
+    </dialog>
 
     <.button
       phx-click="add_child"
       phx-value-node_id={@node.id}
       class={[
-        "btn btn-xs btn-circle",
+        "btn btn-xs btn-circle hover:btn-primary",
         "tooltip"
       ]}
       data-tip="add child"

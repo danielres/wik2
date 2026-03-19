@@ -11,16 +11,28 @@ defmodule Qblog.Wiki.PageTree do
     repo Qblog.Repo
   end
 
-  actions do
-    defaults [:read, :destroy]
+  code_interface do
+    define :create
+    define :add_child, args: [:parent_node_id]
+  end
 
-    create :create do
-      accept [:tree]
+  actions do
+    defaults [
+      :read,
+      :destroy,
+      :create
+    ]
+
+    update :add_child do
+      argument :parent_node_id, :integer do
+        allow_nil? true
+      end
+
+      change Qblog.Wiki.PageTree.Changes.AddChild
     end
   end
 
   policies do
-    # TODO: tighten policies
     policy action_type(:read) do
       authorize_if always()
     end
@@ -48,10 +60,10 @@ defmodule Qblog.Wiki.PageTree do
     uuid_v7_primary_key :id
     timestamps()
 
-    attribute :tree, :map do
+    attribute :nodes, {:array, Qblog.Wiki.PageTree.Node} do
       allow_nil? false
       public? true
-      default fn -> %{"roots" => []} end
+      default fn -> [] end
     end
   end
 

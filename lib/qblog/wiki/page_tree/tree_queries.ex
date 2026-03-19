@@ -14,4 +14,21 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
   def leaf?(nodes, node_id) do
     not Enum.any?(nodes, &(&1.parent_id == node_id))
   end
+
+  def build_tree(nodes) do
+    nodes
+    |> root_nodes()
+    |> Enum.map(&build_subtree(nodes, &1))
+  end
+
+  defp build_subtree(nodes, node) do
+    %{
+      id: node.id,
+      page_id: node.page_id,
+      children:
+        nodes
+        |> child_nodes(node.id)
+        |> Enum.map(&build_subtree(nodes, &1))
+    }
+  end
 end

@@ -12,7 +12,7 @@ defmodule Qblog.Wiki do
 
   resources do
     resource Qblog.Wiki.PageTree do
-      define :get_page_tree, action: :read, get_by: [:group_id]
+      define :get_or_create_page_tree, action: :get_or_create_page_tree, args: []
     end
   end
 end

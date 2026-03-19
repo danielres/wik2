@@ -10,9 +10,15 @@ defmodule QblogWeb.PageTreeLive do
 
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
-    flat_tree = scope |> get_or_create_page_tree()
 
-    {:ok, socket |> assign_page_tree(flat_tree)}
+    case Qblog.Wiki.get_or_create_page_tree(scope: scope) do
+      {:ok, flat_tree} ->
+        {:ok, socket |> assign_page_tree(flat_tree)}
+
+      {:error, err} ->
+        Log.scoped_error(scope, err, "flat tree get_or_create failed")
+        {:ok, socket |> assign_page_tree(%PageTree{nodes: []})}
+    end
   end
 
   defp assign_page_tree(socket, flat_tree) do
@@ -110,31 +116,6 @@ defmodule QblogWeb.PageTreeLive do
       {:error, err} ->
         Log.scoped_error(scope, err, "flat tree move_to_root failed")
         {:noreply, socket}
-    end
-  end
-
-  defp get_or_create_page_tree(nil), do: %PageTree{nodes: []}
-
-  defp get_or_create_page_tree(scope) do
-    case Qblog.Wiki.PageTree
-         |> Ash.Query.for_read(:read)
-         |> Ash.read_one(scope: scope) do
-      {:ok, %PageTree{} = page_tree} ->
-        page_tree
-
-      {:ok, nil} ->
-        case PageTree.create(%{}, scope: scope) do
-          {:ok, page_tree} ->
-            page_tree
-
-          {:error, err} ->
-            Log.scoped_error(scope, err, "page tree create failed")
-            %PageTree{nodes: []}
-        end
-
-      {:error, err} ->
-        Log.scoped_error(scope, err, "page tree read failed")
-        %PageTree{nodes: []}
     end
   end
 end

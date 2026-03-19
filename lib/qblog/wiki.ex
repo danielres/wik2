@@ -11,6 +11,8 @@ defmodule Qblog.Wiki do
   end
 
   resources do
-    resource Qblog.Wiki.PageTree
+    resource Qblog.Wiki.PageTree do
+      define :get_page_tree, action: :read, get_by: [:group_id]
+    end
   end
 end

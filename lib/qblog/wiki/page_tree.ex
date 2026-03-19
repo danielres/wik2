@@ -13,6 +13,7 @@ defmodule Qblog.Wiki.PageTree do
 
   code_interface do
     define :create
+    define :get, action: :read, get_by: [:group_id]
     define :add_child, args: [:parent_node_id]
     define :remove_node, args: [:node_id]
     define :move_node, args: [:node_id, :new_parent_id]

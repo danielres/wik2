@@ -15,6 +15,7 @@ defmodule Qblog.Wiki.PageTree do
     define :create
     define :add_child, args: [:parent_node_id]
     define :remove_node, args: [:node_id]
+    define :move_node, args: [:node_id, :new_parent_id]
   end
 
   actions do
@@ -38,6 +39,18 @@ defmodule Qblog.Wiki.PageTree do
       end
 
       change Qblog.Wiki.PageTree.Changes.RemoveNode
+    end
+
+    update :move_node do
+      argument :node_id, :integer do
+        allow_nil? false
+      end
+
+      argument :new_parent_id, :integer do
+        allow_nil? true
+      end
+
+      change Qblog.Wiki.PageTree.Changes.MoveNode
     end
   end
 

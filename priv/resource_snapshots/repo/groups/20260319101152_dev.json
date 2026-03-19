@@ -39,20 +39,55 @@
       "allow_nil?": false,
       "generated?": false,
       "primary_key?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "uuid",
+      "source": "owner_id",
+      "references": {
+        "name": "groups_owner_id_fkey",
+        "table": "users",
+        "multitenancy": {
+          "global": null,
+          "strategy": null,
+          "attribute": null
+        },
+        "primary_key?": true,
+        "destination_attribute": "id",
+        "on_update": null,
+        "on_delete": null,
+        "deferrable": false,
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null
+      },
+      "allow_nil?": false,
+      "generated?": false,
+      "primary_key?": false
     }
   ],
   "table": "groups",
-  "hash": "9EFB61C85EFF11B224932C71CD8CFA2AAFD1AC09C6FA03801AC5B4BD5293CE32",
+  "hash": "AF804298443C9B08D885EA5F7E9E2FBD4DE2BE008B88A32F2629C7BEC1315311",
   "multitenancy": {
     "global": null,
-    "attribute": null,
-    "strategy": null
+    "strategy": null,
+    "attribute": null
   },
-  "identities": [],
+  "identities": [
+    {
+      "name": "unique_name",
+      "keys": [
+        "name"
+      ],
+      "nils_distinct?": true,
+      "base_filter": null,
+      "index_name": "groups_unique_name_index"
+    }
+  ],
   "repo": "Elixir.Qblog.Repo",
   "strict?": false,
   "base_filter": null,
   "custom_indexes": [],
   "custom_statements": [],
-  "has_create_action": false
+  "has_create_action": true
 }

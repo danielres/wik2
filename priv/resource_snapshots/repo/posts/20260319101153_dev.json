@@ -60,8 +60,8 @@
         "table": "groups",
         "multitenancy": {
           "global": null,
-          "attribute": null,
-          "strategy": null
+          "strategy": null,
+          "attribute": null
         },
         "primary_key?": true,
         "destination_attribute": "id",
@@ -71,17 +71,42 @@
         "destination_attribute_default": null,
         "destination_attribute_generated": null
       },
-      "allow_nil?": true,
+      "allow_nil?": false,
+      "generated?": false,
+      "primary_key?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "uuid",
+      "source": "author_id",
+      "references": {
+        "name": "posts_author_id_fkey",
+        "table": "users",
+        "multitenancy": {
+          "global": null,
+          "strategy": null,
+          "attribute": null
+        },
+        "primary_key?": true,
+        "destination_attribute": "id",
+        "on_update": null,
+        "on_delete": null,
+        "deferrable": false,
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null
+      },
+      "allow_nil?": false,
       "generated?": false,
       "primary_key?": false
     }
   ],
   "table": "posts",
-  "hash": "A1FDBF4E647184C34D4CE6EF177A308C53CA5ED13975EA701C04DEAFC7AAF08E",
+  "hash": "AB150E25AD697E750FE6A245ECB50F019D2426A9CEF2EBCB08E07EF62C06333F",
   "multitenancy": {
     "global": false,
-    "attribute": "group_id",
-    "strategy": "attribute"
+    "strategy": "attribute",
+    "attribute": "group_id"
   },
   "identities": [],
   "repo": "Elixir.Qblog.Repo",

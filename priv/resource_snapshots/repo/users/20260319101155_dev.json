@@ -13,50 +13,40 @@
     {
       "default": "nil",
       "size": null,
-      "type": "utc_datetime_usec",
-      "source": "inserted_at",
-      "references": null,
-      "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": false
-    },
-    {
-      "default": "nil",
-      "size": null,
-      "type": "utc_datetime_usec",
-      "source": "updated_at",
-      "references": null,
-      "allow_nil?": false,
-      "generated?": false,
-      "primary_key?": false
-    },
-    {
-      "default": "nil",
-      "size": null,
       "type": "text",
-      "source": "name",
+      "source": "role",
+      "references": null,
+      "allow_nil?": false,
+      "generated?": false,
+      "primary_key?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "citext",
+      "source": "email",
       "references": null,
       "allow_nil?": false,
       "generated?": false,
       "primary_key?": false
     }
   ],
-  "table": "groups",
-  "hash": "90C959BAB5A8ECD52AD2EFBAF476E427590B59F7B8CA169DC5F7E101F71E34A1",
+  "table": "users",
+  "hash": "C497A8DE9B6F1FD7DE57046A7634A1B387CF3F5AD2EB85888B40C4A52D4A51A5",
   "multitenancy": {
     "global": null,
-    "attribute": null,
-    "strategy": null
+    "strategy": null,
+    "attribute": null
   },
   "identities": [
     {
-      "name": "unique_name",
+      "name": "unique_email",
       "keys": [
-        "name"
+        "email"
       ],
-      "index_name": "groups_unique_name_index",
       "nils_distinct?": true,
-      "base_filter": null
+      "base_filter": null,
+      "index_name": "users_unique_email_index"
     }
   ],
   "repo": "Elixir.Qblog.Repo",

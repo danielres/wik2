@@ -33,8 +33,11 @@
     {
       "default": "nil",
       "size": null,
-      "type": "text",
-      "source": "name",
+      "type": [
+        "array",
+        "map"
+      ],
+      "source": "nodes",
       "references": null,
       "allow_nil?": false,
       "primary_key?": false,
@@ -44,50 +47,50 @@
       "default": "nil",
       "size": null,
       "type": "uuid",
-      "source": "owner_id",
+      "source": "group_id",
       "references": {
-        "name": "groups_owner_id_fkey",
-        "table": "users",
+        "name": "page_trees_group_id_fkey",
+        "table": "groups",
         "multitenancy": {
           "global": null,
           "attribute": null,
           "strategy": null
         },
-        "primary_key?": true,
         "destination_attribute": "id",
-        "on_update": null,
+        "primary_key?": true,
         "on_delete": null,
+        "on_update": null,
         "deferrable": false,
         "destination_attribute_default": null,
         "destination_attribute_generated": null
       },
-      "allow_nil?": true,
+      "allow_nil?": false,
       "primary_key?": false,
       "generated?": false
     }
   ],
-  "table": "groups",
-  "hash": "8649261668945E9607F7114EBF4DFE963C9A96FF459E9DA2CD419472FBE0C26E",
+  "table": "page_trees",
+  "hash": "818D142A3750C2C064D45A2946840E48116C95065BEAFC4CEA46C0393B4F2A01",
   "multitenancy": {
-    "global": null,
-    "attribute": null,
-    "strategy": null
+    "global": false,
+    "attribute": "group_id",
+    "strategy": "attribute"
   },
   "identities": [
     {
-      "name": "unique_name",
+      "name": "unique_group_page_tree",
       "keys": [
-        "name"
+        "group_id"
       ],
-      "nils_distinct?": true,
       "base_filter": null,
-      "index_name": "groups_unique_name_index"
+      "nils_distinct?": true,
+      "index_name": "page_trees_unique_group_page_tree_index"
     }
   ],
   "repo": "Elixir.Qblog.Repo",
   "strict?": false,
-  "base_filter": null,
   "custom_indexes": [],
+  "base_filter": null,
   "custom_statements": [],
   "has_create_action": true
 }

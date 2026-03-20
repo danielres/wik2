@@ -111,17 +111,4 @@ defmodule QblogWeb.PageTreeLive do
         {:noreply, socket}
     end
   end
-
-  def handle_event("move_to_root", %{"node_id" => node_id}, socket) do
-    scope = socket.assigns.current_scope
-
-    case PageTree.move_node(socket.assigns.page_tree, node_id, nil, scope: scope) do
-      {:ok, page_tree} ->
-        {:noreply, socket |> assign(page_tree: page_tree)}
-
-      {:error, err} ->
-        Log.scoped_error(scope, err, "page_tree move_to_root failed")
-        {:noreply, socket}
-    end
-  end
 end

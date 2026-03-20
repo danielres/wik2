@@ -1,9 +1,10 @@
-defmodule QblogWeb.PageTreeLive.Components.DialogMoveNode do
+defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
   use QblogWeb, :live_view
   use Phoenix.Component
 
   alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Helpers
+  alias QblogWeb.PageTreeLive.Components
 
   attr :moved_node_id, :integer, default: nil
   attr :nodes_flat, :list, required: true
@@ -43,7 +44,7 @@ defmodule QblogWeb.PageTreeLive.Components.DialogMoveNode do
           </div>
         </form>
 
-        <QblogWeb.PageTreeLive.Components.Selector.page_tree_nodes
+        <Components.MoveNode.Selector.page_tree_nodes
           root?={false}
           nodes_flat={@nodes_flat}
           nodes_tree={@nodes_tree}

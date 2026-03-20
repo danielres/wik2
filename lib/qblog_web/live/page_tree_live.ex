@@ -3,7 +3,6 @@ defmodule QblogWeb.PageTreeLive do
 
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
-  alias QblogWeb.PageTreeLive.Components.DialogMoveNode
   alias Utils.Log
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
@@ -36,7 +35,7 @@ defmodule QblogWeb.PageTreeLive do
           </.button>
         </div>
 
-        <DialogMoveNode.dialog
+        <Components.MoveNode.Dialog.dialog
           moved_node_id={@moved_node_id}
           nodes_flat={@page_tree.nodes}
         />

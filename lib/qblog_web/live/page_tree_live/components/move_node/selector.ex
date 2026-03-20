@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageTreeLive.Components.Selector do
+defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
   use QblogWeb, :live_view
   use Phoenix.Component
 

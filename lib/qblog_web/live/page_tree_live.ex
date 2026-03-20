@@ -36,7 +36,10 @@ defmodule QblogWeb.PageTreeLive do
           </.button>
         </div>
 
-        <DialogMoveNode.dialog moved_node_id={@moved_node_id} nodes_flat={@page_tree.nodes} />
+        <DialogMoveNode.dialog
+          moved_node_id={@moved_node_id}
+          nodes_flat={@page_tree.nodes}
+        />
 
         <%= if @page_tree.nodes == [] do %>
           <div class="card bg-base-100 shadow">
@@ -52,6 +55,11 @@ defmodule QblogWeb.PageTreeLive do
     """
   end
 
+  def handle_event("dialog_keydown", params, socket) do
+    socket = if params["key"] == "Escape", do: socket |> assign(moved_node_id: nil), else: socket
+    {:noreply, socket}
+  end
+
   def handle_event("move_node_start", params, socket) do
     {:noreply, socket |> assign(moved_node_id: params["node_id"] |> String.to_integer())}
   end
@@ -60,12 +68,22 @@ defmodule QblogWeb.PageTreeLive do
     {:noreply, socket |> assign(moved_node_id: nil)}
   end
 
-  def handle_event("move_node", %{"node_id" => node_id, "new_parent_id" => new_parent_id}, socket) do
+  def handle_event("move_node", %{"new_parent_id" => new_parent_id}, socket) do
     scope = socket.assigns.current_scope
 
-    case PageTree.move_node(socket.assigns.page_tree, node_id, new_parent_id, scope: scope) do
+    case PageTree.move_node(
+           socket.assigns.page_tree,
+           socket.assigns.moved_node_id,
+           new_parent_id,
+           scope: scope
+         ) do
       {:ok, page_tree} ->
-        {:noreply, socket |> assign(page_tree: page_tree) |> assign(moved_node_id: nil)}
+        {
+          :noreply,
+          socket
+          |> assign(page_tree: page_tree)
+          |> assign(moved_node_id: nil)
+        }
 
       {:error, err} ->
         Log.scoped_error(scope, err, "page_tree move_node failed")

@@ -6,25 +6,19 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
   alias QblogWeb.PageTreeLive.Helpers
 
   attr :nodes_flat, :list, required: true
+  attr :nodes_tree, :list, required: false
+  attr :depth, :integer, default: 0
 
   def render(assigns) do
-    nodes_tree = assigns.nodes_flat |> TreeQueries.build_tree()
-    assigns = assigns |> assign(nodes_tree: nodes_tree)
+    assigns =
+      assigns |> assign_new(:nodes_tree, fn -> assigns.nodes_flat |> TreeQueries.build_tree() end)
 
     ~H"""
-    <.page_tree_list nodes_flat={@nodes_flat} nodes_tree={@nodes_tree} root?={true} />
-    """
-  end
-
-  attr :root?, :boolean, required: true
-  attr :nodes_flat, :list, required: true
-  attr :nodes_tree, :list, required: true
-
-  def page_tree_list(assigns) do
-    ~H"""
-    <ul class={[@root? and "space-y-3"]}>
+    <ul class={[@depth == 0 and "space-y-3"]}>
       <li :for={node <- @nodes_tree} class={["card", "bg-base-100"]}>
-        <.page_tree_node node={node} root?={@root?} nodes_flat={@nodes_flat} />
+        <.page_tree_node node={node} nodes_flat={@nodes_flat} depth={@depth + 1}>
+          <.action_buttons node={node} nodes_flat={@nodes_flat} depth={@depth + 1} />
+        </.page_tree_node>
       </li>
     </ul>
     """
@@ -32,11 +26,12 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
 
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
-  attr :root?, :boolean, default: false
+  attr :depth, :integer, required: true
+  slot :inner_block, required: true
 
-  def page_tree_node(assigns) do
+  defp page_tree_node(assigns) do
     ~H"""
-    <.page_tree_node_wrapper root?={@root?} has_children?={Helpers.has_children?(@node)}>
+    <.page_tree_node_wrapper depth={@depth} has_children?={Helpers.has_children?(@node)}>
       <div class={[
         "group",
         "flex items-center justify-between gap-3"
@@ -49,17 +44,20 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
           ]}
         />
 
-        <.action_buttons root?={@root?} node={@node} nodes_flat={@nodes_flat} />
+        {render_slot(@inner_block, %{node: @node})}
       </div>
 
-      <%= if Helpers.has_children?(@node) do %>
-        <.page_tree_list nodes_tree={@node.children} root?={false} nodes_flat={@nodes_flat} />
-      <% end %>
+      <.render
+        :if={Helpers.has_children?(@node)}
+        nodes_flat={@nodes_flat}
+        nodes_tree={@node.children}
+        depth={@depth}
+      />
     </.page_tree_node_wrapper>
     """
   end
 
-  def page_tree_node_label(assigns) do
+  defp page_tree_node_label(assigns) do
     ~H"""
     <div class={["flex gap-2", @class]}>
       <div class="flex">
@@ -73,7 +71,7 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
     """
   end
 
-  def icon_chevron(assigns) do
+  defp icon_chevron(assigns) do
     ~H"""
     <.icon
       name="hero-chevron-right-mini"
@@ -88,17 +86,17 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
     """
   end
 
-  attr :node, :map, required: true
-  attr :root?, :boolean, default: false
+  attr :depth, :integer, required: true
+  attr :has_children?, :boolean, required: true
   slot :inner_block, required: true
 
-  def page_tree_node_wrapper(assigns) do
+  defp page_tree_node_wrapper(assigns) do
     ~H"""
     <div
       class={[
         "card-body",
-        !@root? and "py-1",
-        !@root? and "pr-0",
+        @depth > 1 and "py-1",
+        @depth > 1 and "pr-0",
         @has_children? and "pb-2"
       ]}
       style="--size-field: 0.22rem;"
@@ -110,7 +108,7 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
 
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
-  attr :root?, :boolean, default: false
+  attr :depth, :integer, required: true
 
   defp action_buttons(assigns) do
     candidates = Helpers.parent_options(assigns.nodes_flat, assigns.node.id)
@@ -123,46 +121,60 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
       "[&_button]:hover:opacity-100",
       "[&_button]:transition"
     ]}>
-      <.button
+      <.action_button
         :if={@node.children == []}
+        phx-value-node_id={@node.id}
         phx-click="remove_node"
-        phx-value-node_id={@node.id}
-        class={[
-          "btn btn-xs btn-circle hover:btn-error",
-          "tooltip"
-        ]}
+        icon="hero-x-mark-mini"
         data-tip="delete"
-      >
-        <.icon name="hero-x-mark-mini" />
-        <span class="sr-only">Delete</span>
-      </.button>
+        variant="error"
+      />
 
-      <.button
+      <.action_button
         :if={@has_candidates?}
+        phx-value-node_id={@node.id}
         phx-click="move_node_start"
-        phx-value-node_id={@node.id}
-        class={["btn btn-xs btn-circle hover:btn-primary", "tooltip"]}
+        icon="hero-arrow-turn-down-right-mini"
         data-tip="move"
-      >
-        <.icon name="hero-arrow-turn-down-right-mini" />
-        <span class="sr-only">
-          Move
-        </span>
-      </.button>
+      />
 
-      <.button
-        phx-click="add_child"
+      <.action_button
         phx-value-node_id={@node.id}
-        class={[
-          "btn btn-xs btn-circle hover:btn-primary",
-          "tooltip"
-        ]}
+        phx-click="add_child"
+        icon="hero-plus-mini"
         data-tip="add child"
-      >
-        <.icon name="hero-plus-mini" />
-        <span class="sr-only">Add child</span>
-      </.button>
+      />
     </div>
+    """
+  end
+
+  attr :variant, :string, default: "primary"
+  attr :"phx-value-node_id", :integer, required: true
+  attr :"phx-click", :string, required: true
+  attr :"data-tip", :string, required: true
+  attr :icon, :string, required: true
+
+  defp action_button(assigns) do
+    class =
+      case assigns.variant do
+        "error" -> "hover:btn-error"
+        _ -> "hover:btn-primary"
+      end
+
+    assigns = assigns |> assign(class: class)
+
+    ~H"""
+    <.button
+      class={[
+        "btn btn-xs btn-circle",
+        "tooltip",
+        @class
+      ]}
+      {assigns}
+    >
+      <.icon name={@icon} />
+      <span class="sr-only">{assigns[:"data-tip"]}</span>
+    </.button>
     """
   end
 end

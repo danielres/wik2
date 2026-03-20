@@ -30,7 +30,11 @@ defmodule QblogWeb.PageTreeLive do
       <div class="space-y-4">
         <div class="flex items-center justify-between gap-4">
           <h1 class="text-2xl font-[100]">Page Tree</h1>
-          <.button phx-click="add_root" class="btn btn-circle bg-base-100">
+          <.button
+            phx-click="add_child"
+            phx-value-node_id=""
+            class="btn btn-circle bg-base-100"
+          >
             <.icon name="hero-plus-mini" />
             <span class="sr-only">Add root node</span>
           </.button>
@@ -94,19 +98,6 @@ defmodule QblogWeb.PageTreeLive do
 
       {:error, err} ->
         Log.scoped_error(scope, err, "page_tree move_node failed")
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("add_root", _params, socket) do
-    scope = socket.assigns.current_scope
-
-    case PageTree.add_child(socket.assigns.page_tree, nil, scope: scope) do
-      {:ok, page_tree} ->
-        {:noreply, socket |> assign(page_tree: page_tree)}
-
-      {:error, err} ->
-        Log.scoped_error(scope, err, "page_tree add_root failed")
         {:noreply, socket}
     end
   end

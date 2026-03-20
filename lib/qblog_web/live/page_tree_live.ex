@@ -54,9 +54,8 @@ defmodule QblogWeb.PageTreeLive do
     """
   end
 
-  def handle_event("dialog_keydown", params, socket) do
-    socket = if params["key"] == "Escape", do: socket |> assign(moved_node_id: nil), else: socket
-    {:noreply, socket}
+  def handle_event("dialog_keydown_escape", _params, socket) do
+    {:noreply, socket |> assign(moved_node_id: nil)}
   end
 
   def handle_event("move_node_start", params, socket) do

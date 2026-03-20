@@ -19,7 +19,8 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
 
     ~H"""
     <dialog
-      phx-window-keydown="dialog_keydown"
+      phx-window-keydown="dialog_keydown_escape"
+      phx-key="escape"
       class={["modal", @moved_node_id != nil and "modal-open"]}
       style="--size-field: 0.22rem;"
     >

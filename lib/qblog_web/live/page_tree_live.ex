@@ -22,9 +22,7 @@ defmodule QblogWeb.PageTreeLive do
   end
 
   defp assign_tree_data(socket, flat_tree) do
-    socket
-    |> assign(flat_tree: flat_tree)
-    |> assign(tree: flat_tree.nodes |> TreeQueries.build_tree())
+    socket |> assign(flat_tree: flat_tree)
   end
 
   def render(assigns) do
@@ -40,14 +38,14 @@ defmodule QblogWeb.PageTreeLive do
           </.button>
         </div>
 
-        <%= if @tree == [] do %>
+        <%= if @flat_tree.nodes == [] do %>
           <div class="card bg-base-100 shadow">
             <div class="card-body">
               No nodes yet.
             </div>
           </div>
         <% else %>
-          <Components.page_tree_nodes nodes={@tree} flat_nodes={@flat_tree.nodes} />
+          <Components.page_tree_nodes nodes_flat={@flat_tree.nodes} />
         <% end %>
       </div>
     </Layouts.app>

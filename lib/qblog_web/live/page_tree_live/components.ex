@@ -2,24 +2,29 @@ defmodule QblogWeb.PageTreeLive.Components do
   use QblogWeb, :live_view
   use Phoenix.Component
 
+  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Helpers
 
-  attr :nodes, :list, required: true
-  attr :flat_nodes, :list, required: true
   attr :root?, :boolean, default: true
+  attr :nodes_flat, :list, required: true
+  attr :nodes_tree, :list, required: false
 
   def page_tree_nodes(assigns) do
+    assigns =
+      assigns
+      |> assign_new(:nodes_tree, fn -> assigns.nodes_flat |> TreeQueries.build_tree() end)
+
     ~H"""
     <ul class={[@root? and "space-y-3"]}>
-      <%= for node <- @nodes do %>
-        <.page_tree_node node={node} root?={@root?} flat_nodes={@flat_nodes} />
+      <%= for node <- @nodes_tree do %>
+        <.page_tree_node node={node} root?={@root?} nodes_flat={@nodes_flat} />
       <% end %>
     </ul>
     """
   end
 
   attr :node, :map, required: true
-  attr :flat_nodes, :list, required: true
+  attr :nodes_flat, :list, required: true
   attr :root?, :boolean, default: false
 
   def page_tree_node(assigns) do
@@ -73,12 +78,12 @@ defmodule QblogWeb.PageTreeLive.Components do
             ]}
             style="--size-field: 0.22rem;"
           >
-            <.action_buttons root?={@root?} node={@node} flat_nodes={@flat_nodes} />
+            <.action_buttons root?={@root?} node={@node} nodes_flat={@nodes_flat} />
           </div>
         </div>
 
         <%= if Helpers.has_children?(@node) do %>
-          <.page_tree_nodes nodes={@node.children} root?={false} flat_nodes={@flat_nodes} />
+          <.page_tree_nodes nodes_tree={@node.children} root?={false} nodes_flat={@nodes_flat} />
         <% end %>
       </div>
     </li>
@@ -86,7 +91,7 @@ defmodule QblogWeb.PageTreeLive.Components do
   end
 
   attr :node, :map, required: true
-  attr :flat_nodes, :list, required: true
+  attr :nodes_flat, :list, required: true
   attr :root?, :boolean, default: false
 
   defp action_buttons(assigns) do
@@ -116,7 +121,7 @@ defmodule QblogWeb.PageTreeLive.Components do
       </span>
     </.button>
 
-    <dialog id={"move-node-#{@node.id}"} class="modal xmodal-open">
+    <dialog id={"move-node-#{@node.id}"} class="modal">
       <div class="modal-box min-w-sm">
         <form
           phx-submit={
@@ -134,7 +139,7 @@ defmodule QblogWeb.PageTreeLive.Components do
               Top level
             </button>
             <button
-              :for={candidate <- Helpers.parent_options(@flat_nodes, @node.id)}
+              :for={candidate <- Helpers.parent_options(@nodes_flat, @node.id)}
               class="btn btn-sm"
               type="submit"
               name="new_parent_id"

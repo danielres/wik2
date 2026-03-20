@@ -95,6 +95,9 @@ defmodule QblogWeb.PageTreeLive.Components do
   attr :root?, :boolean, default: false
 
   defp action_buttons(assigns) do
+    candidates = Helpers.parent_options(assigns.nodes_flat, assigns.node.id)
+    assigns = assigns |> assign(has_candidates?: candidates |> Enum.count() > 0)
+
     ~H"""
     <.button
       :if={@node.children == []}
@@ -111,6 +114,7 @@ defmodule QblogWeb.PageTreeLive.Components do
     </.button>
 
     <.button
+      :if={@has_candidates?}
       phx-click="move_node_start"
       phx-value-node_id={@node.id}
       class={["btn btn-xs btn-circle hover:btn-primary", "tooltip"]}

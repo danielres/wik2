@@ -2,11 +2,12 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree.ActionButton do
   import QblogWeb.CoreComponents
   use Phoenix.Component
 
-  attr :variant, :string, default: "primary"
-  attr :"phx-value-node_id", :integer, required: true
-  attr :"phx-click", :string, required: true
   attr :"data-tip", :string, required: true
+  attr :"phx-click", :string, required: true
+  attr :"phx-value-new_parent_id", :any, required: false
+  attr :"phx-value-node_id", :integer, required: true
   attr :icon, :string, required: true
+  attr :variant, :string, default: "primary"
 
   def render(assigns) do
     class =

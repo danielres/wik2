@@ -3,8 +3,8 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
   use Phoenix.Component
 
   alias Qblog.Wiki.PageTree.TreeQueries
-  alias QblogWeb.PageTreeLive.Helpers
   alias QblogWeb.PageTreeLive.Components
+  alias QblogWeb.PageTreeLive.Helpers
 
   attr :moved_node_id, :integer, default: nil
   attr :nodes_flat, :list, required: true
@@ -31,13 +31,12 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
       >
         <h3 class="">Move <span class="font-bold">node {@moved_node_id}</span> under:</h3>
 
-        <form phx-submit="move_node" class="space-y-4">
-          <input type="hidden" name="node_id" value={@moved_node_id} />
-
+        <div phx-submit="move_node" class="space-y-4">
           <div class={[
             "group",
             "flex items-center justify-between gap-3"
           ]}>
+            <%!-- TODO: DRY up --%>
             <div class={[
               "flex gap-2",
               "opacity-80",
@@ -49,30 +48,17 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
               </div>
             </div>
 
-            <div class={[
-              "flex flex-wrap gap-2",
-              "[&_button]:opacity-50",
-              "[&_button]:hover:opacity-100",
-              "[&_button]:transition"
-            ]}>
-              <button
-                class={[
-                  "btn btn-xs btn-circle hover:btn-primary",
-                  "tooltip",
-                  "tooltip-left"
-                ]}
-                type="submit"
-                name="new_parent_id"
-                value=""
-              >
-                <.icon name="hero-arrow-turn-down-right-mini" />
-                <span class="sr-only">
-                  Move
-                </span>
-              </button>
-            </div>
+            <Components.PagesTree.ActionButtonsWrapper.render>
+              <Components.PagesTree.ActionButton.render
+                phx-click="move_node"
+                phx-value-node_id={@moved_node_id}
+                phx-value-new_parent_id=""
+                data-tip="move to top"
+                icon="hero-arrow-turn-down-right-mini"
+              />
+            </Components.PagesTree.ActionButtonsWrapper.render>
           </div>
-        </form>
+        </div>
 
         <Components.MoveNode.Selector.page_tree_nodes
           root?={false}

@@ -83,7 +83,6 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
             "[&_button]:transition"
           ]}>
             <.action_buttons
-              root?={@root?}
               node={@node}
               nodes_flat={@nodes_flat}
               candidates={@candidates}
@@ -103,9 +102,9 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
     """
   end
 
+  attr :candidates, :list, required: true
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
-  attr :root?, :boolean, default: false
 
   defp action_buttons(assigns) do
     candidate_ids = assigns.candidates |> Enum.map(fn e -> e.id end)

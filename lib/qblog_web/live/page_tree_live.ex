@@ -3,7 +3,6 @@ defmodule QblogWeb.PageTreeLive do
 
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
-  alias QblogWeb.PageTreeLive.Components.PagesTree.ActionButton
   alias QblogWeb.PageTreeLive.Helpers
   alias Utils.Log
 
@@ -138,13 +137,8 @@ defmodule QblogWeb.PageTreeLive do
     assigns = assigns |> assign(has_candidates?: candidates |> Enum.count() > 0)
 
     ~H"""
-    <div class={[
-      "flex flex-wrap gap-2",
-      "[&_button]:opacity-50",
-      "[&_button]:hover:opacity-100",
-      "[&_button]:transition"
-    ]}>
-      <ActionButton.render
+    <Components.PagesTree.ActionButtonsWrapper.render>
+      <Components.PagesTree.ActionButton.render
         :if={@node.children == []}
         phx-value-node_id={@node.id}
         phx-click="remove_node"
@@ -153,7 +147,7 @@ defmodule QblogWeb.PageTreeLive do
         variant="error"
       />
 
-      <ActionButton.render
+      <Components.PagesTree.ActionButton.render
         :if={@has_candidates?}
         phx-value-node_id={@node.id}
         phx-click="move_node_start"
@@ -161,13 +155,13 @@ defmodule QblogWeb.PageTreeLive do
         data-tip="move"
       />
 
-      <ActionButton.render
+      <Components.PagesTree.ActionButton.render
         phx-value-node_id={@node.id}
         phx-click="add_child"
         icon="hero-plus-mini"
         data-tip="add child"
       />
-    </div>
+    </Components.PagesTree.ActionButtonsWrapper.render>
     """
   end
 end

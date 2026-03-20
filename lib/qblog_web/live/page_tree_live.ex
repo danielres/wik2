@@ -2,7 +2,6 @@ defmodule QblogWeb.PageTreeLive do
   use QblogWeb, :live_view
 
   alias Qblog.Wiki.PageTree
-  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Components
   alias Utils.Log
 
@@ -12,17 +11,13 @@ defmodule QblogWeb.PageTreeLive do
     scope = socket.assigns.current_scope
 
     case Qblog.Wiki.get_page_tree(scope: scope) do
-      {:ok, flat_tree} ->
-        {:ok, socket |> assign_tree_data(flat_tree)}
+      {:ok, page_tree} ->
+        {:ok, socket |> assign(page_tree: page_tree)}
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "flat tree get_or_create failed")
-        {:ok, socket |> assign_tree_data(%PageTree{nodes: []})}
+        Log.scoped_error(scope, err, "page_tree get_or_create failed")
+        {:ok, socket |> assign(page_tree: %PageTree{nodes: []})}
     end
-  end
-
-  defp assign_tree_data(socket, flat_tree) do
-    socket |> assign(flat_tree: flat_tree)
   end
 
   def render(assigns) do
@@ -38,14 +33,14 @@ defmodule QblogWeb.PageTreeLive do
           </.button>
         </div>
 
-        <%= if @flat_tree.nodes == [] do %>
+        <%= if @page_tree.nodes == [] do %>
           <div class="card bg-base-100 shadow">
             <div class="card-body">
               No nodes yet.
             </div>
           </div>
         <% else %>
-          <Components.page_tree_nodes nodes_flat={@flat_tree.nodes} />
+          <Components.page_tree_nodes nodes_flat={@page_tree.nodes} />
         <% end %>
       </div>
     </Layouts.app>
@@ -55,12 +50,12 @@ defmodule QblogWeb.PageTreeLive do
   def handle_event("add_root", _params, socket) do
     scope = socket.assigns.current_scope
 
-    case PageTree.add_child(socket.assigns.flat_tree, nil, scope: scope) do
-      {:ok, flat_tree} ->
-        {:noreply, socket |> assign_tree_data(flat_tree)}
+    case PageTree.add_child(socket.assigns.page_tree, nil, scope: scope) do
+      {:ok, page_tree} ->
+        {:noreply, socket |> assign(page_tree: page_tree)}
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "flat tree add_root failed")
+        Log.scoped_error(scope, err, "page_tree add_root failed")
         {:noreply, socket}
     end
   end
@@ -68,12 +63,12 @@ defmodule QblogWeb.PageTreeLive do
   def handle_event("move_node", %{"node_id" => node_id, "new_parent_id" => new_parent_id}, socket) do
     scope = socket.assigns.current_scope
 
-    case PageTree.move_node(socket.assigns.flat_tree, node_id, new_parent_id, scope: scope) do
-      {:ok, flat_tree} ->
-        {:noreply, socket |> assign_tree_data(flat_tree)}
+    case PageTree.move_node(socket.assigns.page_tree, node_id, new_parent_id, scope: scope) do
+      {:ok, page_tree} ->
+        {:noreply, socket |> assign(page_tree: page_tree)}
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "flat tree move_node failed")
+        Log.scoped_error(scope, err, "page_tree move_node failed")
         {:noreply, socket}
     end
   end
@@ -81,12 +76,12 @@ defmodule QblogWeb.PageTreeLive do
   def handle_event("add_child", %{"node_id" => node_id}, socket) do
     scope = socket.assigns.current_scope
 
-    case PageTree.add_child(socket.assigns.flat_tree, node_id, scope: scope) do
-      {:ok, flat_tree} ->
-        {:noreply, socket |> assign_tree_data(flat_tree)}
+    case PageTree.add_child(socket.assigns.page_tree, node_id, scope: scope) do
+      {:ok, page_tree} ->
+        {:noreply, socket |> assign(page_tree: page_tree)}
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "flat tree add_child failed")
+        Log.scoped_error(scope, err, "page_tree add_child failed")
         {:noreply, socket}
     end
   end
@@ -94,12 +89,12 @@ defmodule QblogWeb.PageTreeLive do
   def handle_event("remove_node", %{"node_id" => node_id}, socket) do
     scope = socket.assigns.current_scope
 
-    case PageTree.remove_node(socket.assigns.flat_tree, node_id, scope: scope) do
-      {:ok, flat_tree} ->
-        {:noreply, socket |> assign_tree_data(flat_tree)}
+    case PageTree.remove_node(socket.assigns.page_tree, node_id, scope: scope) do
+      {:ok, page_tree} ->
+        {:noreply, socket |> assign(page_tree: page_tree)}
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "flat tree remove_node failed")
+        Log.scoped_error(scope, err, "page_tree remove_node failed")
         {:noreply, socket}
     end
   end
@@ -107,12 +102,12 @@ defmodule QblogWeb.PageTreeLive do
   def handle_event("move_to_root", %{"node_id" => node_id}, socket) do
     scope = socket.assigns.current_scope
 
-    case PageTree.move_node(socket.assigns.flat_tree, node_id, nil, scope: scope) do
-      {:ok, flat_tree} ->
-        {:noreply, socket |> assign_tree_data(flat_tree)}
+    case PageTree.move_node(socket.assigns.page_tree, node_id, nil, scope: scope) do
+      {:ok, page_tree} ->
+        {:noreply, socket |> assign(page_tree: page_tree)}
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "flat tree move_to_root failed")
+        Log.scoped_error(scope, err, "page_tree move_to_root failed")
         {:noreply, socket}
     end
   end

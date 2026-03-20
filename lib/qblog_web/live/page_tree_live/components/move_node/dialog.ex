@@ -31,50 +31,48 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
       >
         <h3 class="">Move <span class="font-bold">node {@moved_node_id}</span> under:</h3>
 
-        <li>
-          <form phx-submit="move_node" class="space-y-4">
-            <input type="hidden" name="node_id" value={@moved_node_id} />
+        <form phx-submit="move_node" class="space-y-4">
+          <input type="hidden" name="node_id" value={@moved_node_id} />
 
+          <div class={[
+            "group",
+            "flex items-center justify-between gap-3"
+          ]}>
             <div class={[
-              "group",
-              "flex items-center justify-between gap-3"
+              "flex gap-2",
+              "opacity-80",
+              "group-has-[button:hover]:opacity-100",
+              "transition"
             ]}>
-              <div class={[
-                "flex gap-2",
-                "opacity-80",
-                "group-has-[button:hover]:opacity-100",
-                "transition"
-              ]}>
-                <div class="text-sm">
-                  Top level
-                </div>
-              </div>
-
-              <div class={[
-                "flex flex-wrap gap-2",
-                "[&_button]:opacity-50",
-                "[&_button]:hover:opacity-100",
-                "[&_button]:transition"
-              ]}>
-                <button
-                  class={[
-                    "btn btn-xs btn-circle hover:btn-primary",
-                    "tooltip",
-                    "tooltip-left"
-                  ]}
-                  type="submit"
-                  name="new_parent_id"
-                  value=""
-                >
-                  <.icon name="hero-arrow-turn-down-right-mini" />
-                  <span class="sr-only">
-                    Move
-                  </span>
-                </button>
+              <div class="text-sm">
+                Top level
               </div>
             </div>
-          </form>
-        </li>
+
+            <div class={[
+              "flex flex-wrap gap-2",
+              "[&_button]:opacity-50",
+              "[&_button]:hover:opacity-100",
+              "[&_button]:transition"
+            ]}>
+              <button
+                class={[
+                  "btn btn-xs btn-circle hover:btn-primary",
+                  "tooltip",
+                  "tooltip-left"
+                ]}
+                type="submit"
+                name="new_parent_id"
+                value=""
+              >
+                <.icon name="hero-arrow-turn-down-right-mini" />
+                <span class="sr-only">
+                  Move
+                </span>
+              </button>
+            </div>
+          </div>
+        </form>
 
         <Components.MoveNode.Selector.page_tree_nodes
           root?={false}

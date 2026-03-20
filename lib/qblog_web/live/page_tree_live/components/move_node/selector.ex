@@ -17,9 +17,13 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
 
     ~H"""
     <ul class={[@root? and "space-y-3"]}>
-      <%= for node <- @nodes_tree do %>
-        <.page_tree_node node={node} root?={@root?} nodes_flat={@nodes_flat} />
-      <% end %>
+      <.page_tree_node
+        :for={node <- @nodes_tree}
+        node={node}
+        root?={@root?}
+        nodes_flat={@nodes_flat}
+        candidates={@candidates}
+      />
     </ul>
     """
   end
@@ -27,6 +31,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
   attr :root?, :boolean, default: false
+  attr :candidates, :list, required: true
 
   def page_tree_node(assigns) do
     ~H"""
@@ -61,6 +66,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
                 ]}
               /> Node {@node.id}
             </div>
+
             <div class="opacity-60">
               <%= if @node.page_id do %>
                 page: {@node.page_id}
@@ -70,22 +76,28 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
             </div>
           </div>
 
-          <div
-            class={[
-              "flex flex-wrap gap-2",
-              "[&_button]:opacity-50",
-              "[&_button]:hover:opacity-100",
-              "[&_button]:transition"
-            ]}
-            style="--size-field: 0.22rem;"
-          >
-            <.action_buttons root?={@root?} node={@node} nodes_flat={@nodes_flat} />
+          <div class={[
+            "flex flex-wrap gap-2",
+            "[&_button]:opacity-50",
+            "[&_button]:hover:opacity-100",
+            "[&_button]:transition"
+          ]}>
+            <.action_buttons
+              root?={@root?}
+              node={@node}
+              nodes_flat={@nodes_flat}
+              candidates={@candidates}
+            />
           </div>
         </div>
 
-        <%= if Helpers.has_children?(@node) do %>
-          <.page_tree_nodes nodes_tree={@node.children} root?={false} nodes_flat={@nodes_flat} />
-        <% end %>
+        <.page_tree_nodes
+          :if={Helpers.has_children?(@node)}
+          candidates={@candidates}
+          nodes_tree={@node.children}
+          root?={false}
+          nodes_flat={@nodes_flat}
+        />
       </div>
     </li>
     """
@@ -96,10 +108,15 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Selector do
   attr :root?, :boolean, default: false
 
   defp action_buttons(assigns) do
+    candidate_ids = assigns.candidates |> Enum.map(fn e -> e.id end)
+    candidate? = assigns.node.id in candidate_ids
+    assigns = assigns |> assign(candidate?: candidate?)
+
     ~H"""
     <form phx-submit="move_node" class="space-y-4">
       <div class="card space-y-1 overflow-y-auto max-h-96">
         <button
+          :if={@candidate?}
           class={["btn btn-xs btn-circle hover:btn-primary", "tooltip", "tooltip-left"]}
           data-tip={ "move under #{@node.id}" }
           type="submit"

@@ -21,6 +21,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
     <dialog
       phx-window-keydown="dialog_keydown"
       class={["modal", @moved_node_id != nil and "modal-open"]}
+      style="--size-field: 0.22rem;"
     >
       <div
         :if={@moved_node_id != nil and @node != nil}
@@ -29,20 +30,50 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
       >
         <h3 class="">Move <span class="font-bold">node {@moved_node_id}</span> under:</h3>
 
-        <form :if={@node.parent_id != nil} phx-submit="move_node" class="space-y-4">
-          <input type="hidden" name="node_id" value={@moved_node_id} />
+        <li>
+          <form phx-submit="move_node" class="space-y-4">
+            <input type="hidden" name="node_id" value={@moved_node_id} />
 
-          <div class="card space-y-1 overflow-y-auto max-h-96">
-            <button
-              class="btn btn-sm"
-              type="submit"
-              name="new_parent_id"
-              value=""
-            >
-              Top level
-            </button>
-          </div>
-        </form>
+            <div class={[
+              "group",
+              "flex items-center justify-between gap-3"
+            ]}>
+              <div class={[
+                "flex gap-2",
+                "opacity-80",
+                "group-has-[button:hover]:opacity-100",
+                "transition"
+              ]}>
+                <div class="text-sm">
+                  Top level
+                </div>
+              </div>
+
+              <div class={[
+                "flex flex-wrap gap-2",
+                "[&_button]:opacity-50",
+                "[&_button]:hover:opacity-100",
+                "[&_button]:transition"
+              ]}>
+                <button
+                  class={[
+                    "btn btn-xs btn-circle hover:btn-primary",
+                    "tooltip",
+                    "tooltip-left"
+                  ]}
+                  type="submit"
+                  name="new_parent_id"
+                  value=""
+                >
+                  <.icon name="hero-arrow-turn-down-right-mini" />
+                  <span class="sr-only">
+                    Move
+                  </span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </li>
 
         <Components.MoveNode.Selector.page_tree_nodes
           root?={false}

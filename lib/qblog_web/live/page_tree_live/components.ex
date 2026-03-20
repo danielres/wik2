@@ -111,7 +111,8 @@ defmodule QblogWeb.PageTreeLive.Components do
     </.button>
 
     <.button
-      phx-click={JS.add_class("modal-open", to: "#move-node-#{@node.id}")}
+      phx-click="move_node_start"
+      phx-value-node_id={@node.id}
       class={["btn btn-xs btn-circle hover:btn-primary", "tooltip"]}
       data-tip="move"
     >
@@ -120,49 +121,6 @@ defmodule QblogWeb.PageTreeLive.Components do
         Move
       </span>
     </.button>
-
-    <dialog id={"move-node-#{@node.id}"} class="modal">
-      <div class="modal-box min-w-sm">
-        <form
-          phx-submit={
-            JS.remove_class("modal-open", to: {:closest, "dialog"})
-            |> JS.push("move_node")
-          }
-          class="space-y-4"
-        >
-          <h3 class="">Move <span class="font-bold">node {@node.id}</span> under:</h3>
-
-          <input type="hidden" name="node_id" value={@node.id} />
-
-          <div class="card space-y-1 overflow-y-auto max-h-96">
-            <button :if={!@root?} class="btn btn-sm" type="submit" name="new_parent_id" value="">
-              Top level
-            </button>
-            <button
-              :for={candidate <- Helpers.parent_options(@nodes_flat, @node.id)}
-              class="btn btn-sm"
-              type="submit"
-              name="new_parent_id"
-              value={candidate.id}
-            >
-              Node {candidate.id}
-            </button>
-          </div>
-
-          <div class="modal-action">
-            <.button
-              phx-click={JS.remove_class("modal-open", to: "#move-node-#{@node.id}")}
-              type="button"
-              class="btn"
-            >
-              Cancel
-            </.button>
-
-            <.button type="submit" class="btn btn-primary">Move</.button>
-          </div>
-        </form>
-      </div>
-    </dialog>
 
     <.button
       phx-click="add_child"

@@ -1,5 +1,5 @@
 defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
-  use QblogWeb, :live_view
+  import QblogWeb.CoreComponents
   use Phoenix.Component
 
   alias Qblog.Wiki.PageTree.TreeQueries

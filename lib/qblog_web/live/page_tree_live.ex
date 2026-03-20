@@ -3,6 +3,7 @@ defmodule QblogWeb.PageTreeLive do
 
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
+  alias QblogWeb.PageTreeLive.Components.PagesTree.ActionButton
   alias QblogWeb.PageTreeLive.Helpers
   alias Utils.Log
 
@@ -143,7 +144,7 @@ defmodule QblogWeb.PageTreeLive do
       "[&_button]:hover:opacity-100",
       "[&_button]:transition"
     ]}>
-      <.action_button
+      <ActionButton.render
         :if={@node.children == []}
         phx-value-node_id={@node.id}
         phx-click="remove_node"
@@ -152,7 +153,7 @@ defmodule QblogWeb.PageTreeLive do
         variant="error"
       />
 
-      <.action_button
+      <ActionButton.render
         :if={@has_candidates?}
         phx-value-node_id={@node.id}
         phx-click="move_node_start"
@@ -160,43 +161,13 @@ defmodule QblogWeb.PageTreeLive do
         data-tip="move"
       />
 
-      <.action_button
+      <ActionButton.render
         phx-value-node_id={@node.id}
         phx-click="add_child"
         icon="hero-plus-mini"
         data-tip="add child"
       />
     </div>
-    """
-  end
-
-  attr :variant, :string, default: "primary"
-  attr :"phx-value-node_id", :integer, required: true
-  attr :"phx-click", :string, required: true
-  attr :"data-tip", :string, required: true
-  attr :icon, :string, required: true
-
-  defp action_button(assigns) do
-    class =
-      case assigns.variant do
-        "error" -> "hover:btn-error"
-        _ -> "hover:btn-primary"
-      end
-
-    assigns = assigns |> assign(class: class)
-
-    ~H"""
-    <.button
-      class={[
-        "btn btn-xs btn-circle",
-        "tooltip",
-        @class
-      ]}
-      {assigns}
-    >
-      <.icon name={@icon} />
-      <span class="sr-only">{assigns[:"data-tip"]}</span>
-    </.button>
     """
   end
 end

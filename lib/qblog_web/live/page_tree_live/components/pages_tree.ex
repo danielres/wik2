@@ -1,9 +1,11 @@
-defmodule QblogWeb.PageTreeLive.Components do
+defmodule QblogWeb.PageTreeLive.Components.PagesTree do
   use QblogWeb, :live_view
   use Phoenix.Component
 
   alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Helpers
+
+  def render(assigns), do: page_tree_nodes(assigns)
 
   attr :root?, :boolean, default: true
   attr :nodes_flat, :list, required: true

@@ -47,7 +47,7 @@ defmodule QblogWeb.PageTreeLive do
             </div>
           </div>
         <% else %>
-          <Components.page_tree_nodes nodes_flat={@page_tree.nodes} />
+          <Components.PagesTree.render nodes_flat={@page_tree.nodes} />
         <% end %>
       </div>
     </Layouts.app>

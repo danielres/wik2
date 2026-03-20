@@ -3,6 +3,7 @@ defmodule QblogWeb.PageTreeLive do
 
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
+  alias QblogWeb.PageTreeLive.Helpers
   alias Utils.Log
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
@@ -47,7 +48,15 @@ defmodule QblogWeb.PageTreeLive do
             </div>
           </div>
         <% else %>
-          <Components.PagesTree.render nodes_flat={@page_tree.nodes} />
+          <Components.PagesTree.render nodes_flat={@page_tree.nodes}>
+            <:action_buttons :let={props}>
+              <.action_buttons
+                depth={props.depth}
+                node={props.node}
+                nodes_flat={@page_tree.nodes}
+              />
+            </:action_buttons>
+          </Components.PagesTree.render>
         <% end %>
       </div>
     </Layouts.app>
@@ -126,5 +135,77 @@ defmodule QblogWeb.PageTreeLive do
         Log.scoped_error(scope, err, "page_tree remove_node failed")
         {:noreply, socket}
     end
+  end
+
+  attr :node, :map, required: true
+  attr :nodes_flat, :list, required: true
+  attr :depth, :integer, required: true
+
+  defp action_buttons(assigns) do
+    candidates = Helpers.parent_options(assigns.nodes_flat, assigns.node.id)
+    assigns = assigns |> assign(has_candidates?: candidates |> Enum.count() > 0)
+
+    ~H"""
+    <div class={[
+      "flex flex-wrap gap-2",
+      "[&_button]:opacity-50",
+      "[&_button]:hover:opacity-100",
+      "[&_button]:transition"
+    ]}>
+      <.action_button
+        :if={@node.children == []}
+        phx-value-node_id={@node.id}
+        phx-click="remove_node"
+        icon="hero-x-mark-mini"
+        data-tip="delete"
+        variant="error"
+      />
+
+      <.action_button
+        :if={@has_candidates?}
+        phx-value-node_id={@node.id}
+        phx-click="move_node_start"
+        icon="hero-arrow-turn-down-right-mini"
+        data-tip="move"
+      />
+
+      <.action_button
+        phx-value-node_id={@node.id}
+        phx-click="add_child"
+        icon="hero-plus-mini"
+        data-tip="add child"
+      />
+    </div>
+    """
+  end
+
+  attr :variant, :string, default: "primary"
+  attr :"phx-value-node_id", :integer, required: true
+  attr :"phx-click", :string, required: true
+  attr :"data-tip", :string, required: true
+  attr :icon, :string, required: true
+
+  defp action_button(assigns) do
+    class =
+      case assigns.variant do
+        "error" -> "hover:btn-error"
+        _ -> "hover:btn-primary"
+      end
+
+    assigns = assigns |> assign(class: class)
+
+    ~H"""
+    <.button
+      class={[
+        "btn btn-xs btn-circle",
+        "tooltip",
+        @class
+      ]}
+      {assigns}
+    >
+      <.icon name={@icon} />
+      <span class="sr-only">{assigns[:"data-tip"]}</span>
+    </.button>
+    """
   end
 end

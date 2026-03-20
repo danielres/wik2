@@ -8,6 +8,7 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
   attr :nodes_flat, :list, required: true
   attr :nodes_tree, :list, required: false
   attr :depth, :integer, default: 0
+  slot :action_buttons, required: true
 
   def render(assigns) do
     assigns =
@@ -17,7 +18,9 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
     <ul class={[@depth == 0 and "space-y-3"]}>
       <li :for={node <- @nodes_tree} class={["card", "bg-base-100"]}>
         <.page_tree_node node={node} nodes_flat={@nodes_flat} depth={@depth + 1}>
-          <.action_buttons node={node} nodes_flat={@nodes_flat} depth={@depth + 1} />
+          <:action_buttons :let={props}>
+            {render_slot(@action_buttons, props)}
+          </:action_buttons>
         </.page_tree_node>
       </li>
     </ul>
@@ -27,7 +30,7 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
   attr :depth, :integer, required: true
-  slot :inner_block, required: true
+  slot :action_buttons, required: true
 
   defp page_tree_node(assigns) do
     ~H"""
@@ -44,7 +47,7 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
           ]}
         />
 
-        {render_slot(@inner_block, %{node: @node})}
+        {render_slot(@action_buttons, %{node: @node, depth: @depth})}
       </div>
 
       <.render
@@ -52,7 +55,11 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
         nodes_flat={@nodes_flat}
         nodes_tree={@node.children}
         depth={@depth}
-      />
+      >
+        <:action_buttons :let={props}>
+          {render_slot(@action_buttons, props)}
+        </:action_buttons>
+      </.render>
     </.page_tree_node_wrapper>
     """
   end
@@ -103,78 +110,6 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
     >
       {render_slot(@inner_block)}
     </div>
-    """
-  end
-
-  attr :node, :map, required: true
-  attr :nodes_flat, :list, required: true
-  attr :depth, :integer, required: true
-
-  defp action_buttons(assigns) do
-    candidates = Helpers.parent_options(assigns.nodes_flat, assigns.node.id)
-    assigns = assigns |> assign(has_candidates?: candidates |> Enum.count() > 0)
-
-    ~H"""
-    <div class={[
-      "flex flex-wrap gap-2",
-      "[&_button]:opacity-50",
-      "[&_button]:hover:opacity-100",
-      "[&_button]:transition"
-    ]}>
-      <.action_button
-        :if={@node.children == []}
-        phx-value-node_id={@node.id}
-        phx-click="remove_node"
-        icon="hero-x-mark-mini"
-        data-tip="delete"
-        variant="error"
-      />
-
-      <.action_button
-        :if={@has_candidates?}
-        phx-value-node_id={@node.id}
-        phx-click="move_node_start"
-        icon="hero-arrow-turn-down-right-mini"
-        data-tip="move"
-      />
-
-      <.action_button
-        phx-value-node_id={@node.id}
-        phx-click="add_child"
-        icon="hero-plus-mini"
-        data-tip="add child"
-      />
-    </div>
-    """
-  end
-
-  attr :variant, :string, default: "primary"
-  attr :"phx-value-node_id", :integer, required: true
-  attr :"phx-click", :string, required: true
-  attr :"data-tip", :string, required: true
-  attr :icon, :string, required: true
-
-  defp action_button(assigns) do
-    class =
-      case assigns.variant do
-        "error" -> "hover:btn-error"
-        _ -> "hover:btn-primary"
-      end
-
-    assigns = assigns |> assign(class: class)
-
-    ~H"""
-    <.button
-      class={[
-        "btn btn-xs btn-circle",
-        "tooltip",
-        @class
-      ]}
-      {assigns}
-    >
-      <.icon name={@icon} />
-      <span class="sr-only">{assigns[:"data-tip"]}</span>
-    </.button>
     """
   end
 end

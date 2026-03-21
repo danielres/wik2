@@ -8,7 +8,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
   attr :nodes_flat, :list, required: true
   attr :nodes_tree, :list, required: false
   attr :depth, :integer, default: 0
-  slot :action_buttons, required: true
+  slot :action_buttons, required: false
 
   def render(assigns) do
     assigns =

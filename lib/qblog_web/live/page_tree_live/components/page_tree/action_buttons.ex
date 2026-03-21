@@ -19,6 +19,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
 
   attr :"data-tip", :string, required: true
   attr :"phx-click", :string, required: true
+  attr :"phx-target", :any, required: false
   attr :"phx-value-new_parent_id", :any, required: false
   attr :"phx-value-node_id", :integer, required: true
   attr :icon, :string, required: true

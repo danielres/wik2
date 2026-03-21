@@ -6,10 +6,10 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
   alias QblogWeb.PageTreeLive.Components
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
-  alias QblogWeb.PageTreeLive.Components.PageTree
 
   attr :moved_node_id, :integer, default: nil
   attr :nodes_flat, :list, required: true
+  attr :target, :any, required: true
 
   def dialog(assigns) do
     assigns =
@@ -23,12 +23,14 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
     <dialog
       phx-window-keydown="dialog_keydown_escape"
       phx-key="escape"
+      phx-target={@target}
       class={["modal", @moved_node_id != nil and "modal-open"]}
       style="--size-field: 0.22rem;"
     >
       <div
         :if={@moved_node_id != nil and @node != nil}
         phx-click-away="move_node_cancel"
+        phx-target={@target}
         class={[
           "modal-box",
           "min-w-sm"
@@ -52,6 +54,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
           <ActionButtons.wrapper>
             <ActionButtons.button
               phx-click="move_node"
+              phx-target={@target}
               phx-value-node_id={@moved_node_id}
               phx-value-new_parent_id=""
               data-tip="move to top"
@@ -66,6 +69,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
               node={props.node}
               nodes_flat={@nodes_flat}
               candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
+              target={@target}
             />
           </:action_buttons>
         </Components.PageTree.render>
@@ -73,6 +77,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
         <div class="modal-action">
           <.button
             phx-click="move_node_cancel"
+            phx-target={@target}
             type="button"
             class="btn"
           >
@@ -87,6 +92,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
   attr :candidates, :list, required: true
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
+  attr :target, :any, required: true
 
   defp action_buttons(assigns) do
     candidate_ids = assigns.candidates |> Enum.map(fn e -> e.id end)
@@ -100,6 +106,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
         phx-value-node_id={@node.id}
         phx-value-new_parent_id={@node.id}
         phx-click="move_node"
+        phx-target={@target}
         icon="hero-arrow-turn-down-right-mini"
         data-tip={ "move under #{@node.id}" }
       />

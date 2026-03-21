@@ -17,5 +17,10 @@ defmodule Qblog.Wiki.PageTree.Node do
       allow_nil? true
       public? true
     end
+
+    attribute :slug, :string do
+      allow_nil? false
+      public? true
+    end
   end
 end

@@ -3,7 +3,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
   alias Qblog.Wiki
   alias QblogWeb.PageTreeLive.Components
-  alias QblogWeb.PageTreeLive.Components.MoveNode.Dialog
+  alias QblogWeb.PageTreeLive.Components.MoveNode
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
   alias Qblog.Wiki.PageTree
@@ -54,7 +54,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         </.button>
       </div>
 
-      <Dialog.dialog
+      <MoveNode.dialog
         moved_node_id={@moved_node_id}
         nodes_flat={@page_tree.nodes}
         target={@myself}

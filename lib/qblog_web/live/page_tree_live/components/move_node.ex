@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
+defmodule QblogWeb.PageTreeLive.Components.MoveNode do
   import QblogWeb.CoreComponents
   use Phoenix.Component
 

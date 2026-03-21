@@ -3,6 +3,7 @@ defmodule QblogWeb.PageTreeLive do
 
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
+  alias QblogWeb.PageTreeLive.Components.PagesTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
   alias Utils.Log
 
@@ -16,7 +17,7 @@ defmodule QblogWeb.PageTreeLive do
         {:ok,
          socket
          |> assign(page_tree: page_tree)
-         |> assign(moved_node_id: nil)}
+         |> assign(moved_node_id: 18)}
 
       {:error, err} ->
         Log.scoped_error(scope, err, "page_tree get_or_create failed")
@@ -137,8 +138,8 @@ defmodule QblogWeb.PageTreeLive do
     assigns = assigns |> assign(has_candidates?: candidates |> Enum.count() > 0)
 
     ~H"""
-    <Components.PagesTree.ActionButtonsWrapper.render>
-      <Components.PagesTree.ActionButton.render
+    <ActionButtons.wrapper>
+      <ActionButtons.button
         :if={@node.children == []}
         phx-value-node_id={@node.id}
         phx-click="remove_node"
@@ -147,7 +148,7 @@ defmodule QblogWeb.PageTreeLive do
         variant="error"
       />
 
-      <Components.PagesTree.ActionButton.render
+      <ActionButtons.button
         :if={@has_candidates?}
         phx-value-node_id={@node.id}
         phx-click="move_node_start"
@@ -155,13 +156,13 @@ defmodule QblogWeb.PageTreeLive do
         data-tip="move"
       />
 
-      <Components.PagesTree.ActionButton.render
+      <ActionButtons.button
         phx-value-node_id={@node.id}
         phx-click="add_child"
         icon="hero-plus-mini"
         data-tip="add child"
       />
-    </Components.PagesTree.ActionButtonsWrapper.render>
+    </ActionButtons.wrapper>
     """
   end
 end

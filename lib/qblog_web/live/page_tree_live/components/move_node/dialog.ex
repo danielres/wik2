@@ -4,7 +4,9 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
 
   alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Components
+  alias QblogWeb.PageTreeLive.Components.PagesTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
+  alias QblogWeb.PageTreeLive.Components.PagesTree
 
   attr :moved_node_id, :integer, default: nil
   attr :nodes_flat, :list, required: true
@@ -26,38 +28,36 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
     >
       <div
         :if={@moved_node_id != nil and @node != nil}
-        class="modal-box min-w-sm"
         phx-click-away="move_node_cancel"
+        class={[
+          "modal-box",
+          "min-w-sm"
+        ]}
       >
-        <h3 class="">Move <span class="font-bold">node {@moved_node_id}</span> under:</h3>
+        <h3 class="mb-4">Move <span class="font-bold">node {@moved_node_id}</span></h3>
 
-        <div phx-submit="move_node" class="space-y-4">
+        <div class={[
+          "group",
+          "flex items-center justify-between gap-3"
+        ]}>
           <div class={[
-            "group",
-            "flex items-center justify-between gap-3"
+            "opacity-80",
+            "group-has-[button:hover]:opacity-100",
+            "transition",
+            "text-sm"
           ]}>
-            <%!-- TODO: DRY up --%>
-            <div class={[
-              "flex gap-2",
-              "opacity-80",
-              "group-has-[button:hover]:opacity-100",
-              "transition"
-            ]}>
-              <div class="text-sm">
-                Top level
-              </div>
-            </div>
-
-            <Components.PagesTree.ActionButtonsWrapper.render>
-              <Components.PagesTree.ActionButton.render
-                phx-click="move_node"
-                phx-value-node_id={@moved_node_id}
-                phx-value-new_parent_id=""
-                data-tip="move to top"
-                icon="hero-arrow-turn-down-right-mini"
-              />
-            </Components.PagesTree.ActionButtonsWrapper.render>
+            Top level
           </div>
+
+          <ActionButtons.wrapper>
+            <ActionButtons.button
+              phx-click="move_node"
+              phx-value-node_id={@moved_node_id}
+              phx-value-new_parent_id=""
+              data-tip="move to top"
+              icon="hero-arrow-turn-down-right-mini"
+            />
+          </ActionButtons.wrapper>
         </div>
 
         <Components.MoveNode.Selector.page_tree_nodes

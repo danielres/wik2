@@ -34,12 +34,12 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
 
   defp page_tree_node(assigns) do
     ~H"""
-    <.page_tree_node_wrapper depth={@depth} has_children?={Helpers.has_children?(@node)}>
+    <.node_wrapper depth={@depth} has_children?={Helpers.has_children?(@node)}>
       <div class={[
         "group",
         "flex items-center justify-between gap-3"
       ]}>
-        <.page_tree_node_label
+        <.node_label
           node={@node}
           class={[
             "opacity-80 group-has-[button:hover]:opacity-100",
@@ -60,11 +60,11 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
           {render_slot(@action_buttons, props)}
         </:action_buttons>
       </.render>
-    </.page_tree_node_wrapper>
+    </.node_wrapper>
     """
   end
 
-  defp page_tree_node_label(assigns) do
+  def node_label(assigns) do
     ~H"""
     <div class={["flex gap-2", @class]}>
       <div class="flex">
@@ -97,7 +97,7 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree do
   attr :has_children?, :boolean, required: true
   slot :inner_block, required: true
 
-  defp page_tree_node_wrapper(assigns) do
+  def node_wrapper(assigns) do
     ~H"""
     <div
       class={[

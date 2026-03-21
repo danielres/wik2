@@ -37,7 +37,7 @@ defmodule QblogWeb.PageTreeLive.Components.PagesTree.ActionButtons do
     <CoreComponents.button
       class={[
         "btn btn-xs btn-circle",
-        "tooltip",
+        "tooltip tooltip-left",
         @class
       ]}
       {assigns}

@@ -17,7 +17,7 @@ defmodule QblogWeb.PageTreeLive do
         {:ok,
          socket
          |> assign(page_tree: page_tree)
-         |> assign(moved_node_id: 18)}
+         |> assign(moved_node_id: nil)}
 
       {:error, err} ->
         Log.scoped_error(scope, err, "page_tree get_or_create failed")
@@ -149,18 +149,18 @@ defmodule QblogWeb.PageTreeLive do
       />
 
       <ActionButtons.button
+        phx-value-node_id={@node.id}
+        phx-click="add_child"
+        icon="hero-plus-mini"
+        data-tip="add child"
+      />
+
+      <ActionButtons.button
         :if={@has_candidates?}
         phx-value-node_id={@node.id}
         phx-click="move_node_start"
         icon="hero-arrow-turn-down-right-mini"
         data-tip="move"
-      />
-
-      <ActionButtons.button
-        phx-value-node_id={@node.id}
-        phx-click="add_child"
-        icon="hero-plus-mini"
-        data-tip="add child"
       />
     </ActionButtons.wrapper>
     """

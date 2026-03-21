@@ -60,12 +60,15 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
           </ActionButtons.wrapper>
         </div>
 
-        <Components.MoveNode.Selector.page_tree_nodes
-          root?={false}
-          nodes_flat={@nodes_flat}
-          nodes_tree={@nodes_tree}
-          candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
-        />
+        <Components.PagesTree.render nodes_flat={@nodes_flat} depth={1}>
+          <:action_buttons :let={props}>
+            <.action_buttons
+              node={props.node}
+              nodes_flat={@nodes_flat}
+              candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
+            />
+          </:action_buttons>
+        </Components.PagesTree.render>
 
         <div class="modal-action">
           <.button
@@ -78,6 +81,29 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
         </div>
       </div>
     </dialog>
+    """
+  end
+
+  attr :candidates, :list, required: true
+  attr :node, :map, required: true
+  attr :nodes_flat, :list, required: true
+
+  defp action_buttons(assigns) do
+    candidate_ids = assigns.candidates |> Enum.map(fn e -> e.id end)
+    candidate? = assigns.node.id in candidate_ids
+    assigns = assigns |> assign(candidate?: candidate?)
+
+    ~H"""
+    <ActionButtons.wrapper>
+      <ActionButtons.button
+        :if={@candidate?}
+        phx-value-node_id={@node.id}
+        phx-value-new_parent_id={@node.id}
+        phx-click="move_node"
+        icon="hero-arrow-turn-down-right-mini"
+        data-tip={ "move under #{@node.id}" }
+      />
+    </ActionButtons.wrapper>
     """
   end
 end

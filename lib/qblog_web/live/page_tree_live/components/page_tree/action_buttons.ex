@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageTreeLive.Components.PagesTree.ActionButtons do
+defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
   use Phoenix.Component
   alias QblogWeb.CoreComponents
 

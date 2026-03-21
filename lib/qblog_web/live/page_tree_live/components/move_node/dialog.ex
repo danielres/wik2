@@ -4,9 +4,9 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
 
   alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Components
-  alias QblogWeb.PageTreeLive.Components.PagesTree.ActionButtons
+  alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
-  alias QblogWeb.PageTreeLive.Components.PagesTree
+  alias QblogWeb.PageTreeLive.Components.PageTree
 
   attr :moved_node_id, :integer, default: nil
   attr :nodes_flat, :list, required: true
@@ -60,7 +60,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
           </ActionButtons.wrapper>
         </div>
 
-        <Components.PagesTree.render nodes_flat={@nodes_flat} depth={1}>
+        <Components.PageTree.render nodes_flat={@nodes_flat} depth={1}>
           <:action_buttons :let={props}>
             <.action_buttons
               node={props.node}
@@ -68,7 +68,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode.Dialog do
               candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
             />
           </:action_buttons>
-        </Components.PagesTree.render>
+        </Components.PageTree.render>
 
         <div class="modal-action">
           <.button

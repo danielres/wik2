@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageTreeLive.Components.PagesTree do
+defmodule QblogWeb.PageTreeLive.Components.PageTree do
   use QblogWeb, :live_view
   use Phoenix.Component
 

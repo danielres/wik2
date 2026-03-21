@@ -3,7 +3,7 @@ defmodule QblogWeb.PageTreeLive do
 
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
-  alias QblogWeb.PageTreeLive.Components.PagesTree.ActionButtons
+  alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
   alias Utils.Log
 
@@ -53,7 +53,7 @@ defmodule QblogWeb.PageTreeLive do
             </div>
           </div>
         <% else %>
-          <Components.PagesTree.render nodes_flat={@page_tree.nodes}>
+          <Components.PageTree.render nodes_flat={@page_tree.nodes}>
             <:action_buttons :let={props}>
               <.action_buttons
                 depth={props.depth}
@@ -61,7 +61,7 @@ defmodule QblogWeb.PageTreeLive do
                 nodes_flat={@page_tree.nodes}
               />
             </:action_buttons>
-          </Components.PagesTree.render>
+          </Components.PageTree.render>
         <% end %>
       </div>
     </Layouts.app>

@@ -35,7 +35,7 @@ defmodule QblogWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
+    <header class="navbar px-2 sm:px-6 lg:px-8">
       <div class="flex-1">
         <div class="flex-1 flex w-fit items-center">
           <.link navigate={~p"/"} class="btn btn-circle btn-sm opacity-50 hover:opacity-100">

@@ -36,6 +36,7 @@ defmodule QblogWeb.Layouts do
     ~H"""
     <menu class=" px-2 sm:px-6 lg:px-8">
       <ul class="flex flex-wrap gap-1">
+        <li><.menu_button {assigns} target="wiki">Wiki</.menu_button></li>
         <li><.menu_button {assigns} target="tree">Page tree</.menu_button></li>
         <li><.menu_button {assigns} target="blog">Blog</.menu_button></li>
       </ul>

@@ -36,6 +36,10 @@ defmodule QblogWeb.Router do
         live "/blog", BlogLive, :index
         live "/tree", PageTreeLive, :index
 
+        scope "/wiki" do
+          live "/*path", PageLive, :index
+        end
+
         # in each liveview, add one of the following at the top of the module:
         #
         # If an authenticated user & tenant must be present:

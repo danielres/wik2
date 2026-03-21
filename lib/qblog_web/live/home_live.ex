@@ -20,38 +20,40 @@ defmodule QblogWeb.HomeLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <h1 class="text-2xl font-[100]">Your groups</h1>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <ul class="space-y-2">
-          <li class="card bg-base-100 shadow">
-            <div class="card-body">
-              <%= for group <- @groups do %>
-                <.link
-                  class="btn btn-soft justify-between"
-                  navigate={~p"/#{group.name}/blog"}
-                >
-                  {group.name}
-                  <span class="font-thin">{group.owner |> to_string}</span>
-                </.link>
-              <% end %>
-            </div>
-          </li>
-        </ul>
+      <Layouts.container>
+        <h1 class="text-2xl font-[100]">Your groups</h1>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <ul class="space-y-2">
+            <li class="card bg-base-100 shadow">
+              <div class="card-body">
+                <%= for group <- @groups do %>
+                  <.link
+                    class="btn btn-soft justify-between"
+                    navigate={~p"/#{group.name}/tree"}
+                  >
+                    {group.name}
+                    <span class="font-thin">{group.owner |> to_string}</span>
+                  </.link>
+                <% end %>
+              </div>
+            </li>
+          </ul>
 
-        <.form for={@form} phx-change="validate" phx-submit="submit">
-          <div class="card bg-base-300">
-            <div class="card-body">
-              <.input
-                :for={field <- @fields}
-                type={Group.field_type_for(field)}
-                field={@form[field]}
-                label={field |> Phoenix.Naming.humanize()}
-              />
-              <.button type="submit" class="btn btn-primary mt-3">Create group</.button>
+          <.form for={@form} phx-change="validate" phx-submit="submit">
+            <div class="card bg-base-300">
+              <div class="card-body">
+                <.input
+                  :for={field <- @fields}
+                  type={Group.field_type_for(field)}
+                  field={@form[field]}
+                  label={field |> Phoenix.Naming.humanize()}
+                />
+                <.button type="submit" class="btn btn-primary mt-3">Create group</.button>
+              </div>
             </div>
-          </div>
-        </.form>
-      </div>
+          </.form>
+        </div>
+      </Layouts.container>
     </Layouts.app>
     """
   end

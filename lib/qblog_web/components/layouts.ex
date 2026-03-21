@@ -25,6 +25,56 @@ defmodule QblogWeb.Layouts do
       </Layouts.app>
 
   """
+
+  attr :scope, :map,
+    default: %{tenant: nil, user: nil},
+    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+
+  slot :inner_block, required: true
+
+  def group(assigns) do
+    ~H"""
+    <menu class=" px-2 sm:px-6 lg:px-8">
+      <ul class="flex flex-wrap gap-1">
+        <li><.menu_button {assigns} target="tree">Page tree</.menu_button></li>
+        <li><.menu_button {assigns} target="blog">Blog</.menu_button></li>
+      </ul>
+    </menu>
+
+    <.container>
+      {render_slot(@inner_block)}
+    </.container>
+    """
+  end
+
+  def container(assigns) do
+    ~H"""
+    <main class="px-4 py-20 sm:px-6 lg:px-8">
+      <div class="mx-auto max-w-2xl space-y-4">
+        {render_slot(@inner_block)}
+      </div>
+    </main>
+    """
+  end
+
+  def menu_button(assigns) do
+    ~H"""
+    <.link
+      class={[
+        "px-4 py-1",
+        "rounded",
+        "bg-base-300",
+        "font-bold",
+        "text-sm",
+        "opacity-75 hover:opacity-100 transition"
+      ]}
+      navigate={~p"/#{@scope.tenant}/#{@target}"}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
   attr :scope, :map,
@@ -65,11 +115,7 @@ defmodule QblogWeb.Layouts do
       </div>
     </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
-        {render_slot(@inner_block)}
-      </div>
-    </main>
+    {render_slot(@inner_block)}
 
     <.flash_group flash={@flash} />
     """

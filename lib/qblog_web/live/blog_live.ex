@@ -23,47 +23,49 @@ defmodule QblogWeb.BlogLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <h1 class="text-2xl font-[100]">Blog Posts</h1>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <ul class="space-y-2">
-          <%= for post <- @posts do %>
-            <li
-              id={"post-#{post.id}"}
-              class={[
-                "card bg-base-100 shadow transition-all duration-900 ",
-                @new_post_id == post.id && "ring ring-primary"
-              ]}
-            >
+      <Layouts.group scope={@current_scope}>
+        <h1 class="text-2xl font-[100]">Blog Posts</h1>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <ul class="space-y-2">
+            <%= for post <- @posts do %>
+              <li
+                id={"post-#{post.id}"}
+                class={[
+                  "card bg-base-100 shadow transition-all duration-900 ",
+                  @new_post_id == post.id && "ring ring-primary"
+                ]}
+              >
+                <div class="card-body">
+                  <h3 class="card-title items-baseline justify-between gap-1">
+                    <div class="leading-tight">{post.title}</div>
+
+                    <div class="text-sm font-thin opacity-80 text-end leading-tight">
+                      <div>{post.author |> to_string()}</div>
+                      <div>{Time.relative(post.inserted_at)}</div>
+                    </div>
+                  </h3>
+
+                  {post.body}
+                </div>
+              </li>
+            <% end %>
+          </ul>
+
+          <.form for={@form} phx-change="validate" phx-submit="submit">
+            <div class="card bg-base-300">
               <div class="card-body">
-                <h3 class="card-title items-baseline justify-between gap-1">
-                  <div class="leading-tight">{post.title}</div>
-
-                  <div class="text-sm font-thin opacity-80 text-end leading-tight">
-                    <div>{post.author |> to_string()}</div>
-                    <div>{Time.relative(post.inserted_at)}</div>
-                  </div>
-                </h3>
-
-                {post.body}
+                <.input
+                  :for={field <- @fields}
+                  type={Post.field_type_for(field)}
+                  field={@form[field]}
+                  label={field |> Phoenix.Naming.humanize()}
+                />
+                <.button type="submit" class="btn btn-primary mt-3">Create post</.button>
               </div>
-            </li>
-          <% end %>
-        </ul>
-
-        <.form for={@form} phx-change="validate" phx-submit="submit">
-          <div class="card bg-base-300">
-            <div class="card-body">
-              <.input
-                :for={field <- @fields}
-                type={Post.field_type_for(field)}
-                field={@form[field]}
-                label={field |> Phoenix.Naming.humanize()}
-              />
-              <.button type="submit" class="btn btn-primary mt-3">Create post</.button>
             </div>
-          </div>
-        </.form>
-      </div>
+          </.form>
+        </div>
+      </Layouts.group>
     </Layouts.app>
     """
   end

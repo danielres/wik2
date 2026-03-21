@@ -7,12 +7,14 @@ defmodule QblogWeb.PageTreeLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <.live_component
-        current_scope={@current_scope}
-        editable?={true}
-        id="page_tree_editor"
-        module={PageTreeEditor}
-      />
+      <Layouts.group scope={@current_scope}>
+        <.live_component
+          current_scope={@current_scope}
+          editable?={true}
+          id="page_tree_editor"
+          module={PageTreeEditor}
+        />
+      </Layouts.group>
     </Layouts.app>
     """
   end

@@ -38,9 +38,10 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
     <CoreComponents.button
       class={[
         "btn btn-xs btn-circle",
-        "tooltip tooltip-left",
+        "tooltip tooltip-left tooltip-delayed",
         @class
       ]}
+      style="--tt-delay: 800ms"
       {assigns}
     >
       <CoreComponents.icon name={@icon} />

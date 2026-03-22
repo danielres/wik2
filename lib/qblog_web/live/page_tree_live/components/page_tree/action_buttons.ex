@@ -7,8 +7,8 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
   def wrapper(assigns) do
     ~H"""
     <div class={[
-      "flex flex-wrap gap-2",
-      "[&_button]:opacity-50",
+      "flex flex-wrap gap-1",
+      "[&_button]:opacity-70",
       "[&_button]:hover:opacity-100",
       "[&_button]:transition"
     ]}>

@@ -35,8 +35,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             {:ok, page_tree} ->
               socket
               |> assign(page_tree: page_tree)
-              # TODO: rename form to form_add_child
-              |> assign(form: scope |> init_form_add_child())
+              |> assign(form_add_child: scope |> init_form_add_child())
 
             {:error, err} ->
               Log.scoped_error(scope, err, "page_tree get_or_create failed")
@@ -86,9 +85,8 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         open?={@add_child_open?}
         phx-target={@myself}
       >
-        <%!-- TODO: rename form to form_add_child --%>
         <AddChild.dialog
-          form={@form}
+          form={@form_add_child}
           nodes_flat={@page_tree.nodes}
           parent_id={@parent_id}
           scope={@current_scope}
@@ -167,8 +165,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   def handle_event("add_child_cancel", _params, socket) do
     {:noreply,
      socket
-     # TODO: rename form to form_add_child
-     |> assign(form: socket.assigns.current_scope |> init_form_add_child())
+     |> assign(form_add_child: socket.assigns.current_scope |> init_form_add_child())
      |> assign(add_child_open?: false)
      |> assign(moved_node_id: nil)
      |> assign(parent_id: nil)}
@@ -210,10 +207,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
       {:ok, page_tree} ->
         {:noreply,
          socket
-         |> assign(page_tree: page_tree)
-         |> assign(parent_id: nil)
          |> assign(add_child_open?: false)
-         |> assign(form: scope |> init_form_add_child())}
+         |> assign(form_add_child: scope |> init_form_add_child())
+         |> assign(page_tree: page_tree)
+         |> assign(parent_id: nil)}
 
       {:error, err} ->
         Log.scoped_error(scope, err, "page_tree add_child failed")
@@ -223,7 +220,8 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
   @impl true
   def handle_event("validate_child", %{"form" => params}, socket) do
-    {:noreply, socket |> assign(:form, socket.assigns.form |> Form.validate(params))}
+    {:noreply,
+     socket |> assign(:form_add_child, socket.assigns.form_add_child |> Form.validate(params))}
   end
 
   # move node ==================================================================

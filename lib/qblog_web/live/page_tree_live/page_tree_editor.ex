@@ -105,10 +105,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
     """
   end
 
+  attr :"phx-target", :any, required: false
+  attr :depth, :integer, required: true
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
-  attr :depth, :integer, required: true
-  attr :"phx-target", :any, required: false
 
   defp action_buttons(assigns) do
     candidates = Helpers.parent_options(assigns.nodes_flat, assigns.node.id)
@@ -118,29 +118,29 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
     <ActionButtons.wrapper>
       <ActionButtons.button
         :if={@node.children == []}
-        phx-value-node_id={@node.id}
+        data-tip="delete"
+        icon="hero-x-mark-mini"
         phx-click="remove_node"
         phx-target={assigns[:"phx-target"]}
-        icon="hero-x-mark-mini"
-        data-tip="delete"
+        phx-value-node_id={@node.id}
         variant="error"
       />
 
       <ActionButtons.button
-        phx-value-node_id={@node.id}
+        data-tip="add child"
+        icon="hero-plus-mini"
         phx-click="add_child_start"
         phx-target={assigns[:"phx-target"]}
-        icon="hero-plus-mini"
-        data-tip="add child"
+        phx-value-node_id={@node.id}
       />
 
       <ActionButtons.button
         :if={@has_candidates?}
-        phx-value-node_id={@node.id}
+        data-tip="move"
+        icon="hero-arrow-turn-down-right-mini"
         phx-click="move_node_start"
         phx-target={assigns[:"phx-target"]}
-        icon="hero-arrow-turn-down-right-mini"
-        data-tip="move"
+        phx-value-node_id={@node.id}
       />
     </ActionButtons.wrapper>
     """

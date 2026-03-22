@@ -23,7 +23,12 @@ defmodule QblogWeb.Components.Modal do
         <button
           phx-click={@cancel}
           phx-target={assigns[:"phx-target"]}
-          class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          class={[
+            "absolute right-2 top-2",
+            "size-4 text-xs",
+            "cursor-pointer",
+            "opacity-50 hover:opacity-100 transition"
+          ]}
         >
           ✕
         </button>

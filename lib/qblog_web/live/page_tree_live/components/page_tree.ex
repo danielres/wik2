@@ -5,12 +5,26 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
   alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Helpers
 
+  def render(assigns) do
+    ~H"""
+    <%= if @nodes_flat == [] do %>
+      <div class="card bg-base-100 shadow">
+        <div class="card-body">
+          No nodes yet.
+        </div>
+      </div>
+    <% else %>
+      <.page_tree_nodes {assigns} />
+    <% end %>
+    """
+  end
+
   attr :nodes_flat, :list, required: true
   attr :nodes_tree, :list, required: false
   attr :depth, :integer, default: 0
   slot :action_buttons, required: false
 
-  def render(assigns) do
+  def page_tree_nodes(assigns) do
     assigns =
       assigns
       |> assign_new(:nodes_tree, fn ->
@@ -55,7 +69,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
         {render_slot(@action_buttons, %{node: @node, depth: @depth})}
       </div>
 
-      <.render
+      <.page_tree_nodes
         :if={Helpers.has_children?(@node)}
         nodes_flat={@nodes_flat}
         nodes_tree={@node.children}
@@ -64,7 +78,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
         <:action_buttons :let={props}>
           {render_slot(@action_buttons, props)}
         </:action_buttons>
-      </.render>
+      </.page_tree_nodes>
     </.node_wrapper>
     """
   end

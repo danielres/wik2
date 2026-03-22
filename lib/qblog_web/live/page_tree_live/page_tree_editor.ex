@@ -94,26 +94,17 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         />
       </Modal.render>
 
-      <%!-- TODO: move inside Components.PageTree.render --%>
-      <%= if @page_tree.nodes == [] do %>
-        <div class="card bg-base-100 shadow">
-          <div class="card-body">
-            No nodes yet.
-          </div>
-        </div>
-      <% else %>
-        <Components.PageTree.render nodes_flat={@page_tree.nodes}>
-          <:action_buttons :let={props}>
-            <.action_buttons
-              :if={@editable?}
-              depth={props.depth}
-              node={props.node}
-              nodes_flat={@page_tree.nodes}
-              phx-target={@myself}
-            />
-          </:action_buttons>
-        </Components.PageTree.render>
-      <% end %>
+      <Components.PageTree.render nodes_flat={@page_tree.nodes}>
+        <:action_buttons :let={props}>
+          <.action_buttons
+            :if={@editable?}
+            depth={props.depth}
+            node={props.node}
+            nodes_flat={@page_tree.nodes}
+            phx-target={@myself}
+          />
+        </:action_buttons>
+      </Components.PageTree.render>
     </div>
     """
   end

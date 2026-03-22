@@ -19,9 +19,9 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
     """
   end
 
+  attr :depth, :integer, default: 0
   attr :nodes_flat, :list, required: true
   attr :nodes_tree, :list, required: false
-  attr :depth, :integer, default: 0
   slot :action_buttons, required: false
 
   def page_tree_nodes(assigns) do
@@ -46,9 +46,9 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
     """
   end
 
+  attr :depth, :integer, required: true
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
-  attr :depth, :integer, required: true
   slot :action_buttons, required: true
 
   defp page_tree_node(assigns) do

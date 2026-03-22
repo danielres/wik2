@@ -24,21 +24,23 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
   attr :"phx-value-node_id", :integer, required: true
   attr :icon, :string, required: true
   attr :variant, :string, default: "primary"
+  attr :class, :string, default: ""
 
   def button(assigns) do
-    class =
+    variant_class =
       case assigns.variant do
         "error" -> "hover:btn-error"
         _ -> "hover:btn-primary"
       end
 
-    assigns = assigns |> assign(class: class)
+    assigns = assigns |> assign(variant_class: variant_class)
 
     ~H"""
     <CoreComponents.button
       class={[
         "btn btn-xs btn-circle",
         "tooltip tooltip-left tooltip-delayed",
+        @variant_class,
         @class
       ]}
       style="--tt-delay: 800ms"

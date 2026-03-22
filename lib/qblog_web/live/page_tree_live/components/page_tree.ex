@@ -12,7 +12,12 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
 
   def render(assigns) do
     assigns =
-      assigns |> assign_new(:nodes_tree, fn -> assigns.nodes_flat |> TreeQueries.build_tree() end)
+      assigns
+      |> assign_new(:nodes_tree, fn ->
+        assigns.nodes_flat
+        |> Enum.sort_by(&(&1.slug |> String.downcase()), :asc)
+        |> TreeQueries.build_tree()
+      end)
 
     ~H"""
     <ul class={[@depth == 0 and "space-y-3"]}>

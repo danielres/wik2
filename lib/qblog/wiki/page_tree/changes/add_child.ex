@@ -3,10 +3,12 @@ defmodule Qblog.Wiki.PageTree.Changes.AddChild do
 
   @impl true
   def change(changeset, _opts, _context) do
+    # TODO: just pass props map instead
     nodes = Ash.Changeset.get_attribute(changeset, :nodes)
-    parent_node_id = Ash.Changeset.get_argument(changeset, :parent_node_id)
+    parent_id = Ash.Changeset.get_argument(changeset, :parent_id)
+    slug = Ash.Changeset.get_argument(changeset, :slug)
 
-    case Qblog.Wiki.PageTree.TreeOps.AddChild.call(nodes, parent_node_id) do
+    case Qblog.Wiki.PageTree.TreeOps.AddChild.call(nodes, slug, parent_id) do
       {:ok, new_nodes} ->
         Ash.Changeset.change_attribute(changeset, :nodes, new_nodes)
 

@@ -68,11 +68,14 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
     ~H"""
     <div class={["flex gap-2", @class]}>
       <div class="flex">
-        <.icon_chevron /> Node {@node.id}
+        <.icon_chevron />
       </div>
 
-      <div class="opacity-60">
-        {if @node.page_id, do: "page: #{@node.page_id}", else: "no page"}
+      <div class="flex gap-3 items-baseline">
+        <span>{@node[:slug]}</span>
+        <span class="opacity-60 text-xs">
+          id: {@node.id} - {if @node.page_id, do: "page: #{@node.page_id}", else: "no page"}
+        </span>
       </div>
     </div>
     """

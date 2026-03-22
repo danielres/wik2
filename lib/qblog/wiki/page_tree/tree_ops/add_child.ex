@@ -1,11 +1,12 @@
 defmodule Qblog.Wiki.PageTree.TreeOps.AddChild do
-  def call(nodes, parent_node_id) when is_list(nodes) do
+  # TODO: just pass props map instead
+  def call(nodes, slug, parent_id) when is_list(nodes) do
     cond do
-      is_nil(parent_node_id) ->
-        {:ok, nodes ++ [new_node(nodes, nil)]}
+      is_nil(parent_id) ->
+        {:ok, nodes ++ [new_node(nodes, slug, nil)]}
 
-      has_node?(nodes, parent_node_id) ->
-        {:ok, nodes ++ [new_node(nodes, parent_node_id)]}
+      has_node?(nodes, parent_id) ->
+        {:ok, nodes ++ [new_node(nodes, slug, parent_id)]}
 
       true ->
         {:error, "parent node not found"}
@@ -16,11 +17,12 @@ defmodule Qblog.Wiki.PageTree.TreeOps.AddChild do
     Enum.any?(nodes, &(&1.id == id))
   end
 
-  defp new_node(nodes, parent_id) do
+  defp new_node(nodes, slug, parent_id) do
     %{
       id: next_id(nodes),
       page_id: nil,
-      parent_id: parent_id
+      parent_id: parent_id,
+      slug: slug
     }
   end
 

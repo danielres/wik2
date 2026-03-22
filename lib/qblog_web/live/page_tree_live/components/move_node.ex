@@ -21,7 +21,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
 
     ~H"""
     <dialog
-      phx-window-keydown="dialog_keydown_escape"
+      phx-window-keydown="move_node_cancel"
       phx-key="escape"
       phx-target={@target}
       class={["modal", @moved_node_id != nil and "modal-open"]}

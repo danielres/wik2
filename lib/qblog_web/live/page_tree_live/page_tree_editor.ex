@@ -1,19 +1,28 @@
 defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   use QblogWeb, :live_component
 
+  alias AshPhoenix.Form
   alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
+  alias QblogWeb.PageTreeLive.Components.AddChild
   alias QblogWeb.PageTreeLive.Components.MoveNode
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
-  alias Qblog.Wiki.PageTree
   alias Utils.Log
 
+  defp init_form_add_child(scope) do
+    PageTree.Node |> Form.for_create(:create, scope: scope) |> to_form()
+  end
+
+  @impl true
   def update(assigns, socket) do
     socket =
       socket
       |> assign(assigns)
       |> assign_new(:moved_node_id, fn -> nil end)
+      |> assign_new(:parent_id, fn -> nil end)
+      |> assign_new(:add_child_open?, fn -> false end)
 
     socket =
       case socket.assigns do
@@ -23,7 +32,9 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         %{current_scope: scope} ->
           case Wiki.get_page_tree(scope: scope) do
             {:ok, page_tree} ->
-              assign(socket, :page_tree, page_tree)
+              socket
+              |> assign(page_tree: page_tree)
+              |> assign(form: scope |> init_form_add_child())
 
             {:error, err} ->
               Log.scoped_error(scope, err, "page_tree get_or_create failed")
@@ -37,26 +48,37 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   attr :current_scope, :any, required: true
   attr :editable?, :boolean, default: false
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div>
       <div class="flex items-center justify-between gap-4">
         <h1 class="text-2xl font-[100]">Page Tree</h1>
-        <.button
-          :if={@editable?}
-          phx-click="add_child"
-          phx-target={@myself}
-          phx-value-node_id=""
-          class="btn btn-circle bg-base-100"
-        >
-          <.icon name="hero-plus-mini" />
-          <span class="sr-only">Add root node</span>
-        </.button>
+        <ActionButtons.wrapper>
+          <ActionButtons.button
+            :if={@editable?}
+            class="[&:not(:hover)]:bg-base-100"
+            data-tip="add at top level"
+            icon="hero-plus-mini"
+            phx-click="add_child_start"
+            phx-target={@myself}
+            phx-value-node_id=""
+          />
+        </ActionButtons.wrapper>
       </div>
 
       <MoveNode.dialog
         moved_node_id={@moved_node_id}
         nodes_flat={@page_tree.nodes}
+        target={@myself}
+      />
+
+      <AddChild.dialog
+        form={@form}
+        nodes_flat={@page_tree.nodes}
+        open?={@add_child_open?}
+        parent_id={@parent_id}
+        scope={@current_scope}
         target={@myself}
       />
 
@@ -71,10 +93,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
           <:action_buttons :let={props}>
             <.action_buttons
               :if={@editable?}
-              phx-target={@myself}
               depth={props.depth}
               node={props.node}
               nodes_flat={@page_tree.nodes}
+              phx-target={@myself}
             />
           </:action_buttons>
         </Components.PageTree.render>
@@ -106,7 +128,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
       <ActionButtons.button
         phx-value-node_id={@node.id}
-        phx-click="add_child"
+        phx-click="add_child_start"
         phx-target={assigns[:"phx-target"]}
         icon="hero-plus-mini"
         data-tip="add child"
@@ -124,18 +146,82 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
     """
   end
 
-  def handle_event("move_node_start", params, socket) do
-    {:noreply, socket |> assign(moved_node_id: params["node_id"] |> String.to_integer())}
-  end
+  # dialog =======================================================================
 
+  @impl true
   def handle_event("dialog_keydown_escape", _params, socket) do
-    {:noreply, assign(socket, :moved_node_id, nil)}
+    {:noreply,
+     socket
+     |> assign(moved_node_id: nil)
+     |> assign(parent_id: nil)
+     |> assign(add_child_open?: false)}
   end
 
+  @impl true
+  def handle_event("add_child_cancel", _params, socket) do
+    {:noreply, socket |> assign(parent_id: nil) |> assign(add_child_open?: false)}
+  end
+
+  @impl true
   def handle_event("move_node_cancel", _params, socket) do
     {:noreply, socket |> assign(moved_node_id: nil)}
   end
 
+  # add_child ==================================================================
+
+  @impl true
+  def handle_event("add_child_start", params, socket) do
+    parent_id =
+      case params["node_id"] do
+        "" -> nil
+        value -> value |> String.to_integer()
+      end
+
+    {:noreply, socket |> assign(parent_id: parent_id) |> assign(add_child_open?: true)}
+  end
+
+  @impl true
+  def handle_event(
+        "add_child",
+        %{"form" => %{"parent_id" => node_id, "slug" => slug}},
+        socket
+      ) do
+    scope = socket.assigns.current_scope
+    parent_id = if node_id == "", do: nil, else: node_id
+
+    case PageTree.add_child(
+           socket.assigns.page_tree,
+           parent_id,
+           slug,
+           scope: scope
+         ) do
+      {:ok, page_tree} ->
+        {:noreply,
+         socket
+         |> assign(page_tree: page_tree)
+         |> assign(parent_id: nil)
+         |> assign(add_child_open?: false)
+         |> assign(form: scope |> init_form_add_child())}
+
+      {:error, err} ->
+        Log.scoped_error(scope, err, "page_tree add_child failed")
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("validate_child", %{"form" => params}, socket) do
+    {:noreply, socket |> assign(:form, socket.assigns.form |> Form.validate(params))}
+  end
+
+  # move node ==================================================================
+
+  @impl true
+  def handle_event("move_node_start", params, socket) do
+    {:noreply, socket |> assign(moved_node_id: params["node_id"] |> String.to_integer())}
+  end
+
+  @impl true
   def handle_event("move_node", %{"new_parent_id" => new_parent_id}, socket) do
     scope = socket.assigns.current_scope
 
@@ -159,19 +245,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
     end
   end
 
-  def handle_event("add_child", %{"node_id" => node_id}, socket) do
-    scope = socket.assigns.current_scope
-    parent_node_id = if node_id == "", do: nil, else: node_id
-
-    case PageTree.add_child(socket.assigns.page_tree, parent_node_id, scope: scope) do
-      {:ok, page_tree} ->
-        {:noreply, socket |> assign(page_tree: page_tree)}
-
-      {:error, err} ->
-        Log.scoped_error(scope, err, "page_tree add_child failed")
-        {:noreply, socket}
-    end
-  end
+  # remove node ================================================================
 
   def handle_event("remove_node", %{"node_id" => node_id}, socket) do
     scope = socket.assigns.current_scope

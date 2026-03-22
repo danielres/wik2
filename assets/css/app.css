@@ -45,3 +45,18 @@
     }
   }
 }
+
+.tooltip-delayed {
+  &:hover,
+  &:has(:focus-visible) {
+    & > .tooltip-content,
+    &[data-tip]:before,
+    &:after {
+      --delay: var(--tt-delay, 500ms);
+      --duration: var(--tt-duration, 300ms);
+      transition:
+        opacity var(--duration) cubic-bezier(0.4, 0, 0.2, 1) var(--delay),
+        transform var(--duration) cubic-bezier(0.4, 0, 0.2, 1) var(--delay);
+    }
+  }
+}

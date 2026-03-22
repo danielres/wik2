@@ -20,72 +20,44 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
       |> assign(:nodes_tree, assigns.nodes_flat |> TreeQueries.build_tree())
 
     ~H"""
-    <dialog
-      phx-window-keydown="move_node_cancel"
-      phx-key="escape"
-      phx-target={@target}
-      class={["modal", @moved_node_id != nil and "modal-open"]}
-      style="--size-field: 0.22rem;"
-    >
-      <div
-        :if={@moved_node_id != nil and @node != nil}
-        phx-click-away="move_node_cancel"
-        phx-target={@target}
-        class={[
-          "modal-box",
-          "min-w-sm"
-        ]}
-      >
-        <h3 class="mb-4">Move <span class="font-bold">node {@moved_node_id}</span></h3>
+    <h3 class="mb-2">Move <span class="font-bold">node {@node.slug}</span></h3>
 
-        <div class={[
-          "group",
-          "flex items-center justify-between gap-3"
-        ]}>
-          <div class={[
-            "opacity-80",
-            "group-has-[button:hover]:opacity-100",
-            "transition",
-            "text-sm"
-          ]}>
-            Top level
-          </div>
-
-          <ActionButtons.wrapper>
-            <ActionButtons.button
-              phx-click="move_node"
-              phx-target={@target}
-              phx-value-node_id={@moved_node_id}
-              phx-value-new_parent_id=""
-              data-tip="move to top"
-              icon="hero-arrow-turn-down-right-mini"
-            />
-          </ActionButtons.wrapper>
-        </div>
-
-        <Components.PageTree.render nodes_flat={@nodes_flat} depth={1}>
-          <:action_buttons :let={props}>
-            <.action_buttons
-              node={props.node}
-              nodes_flat={@nodes_flat}
-              candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
-              target={@target}
-            />
-          </:action_buttons>
-        </Components.PageTree.render>
-
-        <div class="modal-action">
-          <.button
-            phx-click="move_node_cancel"
-            phx-target={@target}
-            type="button"
-            class="btn"
-          >
-            Cancel
-          </.button>
-        </div>
+    <div class={[
+      "group",
+      "flex items-center justify-between gap-3",
+      "mb-2"
+    ]}>
+      <div class={[
+        "opacity-80",
+        "group-has-[button:hover]:opacity-100",
+        "transition",
+        "text-sm"
+      ]}>
+        Top level
       </div>
-    </dialog>
+
+      <ActionButtons.wrapper>
+        <ActionButtons.button
+          phx-click="move_node"
+          phx-target={@target}
+          phx-value-node_id={@moved_node_id}
+          phx-value-new_parent_id=""
+          data-tip="move to top"
+          icon="hero-arrow-turn-down-right-mini"
+        />
+      </ActionButtons.wrapper>
+    </div>
+
+    <Components.PageTree.render nodes_flat={@nodes_flat}>
+      <:action_buttons :let={props}>
+        <.action_buttons
+          node={props.node}
+          nodes_flat={@nodes_flat}
+          candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
+          target={@target}
+        />
+      </:action_buttons>
+    </Components.PageTree.render>
     """
   end
 
@@ -108,7 +80,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
         phx-click="move_node"
         phx-target={@target}
         icon="hero-arrow-turn-down-right-mini"
-        data-tip={ "move under #{@node.id}" }
+        data-tip={ "move under #{@node.slug}" }
       />
     </ActionButtons.wrapper>
     """

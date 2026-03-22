@@ -4,6 +4,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   alias AshPhoenix.Form
   alias Qblog.Wiki
   alias Qblog.Wiki.PageTree
+  alias QblogWeb.Components.Modal
   alias QblogWeb.PageTreeLive.Components
   alias QblogWeb.PageTreeLive.Components.AddChild
   alias QblogWeb.PageTreeLive.Components.MoveNode
@@ -68,21 +69,34 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         </ActionButtons.wrapper>
       </div>
 
-      <MoveNode.dialog
-        moved_node_id={@moved_node_id}
-        nodes_flat={@page_tree.nodes}
-        target={@myself}
-      />
+      <Modal.render
+        cancel="move_node_cancel"
+        open?={@moved_node_id != nil}
+        phx-target={@myself}
+      >
+        <MoveNode.dialog
+          moved_node_id={@moved_node_id}
+          nodes_flat={@page_tree.nodes}
+          target={@myself}
+        />
+      </Modal.render>
 
-      <AddChild.dialog
-        form={@form}
-        nodes_flat={@page_tree.nodes}
+      <Modal.render
+        cancel="add_child_cancel"
         open?={@add_child_open?}
-        parent_id={@parent_id}
-        scope={@current_scope}
-        target={@myself}
-      />
+        phx-target={@myself}
+      >
+        <%!-- TODO: rename form to form_add_child --%>
+        <AddChild.dialog
+          form={@form}
+          nodes_flat={@page_tree.nodes}
+          parent_id={@parent_id}
+          scope={@current_scope}
+          target={@myself}
+        />
+      </Modal.render>
 
+      <%!-- TODO: move inside Components.PageTree.render --%>
       <%= if @page_tree.nodes == [] do %>
         <div class="card bg-base-100 shadow">
           <div class="card-body">
@@ -150,17 +164,14 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   # dialog =======================================================================
 
   @impl true
-  def handle_event("dialog_keydown_escape", _params, socket) do
+  def handle_event("add_child_cancel", _params, socket) do
     {:noreply,
      socket
+     # TODO: rename form to form_add_child
+     |> assign(form: socket.assigns.current_scope |> init_form_add_child())
+     |> assign(add_child_open?: false)
      |> assign(moved_node_id: nil)
-     |> assign(parent_id: nil)
-     |> assign(add_child_open?: false)}
-  end
-
-  @impl true
-  def handle_event("add_child_cancel", _params, socket) do
-    {:noreply, socket |> assign(parent_id: nil) |> assign(add_child_open?: false)}
+     |> assign(parent_id: nil)}
   end
 
   @impl true

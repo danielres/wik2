@@ -34,6 +34,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             {:ok, page_tree} ->
               socket
               |> assign(page_tree: page_tree)
+              # TODO: rename form to form_add_child
               |> assign(form: scope |> init_form_add_child())
 
             {:error, err} ->

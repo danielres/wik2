@@ -17,6 +17,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
     """
   end
 
+  # TODO: use proper rest attributes
   attr :"data-tip", :string, required: true
   attr :"phx-click", :string, required: true
   attr :"phx-target", :any, required: false

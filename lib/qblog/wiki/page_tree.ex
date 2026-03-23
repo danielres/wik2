@@ -31,6 +31,8 @@ defmodule Qblog.Wiki.PageTree do
     end
 
     update :add_child do
+      require_atomic? false
+
       argument :parent_id, :integer do
         allow_nil? true
       end
@@ -43,6 +45,8 @@ defmodule Qblog.Wiki.PageTree do
     end
 
     update :remove_node do
+      require_atomic? false
+
       argument :node_id, :integer do
         allow_nil? false
       end
@@ -51,6 +55,8 @@ defmodule Qblog.Wiki.PageTree do
     end
 
     update :move_node do
+      require_atomic? false
+
       argument :node_id, :integer do
         allow_nil? false
       end

@@ -1,6 +1,6 @@
 defmodule QblogWeb.PageTreeLive.Helpers do
   def get_node_by_id(_nodes_flat, nil) do
-    %{slug: "Top", id: nil}
+    %{slug: "top", title: "Top", id: nil}
   end
 
   def get_node_by_id(nodes_flat, id) do

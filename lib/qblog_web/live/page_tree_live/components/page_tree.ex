@@ -29,6 +29,8 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
       assigns
       |> assign_new(:nodes_tree, fn ->
         assigns.nodes_flat
+
+        # TODO: change &1.slug to &1.title
         |> Enum.sort_by(&(&1.slug |> String.downcase()), :asc)
         |> TreeQueries.build_tree()
       end)
@@ -91,8 +93,9 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
       </div>
 
       <div class="flex gap-3 items-baseline">
-        <span>{@node[:slug]}</span>
+        <span>{@node[:title]}</span>
         <span class="opacity-60 text-xs">
+          slug: {@node[:slug]} -
           id: {@node.id} - {if @node.page_id, do: "page: #{@node.page_id}", else: "no page"}
         </span>
       </div>

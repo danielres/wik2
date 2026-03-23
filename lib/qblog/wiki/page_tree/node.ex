@@ -18,6 +18,11 @@ defmodule Qblog.Wiki.PageTree.Node do
       public? true
     end
 
+    attribute :title, :string do
+      allow_nil? false
+      public? true
+    end
+
     attribute :slug, :string do
       allow_nil? false
       public? true

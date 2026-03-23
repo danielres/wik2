@@ -70,6 +70,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
 
     ~H"""
     <ActionButtons.wrapper>
+      <%!-- TODO: change @node.slug to @node.title --%>
       <ActionButtons.button
         :if={@candidate?}
         data-tip={ "move under #{@node.slug}" }

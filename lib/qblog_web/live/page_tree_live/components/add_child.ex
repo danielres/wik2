@@ -22,6 +22,10 @@ defmodule QblogWeb.PageTreeLive.Components.AddChild do
             value={@parent_id}
           />
           <.input
+            field={@form[:title]}
+            label="title"
+          />
+          <.input
             field={@form[:slug]}
             label="slug"
           />

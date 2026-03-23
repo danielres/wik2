@@ -7,8 +7,9 @@ defmodule Qblog.Wiki.PageTree.Changes.AddChild do
     nodes = Ash.Changeset.get_attribute(changeset, :nodes)
     parent_id = Ash.Changeset.get_argument(changeset, :parent_id)
     slug = Ash.Changeset.get_argument(changeset, :slug)
+    title = Ash.Changeset.get_argument(changeset, :title)
 
-    case Qblog.Wiki.PageTree.TreeOps.AddChild.call(nodes, slug, parent_id) do
+    case Qblog.Wiki.PageTree.TreeOps.AddChild.call(nodes, slug, title, parent_id) do
       {:ok, new_nodes} ->
         Ash.Changeset.change_attribute(changeset, :nodes, new_nodes)
 

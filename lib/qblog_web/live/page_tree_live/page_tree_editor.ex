@@ -195,7 +195,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   @impl true
   def handle_event(
         "add_child",
-        %{"form" => %{"parent_id" => node_id, "slug" => slug}},
+        %{"form" => %{"parent_id" => node_id, "slug" => slug, "title" => title}},
         socket
       ) do
     scope = socket.assigns.current_scope
@@ -205,6 +205,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
            socket.assigns.page_tree,
            parent_id,
            slug,
+           title,
            scope: scope
          ) do
       {:ok, page_tree} ->

@@ -26,6 +26,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
       id: node.id,
       page_id: node.page_id,
       slug: node.slug,
+      title: node.title,
       children:
         nodes
         |> child_nodes(node.id)

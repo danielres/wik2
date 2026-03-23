@@ -2,11 +2,11 @@ defmodule Qblog.Accounts.Token do
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Accounts,
-    data_layer: AshSqlite.DataLayer,
+    data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAuthentication.TokenResource]
 
-  sqlite do
+  postgres do
     table "tokens"
     repo Qblog.Repo
   end

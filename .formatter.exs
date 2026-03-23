@@ -1,9 +1,9 @@
 [
   import_deps: [
+    :ash_postgres,
     :ash_admin,
     :ash_authentication_phoenix,
     :ash_authentication,
-    :ash_sqlite,
     :ash_phoenix,
     :ash,
     :reactor,

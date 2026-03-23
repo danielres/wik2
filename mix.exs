@@ -48,14 +48,13 @@ defmodule Qblog.MixProject do
       {:ash_admin, "~> 0.14"},
       {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_authentication, "~> 4.0"},
-      {:ash_sqlite, "~> 0.2"},
+      {:ash_postgres, "~> 2.0"},
       {:ash_phoenix, "~> 2.0"},
       {:ash, "~> 3.0"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:phoenix, "~> 1.8.5"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.13"},
-      {:ecto_sqlite3, ">= 0.0.0"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.1.0"},
@@ -89,7 +88,7 @@ defmodule Qblog.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      setup: ["deps.get", "ash.setup", "assets.setup", "assets.build", "run priv/repo/seeds.exs"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ash.setup --quiet", "test"],

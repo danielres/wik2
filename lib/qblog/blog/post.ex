@@ -2,11 +2,11 @@ defmodule Qblog.Blog.Post do
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Blog,
-    data_layer: AshSqlite.DataLayer,
+    data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshPhoenix]
 
-  sqlite do
+  postgres do
     table "posts"
     repo Qblog.Repo
   end

@@ -2,11 +2,31 @@ import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
-config :qblog, Qblog.Repo,
-  database: Path.expand("../qblog_dev.db", __DIR__),
-  pool_size: 5,
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true
+pg_host = System.get_env("PGHOST")
+
+repo_connection_opts =
+  cond do
+    is_binary(pg_host) and String.starts_with?(pg_host, "/") ->
+      [socket_dir: pg_host]
+
+    is_binary(pg_host) and pg_host != "" ->
+      [hostname: pg_host]
+
+    true ->
+      [hostname: "localhost"]
+  end
+
+config :qblog,
+       Qblog.Repo,
+       [
+         username: System.get_env("PGUSER", "postgres"),
+         password: System.get_env("PGPASSWORD", "postgres"),
+         port: String.to_integer(System.get_env("PGPORT", "5432")),
+         database: System.get_env("PGDATABASE", "qblog_dev"),
+         stacktrace: true,
+         show_sensitive_data_on_connection_error: true,
+         pool_size: 10
+       ] ++ repo_connection_opts
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

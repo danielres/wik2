@@ -2,9 +2,9 @@ defmodule Qblog.Accounts.Group do
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Accounts,
-    data_layer: AshSqlite.DataLayer
+    data_layer: AshPostgres.DataLayer
 
-  sqlite do
+  postgres do
     table "groups"
     repo Qblog.Repo
   end

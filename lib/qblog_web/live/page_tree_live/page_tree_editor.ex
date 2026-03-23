@@ -22,7 +22,6 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
       socket
       |> assign(assigns)
       |> assign_new(:moved_node_id, fn -> nil end)
-      |> assign_new(:parent_id, fn -> nil end)
       |> assign_new(:add_child_open?, fn -> false end)
 
     socket =
@@ -35,6 +34,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             {:ok, page_tree} ->
               socket
               |> assign(page_tree: page_tree)
+              |> assign_new(:parent_id, fn -> nil end)
               |> assign(form_add_child: scope |> init_form_add_child())
 
             {:error, err} ->
@@ -73,6 +73,14 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         open?={@moved_node_id != nil}
         phx-target={@myself}
       >
+        <:title>
+          <h3 class="mb-2">
+            <span>Move</span>
+            <span class="font-bold">
+              node {@moved_node_id}
+            </span>
+          </h3>
+        </:title>
         <MoveNode.dialog
           moved_node_id={@moved_node_id}
           nodes_flat={@page_tree.nodes}
@@ -85,11 +93,15 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         open?={@add_child_open?}
         phx-target={@myself}
       >
+        <:title>
+          <span>Add child under</span>
+          <span class="font-bold">
+            {Helpers.get_node_by_id(@page_tree.nodes, @parent_id).slug}
+          </span>
+        </:title>
         <AddChild.dialog
           form={@form_add_child}
-          nodes_flat={@page_tree.nodes}
           parent_id={@parent_id}
-          scope={@current_scope}
           target={@myself}
         />
       </Modal.render>

@@ -3,18 +3,10 @@ defmodule QblogWeb.PageTreeLive.Components.AddChild do
   use Phoenix.Component
 
   attr :form, :any, required: true
-  attr :nodes_flat, :list, required: true
-  attr :parent_id, :integer, default: nil
-  attr :scope, :map, required: true
+  attr :parent_id, :map, default: nil
   attr :target, :any, required: true
 
   def dialog(assigns) do
-    assigns =
-      assigns
-      |> assign(
-        parent_node: assigns.nodes_flat |> Enum.find(fn node -> node.id == assigns.parent_id end)
-      )
-
     ~H"""
     <.form
       for={@form}
@@ -37,11 +29,7 @@ defmodule QblogWeb.PageTreeLive.Components.AddChild do
             class="btn btn-primary"
             type="submit"
           >
-            <%= if (@parent_node) do %>
-              Add under <span class="font-bold">{@parent_node.slug}</span>
-            <% else %>
-              Add at top level
-            <% end %>
+            Add
           </.button>
         </div>
       </div>

@@ -5,6 +5,7 @@ defmodule QblogWeb.Components.Modal do
   attr :cancel, :string, required: false
   attr :open?, :boolean, default: true
   slot :inner_block, required: true
+  slot :title, required: true
 
   def render(assigns) do
     ~H"""
@@ -32,6 +33,8 @@ defmodule QblogWeb.Components.Modal do
         >
           ✕
         </button>
+
+        <h3 class="mb-2">{render_slot(@title)}</h3>
 
         {render_slot(@inner_block)}
       </div>

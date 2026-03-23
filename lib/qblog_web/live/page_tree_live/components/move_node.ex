@@ -11,16 +11,14 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
   attr :target, :any, required: true
 
   def dialog(assigns) do
+    node = assigns.nodes_flat |> Helpers.get_node_by_id(assigns.moved_node_id)
+
     assigns =
       assigns
-      |> assign(
-        node: assigns.nodes_flat |> Enum.find(fn node -> node.id == assigns.moved_node_id end)
-      )
-      |> assign(:nodes_tree, assigns.nodes_flat |> TreeQueries.build_tree())
+      |> assign(node: node)
+      |> assign(nodes_tree: assigns.nodes_flat |> TreeQueries.build_tree())
 
     ~H"""
-    <h3 class="mb-2">Move <span class="font-bold">node {@node.slug}</span></h3>
-
     <div class={[
       "group",
       "flex items-center justify-between gap-3",
@@ -37,12 +35,12 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
 
       <ActionButtons.wrapper>
         <ActionButtons.button
-          phx-click="move_node"
-          phx-target={@target}
-          phx-value-node_id={@moved_node_id}
-          phx-value-new_parent_id=""
           data-tip="move to top"
           icon="hero-arrow-turn-down-right-mini"
+          phx-click="move_node"
+          phx-target={@target}
+          phx-value-new_parent_id=""
+          phx-value-node_id={@moved_node_id}
         />
       </ActionButtons.wrapper>
     </div>
@@ -50,9 +48,9 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
     <Components.PageTree.render nodes_flat={@nodes_flat}>
       <:action_buttons :let={props}>
         <.action_buttons
+          candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
           node={props.node}
           nodes_flat={@nodes_flat}
-          candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
           target={@target}
         />
       </:action_buttons>
@@ -74,12 +72,12 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
     <ActionButtons.wrapper>
       <ActionButtons.button
         :if={@candidate?}
-        phx-value-node_id={@node.id}
-        phx-value-new_parent_id={@node.id}
+        data-tip={ "move under #{@node.slug}" }
+        icon="hero-arrow-turn-down-right-mini"
         phx-click="move_node"
         phx-target={@target}
-        icon="hero-arrow-turn-down-right-mini"
-        data-tip={ "move under #{@node.slug}" }
+        phx-value-new_parent_id={@node.id}
+        phx-value-node_id={@node.id}
       />
     </ActionButtons.wrapper>
     """

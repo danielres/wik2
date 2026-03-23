@@ -1,5 +1,4 @@
 defmodule QblogWeb.PageTreeLive.Components.MoveNode do
-  import QblogWeb.CoreComponents
   use Phoenix.Component
 
   alias Qblog.Wiki.PageTree.TreeQueries

@@ -17,15 +17,11 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
     """
   end
 
-  # TODO: use proper rest attributes
   attr :"data-tip", :string, required: true
-  attr :"phx-click", :string, required: true
-  attr :"phx-target", :any, required: false
-  attr :"phx-value-new_parent_id", :any, required: false
-  attr :"phx-value-node_id", :any, required: true
   attr :icon, :string, required: true
-  attr :variant, :string, default: "primary"
   attr :class, :string, default: ""
+  attr :variant, :string, default: "primary"
+  attr :rest, :global
 
   def button(assigns) do
     variant_class =
@@ -44,8 +40,9 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
         @variant_class,
         @class
       ]}
+      data-tip={assigns[:"data-tip"]}
       style="--tt-delay: 800ms"
-      {assigns}
+      {@rest}
     >
       <CoreComponents.icon name={@icon} />
       <span class="sr-only">{assigns[:"data-tip"]}</span>

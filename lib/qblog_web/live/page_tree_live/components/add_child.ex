@@ -9,6 +9,7 @@ defmodule QblogWeb.PageTreeLive.Components.AddChild do
   def dialog(assigns) do
     ~H"""
     <.form
+      autocomplete="off"
       for={@form}
       phx-change="validate_child"
       phx-submit="add_child"

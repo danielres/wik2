@@ -69,7 +69,7 @@ defmodule QblogWeb.Layouts do
         "text-sm",
         "opacity-75 hover:opacity-100 transition"
       ]}
-      navigate={~p"/#{@scope.tenant}/#{@target}"}
+      navigate={"/#{@scope.tenant}/#{@target}"}
     >
       {render_slot(@inner_block)}
     </.link>

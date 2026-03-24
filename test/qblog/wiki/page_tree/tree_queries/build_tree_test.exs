@@ -5,9 +5,9 @@ defmodule Qblog.Wiki.PageTree.TreeQueries.BuildTreeTest do
 
   test "builds a tree from flat nodes" do
     nodes = [
-      %{id: 1, page_id: nil, parent_id: nil},
-      %{id: 2, page_id: nil, parent_id: 1},
-      %{id: 3, page_id: nil, parent_id: 1}
+      %{id: 1, page_id: nil, parent_id: nil, slug: "home", title: "Home"},
+      %{id: 2, page_id: nil, parent_id: 1, slug: "about", title: "About"},
+      %{id: 3, page_id: nil, parent_id: 1, slug: "contact", title: "Contact"}
     ]
 
     assert [

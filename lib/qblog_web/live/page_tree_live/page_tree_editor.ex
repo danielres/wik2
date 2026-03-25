@@ -195,7 +195,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   @impl true
   def handle_event(
         "add_child",
-        %{"form" => %{"parent_id" => node_id, "slug" => slug, "title" => title}},
+        %{"form" => %{"parent_id" => node_id, "slug" => slug, "title" => title} = params},
         socket
       ) do
     scope = socket.assigns.current_scope
@@ -218,7 +218,13 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
       {:error, err} ->
         Log.scoped_error(scope, err, "page_tree add_child failed")
-        {:noreply, socket}
+
+        form =
+          socket.assigns.form_add_child
+          |> Form.validate(params)
+          |> Form.add_error(err)
+
+        {:noreply, socket |> assign(form_add_child: form)}
     end
   end
 

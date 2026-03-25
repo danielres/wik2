@@ -7,6 +7,13 @@ defmodule QblogWeb.PageTreeLive.Components.AddChild do
   attr :target, :any, required: true
 
   def dialog(assigns) do
+    auto_slug = assigns.form[:title].value |> Utils.Slugify.generate()
+
+    assigns =
+      assigns
+      |> assign(auto_slug: auto_slug)
+      |> assign(form_errors: AshPhoenix.Form.errors(assigns.form))
+
     ~H"""
     <.form
       autocomplete="off"
@@ -22,14 +29,39 @@ defmodule QblogWeb.PageTreeLive.Components.AddChild do
             type="hidden"
             value={@parent_id}
           />
-          <.input
-            field={@form[:title]}
-            label="title"
-          />
-          <.input
-            field={@form[:slug]}
-            label="slug"
-          />
+
+          <.input field={@form[:title]} label="title" />
+
+          <div class={[
+            "flex items-baseline",
+            "[&_._prepend]:w-2 [&_.alert]:-ml-2"
+          ]}>
+            <span
+              :if={@form[:title].value}
+              class={[
+                "_prepend",
+                "font-mono opacity-80"
+              ]}
+            >
+              /
+            </span>
+
+            <.input hidden field={@form[:slug]} value={@auto_slug} />
+
+            <div class={["flex-grow"]}>
+              <div class={[
+                "opacity-80",
+                "font-mono",
+                "w-full",
+                "!bg-transparent"
+              ]}>
+                {@auto_slug}
+              </div>
+            </div>
+          </div>
+
+          <.error :for={{:nodes, msg} <- @form_errors}>{msg}</.error>
+
           <.button
             class="btn btn-primary"
             type="submit"

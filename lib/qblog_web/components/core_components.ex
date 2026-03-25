@@ -296,10 +296,10 @@ defmodule QblogWeb.CoreComponents do
   end
 
   # Helper used by inputs to generate form errors
-  defp error(assigns) do
+  def error(assigns) do
     ~H"""
-    <p class="mt-1.5 flex gap-2 items-center text-sm text-error">
-      <.icon name="hero-exclamation-circle" class="size-5" />
+    <p class="text-content flex items-center gap-2">
+      <.icon name="hero-exclamation-triangle-micro" class="size-5 opacity-60 text-error-content" />
       {render_slot(@inner_block)}
     </p>
     """

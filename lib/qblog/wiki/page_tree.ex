@@ -21,9 +21,12 @@ defmodule Qblog.Wiki.PageTree do
   actions do
     defaults [
       :read,
-      :destroy,
-      :create
+      :destroy
     ]
+
+    create :create do
+      change Qblog.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
+    end
 
     action :get_or_create_page_tree, :struct do
       constraints instance_of: __MODULE__
@@ -44,7 +47,9 @@ defmodule Qblog.Wiki.PageTree do
       argument :title, :string do
         allow_nil? false
       end
+
       change Qblog.Wiki.PageTree.Changes.AddChild
+      change Qblog.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
     end
 
     update :remove_node do
@@ -69,6 +74,7 @@ defmodule Qblog.Wiki.PageTree do
       end
 
       change Qblog.Wiki.PageTree.Changes.MoveNode
+      change Qblog.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
     end
   end
 

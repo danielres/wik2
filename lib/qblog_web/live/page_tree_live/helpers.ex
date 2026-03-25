@@ -19,7 +19,8 @@ defmodule QblogWeb.PageTreeLive.Helpers do
         descendant_ids(node_id, nodes) ++
         parent_ids_with_child_slug(slug, nodes)
 
-    Enum.reject(nodes, &(&1.id in forbidden_ids))
+    [get_node_by_id(nodes, nil) | nodes]
+    |> Enum.reject(&(&1.id in forbidden_ids))
   end
 
   defp descendant_ids(root_id, nodes) do
@@ -35,6 +36,5 @@ defmodule QblogWeb.PageTreeLive.Helpers do
     nodes
     |> Enum.filter(&(&1.slug == slug))
     |> Enum.map(& &1.parent_id)
-    |> Enum.reject(&is_nil/1)
   end
 end

@@ -1,7 +1,6 @@
 defmodule QblogWeb.PageTreeLive.Components.MoveNode do
   use Phoenix.Component
 
-  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageTreeLive.Components
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
@@ -11,12 +10,12 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
   attr :target, :any, required: true
 
   def dialog(assigns) do
-    node = assigns.nodes_flat |> Helpers.get_node_by_id(assigns.moved_node_id)
+    candidates = assigns.nodes_flat |> Helpers.parent_options(assigns.moved_node_id)
 
     assigns =
       assigns
-      |> assign(node: node)
-      |> assign(nodes_tree: assigns.nodes_flat |> TreeQueries.build_tree())
+      |> assign(candidates: candidates)
+      |> assign(can_move_to_top?: Enum.any?(candidates, &is_nil(&1.id)))
 
     ~H"""
     <div class={[
@@ -33,7 +32,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
         Top level
       </div>
 
-      <ActionButtons.wrapper>
+      <ActionButtons.wrapper :if={@can_move_to_top?}>
         <ActionButtons.button
           data-tip="move to top"
           icon="hero-arrow-turn-down-right-mini"
@@ -48,7 +47,7 @@ defmodule QblogWeb.PageTreeLive.Components.MoveNode do
     <Components.PageTree.render nodes_flat={@nodes_flat}>
       <:action_buttons :let={props}>
         <.action_buttons
-          candidates={Helpers.parent_options(@nodes_flat, @moved_node_id)}
+          candidates={@candidates}
           node={props.node}
           nodes_flat={@nodes_flat}
           target={@target}

@@ -77,7 +77,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
           <h3 class="mb-2">
             <span>Move</span>
             <span class="font-bold">
-              node {@moved_node_id}
+              "{Helpers.get_node_by_id(@page_tree.nodes, @moved_node_id).title}"
             </span>
           </h3>
         </:title>

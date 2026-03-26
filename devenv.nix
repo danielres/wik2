@@ -30,6 +30,11 @@
     enable = true;
   };
 
+  # needed by expert lsp:
+  languages.erlang = {
+    enable = true;
+  };
+
   services.adminer.enable = true;
 
   services.postgres = {

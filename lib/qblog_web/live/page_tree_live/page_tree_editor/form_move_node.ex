@@ -1,0 +1,137 @@
+defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
+  use QblogWeb, :live_component
+
+  alias QblogWeb.PageTreeLive.Components
+  alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
+  alias QblogWeb.PageTreeLive.Helpers
+  alias QblogWeb.PageTreeLive.PageTreeEditor
+  alias QblogWeb.PageTreeLive.PageTreeEditor.MoveNodeFlow
+  alias Utils.Log
+
+  @impl true
+  def update(assigns, socket) do
+    socket =
+      socket
+      |> assign(assigns)
+
+    {:ok, socket}
+  end
+
+  attr :current_scope, :any, required: true
+  attr :editor_id, :string, required: true
+  attr :flow, :map, required: true
+  attr :page_tree, :map, required: true
+
+  @impl true
+  def render(assigns) do
+    candidates =
+      if assigns.flow.node_id != nil do
+        assigns.page_tree.nodes |> Helpers.parent_options(assigns.flow.node_id)
+      else
+        []
+      end
+
+    assigns =
+      assigns
+      |> assign(candidates: candidates)
+      |> assign(can_move_to_top?: Enum.any?(candidates, &is_nil(&1.id)))
+
+    ~H"""
+    <div id={@id}>
+      <h3 class="mb-2">
+        <span>Move</span>
+        <span class="font-bold">
+          "{Helpers.get_node_by_id(@page_tree.nodes, @flow.node_id).title}"
+        </span>
+      </h3>
+
+      <div class={[
+        "group",
+        "flex items-center justify-between gap-3",
+        "mb-2"
+      ]}>
+        <div class={[
+          "opacity-80",
+          "group-has-[button:hover]:opacity-100",
+          "transition",
+          "text-sm"
+        ]}>
+          Top level
+        </div>
+
+        <ActionButtons.wrapper :if={@can_move_to_top?}>
+          <ActionButtons.button
+            data-tip="move to top"
+            icon="hero-arrow-turn-down-right-mini"
+            phx-click="move_node"
+            phx-target={@myself}
+            phx-value-new_parent_id=""
+            phx-value-node_id={@flow.node_id}
+          />
+        </ActionButtons.wrapper>
+      </div>
+
+      <Components.PageTree.render nodes_flat={@page_tree.nodes}>
+        <:action_buttons :let={props}>
+          <.action_buttons
+            candidates={@candidates}
+            node={props.node}
+            target={@myself}
+          />
+        </:action_buttons>
+      </Components.PageTree.render>
+    </div>
+    """
+  end
+
+  @impl true
+  def handle_event("move_node", %{"new_parent_id" => new_parent_id}, socket) do
+    flow = socket.assigns.flow
+    page_tree = socket.assigns.page_tree
+    scope = socket.assigns.current_scope
+
+    case MoveNodeFlow.submit(flow, page_tree, new_parent_id, scope) do
+      {:ok, flow, page_tree} ->
+        send(self(), {:page_tree_updated, page_tree})
+
+        send_update(
+          PageTreeEditor,
+          id: socket.assigns.editor_id,
+          move_node_flow: flow
+        )
+
+        {:noreply,
+         socket
+         |> assign(flow: flow, page_tree: page_tree)}
+
+      {:error, flow, err} ->
+        Log.scoped_error(scope, err, "page_tree move_node failed")
+        {:noreply, socket |> assign(flow: flow)}
+    end
+  end
+
+  attr :candidates, :list, required: true
+  attr :node, :map, required: true
+  attr :target, :any, required: true
+
+  defp action_buttons(assigns) do
+    candidate_ids = assigns.candidates |> Enum.map(fn e -> e.id end)
+    candidate? = assigns.node.id in candidate_ids
+    assigns = assigns |> assign(candidate?: candidate?)
+
+    ~H"""
+    <ActionButtons.wrapper>
+      <%!-- TODO: change @node.slug to @node.title --%>
+      <ActionButtons.button
+        :if={@candidate?}
+        data-tip={ "move under #{@node.slug}" }
+        icon="hero-arrow-turn-down-right-mini"
+        phx-click="move_node"
+        phx-target={@target}
+        phx-value-new_parent_id={@node.id}
+        phx-value-node_id={@node.id}
+      />
+    </ActionButtons.wrapper>
+    """
+  end
+end

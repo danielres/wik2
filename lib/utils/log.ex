@@ -10,7 +10,9 @@ defmodule Utils.Log do
       scope: scope
     ]
 
-    Logger.error("#{title} #{inspect(meta, pretty: true)}")
+    if error_logging_enabled?() do
+      Logger.error("#{title} #{inspect(meta, pretty: true)}")
+    end
 
     error_id
   end
@@ -25,5 +27,10 @@ defmodule Utils.Log do
 
   defp short_error_id do
     Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)
+  end
+
+  defp error_logging_enabled? do
+    Application.get_env(:qblog, __MODULE__, [])
+    |> Keyword.get(:error_logging_enabled?, true)
   end
 end

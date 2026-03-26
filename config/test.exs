@@ -2,6 +2,7 @@ import Config
 config :qblog, token_signing_secret: "0RaegrszeoUZf8/Nmq0S/siUPZpCVgvn"
 config :bcrypt_elixir, log_rounds: 1
 config :ash, policies: [show_policy_breakdowns?: true], disable_async?: true
+config :qblog, Utils.Log, error_logging_enabled?: false
 
 # Configure your database
 #

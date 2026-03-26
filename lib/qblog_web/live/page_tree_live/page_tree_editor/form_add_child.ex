@@ -6,7 +6,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
 
   alias QblogWeb.PageTreeLive.Helpers
   alias QblogWeb.PageTreeLive.PageTreeEditor
-  alias QblogWeb.PageTreeLive.PageTreeEditor.AddChildFlow
+  alias QblogWeb.PageTreeLive.PageTreeEditor.FlowAddChild
   alias Utils.Log
 
   @impl true
@@ -25,10 +25,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
   def render(assigns) do
     ~H"""
     <div id={@id}>
-      <h3>
+      <h3 class="mb-2">
         <span>Add child under</span>
         <span class="font-bold">
-          {Helpers.get_node_by_id(@page_tree.nodes, @flow.parent_id).slug}
+          "{Helpers.get_node_by_id(@page_tree.nodes, @flow.parent_id).slug}"
         </span>
       </h3>
 
@@ -47,14 +47,14 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
     page_tree = socket.assigns.page_tree
     scope = socket.assigns.current_scope
 
-    case flow |> AddChildFlow.submit(page_tree, %{"form" => params}, scope) do
+    case flow |> FlowAddChild.submit(page_tree, %{"form" => params}, scope) do
       {:ok, flow, page_tree} ->
         send(self(), {:page_tree_updated, page_tree})
 
         send_update(
           PageTreeEditor,
           id: socket.assigns.editor_id,
-          add_child_flow: flow
+          flow_add_child: flow
         )
 
         {:noreply,
@@ -71,7 +71,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
   def handle_event("add_child_validate", %{"form" => params}, socket) do
     {:noreply,
      socket
-     |> assign(flow: socket.assigns.flow |> AddChildFlow.validate(params))}
+     |> assign(flow: socket.assigns.flow |> FlowAddChild.validate(params))}
   end
 
   attr(:form, :any, required: true)

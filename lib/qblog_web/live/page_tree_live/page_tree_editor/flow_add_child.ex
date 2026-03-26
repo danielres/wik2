@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageTreeLive.PageTreeEditor.AddChildFlow do
+defmodule QblogWeb.PageTreeLive.PageTreeEditor.FlowAddChild do
   import Phoenix.Component, only: [to_form: 1]
 
   alias AshPhoenix.Form
@@ -8,7 +8,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.AddChildFlow do
 
   def init(scope) do
     form = PageTree.Node |> Form.for_create(:create, scope: scope) |> to_form()
-    %__MODULE__{ form: form }
+    %__MODULE__{form: form}
   end
 
   def open(flow, parent_id) do

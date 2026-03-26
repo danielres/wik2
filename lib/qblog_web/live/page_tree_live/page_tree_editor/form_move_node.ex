@@ -5,7 +5,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias QblogWeb.PageTreeLive.Helpers
   alias QblogWeb.PageTreeLive.PageTreeEditor
-  alias QblogWeb.PageTreeLive.PageTreeEditor.MoveNodeFlow
+  alias QblogWeb.PageTreeLive.PageTreeEditor.FlowMoveNode
   alias Utils.Log
 
   @impl true
@@ -90,14 +90,14 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
     page_tree = socket.assigns.page_tree
     scope = socket.assigns.current_scope
 
-    case MoveNodeFlow.submit(flow, page_tree, new_parent_id, scope) do
+    case FlowMoveNode.submit(flow, page_tree, new_parent_id, scope) do
       {:ok, flow, page_tree} ->
         send(self(), {:page_tree_updated, page_tree})
 
         send_update(
           PageTreeEditor,
           id: socket.assigns.editor_id,
-          move_node_flow: flow
+          flow_move_node: flow
         )
 
         {:noreply,

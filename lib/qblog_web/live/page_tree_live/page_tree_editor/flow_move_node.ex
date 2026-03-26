@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageTreeLive.PageTreeEditor.MoveNodeFlow do
+defmodule QblogWeb.PageTreeLive.PageTreeEditor.FlowMoveNode do
   alias Qblog.Wiki.PageTree
 
   defstruct open?: false, node_id: nil

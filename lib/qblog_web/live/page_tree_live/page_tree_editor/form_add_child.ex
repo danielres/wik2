@@ -24,10 +24,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={@id}>
-      <h3 class="mb-2">
+    <div id={@id} data-testid="add-child-modal">
+      <h3 class="mb-2" data-testid="add-child-heading">
         <span>Add child under</span>
-        <span class="font-bold">
+        <span class="font-bold" data-testid="add-child-parent-slug">
           "{Helpers.get_node_by_id(@page_tree.nodes, @flow.parent_id).slug}"
         </span>
       </h3>
@@ -89,6 +89,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
     ~H"""
     <.form
       autocomplete="off"
+      data-testid="add-child-form"
       for={@form}
       phx-change="add_child_validate"
       phx-submit="add_child"
@@ -97,12 +98,13 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
       <div class="card bg-base-100">
         <div class="card-body [&_input]:bg-base-200">
           <.input
+            data-testid="add-child-parent-id"
             field={@form[:parent_id]}
             type="hidden"
             value={@parent_id}
           />
 
-          <.input field={@form[:title]} label="title" />
+          <.input data-testid="add-child-title" field={@form[:title]} label="title" />
 
           <div class={[
             "flex items-baseline",
@@ -126,16 +128,19 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
                 "font-mono",
                 "w-full",
                 "!bg-transparent"
-              ]}>
+              ]} data-testid={data_auto_slug_testid(@auto_slug)}>
                 {@auto_slug}
               </div>
             </div>
           </div>
 
-          <.error :for={{:nodes, msg} <- @form_errors}>{msg}</.error>
+          <div :for={{:nodes, msg} <- @form_errors} data-testid="add-child-error-nodes">
+            <.error>{msg}</.error>
+          </div>
 
           <.button
             class="btn btn-primary"
+            data-testid="add-child-submit"
             type="submit"
           >
             Add
@@ -145,4 +150,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
     </.form>
     """
   end
+
+  defp data_auto_slug_testid(""), do: "add-child-auto-slug-empty"
+  defp data_auto_slug_testid(auto_slug), do: "add-child-auto-slug-#{auto_slug}"
 end

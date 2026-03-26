@@ -37,10 +37,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
       |> assign(can_move_to_top?: Enum.any?(candidates, &is_nil(&1.id)))
 
     ~H"""
-    <div id={@id}>
-      <h3 class="mb-2">
+    <div id={@id} data-testid="move-node-modal">
+      <h3 class="mb-2" data-testid="move-node-heading">
         <span>Move</span>
-        <span class="font-bold">
+        <span class="font-bold" data-testid="move-node-current-node">
           "{Helpers.get_node_by_id(@page_tree.nodes, @flow.node_id).title}"
         </span>
       </h3>
@@ -62,6 +62,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
         <ActionButtons.wrapper :if={@can_move_to_top?}>
           <ActionButtons.button
             data-tip="move to top"
+            data-testid="move-node-to-top"
             icon="hero-arrow-turn-down-right-mini"
             phx-click="move_node"
             phx-target={@myself}
@@ -125,6 +126,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
       <ActionButtons.button
         :if={@candidate?}
         data-tip={ "move under #{@node.slug}" }
+        data-testid={"move-node-to-parent-#{@node.id}"}
         icon="hero-arrow-turn-down-right-mini"
         phx-click="move_node"
         phx-target={@target}

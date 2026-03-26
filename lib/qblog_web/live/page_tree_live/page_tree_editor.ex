@@ -38,6 +38,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             :if={@editable?}
             class="[&:not(:hover)]:bg-base-100"
             data-tip="add at top level"
+            data-testid="page-tree-editor-add-root"
             icon="hero-plus-mini"
             phx-click="add_child_start"
             phx-target={@myself}
@@ -62,8 +63,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
       <Modal.render
         cancel="move_node_cancel"
+        cancel_testid="move-node-cancel"
         open?={@flow_move_node.open?}
         phx-target={@myself}
+        testid="move-node-dialog"
       >
         <.live_component
           module={FormMoveNode}
@@ -77,8 +80,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
       <Modal.render
         cancel="add_child_cancel"
+        cancel_testid="add-child-cancel"
         open?={@flow_add_child.open?}
         phx-target={@myself}
+        testid="add-child-dialog"
       >
         <.live_component
           module={FormAddChild}
@@ -109,6 +114,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
       <ActionButtons.button
         :if={@node.children == []}
         data-tip="delete"
+        data-testid={"page-tree-editor-node-#{@node.id}-remove"}
         icon="hero-x-mark-mini"
         phx-click="remove_node"
         phx-target={@remove_target}
@@ -118,6 +124,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
       <ActionButtons.button
         data-tip="add child"
+        data-testid={"page-tree-editor-node-#{@node.id}-add-child"}
         icon="hero-plus-mini"
         phx-click="add_child_start"
         phx-target={@add_child_target}
@@ -127,6 +134,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
       <ActionButtons.button
         :if={@has_candidates?}
         data-tip="move"
+        data-testid={"page-tree-editor-node-#{@node.id}-move"}
         icon="hero-arrow-turn-down-right-mini"
         phx-click="move_node_start"
         phx-target={@move_node_target}

@@ -37,7 +37,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
 
     ~H"""
     <ul class={[@depth == 0 and "space-y-3"]}>
-      <li :for={node <- @nodes_tree} class={["card", "bg-base-100"]}>
+      <li :for={node <- @nodes_tree} class={["card", "bg-base-100"]} data-testid={"page-tree-node-#{node.id}"}>
         <.page_tree_node node={node} nodes_flat={@nodes_flat} depth={@depth + 1}>
           <:action_buttons :let={props}>
             {render_slot(@action_buttons, props)}

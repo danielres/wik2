@@ -7,6 +7,18 @@ defmodule QblogWeb.PageTreeLive.Helpers do
     nodes_flat |> Enum.find(fn node -> node.id == id end)
   end
 
+  def node_path(nodes_flat, node_id) do
+    case get_node_by_id(nodes_flat, node_id) do
+      nil ->
+        {:error, :not_found}
+
+      node ->
+        node
+        |> slug_path(nodes_flat)
+        |> Enum.join("/")
+    end
+  end
+
   def has_children?(node), do: node.children != []
 
   def parent_options(nodes, node_id) do
@@ -36,5 +48,16 @@ defmodule QblogWeb.PageTreeLive.Helpers do
     nodes
     |> Enum.filter(&(&1.slug == slug))
     |> Enum.map(& &1.parent_id)
+  end
+
+  defp slug_path(%{parent_id: nil, slug: slug}, _nodes_flat), do: [slug]
+
+  defp slug_path(node, nodes_flat) do
+    parent = get_node_by_id(nodes_flat, node.parent_id)
+
+    case parent do
+      nil -> [node.slug]
+      parent -> slug_path(parent, nodes_flat) ++ [node.slug]
+    end
   end
 end

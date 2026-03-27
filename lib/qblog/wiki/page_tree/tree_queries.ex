@@ -1,7 +1,16 @@
 defmodule Qblog.Wiki.PageTree.TreeQueries do
+  # TODO: move to TreeOps
+  alias Qblog.Wiki.PageTree.TreeQueries.ByPath.Create
+  alias Qblog.Wiki.PageTree.TreeQueries.ByPath.Get
+
   def get_node(nodes, node_id) do
     Enum.find(nodes, &(&1.id == node_id))
   end
+
+  defdelegate get_node_by_path(nodes, path), to: Get, as: :call
+
+  # TODO: move to TreeOps
+  defdelegate create_by_path(nodes, path, attrs \\ %{}), to: Create, as: :call
 
   def root_nodes(nodes) do
     Enum.filter(nodes, &is_nil(&1.parent_id))

@@ -41,7 +41,7 @@ defmodule Qblog.Blog.Post do
   pub_sub do
     module QblogWeb.Endpoint
     prefix "post"
-    publish :create, ["created", :group_id]
+    publish :create, ["created", :_tenant]
   end
 
   multitenancy do

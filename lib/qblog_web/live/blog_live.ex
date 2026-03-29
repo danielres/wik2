@@ -12,6 +12,8 @@ defmodule QblogWeb.BlogLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
 
+    if connected?(socket), do: QblogWeb.Endpoint.subscribe("post:created:#{scope.tenant}")
+
     {:ok,
      socket
      |> assign(form: scope |> init_form())
@@ -76,16 +78,9 @@ defmodule QblogWeb.BlogLive do
 
   def handle_event("submit", %{"form" => params}, socket) do
     case socket.assigns.form |> Form.submit(params: params) do
-      {:ok, post} ->
-        Process.send_after(self(), :clear_new_post_id, 1000)
-
+      {:ok, _post} ->
         scope = socket.assigns.current_scope
-
-        {:noreply,
-         socket
-         |> assign(form: scope |> init_form())
-         |> assign(posts: [post | socket.assigns.posts])
-         |> assign(:new_post_id, post.id)}
+        {:noreply, socket |> assign(form: scope |> init_form())}
 
       {:error, form} ->
         Log.scoped_error(socket.assigns.current_scope, form.errors, "Post create failed")
@@ -95,6 +90,22 @@ defmodule QblogWeb.BlogLive do
 
   def handle_info(:clear_new_post_id, socket) do
     {:noreply, socket |> assign(:new_post_id, nil)}
+  end
+
+  def handle_info(%{topic: "post:created:" <> _tenant, payload: %{data: new_post}}, socket) do
+    Process.send_after(self(), :clear_new_post_id, 3000)
+    scope = socket.assigns.current_scope
+
+    socket =
+      if Ash.can?({new_post, :read}, scope: scope) do
+        socket
+        |> assign(posts: scope |> list_posts())
+        |> assign(:new_post_id, new_post.id)
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   defp init_form(scope) do

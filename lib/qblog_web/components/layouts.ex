@@ -92,9 +92,13 @@ defmodule QblogWeb.Layouts do
           <.link navigate={~p"/"} class="btn btn-circle btn-sm opacity-50 hover:opacity-100">
             <i class="hero-home-mini size-4" />
           </.link>
-          <span :if={@scope.tenant} class="font-bold tracking-wide opacity-50">
+          <.link
+            :if={@scope.tenant}
+            class="font-bold tracking-wide opacity-50 hover:opacity-100 transition"
+            navigate={~p"/#{@scope.tenant.name}"}
+          >
             / {@scope.tenant |> to_string()}
-          </span>
+          </.link>
         </div>
       </div>
 

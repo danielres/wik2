@@ -122,6 +122,14 @@ defmodule Qblog.Accounts.User do
     end
   end
 
+  relationships do
+    many_to_many :groups, Qblog.Accounts.Group do
+      through Qblog.Accounts.GroupUserRelation
+      source_attribute_on_join_resource :user_id
+      destination_attribute_on_join_resource :group_id
+    end
+  end
+
   identities do
     identity :unique_email, [:email]
   end

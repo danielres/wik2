@@ -30,6 +30,8 @@ defmodule Qblog.Accounts do
           load: [:owner]
         ]
     end
+
+    resource Qblog.Accounts.GroupUserRelation
   end
 
   def group_name_to_id(group_name) do

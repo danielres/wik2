@@ -44,6 +44,12 @@ defmodule Qblog.Accounts.Group do
       destination_attribute :id
       allow_nil? false
     end
+
+    many_to_many :users, Qblog.Accounts.User do
+      through Qblog.Accounts.GroupUserRelation
+      source_attribute_on_join_resource :group_id
+      destination_attribute_on_join_resource :user_id
+    end
   end
 
   identities do

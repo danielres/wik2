@@ -31,7 +31,7 @@ defmodule QblogWeb.Router do
       live "/", HomeLive, :index
       live "/me", MeLive, :index
 
-      scope "/:group" do
+      scope "/:group_name" do
         pipe_through [:group_tenant]
         live "/blog", BlogLive, :index
         live "/tree", PageTreeLive, :index

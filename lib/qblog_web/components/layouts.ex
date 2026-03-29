@@ -93,7 +93,7 @@ defmodule QblogWeb.Layouts do
             <i class="hero-home-mini size-4" />
           </.link>
           <span :if={@scope.tenant} class="font-bold tracking-wide opacity-50">
-            / {@scope.tenant}
+            / {@scope.tenant |> to_string()}
           </span>
         </div>
       </div>

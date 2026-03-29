@@ -4,6 +4,10 @@ defmodule Qblog.Accounts.Group do
     domain: Qblog.Accounts,
     data_layer: AshPostgres.DataLayer
 
+  defimpl Ash.ToTenant do
+    def to_tenant(%{name: name}, _resource), do: name
+  end
+
   postgres do
     table "groups"
     repo Qblog.Repo
@@ -45,4 +49,8 @@ defmodule Qblog.Accounts.Group do
   identities do
     identity :unique_name, :name
   end
+end
+
+defimpl String.Chars, for: Qblog.Accounts.Group do
+  def to_string(%Qblog.Accounts.Group{name: name}), do: name
 end

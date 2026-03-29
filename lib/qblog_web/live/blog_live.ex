@@ -33,8 +33,8 @@ defmodule QblogWeb.BlogLive do
               <li
                 id={"post-#{post.id}"}
                 class={[
-                  "card bg-base-100 shadow transition-all duration-900 ",
-                  @new_post_id == post.id && "ring ring-primary"
+                  "card bg-base-100 shadow transition-all duration-900",
+                  if(@new_post_id == post.id, do: "opacity-0", else: "opacity-100")
                 ]}
               >
                 <div class="card-body">
@@ -93,13 +93,13 @@ defmodule QblogWeb.BlogLive do
   end
 
   def handle_info(%{topic: "post:created:" <> _tenant, payload: %{data: new_post}}, socket) do
-    Process.send_after(self(), :clear_new_post_id, 3000)
+    Process.send_after(self(), :clear_new_post_id, 200)
     scope = socket.assigns.current_scope
 
     socket =
       if Ash.can?({new_post, :read}, scope: scope) do
         socket
-        |> assign(posts: scope |> list_posts())
+        |> assign(posts: socket.assigns.posts |> List.insert_at(0, new_post))
         |> assign(:new_post_id, new_post.id)
       else
         socket

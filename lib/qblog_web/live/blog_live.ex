@@ -37,6 +37,20 @@ defmodule QblogWeb.BlogLive do
                   if(@new_post_id == post.id, do: "opacity-0", else: "opacity-100")
                 ]}
               >
+                <button
+                  :if={Ash.can?({post, :destroy}, @current_scope)}
+                  class={[
+                    "absolute right-2 top-2",
+                    "size-4 text-xs",
+                    "cursor-pointer",
+                    "opacity-50 hover:opacity-100 transition"
+                  ]}
+                  phx-click="destroy-post"
+                  phx-value-post_id={post.id}
+                >
+                  ✕
+                </button>
+
                 <div class="card-body">
                   <h3 class="card-title items-baseline justify-between gap-1">
                     <div class="leading-tight">{post.title}</div>
@@ -74,6 +88,21 @@ defmodule QblogWeb.BlogLive do
 
   def handle_event("validate", %{"form" => params}, socket) do
     {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
+  end
+
+  def handle_event("destroy-post", %{"post_id" => post_id}, socket) do
+    scope = socket.assigns.current_scope
+
+    socket =
+      case Blog.destroy_post_by_id(post_id, scope: scope) do
+        :ok ->
+          socket |> assign(posts: scope |> list_posts())
+
+        _ ->
+          socket
+      end
+
+    {:noreply, socket}
   end
 
   def handle_event("submit", %{"form" => params}, socket) do

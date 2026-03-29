@@ -25,6 +25,7 @@ defmodule Qblog.Blog do
         ]
 
       define :create_post, action: :create, args: [:title, :body]
+      define :destroy_post_by_id, action: :destroy, get_by: [:id]
     end
   end
 end

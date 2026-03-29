@@ -33,6 +33,11 @@ defmodule Qblog.Blog.Post do
     policy action_type(:create) do
       authorize_if always()
     end
+
+    policy action_type(:destroy) do
+      authorize_if relates_to_actor_via(:author)
+      authorize_if actor_attribute_equals(:role, :superadmin)
+    end
   end
 
   def field_type_for(:body), do: "textarea"

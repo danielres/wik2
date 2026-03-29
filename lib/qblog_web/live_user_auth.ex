@@ -16,7 +16,7 @@ defmodule QblogWeb.LiveUserAuth do
   def on_mount(:live_user_required, _params, _session, socket) do
     if socket.assigns[:current_user] do
       current_user = socket.assigns.current_user
-      current_scope = %{actor: current_user, tenant: nil}
+      current_scope = %Qblog.Scope{actor: current_user, tenant: nil}
       socket = socket |> assign(current_scope: current_scope)
 
       {:cont, socket}
@@ -29,7 +29,7 @@ defmodule QblogWeb.LiveUserAuth do
     if socket.assigns[:current_user] do
       {:ok, group} = params["group_name"] |> Qblog.Accounts.get_group_by_name()
       current_user = socket.assigns.current_user
-      current_scope = %{actor: current_user, tenant: group}
+      current_scope = %Qblog.Scope{actor: current_user, tenant: group}
       socket = socket |> assign(current_scope: current_scope)
 
       {:cont, socket}

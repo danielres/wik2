@@ -4,7 +4,8 @@ defmodule Qblog.Blog.Post do
     domain: Qblog.Blog,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshPhoenix]
+    extensions: [AshPhoenix],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "posts"
@@ -24,9 +25,6 @@ defmodule Qblog.Blog.Post do
     end
   end
 
-  def field_type_for(:body), do: "textarea"
-  def field_type_for(_), do: nil
-
   policies do
     policy action_type(:read) do
       authorize_if always()
@@ -35,6 +33,15 @@ defmodule Qblog.Blog.Post do
     policy action_type(:create) do
       authorize_if always()
     end
+  end
+
+  def field_type_for(:body), do: "textarea"
+  def field_type_for(_), do: nil
+
+  pub_sub do
+    module QblogWeb.Endpoint
+    prefix "post"
+    publish :create, ["created", :group_id]
   end
 
   multitenancy do

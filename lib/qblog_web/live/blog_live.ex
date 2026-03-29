@@ -33,7 +33,7 @@ defmodule QblogWeb.BlogLive do
               <li
                 id={"post-#{post.id}"}
                 class={[
-                  "card bg-base-100 shadow transition-all duration-900",
+                  "card bg-base-100 shadow transition-opacity duration-900",
                   if(@new_post_id == post.id, do: "opacity-0", else: "opacity-100")
                 ]}
               >

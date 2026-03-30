@@ -2,7 +2,8 @@ defmodule Qblog.Accounts.Group do
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Accounts,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshAdmin.Resource]
 
   defimpl Ash.ToTenant do
     def to_tenant(%{name: name}, _resource), do: name
@@ -11,6 +12,11 @@ defmodule Qblog.Accounts.Group do
   postgres do
     table "groups"
     repo Qblog.Repo
+  end
+
+  admin do
+    label_field :name
+    relationship_display_fields [:name]
   end
 
   actions do

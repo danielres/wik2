@@ -3,15 +3,26 @@ defmodule Qblog.Accounts.GroupUserRelation do
     otp_app: :qblog,
     domain: Qblog.Accounts,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshAdmin.Resource]
 
   postgres do
     table "group_user_relations"
     repo Qblog.Repo
   end
 
+  admin do
+    table_columns [:group, :user, :inserted_at]
+
+    format_fields inserted_at: {Calendar, :strftime, ["%Y-%m-%d %H:%M"]}
+  end
+
   actions do
-    defaults [:create, :read, :destroy]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:group_id, :user_id]
+    end
   end
 
   policies do
@@ -29,17 +40,16 @@ defmodule Qblog.Accounts.GroupUserRelation do
   end
 
   attributes do
+    uuid_v7_primary_key :id
     timestamps()
   end
 
   relationships do
     belongs_to :group, Qblog.Accounts.Group do
-      primary_key? true
       allow_nil? false
     end
 
     belongs_to :user, Qblog.Accounts.User do
-      primary_key? true
       allow_nil? false
     end
   end
@@ -48,4 +58,3 @@ defmodule Qblog.Accounts.GroupUserRelation do
     identity :unique_group_user_relation, [:group_id, :user_id]
   end
 end
-

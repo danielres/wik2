@@ -4,11 +4,17 @@ defmodule Qblog.Accounts.User do
     domain: Qblog.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAuthentication]
+    extensions: [AshAuthentication, AshAdmin.Resource]
 
   postgres do
     table "users"
     repo Qblog.Repo
+  end
+
+  admin do
+    actor? true
+    label_field :email
+    relationship_display_fields [:email]
   end
 
   authentication do

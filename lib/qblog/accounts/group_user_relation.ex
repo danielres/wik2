@@ -30,7 +30,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
       # TODO: allow group owners and members to read the relations
       authorize_if actor_attribute_equals(:role, :superadmin)
       authorize_if relates_to_actor_via([:group, :users])
-      authorize_if relates_to_actor_via([:group, :owner])
+      # authorize_if relates_to_actor_via([:group, :owner])
     end
 
     policy action_type(:create) do

@@ -27,7 +27,7 @@ defmodule Qblog.Accounts do
         args: [],
         default_options: [
           query: [sort: [inserted_at: :desc]],
-          load: [:owner]
+          load: [:author]
         ]
     end
 

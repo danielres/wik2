@@ -9,7 +9,8 @@ defmodule Qblog.TestGenerators do
     seed_generator(
       {User,
        %{
-         email: sequence(:user_email, &"user-#{System.unique_integer([:positive])}-#{&1}@example.com"),
+         email:
+           sequence(:user_email, &"user-#{System.unique_integer([:positive])}-#{&1}@example.com"),
          role: :user
        }},
       overrides: opts
@@ -17,19 +18,19 @@ defmodule Qblog.TestGenerators do
   end
 
   def group(opts \\ []) do
-    owner = Keyword.get(opts, :owner, user())
+    author = Keyword.get(opts, :author, user())
 
     seed_generator(
-      fn %{owner: owner} ->
-        owner = generate(owner)
+      fn %{author: author} ->
+        author = generate(author)
 
         %Group{
-           owner_id: owner.id,
-           name: sequence(:group_name, &"group-#{System.unique_integer([:positive])}-#{&1}")
-         }
+          author_id: author.id,
+          name: sequence(:group_name, &"group-#{System.unique_integer([:positive])}-#{&1}")
+        }
       end,
-      uses: [owner: owner],
-      overrides: Keyword.drop(opts, [:owner])
+      uses: [author: author],
+      overrides: Keyword.drop(opts, [:author])
     )
   end
 

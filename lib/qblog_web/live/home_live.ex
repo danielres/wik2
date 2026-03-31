@@ -32,7 +32,7 @@ defmodule QblogWeb.HomeLive do
                   navigate={~p"/#{group.name}"}
                 >
                   {group.name}
-                  <span class="font-thin">{group.owner |> to_string}</span>
+                  <span class="font-thin">{group.author |> to_string}</span>
                 </.link>
 
                 <span :if={@groups == []} class="opacity-70">

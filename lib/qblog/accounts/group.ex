@@ -29,7 +29,7 @@ defmodule Qblog.Accounts.Group do
 
     create :create do
       accept [:name]
-      change relate_actor(:owner, allow_nil?: false)
+      change relate_actor(:author, allow_nil?: false)
     end
   end
 
@@ -38,7 +38,7 @@ defmodule Qblog.Accounts.Group do
 
   policies do
     policy action_type(:read) do
-      authorize_if relates_to_actor_via(:owner)
+      # authorize_if relates_to_actor_via(:owner)
       authorize_if relates_to_actor_via(:users)
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
@@ -49,7 +49,7 @@ defmodule Qblog.Accounts.Group do
     end
 
     policy action_type(:update) do
-      authorize_if relates_to_actor_via(:owner)
+      # authorize_if relates_to_actor_via(:owner)
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 
@@ -69,7 +69,7 @@ defmodule Qblog.Accounts.Group do
   end
 
   relationships do
-    belongs_to :owner, Qblog.Accounts.User do
+    belongs_to :author, Qblog.Accounts.User do
       destination_attribute :id
       allow_nil? false
     end

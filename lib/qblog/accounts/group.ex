@@ -3,7 +3,8 @@ defmodule Qblog.Accounts.Group do
     otp_app: :qblog,
     domain: Qblog.Accounts,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource],
+    authorizers: [Ash.Policy.Authorizer]
 
   defimpl Ash.ToTenant do
     def to_tenant(%{name: name}, _resource), do: name
@@ -34,6 +35,28 @@ defmodule Qblog.Accounts.Group do
 
   def field_type_for(:name), do: "text"
   def field_type_for(_), do: nil
+
+  policies do
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via(:owner)
+      authorize_if relates_to_actor_via(:users)
+      authorize_if actor_attribute_equals(:role, :superadmin)
+    end
+
+    policy action_type(:create) do
+      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if Qblog.Checks.ActorHasAnyGroupMembership
+    end
+
+    policy action_type(:update) do
+      authorize_if relates_to_actor_via(:owner)
+      authorize_if actor_attribute_equals(:role, :superadmin)
+    end
+
+    policy action_type(:destroy) do
+      authorize_if actor_attribute_equals(:role, :superadmin)
+    end
+  end
 
   attributes do
     uuid_v7_primary_key :id

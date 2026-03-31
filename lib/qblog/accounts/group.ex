@@ -28,12 +28,13 @@ defmodule Qblog.Accounts.Group do
     ]
 
     create :create do
-      accept [:name]
+      accept [:name, :description]
       change Qblog.Changes.CreateGroupWithOwnerMembership
     end
   end
 
   def field_type_for(:name), do: "text"
+  def field_type_for(:description), do: "textarea"
   def field_type_for(_), do: nil
 
   policies do
@@ -65,6 +66,11 @@ defmodule Qblog.Accounts.Group do
     attribute :name, :string do
       public? true
       allow_nil? false
+    end
+
+    attribute :description, :string do
+      public? true
+      allow_nil? true
     end
   end
 

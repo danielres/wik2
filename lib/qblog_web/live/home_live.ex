@@ -29,7 +29,7 @@ defmodule QblogWeb.HomeLive do
                 <%= for group <- @groups do %>
                   <.link
                     class="btn btn-soft justify-between"
-                    navigate={~p"/#{group.name}/tree"}
+                    navigate={~p"/#{group.name}"}
                   >
                     {group.name}
                     <span class="font-thin">{group.owner |> to_string}</span>

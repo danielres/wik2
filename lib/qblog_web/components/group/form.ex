@@ -5,8 +5,8 @@ defmodule QblogWeb.Components.Group.Form do
   alias QblogWeb.CoreComponents
 
   attr :form, :any, required: true
-  attr :fields, :list, required: true
   attr :class, :string, default: ""
+  attr :action_type, :string, default: "create"
 
   def render(assigns) do
     ~H"""
@@ -18,14 +18,11 @@ defmodule QblogWeb.Components.Group.Form do
       >
         <div class="card bg-base-300">
           <div class="card-body">
-            <CoreComponents.input
-              :for={field <- @fields}
-              type={Group.field_type_for(field)}
-              field={@form[field]}
-              label={field |> Phoenix.Naming.humanize()}
-            />
+            <CoreComponents.input field={@form[:name]} label="Name" />
+            <CoreComponents.input field={@form[:description]} label="Description" type="textarea" />
+
             <CoreComponents.button type="submit" class="btn btn-primary mt-3">
-              Create group
+              {@action_type |> String.capitalize()} group
             </CoreComponents.button>
           </div>
         </div>

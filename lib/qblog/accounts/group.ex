@@ -23,8 +23,8 @@ defmodule Qblog.Accounts.Group do
   actions do
     defaults [
       :read,
-      :update,
-      :destroy
+      :destroy,
+      update: :*
     ]
 
     create :create do
@@ -32,10 +32,6 @@ defmodule Qblog.Accounts.Group do
       change Qblog.Changes.CreateGroupWithOwnerMembership
     end
   end
-
-  def field_type_for(:name), do: "text"
-  def field_type_for(:description), do: "textarea"
-  def field_type_for(_), do: nil
 
   policies do
     policy action_type(:read) do

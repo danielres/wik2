@@ -13,8 +13,7 @@ defmodule QblogWeb.HomeLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign_groups_and_form()
-     |> assign(fields: Ash.Resource.Info.action(Group, :create).accept)}
+     |> assign_groups_and_form()}
   end
 
   @impl true
@@ -46,7 +45,6 @@ defmodule QblogWeb.HomeLive do
           <Components.Group.Form.render
             :if={Ash.can?({Group, :create}, @current_scope)}
             class="flex-1"
-            fields={@fields}
             form={@form}
           />
         </div>

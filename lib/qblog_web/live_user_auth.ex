@@ -2,6 +2,7 @@ defmodule QblogWeb.LiveUserAuth do
   @moduledoc """
   Helpers for authenticating users in LiveViews.
   """
+  alias Qblog.Accounts
 
   import Phoenix.Component
   use QblogWeb, :verified_routes
@@ -26,13 +27,21 @@ defmodule QblogWeb.LiveUserAuth do
   end
 
   def on_mount(:live_scope_required, params, _session, socket) do
-    if socket.assigns[:current_user] do
-      {:ok, group} = params["group_name"] |> Qblog.Accounts.get_group_by_name()
-      current_user = socket.assigns.current_user
-      current_scope = %Qblog.Scope{actor: current_user, tenant: group}
-      socket = socket |> assign(current_scope: current_scope)
+    current_user = socket.assigns[:current_user]
 
-      {:cont, socket}
+    if current_user do
+      group_name = params["group_name"]
+
+      case group_name |> Accounts.get_group_by_name(actor: current_user) do
+        {:ok, group} ->
+          current_scope = %Qblog.Scope{actor: current_user, tenant: group}
+          socket = socket |> assign(current_scope: current_scope)
+          {:cont, socket}
+
+        _ ->
+          socket = Phoenix.LiveView.put_flash(socket, :error, ~s(Group "#{group_name}" not found))
+          {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
+      end
     else
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/sign-in")}
     end

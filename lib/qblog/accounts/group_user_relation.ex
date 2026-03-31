@@ -21,7 +21,8 @@ defmodule Qblog.Accounts.GroupUserRelation do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:group_id, :user_id]
+      primary? true
+      accept [:group_id, :user_id, :type]
     end
   end
 

@@ -29,7 +29,7 @@ defmodule Qblog.Accounts.Group do
 
     create :create do
       accept [:name]
-      change relate_actor(:author, allow_nil?: false)
+      change Qblog.Changes.CreateGroupWithOwnerMembership
     end
   end
 

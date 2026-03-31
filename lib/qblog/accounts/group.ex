@@ -50,7 +50,7 @@ defmodule Qblog.Accounts.Group do
     end
 
     policy action_type(:update) do
-      # authorize_if relates_to_actor_via(:owner)
+      authorize_if expr(exists(memberships, user_id == ^actor(:id) and type in [:owner, :admin]))
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 

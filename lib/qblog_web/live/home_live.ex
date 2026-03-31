@@ -22,24 +22,33 @@ defmodule QblogWeb.HomeLive do
     <Layouts.app flash={@flash} scope={@current_scope}>
       <Layouts.container>
         <h1 class="text-2xl font-[100]">Your groups</h1>
-        <div class="grid sm:grid-cols-2 gap-4">
-          <ul class="space-y-2">
+        <div class="flex gap-4">
+          <ul class="space-y-2 flex-1">
             <li class="card bg-base-100 shadow">
               <div class="card-body">
-                <%= for group <- @groups do %>
-                  <.link
-                    class="btn btn-soft justify-between"
-                    navigate={~p"/#{group.name}"}
-                  >
-                    {group.name}
-                    <span class="font-thin">{group.owner |> to_string}</span>
-                  </.link>
-                <% end %>
+                <.link
+                  :for={group <- @groups}
+                  class="btn btn-soft justify-between"
+                  navigate={~p"/#{group.name}"}
+                >
+                  {group.name}
+                  <span class="font-thin">{group.owner |> to_string}</span>
+                </.link>
+
+                <span :if={@groups == []} class="opacity-70">
+                  You are not a member of any groups yet.
+                </span>
               </div>
             </li>
           </ul>
 
-          <.form for={@form} phx-change="validate" phx-submit="submit">
+          <.form
+            :if={Ash.can?({Group, :create}, @current_scope)}
+            class="flex-1"
+            for={@form}
+            phx-change="validate"
+            phx-submit="submit"
+          >
             <div class="card bg-base-300">
               <div class="card-body">
                 <.input

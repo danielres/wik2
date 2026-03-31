@@ -27,10 +27,12 @@ defmodule Qblog.Accounts.GroupUserRelation do
 
   policies do
     policy action_type(:read) do
+      # TODO: allow group owners and members to read the relations
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 
     policy action_type(:create) do
+      # TODO: allow group owners to invite users to their groups
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 
@@ -42,6 +44,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
   attributes do
     uuid_v7_primary_key :id
     timestamps()
+    # TODO: add membership role (e.g. owner, admin, member)
   end
 
   relationships do

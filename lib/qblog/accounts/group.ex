@@ -74,6 +74,10 @@ defmodule Qblog.Accounts.Group do
       allow_nil? false
     end
 
+    has_many :memberships, Qblog.Accounts.GroupUserRelation do
+      destination_attribute :group_id
+    end
+
     many_to_many :users, Qblog.Accounts.User do
       through Qblog.Accounts.GroupUserRelation
       source_attribute_on_join_resource :group_id

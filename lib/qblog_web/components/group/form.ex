@@ -1,7 +1,6 @@
 defmodule QblogWeb.Components.Group.Form do
   use Phoenix.Component
 
-  alias Qblog.Accounts.Group
   alias QblogWeb.CoreComponents
 
   attr :form, :any, required: true

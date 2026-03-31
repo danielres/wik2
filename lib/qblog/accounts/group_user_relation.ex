@@ -46,7 +46,13 @@ defmodule Qblog.Accounts.GroupUserRelation do
   attributes do
     uuid_v7_primary_key :id
     timestamps()
-    # TODO: add membership role (e.g. owner, admin, member)
+
+    attribute :type, :atom do
+      constraints one_of: [:owner, :admin, :member]
+      public? true
+      allow_nil? false
+      default :member
+    end
   end
 
   relationships do

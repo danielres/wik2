@@ -1,9 +1,10 @@
 defmodule QblogWeb.HomeLive do
   use QblogWeb, :live_view
 
+  alias AshPhoenix.Form
   alias Qblog.Accounts
   alias Qblog.Accounts.Group
-  alias AshPhoenix.Form
+  alias QblogWeb.Components
   alias Utils.Log
 
   on_mount {QblogWeb.LiveUserAuth, :live_user_required}
@@ -42,25 +43,12 @@ defmodule QblogWeb.HomeLive do
             </li>
           </ul>
 
-          <.form
+          <Components.Group.Form.render
             :if={Ash.can?({Group, :create}, @current_scope)}
             class="flex-1"
-            for={@form}
-            phx-change="validate"
-            phx-submit="submit"
-          >
-            <div class="card bg-base-300">
-              <div class="card-body">
-                <.input
-                  :for={field <- @fields}
-                  type={Group.field_type_for(field)}
-                  field={@form[field]}
-                  label={field |> Phoenix.Naming.humanize()}
-                />
-                <.button type="submit" class="btn btn-primary mt-3">Create group</.button>
-              </div>
-            </div>
-          </.form>
+            fields={@fields}
+            form={@form}
+          />
         </div>
       </Layouts.container>
     </Layouts.app>

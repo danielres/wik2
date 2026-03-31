@@ -54,6 +54,11 @@ defmodule Qblog.Accounts.GroupUserRelation do
     end
   end
 
+  calculations do
+    calculate :type_sort, :integer,
+              expr(fragment("CASE WHEN ? = 'owner' THEN 0 WHEN ? = 'admin' THEN 1 ELSE 2 END", type, type))
+  end
+
   relationships do
     belongs_to :group, Qblog.Accounts.Group do
       allow_nil? false

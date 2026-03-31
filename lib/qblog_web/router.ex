@@ -35,36 +35,6 @@ defmodule QblogWeb.Router do
   end
 
   scope "/", QblogWeb do
-    ash_authentication_live_session :authenticated_routes do
-      pipe_through [:browser]
-      live "/", HomeLive, :index
-      live "/me", MeLive, :index
-
-      scope "/:group_name" do
-        pipe_through [:group_tenant]
-        live "/", GroupLive
-        live "/blog", BlogLive, :index
-        live "/tree", PageTreeLive, :index
-
-        scope "/wiki" do
-          live "/*path", PageLive, :index
-        end
-
-        # in each liveview, add one of the following at the top of the module:
-        #
-        # If an authenticated user & tenant must be present:
-        # on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
-        #
-        # If an authenticated user must be present:
-        # on_mount {QblogWeb.LiveUserAuth, :live_user_required}
-        #
-        # If an authenticated user must *not* be present:
-        # on_mount {QblogWeb.LiveUserAuth, :live_no_user}
-      end
-    end
-  end
-
-  scope "/", QblogWeb do
     pipe_through :browser
 
     auth_routes AuthController, Qblog.Accounts.User, path: "/auth"
@@ -97,6 +67,36 @@ defmodule QblogWeb.Router do
       auth_routes_prefix: "/auth",
       overrides: [QblogWeb.AuthOverrides, Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI]
     )
+  end
+
+  scope "/", QblogWeb do
+    ash_authentication_live_session :authenticated_routes do
+      pipe_through [:browser]
+      live "/", HomeLive, :index
+      live "/me", MeLive, :index
+
+      scope "/:group_name" do
+        pipe_through [:group_tenant]
+        live "/", GroupLive
+        live "/blog", BlogLive, :index
+        live "/tree", PageTreeLive, :index
+
+        scope "/wiki" do
+          live "/*path", PageLive, :index
+        end
+
+        # in each liveview, add one of the following at the top of the module:
+        #
+        # If an authenticated user & tenant must be present:
+        # on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
+        #
+        # If an authenticated user must be present:
+        # on_mount {QblogWeb.LiveUserAuth, :live_user_required}
+        #
+        # If an authenticated user must *not* be present:
+        # on_mount {QblogWeb.LiveUserAuth, :live_no_user}
+      end
+    end
   end
 
   # Other scopes may use custom stacks.

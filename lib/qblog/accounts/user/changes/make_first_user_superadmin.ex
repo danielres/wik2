@@ -1,4 +1,4 @@
-defmodule Qblog.Changes.MakeFirstUserSuperadmin do
+defmodule Qblog.Accounts.User.Changes.MakeFirstUserSuperadmin do
   @moduledoc """
   A change that sets the role of the very first user to :superadmin.
   """

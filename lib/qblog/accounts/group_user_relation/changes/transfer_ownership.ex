@@ -1,4 +1,4 @@
-defmodule Qblog.Changes.GroupUserRelationTransferOwnership do
+defmodule Qblog.Accounts.GroupUserRelation.Changes.TransferOwnership do
   use Ash.Resource.Change
 
   alias Ash.Changeset

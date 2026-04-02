@@ -1,4 +1,4 @@
-defmodule Qblog.Changes.CreateGroupWithOwnerMembership do
+defmodule Qblog.Accounts.Group.Changes.CreateWithOwnerMembership do
   use Ash.Resource.Change
 
   alias Ash.Changeset

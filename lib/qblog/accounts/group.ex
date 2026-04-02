@@ -1,4 +1,7 @@
 defmodule Qblog.Accounts.Group do
+  alias Qblog.Accounts.Group.Changes
+  alias Qblog.Accounts.Group.Checks
+
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Accounts,
@@ -29,7 +32,7 @@ defmodule Qblog.Accounts.Group do
 
     create :create do
       accept [:name, :description]
-      change Qblog.Changes.CreateGroupWithOwnerMembership
+      change Changes.CreateWithOwnerMembership
     end
   end
 
@@ -42,7 +45,7 @@ defmodule Qblog.Accounts.Group do
 
     policy action_type(:create) do
       authorize_if actor_attribute_equals(:role, :superadmin)
-      authorize_if Qblog.Checks.ActorHasAnyGroupMembership
+      authorize_if Checks.ActorHasAnyGroupMembership
     end
 
     policy action_type(:update) do

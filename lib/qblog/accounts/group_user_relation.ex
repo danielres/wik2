@@ -37,7 +37,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
         allow_nil? false
       end
 
-      change Qblog.Changes.GroupUserRelationTransferOwnership
+      change Qblog.Accounts.GroupUserRelation.Changes.TransferOwnership
     end
   end
 

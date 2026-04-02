@@ -6,6 +6,9 @@ defmodule Qblog.Accounts.User do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAuthentication, AshAdmin.Resource]
 
+  alias Qblog.Accounts.User.Changes
+  alias Qblog.Accounts.User.Senders
+
   postgres do
     table "users"
     repo Qblog.Repo
@@ -38,7 +41,7 @@ defmodule Qblog.Accounts.User do
         registration_enabled? true
         require_interaction? true
 
-        sender Qblog.Accounts.User.Senders.SendMagicLinkEmail
+        sender Senders.SendMagicLinkEmail
       end
 
       remember_me :remember_me
@@ -109,7 +112,7 @@ defmodule Qblog.Accounts.User do
   end
 
   changes do
-    change Qblog.Changes.MakeFirstUserSuperadmin, on: :create
+    change Changes.MakeFirstUserSuperadmin, on: :create
   end
 
   attributes do

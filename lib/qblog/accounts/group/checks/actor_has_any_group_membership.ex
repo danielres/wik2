@@ -1,4 +1,4 @@
-defmodule Qblog.Checks.ActorHasAnyGroupMembership do
+defmodule Qblog.Accounts.Group.Checks.ActorHasAnyGroupMembership do
   use Ash.Policy.SimpleCheck
 
   require Ash.Query

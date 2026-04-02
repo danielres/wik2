@@ -55,7 +55,7 @@ defmodule QblogWeb.GroupLive do
           open?={@form != nil}
           testid="update-group-dialog"
         >
-          <Components.Group.Form.render
+          <Components.Group.form
             :if={Ash.can?({@group, :update}, @current_scope)}
             action_type="update"
             form={@form}

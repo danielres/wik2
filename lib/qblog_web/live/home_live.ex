@@ -23,26 +23,13 @@ defmodule QblogWeb.HomeLive do
       <Layouts.container>
         <h1 class="text-2xl font-[100]">Your groups</h1>
         <div class="flex gap-4">
-          <ul class="space-y-2 flex-1">
-            <li class="card bg-base-100 shadow">
-              <div class="card-body">
-                <.link
-                  :for={group <- @groups}
-                  class="btn btn-soft justify-between"
-                  navigate={~p"/#{group.name}"}
-                >
-                  {group.name}
-                  <span class="font-thin">{group.author |> to_string}</span>
-                </.link>
+          <div class="card bg-base-100 shadow flex-1">
+            <div class="card-body">
+              <Components.Group.list groups={@groups} />
+            </div>
+          </div>
 
-                <span :if={@groups == []} class="opacity-70">
-                  You are not a member of any groups yet.
-                </span>
-              </div>
-            </li>
-          </ul>
-
-          <Components.Group.Form.render
+          <Components.Group.form
             :if={Ash.can?({Group, :create}, @current_scope)}
             class="flex-1"
             form={@form}

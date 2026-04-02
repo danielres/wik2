@@ -10,10 +10,6 @@ defmodule Qblog.Accounts do
     show? true
   end
 
-  forms do
-    form :create_group, args: [:name]
-  end
-
   resources do
     resource Qblog.Accounts.Token
     resource Qblog.Accounts.User

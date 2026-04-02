@@ -21,6 +21,50 @@ defmodule Qblog.Wiki.PageTree.TreeQueriesTest do
     assert nil == TreeQueries.get_node(nodes, 999)
   end
 
+  test "get_node_parent returns the parent node" do
+    nodes = [
+      %{id: 1, page_id: nil, parent_id: nil},
+      %{id: 2, page_id: nil, parent_id: 1}
+    ]
+
+    assert %{id: 1, page_id: nil, parent_id: nil} == TreeQueries.get_node_parent(nodes, 2)
+  end
+
+  test "get_node_ancestors returns the node ancestors" do
+    nodes = [
+      %{id: 1, page_id: nil, parent_id: nil},
+      %{id: 2, page_id: nil, parent_id: 1},
+      %{id: 3, page_id: nil, parent_id: 2},
+      %{id: 4, page_id: nil, parent_id: 2}
+    ]
+
+    assert [
+             %{id: 3, page_id: nil, parent_id: 2},
+             %{id: 2, page_id: nil, parent_id: 1},
+             %{id: 1, page_id: nil, parent_id: nil}
+           ] == TreeQueries.get_node_ancestors(nodes, 3)
+  end
+
+  test "get_node_path_segments returns the node path as a list of slugs" do
+    nodes = [
+      %{id: 1, page_id: nil, parent_id: nil, slug: "docs"},
+      %{id: 2, page_id: nil, parent_id: 1, slug: "faq"},
+      %{id: 3, page_id: nil, parent_id: 2, slug: "install"}
+    ]
+
+    assert ["docs", "faq", "install"] == TreeQueries.get_node_path_segments(nodes, 3)
+  end
+
+  test "get_node_path returns the node path as a string" do
+    nodes = [
+      %{id: 1, page_id: nil, parent_id: nil, slug: "docs"},
+      %{id: 2, page_id: nil, parent_id: 1, slug: "faq"},
+      %{id: 3, page_id: nil, parent_id: 2, slug: "install"}
+    ]
+
+    assert "docs/faq/install" == TreeQueries.get_node_path(nodes, 3)
+  end
+
   test "get_node_by_path finds a node from a list of slugs" do
     nodes = [
       %{id: 1, page_id: nil, parent_id: nil, slug: "docs"},

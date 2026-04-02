@@ -16,6 +16,30 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
     Enum.filter(nodes, &is_nil(&1.parent_id))
   end
 
+  def get_node_parent(nodes, node_id) do
+    case get_node(nodes, node_id) do
+      nil -> nil
+      node -> get_node(nodes, node.parent_id)
+    end
+  end
+
+  def get_node_ancestors(nodes, node_id) do
+    case get_node(nodes, node_id) do
+      nil -> []
+      node -> [node | get_node_ancestors(nodes, node.parent_id)]
+    end
+  end
+
+  def get_node_path_segments(nodes, node_id) do
+    get_node_ancestors(nodes, node_id)
+    |> Enum.reverse()
+    |> Enum.map(& &1.slug)
+  end
+
+  def get_node_path(nodes, node_id) do
+    get_node_path_segments(nodes, node_id) |> Enum.join("/")
+  end
+
   def child_nodes(nodes, node_id) do
     Enum.filter(nodes, &(&1.parent_id == node_id))
   end

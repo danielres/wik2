@@ -6,6 +6,8 @@ defmodule Qblog.Accounts.User do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAuthentication, AshAdmin.Resource]
 
+  alias Qblog.Accounts.Group
+  alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Accounts.User.Changes
   alias Qblog.Accounts.User.Senders
 
@@ -132,8 +134,8 @@ defmodule Qblog.Accounts.User do
   end
 
   relationships do
-    many_to_many :groups, Qblog.Accounts.Group do
-      through Qblog.Accounts.GroupUserRelation
+    many_to_many :groups, Group do
+      through GroupUserRelation
       source_attribute_on_join_resource :user_id
       destination_attribute_on_join_resource :group_id
     end

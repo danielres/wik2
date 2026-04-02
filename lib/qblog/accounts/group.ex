@@ -1,6 +1,8 @@
 defmodule Qblog.Accounts.Group do
   alias Qblog.Accounts.Group.Changes
   alias Qblog.Accounts.Group.Checks
+  alias Qblog.Accounts.User
+  alias Qblog.Accounts.GroupUserRelation
 
   use Ash.Resource,
     otp_app: :qblog,
@@ -74,18 +76,18 @@ defmodule Qblog.Accounts.Group do
   end
 
   relationships do
-    belongs_to :author, Qblog.Accounts.User do
+    belongs_to :author, User do
       destination_attribute :id
       allow_nil? false
     end
 
-    has_many :memberships, Qblog.Accounts.GroupUserRelation do
+    has_many :memberships, GroupUserRelation do
       destination_attribute :group_id
       default_sort type_sort: :asc, inserted_at: :asc
     end
 
-    many_to_many :users, Qblog.Accounts.User do
-      through Qblog.Accounts.GroupUserRelation
+    many_to_many :users, User do
+      through GroupUserRelation
       source_attribute_on_join_resource :group_id
       destination_attribute_on_join_resource :user_id
     end

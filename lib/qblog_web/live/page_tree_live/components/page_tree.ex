@@ -23,6 +23,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
   attr :nodes_flat, :list, required: true
   attr :nodes_tree, :list, required: false
   slot :action_buttons, required: false
+  slot :label, required: false
 
   def page_tree_nodes(assigns) do
     assigns =
@@ -46,6 +47,10 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
           <:action_buttons :let={props}>
             {render_slot(@action_buttons, props)}
           </:action_buttons>
+
+          <:label :let={props}>
+            {render_slot(@label, props)}
+          </:label>
         </.page_tree_node>
       </li>
     </ul>
@@ -56,6 +61,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
   slot :action_buttons, required: true
+  slot :label, required: true
 
   defp page_tree_node(assigns) do
     ~H"""
@@ -64,13 +70,17 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
         "group",
         "flex items-center justify-between gap-3"
       ]}>
-        <.node_label
-          node={@node}
-          class={[
-            "opacity-80 group-has-[button:hover]:opacity-100",
-            "transition"
-          ]}
-        />
+        <div class={[
+          "flex gap-2",
+          "opacity-80 group-has-[button:hover]:opacity-100",
+          "transition"
+        ]}>
+          <div class="flex">
+            <.icon_chevron />
+          </div>
+
+          {render_slot(@label, %{node: @node})}
+        </div>
 
         {render_slot(@action_buttons, %{node: @node, depth: @depth})}
       </div>
@@ -84,26 +94,11 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
         <:action_buttons :let={props}>
           {render_slot(@action_buttons, props)}
         </:action_buttons>
+        <:label :let={props}>
+          {render_slot(@label, props)}
+        </:label>
       </.page_tree_nodes>
     </.node_wrapper>
-    """
-  end
-
-  def node_label(assigns) do
-    ~H"""
-    <div class={["flex gap-2", @class]}>
-      <div class="flex">
-        <.icon_chevron />
-      </div>
-
-      <div class="flex gap-3 items-baseline">
-        <span>{@node[:title]}</span>
-        <span class="opacity-60 text-xs">
-          slug: {@node[:slug]} -
-          id: {@node.id} - {if @node.page_id, do: "page: #{@node.page_id}", else: "no page"}
-        </span>
-      </div>
-    </div>
     """
   end
 

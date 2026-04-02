@@ -2,6 +2,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   use QblogWeb, :live_component
 
   alias Qblog.Wiki.PageTree
+  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.Components.Modal
   alias QblogWeb.PageTreeLive.Components
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
@@ -59,6 +60,24 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             remove_target={@myself}
           />
         </:action_buttons>
+
+        <:label :let={props}>
+          <div class="flex gap-1 items-center">
+            <span>{props.node[:title]}</span>
+
+            <.link
+              navigate={@current_scope |> link_target_for_node(@page_tree.nodes, props.node)}
+              class="opacity-50 hover:opacity-100 transition"
+            >
+              <.icon name="hero-arrow-up-right-micro" class="" />
+            </.link>
+            <span class="badge-xs bg-base-200 px-2 font-mono">{props.node[:slug]}</span>
+            <span class="badge-xs bg-base-200 px-2">id {props.node.id}</span>
+            <span class="badge-xs bg-base-200 px-2 opacity-50">
+              {if props.node.page_id, do: "page: #{props.node.page_id}", else: "no page"}
+            </span>
+          </div>
+        </:label>
       </Components.PageTree.render>
 
       <Modal.render
@@ -142,6 +161,14 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
       />
     </ActionButtons.wrapper>
     """
+  end
+
+  # helpers ==================================================================
+  defp link_target_for_node(scope, nodes, node) do
+    case TreeQueries.get_node_path(nodes, node.id) do
+      nil -> "#"
+      path -> "/#{scope.tenant.name}/wiki/#{path}"
+    end
   end
 
   # move node ================================================================

@@ -19,7 +19,6 @@ defmodule Qblog.Wiki.Page do
     ]
 
     create :create do
-      accept [:title, :slug]
       change relate_actor(:author, allow_nil?: false)
     end
   end
@@ -43,16 +42,6 @@ defmodule Qblog.Wiki.Page do
   attributes do
     uuid_v7_primary_key :id
     timestamps()
-
-    attribute :title, :string do
-      public? true
-      allow_nil? false
-    end
-
-    attribute :slug, :string do
-      public? true
-      allow_nil? false
-    end
   end
 
   relationships do

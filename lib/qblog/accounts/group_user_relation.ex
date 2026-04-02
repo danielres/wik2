@@ -24,12 +24,33 @@ defmodule Qblog.Accounts.GroupUserRelation do
       primary? true
       accept [:group_id, :user_id, :type]
     end
+
+    update :update do
+      accept [:type]
+      public? false
+    end
+
+    update :transfer_ownership do
+      require_atomic? false
+
+      argument :target_membership_id, :uuid do
+        allow_nil? false
+      end
+
+      change Qblog.Changes.GroupUserRelationTransferOwnership
+    end
   end
 
   policies do
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :superadmin)
       authorize_if relates_to_actor_via([:group, :users])
+    end
+
+    policy action(:transfer_ownership) do
+      forbid_unless expr(type == :owner)
+      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if expr(user_id == ^actor(:id))
     end
 
     policy action_type(:create) do
@@ -54,11 +75,6 @@ defmodule Qblog.Accounts.GroupUserRelation do
     end
   end
 
-  calculations do
-    calculate :type_sort, :integer,
-              expr(fragment("CASE WHEN ? = 'owner' THEN 0 WHEN ? = 'admin' THEN 1 ELSE 2 END", type, type))
-  end
-
   relationships do
     belongs_to :group, Qblog.Accounts.Group do
       allow_nil? false
@@ -67,6 +83,18 @@ defmodule Qblog.Accounts.GroupUserRelation do
     belongs_to :user, Qblog.Accounts.User do
       allow_nil? false
     end
+  end
+
+  calculations do
+    calculate :type_sort,
+              :integer,
+              expr(
+                fragment(
+                  "CASE WHEN ? = 'owner' THEN 0 WHEN ? = 'admin' THEN 1 ELSE 2 END",
+                  type,
+                  type
+                )
+              )
   end
 
   identities do

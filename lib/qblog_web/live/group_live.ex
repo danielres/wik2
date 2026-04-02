@@ -16,6 +16,7 @@ defmodule QblogWeb.GroupLive do
     socket =
       socket
       |> assign(form: nil)
+      |> assign(transfer_ownership_form: nil)
       |> assign(group: group)
 
     {:ok, socket}
@@ -61,6 +62,51 @@ defmodule QblogWeb.GroupLive do
           />
         </Modal.render>
 
+        <Modal.render
+          cancel="transfer_ownership_cancel"
+          cancel_testid="transfer-ownership-cancel"
+          open?={@transfer_ownership_form != nil}
+          testid="transfer-ownership-dialog"
+        >
+          <div class="alert bg-error/50 text-error-content mb-4">
+            <.icon name="hero-exclamation-circle-micro self-start" class="size-6 opacity-50" />
+            <div class="leading-tight space-y-2">
+              <p class="font-bold">This action will transfer ownership to the selected member.</p>
+              <p>
+                You will become administrator of the group, and won't be able to transfer ownership again unless the new owner transfers it back to you.
+              </p>
+            </div>
+          </div>
+
+          <h3 class="text-xl mb-2">Select new owner</h3>
+
+          <ul class="space-y-0.5">
+            <li :for={membership <- @group.memberships |> Enum.filter(&(&1.type != :owner))}>
+              <button
+                class={[
+                  "w-full",
+                  "opacity-80 hover:opacity-100 transition-all cursor-pointer",
+                  "flex items-center justify-between gap-1 flex-wrap",
+                  "rounded bg-base-300 hover:bg-info/20 px-3 py-2"
+                ]}
+                phx-click="transfer_ownership"
+                phx-value-target_membership_id={membership.id}
+              >
+                <span>{membership.user |> to_string()}</span>
+
+                <span class={[
+                  "flex flex-wrap gap-1",
+                  "text-sm opacity-70"
+                ]}>
+                  <span class={["badge badge-sm px-2 bg-base-300"]}>
+                    {membership.type |> Atom.to_string() |> String.capitalize()}
+                  </span>
+                </span>
+              </button>
+            </li>
+          </ul>
+        </Modal.render>
+
         <div class="opacity-80">
           {@group.description}
         </div>
@@ -84,6 +130,14 @@ defmodule QblogWeb.GroupLive do
                   "text-sm opacity-70"
                 ]}>
                   <span class={["badge badge-sm px-2 bg-base-300"]}>
+                    <button
+                      :if={Ash.can?({membership, :transfer_ownership}, @current_scope)}
+                      phx-click="transfer_ownership_start"
+                      phx-value-membership_id={membership.id}
+                      class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <.icon name="hero-cog-micro" class="" />
+                    </button>
                     {membership.type |> Atom.to_string() |> String.capitalize()}
                   </span>
 
@@ -98,6 +152,49 @@ defmodule QblogWeb.GroupLive do
       </Layouts.group>
     </Layouts.app>
     """
+  end
+
+  @impl true
+  def handle_event("transfer_ownership_start", params, socket) do
+    group = socket.assigns.group
+    scope = socket.assigns.current_scope
+    membership_id = params["membership_id"]
+
+    case Enum.find(group.memberships, &(&1.id == membership_id)) do
+      nil ->
+        {:noreply, socket}
+
+      membership ->
+        form = membership |> Form.for_update(:transfer_ownership, scope: scope) |> to_form()
+        socket = socket |> assign(transfer_ownership_form: form)
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("transfer_ownership_cancel", _params, socket) do
+    socket = socket |> assign(transfer_ownership_form: nil)
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "transfer_ownership",
+        %{"target_membership_id" => target_membership_id},
+        socket
+      ) do
+    scope = socket.assigns.current_scope
+    form = socket.assigns.transfer_ownership_form
+
+    case Form.submit(form, params: %{target_membership_id: target_membership_id}) do
+      {:ok, _membership} ->
+        group = socket.assigns.group |> Ash.load!([memberships: [:user]], scope: scope)
+
+        {:noreply,
+         socket
+         |> assign(group: group, transfer_ownership_form: nil)}
+
+      {:error, form} ->
+        {:noreply, socket |> assign(transfer_ownership_form: form)}
+    end
   end
 
   @impl true

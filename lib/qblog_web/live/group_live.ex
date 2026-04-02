@@ -68,85 +68,19 @@ defmodule QblogWeb.GroupLive do
           open?={@transfer_ownership_form != nil}
           testid="transfer-ownership-dialog"
         >
-          <div class="alert bg-error/50 text-error-content mb-4">
-            <.icon name="hero-exclamation-circle-micro self-start" class="size-6 opacity-50" />
-            <div class="leading-tight space-y-2">
-              <p class="font-bold">This action will transfer ownership to the selected member.</p>
-              <p>
-                You will become administrator of the group, and won't be able to transfer ownership again unless the new owner transfers it back to you.
-              </p>
-            </div>
-          </div>
-
-          <h3 class="text-xl mb-2">Select new owner</h3>
-
-          <ul class="space-y-0.5">
-            <li :for={membership <- @group.memberships |> Enum.filter(&(&1.type != :owner))}>
-              <button
-                class={[
-                  "w-full",
-                  "opacity-80 hover:opacity-100 transition-all cursor-pointer",
-                  "flex items-center justify-between gap-1 flex-wrap",
-                  "rounded bg-base-300 hover:bg-info/20 px-3 py-2"
-                ]}
-                phx-click="transfer_ownership"
-                phx-value-target_membership_id={membership.id}
-              >
-                <span>{membership.user |> to_string()}</span>
-
-                <span class={[
-                  "flex flex-wrap gap-1",
-                  "text-sm opacity-70"
-                ]}>
-                  <span class={["badge badge-sm px-2 bg-base-300"]}>
-                    {membership.type |> Atom.to_string() |> String.capitalize()}
-                  </span>
-                </span>
-              </button>
-            </li>
-          </ul>
+          <.new_owner_selector group={@group} />
         </Modal.render>
 
-        <div class="opacity-80">
-          {@group.description}
-        </div>
+        <div class="opacity-80">{@group.description}</div>
 
         <div class="card card-sm bg-base-100">
           <div class="card-body">
             <h2 class="text-xl">Members</h2>
 
-            <ul class="space-y-0.5">
-              <li
-                :for={membership <- @group.memberships}
-                class={[
-                  "flex items-center justify-between gap-1 flex-wrap",
-                  "rounded bg-base-200/50 px-3 py-2"
-                ]}
-              >
-                <span>{membership.user |> to_string()}</span>
-
-                <span class={[
-                  "flex flex-wrap gap-1",
-                  "text-sm opacity-70"
-                ]}>
-                  <span class={["badge badge-sm px-2 bg-base-300"]}>
-                    <button
-                      :if={Ash.can?({membership, :transfer_ownership}, @current_scope)}
-                      phx-click="transfer_ownership_start"
-                      phx-value-membership_id={membership.id}
-                      class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      <.icon name="hero-cog-micro" class="" />
-                    </button>
-                    {membership.type |> Atom.to_string() |> String.capitalize()}
-                  </span>
-
-                  <span class={["badge badge-sm px-2 bg-base-300", "whitespace-nowrap"]}>
-                    Since {Calendar.strftime(membership.inserted_at, "%Y-%m-%d %H:%M")}
-                  </span>
-                </span>
-              </li>
-            </ul>
+            <.memberships_list
+              memberships={@group.memberships}
+              current_scope={@current_scope}
+            />
           </div>
         </div>
       </Layouts.group>
@@ -233,5 +167,85 @@ defmodule QblogWeb.GroupLive do
          socket
          |> assign(form: form)}
     end
+  end
+
+  defp new_owner_selector(assigns) do
+    ~H"""
+    <div class="alert bg-error/50 text-error-content mb-4">
+      <.icon name="hero-exclamation-circle-micro self-start" class="size-6 opacity-50" />
+
+      <div class="leading-tight space-y-2">
+        <p class="font-bold">This action will transfer ownership to the selected member.</p>
+        <p>
+          You will become administrator of the group, and won't be able to transfer ownership again unless the new owner transfers it back to you.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="text-xl mb-2">Select new owner</h3>
+
+    <ul class="space-y-0.5">
+      <li :for={membership <- @group.memberships |> Enum.filter(&(&1.type != :owner))}>
+        <button
+          class={[
+            "w-full",
+            "opacity-80 hover:opacity-100 transition-all cursor-pointer",
+            "flex items-center justify-between gap-1 flex-wrap",
+            "rounded bg-base-300 hover:bg-info/20 px-3 py-2"
+          ]}
+          phx-click="transfer_ownership"
+          phx-value-target_membership_id={membership.id}
+        >
+          <span>{membership.user |> to_string()}</span>
+
+          <span class={[
+            "flex flex-wrap gap-1",
+            "text-sm opacity-70"
+          ]}>
+            <span class={["badge badge-sm px-2 bg-base-300"]}>
+              {membership.type |> Atom.to_string() |> String.capitalize()}
+            </span>
+          </span>
+        </button>
+      </li>
+    </ul>
+    """
+  end
+
+  def memberships_list(assigns) do
+    ~H"""
+    <ul class="space-y-0.5">
+      <li
+        :for={membership <- @memberships}
+        class={[
+          "flex items-center justify-between gap-1 flex-wrap",
+          "rounded bg-base-200/50 px-3 py-2"
+        ]}
+      >
+        <span>{membership.user |> to_string()}</span>
+
+        <span class={[
+          "flex flex-wrap gap-1",
+          "text-sm opacity-70"
+        ]}>
+          <span class={["badge badge-sm px-2 bg-base-300"]}>
+            <button
+              :if={Ash.can?({membership, :transfer_ownership}, @current_scope)}
+              phx-click="transfer_ownership_start"
+              phx-value-membership_id={membership.id}
+              class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+            >
+              <.icon name="hero-cog-micro" class="" />
+            </button>
+            {membership.type |> Atom.to_string() |> String.capitalize()}
+          </span>
+
+          <span class={["badge badge-sm px-2 bg-base-300", "whitespace-nowrap"]}>
+            Since {Calendar.strftime(membership.inserted_at, "%Y-%m-%d %H:%M")}
+          </span>
+        </span>
+      </li>
+    </ul>
+    """
   end
 end

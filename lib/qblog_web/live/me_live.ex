@@ -12,6 +12,7 @@ defmodule QblogWeb.MeLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
+      <Layouts.container>
       <div>
         <h1 class="text-2xl font-[100] flex justify-between items-center">
           <span>Your profile</span>
@@ -37,6 +38,7 @@ defmodule QblogWeb.MeLive do
           </table>
         </div>
       </div>
+      </Layouts.container>>
     </Layouts.app>
     """
   end

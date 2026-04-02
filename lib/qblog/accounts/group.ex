@@ -78,7 +78,7 @@ defmodule Qblog.Accounts.Group do
 
     has_many :memberships, Qblog.Accounts.GroupUserRelation do
       destination_attribute :group_id
-      default_sort [type_sort: :asc, inserted_at: :asc]
+      default_sort type_sort: :asc, inserted_at: :asc
     end
 
     many_to_many :users, Qblog.Accounts.User do

@@ -123,12 +123,15 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
             <.input hidden field={@form[:slug]} value={@auto_slug} />
 
             <div class={["flex-grow"]}>
-              <div class={[
-                "opacity-80",
-                "font-mono",
-                "w-full",
-                "!bg-transparent"
-              ]} data-testid={data_auto_slug_testid(@auto_slug)}>
+              <div
+                class={[
+                  "opacity-80",
+                  "font-mono",
+                  "w-full",
+                  "!bg-transparent"
+                ]}
+                data-testid={data_auto_slug_testid(@auto_slug)}
+              >
                 {@auto_slug}
               </div>
             </div>

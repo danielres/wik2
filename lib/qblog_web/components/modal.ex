@@ -1,6 +1,8 @@
 defmodule QblogWeb.Components.Modal do
   use Phoenix.Component
 
+  alias Phoenix.LiveView.JS
+
   attr :"phx-target", :any, required: false
   attr :cancel, :string, required: false
   attr :cancel_testid, :string, default: nil
@@ -22,6 +24,7 @@ defmodule QblogWeb.Components.Modal do
         :if={@open?}
         class={["modal-box", "min-w-sm", "bg-base-200"]}
         phx-click-away={@cancel}
+        phx-mounted={JS.focus_first(to: "form")}
         phx-target={assigns[:"phx-target"]}
       >
         <button

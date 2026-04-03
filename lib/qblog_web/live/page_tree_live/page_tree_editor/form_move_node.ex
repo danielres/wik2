@@ -80,6 +80,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
             target={@myself}
           />
         </:action_buttons>
+
+        <:label :let={props}>
+          <span>{props.node[:title]}</span>
+        </:label>
       </Components.PageTree.render>
     </div>
     """

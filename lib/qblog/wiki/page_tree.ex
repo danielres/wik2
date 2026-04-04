@@ -18,6 +18,7 @@ defmodule Qblog.Wiki.PageTree do
     define :link_page, args: [:node_id, :page_id]
     define :remove_node, args: [:node_id]
     define :move_node, args: [:node_id, :new_parent_id]
+    define :ensure_page_tree, action: :ensure_page_tree, args: []
   end
 
   actions do
@@ -30,7 +31,7 @@ defmodule Qblog.Wiki.PageTree do
       change Qblog.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
     end
 
-    action :get_or_create_page_tree, :struct do
+    action :ensure_page_tree, :struct do
       constraints instance_of: __MODULE__
       run Qblog.Wiki.PageTree.Actions.GetOrCreate
     end
@@ -115,22 +116,27 @@ defmodule Qblog.Wiki.PageTree do
 
   policies do
     policy action_type(:read) do
+      # TODO: implement proper permissions
       authorize_if always()
     end
 
     policy action_type(:create) do
+      # TODO: implement proper permissions
       authorize_if always()
     end
 
     policy action_type(:update) do
+      # TODO: implement proper permissions
       authorize_if always()
     end
 
     policy action_type(:destroy) do
+      # TODO: implement proper permissions
       authorize_if always()
     end
 
-    policy action(:get_or_create_page_tree) do
+    policy action(:ensure_page_tree) do
+      # TODO: implement proper permissions
       authorize_if always()
     end
   end

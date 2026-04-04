@@ -18,20 +18,17 @@ defmodule Qblog.Wiki do
   end
 
   resources do
-    resource Qblog.Wiki.PageTree do
-      define :get_page_tree, action: :get_or_create_page_tree, args: []
-      define :link_page, action: :link_page, args: [:node_id, :page_id]
-      define :create_node_at_path, action: :create_node_at_path, args: [:path, :title, :page_id]
-    end
+    resource Qblog.Wiki.Page
+    resource Qblog.Wiki.PageTree
   end
 
   def load_page_tree(scope) do
-    case get_page_tree(scope: scope) do
+    case PageTree.ensure_page_tree(scope: scope) do
       {:ok, page_tree} ->
         page_tree
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "get_page_tree failed")
+        Log.scoped_error(scope, err, "ensure_page_tree failed")
         %PageTree{nodes: []}
     end
   end
@@ -68,7 +65,7 @@ defmodule Qblog.Wiki do
 
     case Repo.transaction(fn ->
            with {:ok, page} <- Page.create_page(scope: scope),
-                {:ok, page_tree} <- get_page_tree(scope: scope),
+                {:ok, page_tree} <- PageTree.ensure_page_tree(scope: scope),
                 {:ok, _page_tree} <-
                   PageTree.create_node_at_path(page_tree, path, title, page.id, scope: scope) do
              page

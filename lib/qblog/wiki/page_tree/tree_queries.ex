@@ -1,5 +1,4 @@
 defmodule Qblog.Wiki.PageTree.TreeQueries do
-  alias Qblog.Wiki
   alias Qblog.Wiki.PageTree
   alias Qblog.Wiki.PageTree.TreeQueries.ByPath.Get
   alias Utils.Log
@@ -78,12 +77,12 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
   end
 
   defp load_page_tree(scope) do
-    case Wiki.get_page_tree(scope: scope) do
+    case PageTree.ensure_page_tree(scope: scope) do
       {:ok, page_tree} ->
         page_tree
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "get_page_tree failed")
+        Log.scoped_error(scope, err, "ensure_page_tree failed")
         %PageTree{nodes: []}
     end
   end

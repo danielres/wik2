@@ -2,14 +2,14 @@ defmodule QblogWeb.PageTreeEditorTestLive do
   use QblogWeb, :live_view
 
   alias Qblog.Accounts
-  alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.PageTreeEditor
 
   @impl true
   def mount(_params, %{"tenant" => tenant_name}, socket) do
     {:ok, tenant} = Accounts.get_group_by_name(tenant_name, authorize?: false)
     current_scope = %{tenant: tenant}
-    {:ok, page_tree} = Wiki.get_page_tree(scope: current_scope)
+    {:ok, page_tree} = PageTree.ensure_page_tree(scope: current_scope)
 
     {:ok,
      socket

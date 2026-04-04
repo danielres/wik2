@@ -4,7 +4,6 @@ defmodule Qblog.Wiki.PageTree.Node do
 
   alias Qblog.Repo
   alias Qblog.Wiki
-  alias Qblog.Wiki.Page
   alias Utils.Log
 
   attributes do
@@ -58,16 +57,16 @@ defmodule Qblog.Wiki.PageTree.Node do
 
   defp get_or_create_page(scope, %{page_id: page_id}, opts) do
     load = opts |> Keyword.get(:load, [])
-    Page.get_page(page_id, load: load, scope: scope)
+    Wiki.Page.get_page(page_id, load: load, scope: scope)
   end
 
   defp create_page_for_node(node, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
     Repo.transaction(fn ->
-      with {:ok, page} <- Page.create_page(scope: scope),
-           {:ok, page_tree} <- Wiki.get_page_tree(scope: scope),
-           {:ok, _page_tree} <- PageTree.link_page(page_tree, node.id, page.id, scope: scope) do
+      with {:ok, page} <- Wiki.Page.create_page(scope: scope),
+           {:ok, page_tree} <- Wiki.PageTree.ensure_page_tree(scope: scope),
+           {:ok, _page_tree} <- Wiki.PageTree.link_page(page_tree, node.id, page.id, scope: scope) do
         page
       else
         {:error, error} -> Repo.rollback(error)

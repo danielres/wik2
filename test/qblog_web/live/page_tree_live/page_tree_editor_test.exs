@@ -4,7 +4,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
   import Qblog.TestGenerators
   import Phoenix.LiveViewTest
 
-  alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeEditorTestLive
 
   test "add child flow resets on cancel and persists a valid submission", %{conn: conn} do
@@ -100,7 +100,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
   end
 
   defp page_tree_for(tenant) do
-    {:ok, page_tree} = Wiki.get_page_tree(scope: %{tenant: tenant})
+    {:ok, page_tree} = PageTree.ensure_page_tree(scope: %{tenant: tenant})
     page_tree
   end
 

@@ -1,4 +1,4 @@
-defmodule Qblog.Wiki.PageTree.Actions.GetOrCreate do
+defmodule Qblog.Wiki.PageTree.Actions.Ensure do
   use Ash.Resource.Actions.Implementation
 
   alias Qblog.Wiki.PageTree

@@ -33,7 +33,7 @@ defmodule Qblog.Wiki.PageTree do
 
     action :ensure, :struct do
       constraints instance_of: __MODULE__
-      run Qblog.Wiki.PageTree.Actions.GetOrCreate
+      run Qblog.Wiki.PageTree.Actions.Ensure
     end
 
     update :add_child do

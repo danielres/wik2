@@ -1,4 +1,4 @@
-defmodule Qblog.Wiki.PageTree.Changes.CreateByPath do
+defmodule Qblog.Wiki.PageTree.Changes.CreateNodeAtPath do
   use Ash.Resource.Change
 
   alias Qblog.Wiki.PageTree.TreeOps

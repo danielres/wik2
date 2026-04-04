@@ -70,7 +70,7 @@ defmodule Qblog.Wiki.PageTree do
         allow_nil? false
       end
 
-      change Qblog.Wiki.PageTree.Changes.CreateByPath
+      change Qblog.Wiki.PageTree.Changes.CreateNodeAtPath
       change Qblog.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
     end
 

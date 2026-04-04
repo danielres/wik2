@@ -33,7 +33,7 @@ defmodule Qblog.Wiki do
     end
   end
 
-  def load_or_create_node_and_page_at_path(path, opts) do
+  def ensure_node_and_page_at_path(path, opts) do
     scope = Keyword.fetch!(opts, :scope)
     load = Keyword.get(opts, :load, [])
     title = path |> default_page_title_from_path()

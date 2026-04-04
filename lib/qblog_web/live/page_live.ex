@@ -11,7 +11,7 @@ defmodule QblogWeb.PageLive do
     path = Enum.join(params["path"], "/")
 
     {node, page} =
-      path |> Wiki.load_or_create_node_and_page_at_path(scope: scope, load: [:author])
+      path |> Wiki.ensure_node_and_page_at_path(scope: scope, load: [:author])
 
     {:ok,
      socket

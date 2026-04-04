@@ -1,6 +1,4 @@
-# TODO: move to TreeOps
-
-defmodule Qblog.Wiki.PageTree.TreeOps.CreateByPath do
+defmodule Qblog.Wiki.PageTree.TreeOps.CreateNodeAtPath do
   def call(nodes, path, attrs \\ %{})
 
   def call(nodes, path, attrs) when is_binary(path) do

@@ -10,7 +10,9 @@ defmodule QblogWeb.PageLive do
   def mount(params, _session, socket) do
     path = Enum.join(params["path"], "/")
     scope = socket.assigns.current_scope
-    {node, page} = path |> Wiki.load_or_create_node_and_page_at_path(scope: scope, load: [:author])
+
+    {node, page} =
+      path |> Wiki.load_or_create_node_and_page_at_path(scope: scope, load: [:author])
 
     {:ok,
      socket
@@ -105,7 +107,7 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def handle_event("create_page_start", _params, socket) do
-    title = socket.assigns.path |> Wiki.default_page_title()
+    title = socket.assigns.path |> default_page_title_from_path()
     {:noreply, socket |> assign(form_create_page: %{"title" => title} |> to_form())}
   end
 
@@ -118,11 +120,27 @@ defmodule QblogWeb.PageLive do
   def handle_event("create_page_submit", %{"title" => title}, socket) do
     scope = socket.assigns.current_scope
     path = socket.assigns.path
-    {node, page} = path |> Wiki.load_or_create_node_and_page_at_path(scope: scope, load: [:author], title: title)
+
+    {node, page} =
+      path
+      |> Wiki.load_or_create_node_and_page_at_path(scope: scope, load: [:author], title: title)
 
     {:noreply,
      socket
      |> assign(form_create_page: nil)
      |> assign(node: node, page: page)}
+  end
+
+  defp default_page_title_from_path(path) do
+    path
+    |> String.split("/", trim: true)
+    |> List.last()
+    |> case do
+      nil ->
+        ""
+
+      slug ->
+        slug |> String.split("-") |> Enum.map_join(" ", &String.capitalize/1)
+    end
   end
 end

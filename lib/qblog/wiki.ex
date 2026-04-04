@@ -10,6 +10,7 @@ defmodule Qblog.Wiki do
   alias Qblog.Wiki.PageTree
   alias Qblog.Wiki.PageTree.Node
   alias Qblog.Wiki.PageTree.TreeQueries
+  alias Utils.Log
 
   admin do
     show? true
@@ -28,22 +29,15 @@ defmodule Qblog.Wiki do
     end
   end
 
-  def create_page_for_node(node, opts) do
-    scope = Keyword.fetch!(opts, :scope)
+  def load_page_tree(scope) do
+    case get_page_tree(scope: scope) do
+      {:ok, page_tree} ->
+        page_tree
 
-    Repo.transaction(fn ->
-      with {:ok, page} <- create_page(scope: scope),
-           {:ok, page_tree} <- get_page_tree(scope: scope),
-           {:ok, _page_tree} <- PageTree.link_page(page_tree, node.id, page.id, scope: scope) do
-        page
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
-  end
-
-  def default_page_title(path) do
-    path |> Node.Helpers.path_to_default_title()
+      {:error, err} ->
+        Log.scoped_error(scope, err, "get_page_tree failed")
+        %PageTree{nodes: []}
+    end
   end
 
   def load_or_create_node_and_page_at_path(path, opts) do
@@ -67,7 +61,7 @@ defmodule Qblog.Wiki do
         end
 
       {node, _title} ->
-        page = scope |> Node.Helpers.load_or_create_page(node, load: load)
+        page = scope |> Node.load_or_create_page(node, load: load)
         {node, page}
     end
   end

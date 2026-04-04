@@ -47,7 +47,6 @@ defmodule Qblog.Blocs do
         {:error, error} -> Repo.rollback(error)
       end
     end)
-    |> normalize_transaction_result()
   end
 
   defp attachable_attrs(%{id: attachable_id} = parent) do
@@ -79,7 +78,4 @@ defmodule Qblog.Blocs do
     |> Ash.read!(scope: scope)
     |> List.first()
   end
-
-  defp normalize_transaction_result({:ok, result}), do: {:ok, result}
-  defp normalize_transaction_result({:error, error}), do: {:error, error}
 end

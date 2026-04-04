@@ -1,16 +1,14 @@
 defmodule Qblog.Wiki.PageTree.TreeQueries do
-  # TODO: move to TreeOps
-  alias Qblog.Wiki.PageTree.TreeQueries.ByPath.Create
+  alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree
   alias Qblog.Wiki.PageTree.TreeQueries.ByPath.Get
+  alias Utils.Log
 
   def get_node(nodes, node_id) do
     Enum.find(nodes, &(&1.id == node_id))
   end
 
   defdelegate get_node_by_path(nodes, path), to: Get, as: :call
-
-  # TODO: move to TreeOps
-  defdelegate create_by_path(nodes, path, attrs \\ %{}), to: Create, as: :call
 
   def root_nodes(nodes) do
     Enum.filter(nodes, &is_nil(&1.parent_id))
@@ -65,5 +63,28 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
         |> child_nodes(node.id)
         |> Enum.map(&build_subtree(nodes, &1))
     }
+  end
+
+  def load_node_by_path(scope, path) do
+    page_tree = scope |> load_page_tree()
+
+    case get_node_by_path(page_tree.nodes, path) do
+      {:ok, node} ->
+        node
+
+      {:error, _err} ->
+        nil
+    end
+  end
+
+  defp load_page_tree(scope) do
+    case Wiki.get_page_tree(scope: scope) do
+      {:ok, page_tree} ->
+        page_tree
+
+      {:error, err} ->
+        Log.scoped_error(scope, err, "get_page_tree failed")
+        %PageTree{nodes: []}
+    end
   end
 end

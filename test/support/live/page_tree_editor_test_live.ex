@@ -9,7 +9,7 @@ defmodule QblogWeb.PageTreeEditorTestLive do
   def mount(_params, %{"tenant" => tenant_name}, socket) do
     {:ok, tenant} = Accounts.get_group_by_name(tenant_name, authorize?: false)
     current_scope = %{tenant: tenant}
-    {:ok, page_tree} = PageTree.ensure_page_tree(scope: current_scope)
+    {:ok, page_tree} = PageTree.ensure(scope: current_scope)
 
     {:ok,
      socket

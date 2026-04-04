@@ -23,12 +23,12 @@ defmodule Qblog.Wiki do
   end
 
   def load_page_tree(scope) do
-    case PageTree.ensure_page_tree(scope: scope) do
+    case PageTree.ensure(scope: scope) do
       {:ok, page_tree} ->
         page_tree
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "ensure_page_tree failed")
+        Log.scoped_error(scope, err, "PageTree.ensure failed")
         %PageTree{nodes: []}
     end
   end
@@ -64,8 +64,8 @@ defmodule Qblog.Wiki do
     load = Keyword.get(opts, :load, [])
 
     case Repo.transaction(fn ->
-           with {:ok, page} <- Page.create_page(scope: scope),
-                {:ok, page_tree} <- PageTree.ensure_page_tree(scope: scope),
+           with {:ok, page} <- Page.create(scope: scope),
+                {:ok, page_tree} <- PageTree.ensure(scope: scope),
                 {:ok, _page_tree} <-
                   PageTree.create_node_at_path(page_tree, path, title, page.id, scope: scope) do
              page

@@ -100,7 +100,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
   end
 
   defp page_tree_for(tenant) do
-    {:ok, page_tree} = PageTree.ensure_page_tree(scope: %{tenant: tenant})
+    {:ok, page_tree} = PageTree.ensure(scope: %{tenant: tenant})
     page_tree
   end
 

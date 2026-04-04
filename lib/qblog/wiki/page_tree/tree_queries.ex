@@ -77,12 +77,12 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
   end
 
   defp load_page_tree(scope) do
-    case PageTree.ensure_page_tree(scope: scope) do
+    case PageTree.ensure(scope: scope) do
       {:ok, page_tree} ->
         page_tree
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "ensure_page_tree failed")
+        Log.scoped_error(scope, err, "PageTree.ensure failed")
         %PageTree{nodes: []}
     end
   end

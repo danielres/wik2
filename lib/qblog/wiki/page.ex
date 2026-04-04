@@ -11,6 +11,11 @@ defmodule Qblog.Wiki.Page do
     repo Qblog.Repo
   end
 
+  code_interface do
+    define :get_by_id, action: :read, get_by: [:id]
+    define :create, action: :create, args: []
+  end
+
   actions do
     defaults [
       :read,
@@ -21,11 +26,6 @@ defmodule Qblog.Wiki.Page do
     create :create do
       change relate_actor(:author, allow_nil?: false)
     end
-  end
-
-  code_interface do
-    define :get_page, action: :read, get_by: [:id]
-    define :create_page, action: :create, args: []
   end
 
   policies do

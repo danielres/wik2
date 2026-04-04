@@ -36,20 +36,17 @@ defmodule Qblog.Wiki do
   def load_or_create_node_and_page_at_path(path, opts) do
     scope = Keyword.fetch!(opts, :scope)
     load = Keyword.get(opts, :load, [])
-    title = Keyword.get(opts, :title)
+    title = path |> default_page_title_from_path()
     node = scope |> TreeQueries.load_node_by_path(path)
 
     case {node, title} do
-      {nil, nil} ->
-        {nil, nil}
-
       {nil, title} ->
         case path |> create_page_and_node_at_path(title, scope: scope, load: load) do
           {:ok, node, page} ->
             {node, page}
 
           {:error, error} ->
-            Utils.Log.scoped_error(scope, error, "load_or_create_node_and_page_at_path failed")
+            Utils.Log.scoped_error(scope, error, "create_page_and_node_at_path failed")
             {nil, nil}
         end
 
@@ -83,6 +80,19 @@ defmodule Qblog.Wiki do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp default_page_title_from_path(path) do
+    path
+    |> String.split("/", trim: true)
+    |> List.last()
+    |> case do
+      nil ->
+        ""
+
+      slug ->
+        slug |> String.split("-") |> Enum.join(" ") |> String.capitalize()
     end
   end
 end

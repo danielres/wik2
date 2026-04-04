@@ -1,16 +1,16 @@
 defmodule Qblog.Wiki.PageTree.TreeOpsTest do
   use ExUnit.Case, async: true
 
-  alias Qblog.Wiki.PageTree.TreeOps
+  alias Qblog.Wiki.PageTree.TreeOps.CreateNodeAtPath
 
-  test "create_node_at_path creates all missing nodes for a slash path" do
+  test "CreateNodeAtPath.call creates all missing nodes for a slash path" do
     nodes = [
       %{id: 1, page_id: nil, parent_id: nil, slug: "docs", title: "Docs"}
     ]
 
     assert {:ok, %{id: 3, parent_id: 2, slug: "install", title: "Install", page_id: "page-1"},
             nodes} =
-             TreeOps.create_node_at_path(nodes, "docs/guides/install", %{
+             CreateNodeAtPath.call(nodes, "docs/guides/install", %{
                title: "Install",
                page_id: "page-1"
              })
@@ -22,14 +22,16 @@ defmodule Qblog.Wiki.PageTree.TreeOpsTest do
            ] = nodes
   end
 
-  test "create_node_at_path accepts a list path and reuses existing segments" do
+  test "CreateNodeAtPath.call accepts a list path and reuses existing segments" do
     nodes = [
       %{id: 1, page_id: nil, parent_id: nil, slug: "docs", title: "Docs"},
       %{id: 2, page_id: nil, parent_id: 1, slug: "guides", title: "Guides"}
     ]
 
     assert {:ok, %{id: 3, parent_id: 2, slug: "install", title: "Install", page_id: nil}, nodes} =
-             TreeOps.create_node_at_path(nodes, ["docs", "guides", "install"], %{title: "Install"})
+             CreateNodeAtPath.call(nodes, ["docs", "guides", "install"], %{
+               title: "Install"
+             })
 
     assert [
              %{id: 1, parent_id: nil, slug: "docs", title: "Docs", page_id: nil},
@@ -38,7 +40,7 @@ defmodule Qblog.Wiki.PageTree.TreeOpsTest do
            ] = nodes
   end
 
-  test "create_node_at_path returns the existing leaf without changing it" do
+  test "CreateNodeAtPath.call returns the existing leaf without changing it" do
     nodes = [
       %{id: 1, page_id: nil, parent_id: nil, slug: "docs", title: "Docs"},
       %{id: 2, page_id: "page-1", parent_id: 1, slug: "install", title: "Install"}
@@ -46,23 +48,23 @@ defmodule Qblog.Wiki.PageTree.TreeOpsTest do
 
     assert {:ok, %{id: 2, page_id: "page-1", parent_id: 1, slug: "install", title: "Install"},
             ^nodes} =
-             TreeOps.create_node_at_path(nodes, "docs/install", %{
+             CreateNodeAtPath.call(nodes, "docs/install", %{
                title: "Ignored",
                page_id: "page-2"
              })
   end
 
-  test "create_node_at_path rejects invalid attrs and invalid paths" do
+  test "CreateNodeAtPath.call rejects invalid attrs and invalid paths" do
     nodes = []
 
-    assert {:error, :invalid_attrs} == TreeOps.create_node_at_path(nodes, "docs", %{})
+    assert {:error, :invalid_attrs} == CreateNodeAtPath.call(nodes, "docs", %{})
 
     assert {:error, :invalid_attrs} ==
-             TreeOps.create_node_at_path(nodes, "docs", %{title: "Docs", extra: true})
+             CreateNodeAtPath.call(nodes, "docs", %{title: "Docs", extra: true})
 
-    assert {:error, :invalid_path} == TreeOps.create_node_at_path(nodes, "", %{title: "Docs"})
+    assert {:error, :invalid_path} == CreateNodeAtPath.call(nodes, "", %{title: "Docs"})
 
     assert {:error, :invalid_path} ==
-             TreeOps.create_node_at_path(nodes, ["docs", ""], %{title: "Docs"})
+             CreateNodeAtPath.call(nodes, ["docs", ""], %{title: "Docs"})
   end
 end

@@ -57,7 +57,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             move_node_target={@myself}
             node={props.node}
             nodes_flat={@page_tree.nodes}
-            remove_target={@myself}
+            remove_node_target={@myself}
           />
         </:action_buttons>
 
@@ -122,7 +122,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   attr :move_node_target, :any, required: true
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
-  attr :remove_target, :any, required: true
+  attr :remove_node_target, :any, required: true
 
   defp action_buttons(assigns) do
     candidates = assigns.nodes_flat |> Helpers.parent_options(assigns.node.id)
@@ -136,7 +136,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         data-testid={"page-tree-editor-node-#{@node.id}-remove"}
         icon="hero-x-mark-mini"
         phx-click="remove_node"
-        phx-target={@remove_target}
+        phx-target={@remove_node_target}
         phx-value-node_id={@node.id}
         variant="error"
       />

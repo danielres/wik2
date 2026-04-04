@@ -1,6 +1,5 @@
 defmodule Qblog.Wiki.PageTree.TreeQueries do
   alias Qblog.Wiki.PageTree
-  alias Qblog.Wiki.PageTree.TreeQueries.GetNodeByPath
   alias Utils.Log
 
   def get_node(nodes, node_id) do

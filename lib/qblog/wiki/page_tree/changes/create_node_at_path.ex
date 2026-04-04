@@ -16,7 +16,7 @@ defmodule Qblog.Wiki.PageTree.Changes.CreateNodeAtPath do
         Ash.Changeset.add_error(changeset, field: :nodes, message: "path already exists")
 
       {:error, :not_found} ->
-        case TreeOps.create_node_at_path(nodes, path, %{page_id: page_id, title: title}) do
+        case TreeOps.CreateNodeAtPath.call(nodes, path, %{page_id: page_id, title: title}) do
           {:ok, _leaf_node, new_nodes} ->
             Ash.Changeset.change_attribute(changeset, :nodes, new_nodes)
 

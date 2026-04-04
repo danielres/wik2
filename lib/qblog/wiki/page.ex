@@ -23,6 +23,11 @@ defmodule Qblog.Wiki.Page do
     end
   end
 
+  code_interface do
+    define :get_page, action: :read, get_by: [:id]
+    define :create_page, action: :create, args: []
+  end
+
   policies do
     policy action_type(:read) do
       authorize_if always()

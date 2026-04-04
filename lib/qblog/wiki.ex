@@ -7,6 +7,7 @@ defmodule Qblog.Wiki do
     ]
 
   alias Qblog.Repo
+  alias Qblog.Wiki.Page
   alias Qblog.Wiki.PageTree
   alias Qblog.Wiki.PageTree.Node
   alias Qblog.Wiki.PageTree.TreeQueries
@@ -21,11 +22,6 @@ defmodule Qblog.Wiki do
       define :get_page_tree, action: :get_or_create_page_tree, args: []
       define :link_page, action: :link_page, args: [:node_id, :page_id]
       define :create_node_at_path, action: :create_node_at_path, args: [:path, :title, :page_id]
-    end
-
-    resource Qblog.Wiki.Page do
-      define :get_page, action: :read, get_by: [:id]
-      define :create_page, action: :create, args: []
     end
   end
 
@@ -71,7 +67,7 @@ defmodule Qblog.Wiki do
     load = Keyword.get(opts, :load, [])
 
     case Repo.transaction(fn ->
-           with {:ok, page} <- create_page(scope: scope),
+           with {:ok, page} <- Page.create_page(scope: scope),
                 {:ok, page_tree} <- get_page_tree(scope: scope),
                 {:ok, _page_tree} <-
                   PageTree.create_node_at_path(page_tree, path, title, page.id, scope: scope) do

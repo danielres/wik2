@@ -2,9 +2,10 @@ defmodule Qblog.Wiki.PageTree.Node do
   use Ash.Resource,
     data_layer: :embedded
 
-  alias Qblog.Wiki
-  alias Utils.Log
   alias Qblog.Repo
+  alias Qblog.Wiki
+  alias Qblog.Wiki.Page
+  alias Utils.Log
 
   attributes do
     attribute :id, :integer do
@@ -57,14 +58,14 @@ defmodule Qblog.Wiki.PageTree.Node do
 
   defp get_or_create_page(scope, %{page_id: page_id}, opts) do
     load = opts |> Keyword.get(:load, [])
-    Wiki.get_page(page_id, load: load, scope: scope)
+    Page.get_page(page_id, load: load, scope: scope)
   end
 
   defp create_page_for_node(node, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
     Repo.transaction(fn ->
-      with {:ok, page} <- Wiki.create_page(scope: scope),
+      with {:ok, page} <- Page.create_page(scope: scope),
            {:ok, page_tree} <- Wiki.get_page_tree(scope: scope),
            {:ok, _page_tree} <- PageTree.link_page(page_tree, node.id, page.id, scope: scope) do
         page

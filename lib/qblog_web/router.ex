@@ -82,6 +82,7 @@ defmodule QblogWeb.Router do
         live "/tree", PageTreeLive, :index
 
         scope "/wiki" do
+          get "/", WikiRedirectController, :home
           live "/*path", PageLive, :index
         end
 

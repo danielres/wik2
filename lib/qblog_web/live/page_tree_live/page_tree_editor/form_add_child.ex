@@ -104,7 +104,12 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
             value={@parent_id}
           />
 
-          <.input data-testid="add-child-title" field={@form[:title]} label="title" />
+          <.input
+            data-testid="add-child-title"
+            field={@form[:title]}
+            label="title"
+            phx-hook="CapitalizeFirstLetter"
+          />
 
           <div class={[
             "flex items-baseline",

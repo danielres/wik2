@@ -119,7 +119,7 @@ defmodule Qblog.BlocksTest do
     end
   end
 
-  describe "place_block/3" do
+  describe "place_block_on_page/3" do
     test "creates a placement for the parent" do
       actor = generate(user())
       group = generate(group(author: actor))
@@ -129,7 +129,7 @@ defmodule Qblog.BlocksTest do
       {:ok, block} =
         Blocks.create_user_owned_block(%{data: %{text: "Hello"}, type: :text}, scope: scope)
 
-      assert {:ok, placement} = Blocks.place_block(block, page, scope: scope)
+      assert {:ok, placement} = Blocks.place_block_on_page(block, page, scope: scope)
 
       assert placement.attachable_id == page.id
       assert placement.attachable_type == "page"
@@ -149,8 +149,8 @@ defmodule Qblog.BlocksTest do
       {:ok, block2} =
         Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
 
-      assert {:ok, placement1} = Blocks.place_block(block1, page, scope: scope)
-      assert {:ok, placement2} = Blocks.place_block(block2, page, scope: scope)
+      assert {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
+      assert {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
 
       assert placement1.order_key < placement2.order_key
     end
@@ -169,7 +169,7 @@ defmodule Qblog.BlocksTest do
       {:ok, block2} =
         Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
 
-      {:ok, placement1} = Blocks.place_block(block1, page, scope: scope)
+      {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
 
       assert {:error, _error} =
                Ash.create(

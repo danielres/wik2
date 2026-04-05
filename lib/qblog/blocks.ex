@@ -10,6 +10,7 @@ defmodule Qblog.Blocks do
   alias LexSortKey
   alias Qblog.Blocks.Block
   alias Qblog.Blocks.BlockPlacement
+  alias Qblog.Wiki.Page
 
   require Ash.Query
 
@@ -40,9 +41,9 @@ defmodule Qblog.Blocks do
     |> then(&Ash.create(Block, &1, action: :create, scope: scope))
   end
 
-  def place_block(%{id: block_id}, parent, opts) do
+  def place_block_on_page(%{id: block_id}, %Page{} = page, opts) do
     scope = Keyword.fetch!(opts, :scope)
-    attachable_attrs = attachable_attrs(parent)
+    attachable_attrs = page_attachable_attrs(page)
 
     with {:ok, order_key} <- next_order_key(attachable_attrs, scope) do
       attachable_attrs
@@ -52,15 +53,11 @@ defmodule Qblog.Blocks do
     end
   end
 
-  defp attachable_attrs(%{id: attachable_id} = parent) do
+  defp page_attachable_attrs(%Page{id: page_id}) do
     %{
-      attachable_id: attachable_id,
-      attachable_type: attachable_type(parent)
+      attachable_id: page_id,
+      attachable_type: "page"
     }
-  end
-
-  defp attachable_type(parent) do
-    parent.__struct__ |> Module.split() |> List.last() |> Macro.underscore()
   end
 
   defp next_order_key(attachable_attrs, scope) do

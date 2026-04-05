@@ -68,6 +68,8 @@ defmodule Qblog.Blocs.BlockPlacement do
   end
 
   identities do
-    identity :unique_attachable_order_key, [:attachable_type, :attachable_id, :order_key]
+    identity :unique_attachable_order_key, [:attachable_type, :attachable_id, :order_key] do
+      eager_check? true
+    end
   end
 end

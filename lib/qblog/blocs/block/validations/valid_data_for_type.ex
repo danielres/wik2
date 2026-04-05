@@ -21,10 +21,15 @@ defmodule Qblog.Blocs.Block.Validations.ValidDataForType do
       |> Ash.Changeset.get_attribute(:data)
       |> get_text()
 
-    if is_binary(text) and String.trim(text) != "" do
-      :ok
-    else
-      {:error, field: :data, message: "must include non-empty text for text blocks"}
+    case text do
+      nil ->
+        :ok
+
+      text when is_binary(text) ->
+        :ok
+
+      _ ->
+        {:error, field: :data, message: "text blocks must store text as a string"}
     end
   end
 

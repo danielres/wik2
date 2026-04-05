@@ -66,4 +66,8 @@ defmodule Qblog.Blocs.BlockPlacement do
       allow_nil? false
     end
   end
+
+  identities do
+    identity :unique_attachable_order_key, [:attachable_type, :attachable_id, :order_key]
+  end
 end

@@ -1,4 +1,8 @@
 defmodule Qblog.Blocs.Block do
+  alias Qblog.Accounts.Group
+  alias Qblog.Accounts.User
+  alias Qblog.Blocs.Block.Validations.ExactlyOneOwner
+
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Blocs,
@@ -18,13 +22,22 @@ defmodule Qblog.Blocs.Block do
   actions do
     defaults [
       :read,
-      :update,
       :destroy
     ]
 
     create :create do
-      accept [:data, :type]
+      accept [:data, :owner_group_id, :owner_user_id, :type]
+      change relate_actor(:author, allow_nil?: false)
     end
+
+    update :update do
+      accept [:data, :owner_group_id, :owner_user_id, :type]
+      require_atomic? false
+    end
+  end
+
+  validations do
+    validate ExactlyOneOwner
   end
 
   policies do
@@ -63,6 +76,21 @@ defmodule Qblog.Blocs.Block do
   end
 
   relationships do
+    belongs_to :author, User do
+      destination_attribute :id
+      allow_nil? false
+    end
+
+    belongs_to :owner_group, Group do
+      destination_attribute :id
+      allow_nil? true
+    end
+
+    belongs_to :owner_user, User do
+      destination_attribute :id
+      allow_nil? true
+    end
+
     has_many :placements, Qblog.Blocs.BlockPlacement do
       destination_attribute :block_id
       default_sort order_key: :asc

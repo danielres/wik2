@@ -73,8 +73,13 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             </.link>
             <span class="badge-xs bg-base-200 px-2 font-mono">{props.node[:slug]}</span>
             <span class="badge-xs bg-base-200 px-2">id {props.node.id}</span>
-            <span class="badge-xs bg-base-200 px-2 opacity-50">
-              {if props.node.page_id, do: "page: #{props.node.page_id}", else: "no page"}
+            <span class="badge-xs bg-base-200 pr-1 opacity-80">
+              <span :if={!props.node.page_id}>
+                <.icon name="hero-x-circle-solid" class="text-red-500 size-4" /> no page
+              </span>
+              <span :if={props.node.page_id}>
+                <.icon name="hero-check-circle-solid" class="text-green-500 size-4" /> page
+              </span>
             </span>
           </div>
         </:label>

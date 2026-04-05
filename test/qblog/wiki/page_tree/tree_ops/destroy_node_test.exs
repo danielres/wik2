@@ -1,7 +1,7 @@
-defmodule Qblog.Wiki.PageTree.TreeOps.RemoveNodeTest do
+defmodule Qblog.Wiki.PageTree.TreeOps.DestroyNodeTest do
   use ExUnit.Case, async: true
 
-  alias Qblog.Wiki.PageTree.TreeOps.RemoveNode
+  alias Qblog.Wiki.PageTree.TreeOps.DestroyNode
 
   test "removes a leaf root node" do
     nodes = [
@@ -12,7 +12,7 @@ defmodule Qblog.Wiki.PageTree.TreeOps.RemoveNodeTest do
       }
     ]
 
-    assert {:ok, new_nodes} = RemoveNode.call(nodes, 1)
+    assert {:ok, new_nodes} = DestroyNode.call(nodes, 1)
     assert [] = new_nodes
   end
 
@@ -30,7 +30,7 @@ defmodule Qblog.Wiki.PageTree.TreeOps.RemoveNodeTest do
       }
     ]
 
-    assert {:ok, new_nodes} = RemoveNode.call(nodes, 2)
+    assert {:ok, new_nodes} = DestroyNode.call(nodes, 2)
 
     assert [
              %{
@@ -44,7 +44,7 @@ defmodule Qblog.Wiki.PageTree.TreeOps.RemoveNodeTest do
   test "returns an error when node does not exist" do
     nodes = []
 
-    assert {:error, "node not found"} = RemoveNode.call(nodes, 999)
+    assert {:error, "node not found"} = DestroyNode.call(nodes, 999)
   end
 
   test "returns an error when node has children" do
@@ -62,6 +62,6 @@ defmodule Qblog.Wiki.PageTree.TreeOps.RemoveNodeTest do
     ]
 
     assert {:error, "cannot remove a node that has children"} =
-             RemoveNode.call(nodes, 1)
+             DestroyNode.call(nodes, 1)
   end
 end

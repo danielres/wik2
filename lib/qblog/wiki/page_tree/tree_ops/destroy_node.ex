@@ -1,4 +1,4 @@
-defmodule Qblog.Wiki.PageTree.TreeOps.RemoveNode do
+defmodule Qblog.Wiki.PageTree.TreeOps.DestroyNode do
   def call(nodes, node_id) when is_list(nodes) do
     cond do
       not has_node?(nodes, node_id) ->

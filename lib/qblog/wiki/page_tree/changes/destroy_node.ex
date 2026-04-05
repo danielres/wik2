@@ -1,4 +1,4 @@
-defmodule Qblog.Wiki.PageTree.Changes.RemoveNode do
+defmodule Qblog.Wiki.PageTree.Changes.DestroyNode do
   use Ash.Resource.Change
 
   alias Ash.Changeset
@@ -13,7 +13,7 @@ defmodule Qblog.Wiki.PageTree.Changes.RemoveNode do
     destroy_page? = Changeset.get_argument(changeset, :destroy_page?)
     page_id = nodes |> TreeQueries.get_node(node_id) |> then(&(&1 && &1.page_id))
 
-    case TreeOps.RemoveNode.call(nodes, node_id) do
+    case TreeOps.DestroyNode.call(nodes, node_id) do
       {:ok, new_nodes} ->
         changeset
         |> Changeset.change_attribute(:nodes, new_nodes)

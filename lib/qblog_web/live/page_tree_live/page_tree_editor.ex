@@ -57,7 +57,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             move_node_target={@myself}
             node={props.node}
             nodes_flat={@page_tree.nodes}
-            remove_node_target={@myself}
+            destroy_node_target={@myself}
           />
         </:action_buttons>
 
@@ -122,7 +122,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   attr :move_node_target, :any, required: true
   attr :node, :map, required: true
   attr :nodes_flat, :list, required: true
-  attr :remove_node_target, :any, required: true
+  attr :destroy_node_target, :any, required: true
 
   defp action_buttons(assigns) do
     candidates = assigns.nodes_flat |> Helpers.parent_options(assigns.node.id)
@@ -135,8 +135,8 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         data-tip="delete"
         data-testid={"page-tree-editor-node-#{@node.id}-remove"}
         icon="hero-x-mark-mini"
-        phx-click="remove_node"
-        phx-target={@remove_node_target}
+        phx-click="destroy_node"
+        phx-target={@destroy_node_target}
         phx-value-node_id={@node.id}
         variant="error"
       />
@@ -206,11 +206,11 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   # remove node ================================================================
 
   @impl true
-  def handle_event("remove_node", %{"node_id" => node_id}, socket) do
+  def handle_event("destroy_node", %{"node_id" => node_id}, socket) do
     page_tree = socket.assigns.page_tree
     scope = socket.assigns.current_scope
 
-    case PageTree.remove_node(page_tree, node_id, destroy_page?: true, scope: scope) do
+    case PageTree.destroy_node(page_tree, node_id, destroy_page?: true, scope: scope) do
       {:ok, page_tree} ->
         send(self(), {:page_tree_updated, page_tree})
 
@@ -219,7 +219,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
          |> assign(page_tree: page_tree)}
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "page_tree remove_node failed")
+        Log.scoped_error(scope, err, "page_tree destroy_node failed")
         {:noreply, socket}
     end
   end

@@ -32,6 +32,13 @@ defmodule Qblog.Blocks do
     |> then(&Ash.create(Block, &1, action: :create, scope: scope))
   end
 
+  def create_group_owned_block_on_page(%{} = group, %Page{} = page, block_attrs, opts) do
+    with {:ok, block} <- create_group_owned_block(group, block_attrs, opts),
+         {:ok, _placement} <- place_block_on_page(block, page, opts) do
+      {:ok, block}
+    end
+  end
+
   def create_user_owned_block(block_attrs, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
@@ -39,6 +46,13 @@ defmodule Qblog.Blocks do
     |> Map.delete(:owner_group_id)
     |> Map.put(:owner_user_id, scope.actor.id)
     |> then(&Ash.create(Block, &1, action: :create, scope: scope))
+  end
+
+  def create_user_owned_block_on_page(%Page{} = page, block_attrs, opts) do
+    with {:ok, block} <- create_user_owned_block(block_attrs, opts),
+         {:ok, _placement} <- place_block_on_page(block, page, opts) do
+      {:ok, block}
+    end
   end
 
   def place_block_on_page(%{id: block_id}, %Page{} = page, opts) do

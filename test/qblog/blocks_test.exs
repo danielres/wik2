@@ -9,6 +9,8 @@ defmodule Qblog.BlocksTest do
   alias Qblog.Scope
   alias Qblog.Wiki.Page
 
+  require Ash.Query
+
   describe "create_user_owned_block/2" do
     test "sets author and user owner and clears group owner" do
       actor = generate(user())
@@ -49,6 +51,59 @@ defmodule Qblog.BlocksTest do
       assert block.author_id == actor.id
       assert block.owner_group_id == group.id
       assert block.owner_user_id == nil
+    end
+  end
+
+  describe "create_user_owned_block_on_page/3" do
+    test "creates a user-owned block and places it on the page" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      assert {:ok, block} =
+               Blocks.create_user_owned_block_on_page(
+                 page,
+                 %{data: %{text: "Hello"}, type: :text},
+                 scope: scope
+               )
+
+      placement =
+        BlockPlacement
+        |> Ash.Query.filter(attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id)
+        |> Ash.read_one!(scope: scope)
+
+      assert block.author_id == actor.id
+      assert block.owner_user_id == actor.id
+      assert block.owner_group_id == nil
+      assert placement.block_id == block.id
+    end
+  end
+
+  describe "create_group_owned_block_on_page/4" do
+    test "creates a group-owned block and places it on the page" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      assert {:ok, block} =
+               Blocks.create_group_owned_block_on_page(
+                 group,
+                 page,
+                 %{data: %{text: "Hello"}, type: :text},
+                 scope: scope
+               )
+
+      placement =
+        BlockPlacement
+        |> Ash.Query.filter(attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id)
+        |> Ash.read_one!(scope: scope)
+
+      assert block.author_id == actor.id
+      assert block.owner_group_id == group.id
+      assert block.owner_user_id == nil
+      assert placement.block_id == block.id
     end
   end
 

@@ -30,9 +30,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
       assigns
       |> assign_new(:nodes_tree, fn ->
         assigns.nodes_flat
-
-        # TODO: change &1.slug to &1.title
-        |> Enum.sort_by(&(&1.slug |> String.downcase()), :asc)
+        |> Enum.sort_by(&(&1.title |> String.downcase()), :asc)
         |> TreeQueries.build_tree()
       end)
 

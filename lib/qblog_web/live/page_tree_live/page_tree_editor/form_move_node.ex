@@ -126,10 +126,9 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
 
     ~H"""
     <ActionButtons.wrapper>
-      <%!-- TODO: change @node.slug to @node.title --%>
       <ActionButtons.button
         :if={@candidate?}
-        data-tip={ "move under #{@node.slug}" }
+        data-tip={~s(Move under "#{@node.title}")}
         data-testid={"move-node-to-parent-#{@node.id}"}
         icon="hero-arrow-turn-down-right-mini"
         phx-click="move_node"

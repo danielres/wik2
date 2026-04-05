@@ -18,6 +18,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
     socket =
       socket
       |> assign(assigns)
+      |> assign(debug?: false)
       |> assign_new(:flow_add_child, fn -> FlowAddChild.init(assigns.current_scope) end)
       |> assign_new(:flow_move_node, fn -> FlowMoveNode.init() end)
 
@@ -71,16 +72,18 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
             >
               <.icon name="hero-arrow-up-right-micro" class="" />
             </.link>
-            <span class="badge-xs bg-base-200 px-2 font-mono">{props.node[:slug]}</span>
-            <span class="badge-xs bg-base-200 px-2">id {props.node.id}</span>
-            <span class="badge-xs bg-base-200 pr-1 opacity-80">
-              <span :if={!props.node.page_id}>
-                <.icon name="hero-x-circle-solid" class="text-red-500 size-4" /> no page
+            <%= if @debug? do %>
+              <span class="badge-xs bg-base-200 px-2 font-mono">{props.node[:slug]}</span>
+              <span class="badge-xs bg-base-200 px-2">id {props.node.id}</span>
+              <span class="badge-xs bg-base-200 pr-1 opacity-80">
+                <span :if={!props.node.page_id}>
+                  <.icon name="hero-x-circle-solid" class="text-red-500 size-4" /> no page
+                </span>
+                <span :if={props.node.page_id}>
+                  <.icon name="hero-check-circle-solid" class="text-green-500 size-4" /> page
+                </span>
               </span>
-              <span :if={props.node.page_id}>
-                <.icon name="hero-check-circle-solid" class="text-green-500 size-4" /> page
-              </span>
-            </span>
+            <% end %>
           </div>
         </:label>
       </Components.PageTree.render>

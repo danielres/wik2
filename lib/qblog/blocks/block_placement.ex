@@ -1,7 +1,7 @@
-defmodule Qblog.Blocs.BlockPlacement do
+defmodule Qblog.Blocks.BlockPlacement do
   use Ash.Resource,
     otp_app: :qblog,
-    domain: Qblog.Blocs,
+    domain: Qblog.Blocks,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAdmin.Resource]
@@ -62,7 +62,7 @@ defmodule Qblog.Blocs.BlockPlacement do
   end
 
   relationships do
-    belongs_to :block, Qblog.Blocs.Block do
+    belongs_to :block, Qblog.Blocks.Block do
       allow_nil? false
     end
   end

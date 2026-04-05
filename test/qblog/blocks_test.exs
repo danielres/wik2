@@ -1,11 +1,11 @@
-defmodule Qblog.BlocsTest do
+defmodule Qblog.BlocksTest do
   use Qblog.DataCase, async: true
 
   import Qblog.TestGenerators
 
-  alias Qblog.Blocs
-  alias Qblog.Blocs.Block
-  alias Qblog.Blocs.BlockPlacement
+  alias Qblog.Blocks
+  alias Qblog.Blocks.Block
+  alias Qblog.Blocks.BlockPlacement
   alias Qblog.Scope
   alias Qblog.Wiki.Page
 
@@ -15,7 +15,7 @@ defmodule Qblog.BlocsTest do
       group = generate(group())
 
       assert {:ok, block} =
-               Blocs.create_user_owned_block(
+               Blocks.create_user_owned_block(
                  %{
                    data: %{text: "Hello"},
                    owner_group_id: group.id,
@@ -36,7 +36,7 @@ defmodule Qblog.BlocsTest do
       group = generate(group(author: actor))
 
       assert {:ok, block} =
-               Blocs.create_group_owned_block(
+               Blocks.create_group_owned_block(
                  group,
                  %{
                    data: %{text: "Hello"},
@@ -127,9 +127,9 @@ defmodule Qblog.BlocsTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block} =
-        Blocs.create_user_owned_block(%{data: %{text: "Hello"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{text: "Hello"}, type: :text}, scope: scope)
 
-      assert {:ok, placement} = Blocs.place_block(block, page, scope: scope)
+      assert {:ok, placement} = Blocks.place_block(block, page, scope: scope)
 
       assert placement.attachable_id == page.id
       assert placement.attachable_type == "page"
@@ -144,13 +144,13 @@ defmodule Qblog.BlocsTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
-        Blocs.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
 
       {:ok, block2} =
-        Blocs.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
 
-      assert {:ok, placement1} = Blocs.place_block(block1, page, scope: scope)
-      assert {:ok, placement2} = Blocs.place_block(block2, page, scope: scope)
+      assert {:ok, placement1} = Blocks.place_block(block1, page, scope: scope)
+      assert {:ok, placement2} = Blocks.place_block(block2, page, scope: scope)
 
       assert placement1.order_key < placement2.order_key
     end
@@ -164,12 +164,12 @@ defmodule Qblog.BlocsTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
-        Blocs.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
 
       {:ok, block2} =
-        Blocs.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
 
-      {:ok, placement1} = Blocs.place_block(block1, page, scope: scope)
+      {:ok, placement1} = Blocks.place_block(block1, page, scope: scope)
 
       assert {:error, _error} =
                Ash.create(

@@ -1,12 +1,12 @@
-defmodule Qblog.Blocs.Block do
+defmodule Qblog.Blocks.Block do
   alias Qblog.Accounts.Group
   alias Qblog.Accounts.User
-  alias Qblog.Blocs.Block.Validations.ExactlyOneOwner
-  alias Qblog.Blocs.Block.Validations.ValidDataForType
+  alias Qblog.Blocks.Block.Validations.ExactlyOneOwner
+  alias Qblog.Blocks.Block.Validations.ValidDataForType
 
   use Ash.Resource,
     otp_app: :qblog,
-    domain: Qblog.Blocs,
+    domain: Qblog.Blocks,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAdmin.Resource]
@@ -93,7 +93,7 @@ defmodule Qblog.Blocs.Block do
       allow_nil? true
     end
 
-    has_many :placements, Qblog.Blocs.BlockPlacement do
+    has_many :placements, Qblog.Blocks.BlockPlacement do
       destination_attribute :block_id
       default_sort order_key: :asc
     end

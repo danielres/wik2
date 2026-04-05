@@ -1,7 +1,4 @@
-# TODO: add tests
-# TODO: rename Blocs to Blocks
-
-defmodule Qblog.Blocs do
+defmodule Qblog.Blocks do
   use Ash.Domain,
     otp_app: :qblog,
     extensions: [
@@ -11,8 +8,8 @@ defmodule Qblog.Blocs do
 
   alias Ash.Query
   alias LexSortKey
-  alias Qblog.Blocs.Block
-  alias Qblog.Blocs.BlockPlacement
+  alias Qblog.Blocks.Block
+  alias Qblog.Blocks.BlockPlacement
 
   require Ash.Query
 
@@ -21,8 +18,8 @@ defmodule Qblog.Blocs do
   end
 
   resources do
-    resource Qblog.Blocs.Block
-    resource Qblog.Blocs.BlockPlacement
+    resource Qblog.Blocks.Block
+    resource Qblog.Blocks.BlockPlacement
   end
 
   def create_group_owned_block(%{id: group_id}, block_attrs, opts) do

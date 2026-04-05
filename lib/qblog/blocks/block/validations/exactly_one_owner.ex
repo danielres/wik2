@@ -1,4 +1,4 @@
-defmodule Qblog.Blocs.Block.Validations.ExactlyOneOwner do
+defmodule Qblog.Blocks.Block.Validations.ExactlyOneOwner do
   use Ash.Resource.Validation
 
   @impl true

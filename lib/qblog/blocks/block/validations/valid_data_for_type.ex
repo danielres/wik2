@@ -1,4 +1,4 @@
-defmodule Qblog.Blocs.Block.Validations.ValidDataForType do
+defmodule Qblog.Blocks.Block.Validations.ValidDataForType do
   use Ash.Resource.Validation
 
   @impl true

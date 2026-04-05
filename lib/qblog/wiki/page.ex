@@ -60,15 +60,15 @@ defmodule Qblog.Wiki.Page do
       allow_nil? false
     end
 
-    has_many :block_placements, Qblog.Blocs.BlockPlacement do
+    has_many :block_placements, Qblog.Blocks.BlockPlacement do
       source_attribute :id
       destination_attribute :attachable_id
       filter expr(attachable_type == "page" and attachable_id == parent(id))
       default_sort position: :asc
     end
 
-    many_to_many :blocks, Qblog.Blocs.Block do
-      through Qblog.Blocs.BlockPlacement
+    many_to_many :blocks, Qblog.Blocks.Block do
+      through Qblog.Blocks.BlockPlacement
       source_attribute_on_join_resource :attachable_id
       destination_attribute_on_join_resource :block_id
       filter expr(attachable_type == "page")

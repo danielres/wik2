@@ -1,4 +1,5 @@
 # TODO: add tests
+# TODO: rename Blocs to Blocks
 
 defmodule Qblog.Blocs do
   use Ash.Domain,
@@ -8,13 +9,7 @@ defmodule Qblog.Blocs do
       AshPhoenix
     ]
 
-  alias Ash.Query
-  alias LexSortKey
   alias Qblog.Blocs.Block
-  alias Qblog.Blocs.BlockPlacement
-  alias Qblog.Repo
-
-  require Ash.Query
 
   admin do
     show? true
@@ -25,57 +20,21 @@ defmodule Qblog.Blocs do
     resource Qblog.Blocs.BlockPlacement
   end
 
-  # TODO: extract all below 
-  def add_block(parent, block_attrs, opts) do
+  def create_group_owned_block(%{id: group_id}, block_attrs, opts) do
     scope = Keyword.fetch!(opts, :scope)
-    attachable_attrs = attachable_attrs(parent)
 
-    Repo.transaction(fn ->
-      with {:ok, order_key} <- next_order_key(attachable_attrs, scope),
-           {:ok, block} <- Ash.create(Block, block_attrs, scope: scope),
-           {:ok, placement} <-
-             Ash.create(
-               BlockPlacement,
-               Map.merge(attachable_attrs, %{
-                 block_id: block.id,
-                 order_key: order_key
-               }),
-               scope: scope
-             ) do
-        %{block: block, placement: placement}
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
+    block_attrs
+    |> Map.delete(:owner_user_id)
+    |> Map.put(:owner_group_id, group_id)
+    |> then(&Ash.create(Block, &1, scope: scope))
   end
 
-  defp attachable_attrs(%{id: attachable_id} = parent) do
-    %{
-      attachable_id: attachable_id,
-      attachable_type: attachable_type(parent)
-    }
-  end
+  def create_user_owned_block(block_attrs, opts) do
+    scope = Keyword.fetch!(opts, :scope)
 
-  defp attachable_type(parent) do
-    parent.__struct__
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
-  end
-
-  defp next_order_key(attachable_attrs, scope) do
-    case last_placement(attachable_attrs, scope) do
-      nil -> {:ok, LexSortKey.first()}
-      placement -> LexSortKey.key_after(placement.order_key)
-    end
-  end
-
-  defp last_placement(%{attachable_id: attachable_id, attachable_type: attachable_type}, scope) do
-    BlockPlacement
-    |> Query.filter(attachable_id: attachable_id, attachable_type: attachable_type)
-    |> Query.sort(order_key: :desc)
-    |> Query.limit(1)
-    |> Ash.read!(scope: scope)
-    |> List.first()
+    block_attrs
+    |> Map.delete(:owner_group_id)
+    |> Map.put(:owner_user_id, scope.actor.id)
+    |> then(&Ash.create(Block, &1, scope: scope))
   end
 end

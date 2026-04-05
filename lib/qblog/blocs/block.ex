@@ -2,6 +2,7 @@ defmodule Qblog.Blocs.Block do
   alias Qblog.Accounts.Group
   alias Qblog.Accounts.User
   alias Qblog.Blocs.Block.Validations.ExactlyOneOwner
+  alias Qblog.Blocs.Block.Validations.ValidDataForType
 
   use Ash.Resource,
     otp_app: :qblog,
@@ -31,13 +32,14 @@ defmodule Qblog.Blocs.Block do
     end
 
     update :update do
-      accept [:data, :owner_group_id, :owner_user_id, :type]
+      accept [:data, :owner_group_id, :owner_user_id]
       require_atomic? false
     end
   end
 
   validations do
     validate ExactlyOneOwner
+    validate ValidDataForType
   end
 
   policies do

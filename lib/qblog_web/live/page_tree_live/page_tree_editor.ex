@@ -210,7 +210,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
     page_tree = socket.assigns.page_tree
     scope = socket.assigns.current_scope
 
-    case PageTree.remove_node(page_tree, node_id, scope: scope) do
+    case PageTree.remove_node(page_tree, node_id, destroy_page?: true, scope: scope) do
       {:ok, page_tree} ->
         send(self(), {:page_tree_updated, page_tree})
 

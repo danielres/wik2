@@ -16,7 +16,6 @@ defmodule Qblog.Wiki.PageTree do
     define :add_child, args: [:parent_id, :slug, :title]
     define :create_node_at_path, args: [:path, :title, :page_id]
     define :link_page, args: [:node_id, :page_id]
-    define :remove_node, args: [:node_id]
     define :move_node, args: [:node_id, :new_parent_id]
     define :ensure, action: :ensure, args: []
   end
@@ -88,11 +87,17 @@ defmodule Qblog.Wiki.PageTree do
       change Qblog.Wiki.PageTree.Changes.LinkPage
     end
 
+    # TODO: rename to destroy_node
     update :remove_node do
       require_atomic? false
 
       argument :node_id, :integer do
         allow_nil? false
+      end
+
+      argument :destroy_page?, :boolean do
+        allow_nil? false
+        default false
       end
 
       change Qblog.Wiki.PageTree.Changes.RemoveNode
@@ -163,6 +168,19 @@ defmodule Qblog.Wiki.PageTree do
       destination_attribute :id
       allow_nil? false
     end
+  end
+
+  def remove_node(page_tree, node_id, opts \\ []) do
+    # Temporary wrapper until ash fixes the following bug: 
+    # "scope lost on Ash.update for a record #2662"
+    # https://github.com/ash-project/ash/issues/2662
+    {destroy_page?, opts} = Keyword.pop(opts, :destroy_page?, false)
+    {scope, opts} = Keyword.pop!(opts, :scope)
+    opts = scope |> Ash.Scope.to_opts(opts)
+    opts = Keyword.put(opts, :action, :remove_node)
+
+    page_tree
+    |> Ash.update(%{node_id: node_id, destroy_page?: destroy_page?}, opts)
   end
 
   identities do

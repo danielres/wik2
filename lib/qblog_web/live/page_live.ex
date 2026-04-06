@@ -60,6 +60,24 @@ defmodule QblogWeb.PageLive do
                   <div class="absolute top-2 right-2 flex gap-1 opacity-50 hover:opacity-100 transition">
                     <.button
                       class="btn btn-ghost btn-circle"
+                      phx-click="move_block_up"
+                      phx-value-placement_id={placement.id}
+                      type="button"
+                    >
+                      <.icon name="hero-chevron-up-mini" />
+                    </.button>
+
+                    <.button
+                      class="btn btn-ghost btn-circle"
+                      phx-click="move_block_down"
+                      phx-value-placement_id={placement.id}
+                      type="button"
+                    >
+                      <.icon name="hero-chevron-down-mini" />
+                    </.button>
+
+                    <.button
+                      class="btn btn-ghost btn-circle"
                       phx-click="edit_block_start"
                       phx-value-block_id={placement.block.id}
                       type="button"
@@ -77,7 +95,7 @@ defmodule QblogWeb.PageLive do
                     </.button>
                   </div>
                   <div class="whitespace-pre-line">
-                    {placement.block.data |> block_text() || "Empty block"}
+                    {placement.block.data |> get_block_text() || "Empty block"}
                   </div>
                 <% end %>
               </div>
@@ -116,7 +134,7 @@ defmodule QblogWeb.PageLive do
     case group |> Blocks.create_group_owned_block_on_page(page, %{type: :text}, scope: scope) do
       {:ok, block} ->
         {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
-        text = block.data |> block_text() || ""
+        text = block.data |> get_block_text() || ""
 
         {:noreply,
          socket
@@ -133,7 +151,7 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("edit_block_start", %{"block_id" => block_id}, socket) do
     block = socket.assigns.page |> find_block_in_page(block_id)
-    text = block.data |> block_text() || ""
+    text = block.data |> get_block_text() || ""
 
     {:noreply,
      socket
@@ -142,12 +160,50 @@ defmodule QblogWeb.PageLive do
   end
 
   @impl true
+  def handle_event("move_block_down", %{"placement_id" => placement_id}, socket) do
+    scope = socket.assigns.current_scope
+    block_placements = socket.assigns.page.block_placements
+    placement = block_placements |> Enum.find(&(&1.id == placement_id))
+
+    case placement |> Blocks.move_placed_block_down(scope: scope) do
+      {:ok, _placement} ->
+        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
+
+        {:noreply,
+         socket
+         |> assign(node: node, page: page)}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "move_placed_block_down failed")
+        {:noreply, socket |> put_flash(:error, "Could not move block")}
+    end
+  end
+
+  @impl true
+  def handle_event("move_block_up", %{"placement_id" => placement_id}, socket) do
+    scope = socket.assigns.current_scope
+    block_placements = socket.assigns.page.block_placements
+    placement = block_placements |> Enum.find(&(&1.id == placement_id))
+
+    case placement |> Blocks.move_placed_block_up(scope: scope) do
+      {:ok, _placement} ->
+        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
+
+        {:noreply,
+         socket
+         |> assign(node: node, page: page)}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "move_placed_block_up failed")
+        {:noreply, socket |> put_flash(:error, "Could not move block")}
+    end
+  end
+
+  @impl true
   def handle_event("destroy_block", %{"placement_id" => placement_id}, socket) do
     scope = socket.assigns.current_scope
-
-    placement =
-      socket.assigns.page.block_placements
-      |> Enum.find(&(&1.id == placement_id))
+    block_placements = socket.assigns.page.block_placements
+    placement = block_placements |> Enum.find(&(&1.id == placement_id))
 
     case placement |> Blocks.destroy_placed_block(scope: scope) do
       :ok ->
@@ -195,8 +251,8 @@ defmodule QblogWeb.PageLive do
     socket |> assign(form_edit_block: %{"text" => text} |> to_form(as: :block))
   end
 
-  defp block_text(%{"text" => text}) when is_binary(text), do: text
-  defp block_text(_), do: nil
+  defp get_block_text(%{"text" => text}) when is_binary(text), do: text
+  defp get_block_text(_), do: nil
 
   defp find_block_in_page(page, block_id) do
     page.block_placements

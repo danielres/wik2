@@ -96,11 +96,11 @@ defmodule Qblog.Blocks do
   end
 
   def place_block_on_page(%{id: block_id}, %Page{} = page, opts) do
-    scope = Keyword.fetch!(opts, :scope)
+    scope = opts |> Keyword.fetch!(:scope)
     ash_opts = opts |> Keyword.put(:action, :create)
-    attachable_attrs = page_attachable_attrs(page)
+    attachable_attrs = %{attachable_id: page.id, attachable_type: "page"}
 
-    with {:ok, order_key} <- get_next_order_key(attachable_attrs, scope) do
+    with {:ok, order_key} <- scope |> get_next_order_key(attachable_attrs) do
       attachable_attrs
       |> Map.put(:block_id, block_id)
       |> Map.put(:order_key, order_key)
@@ -132,26 +132,103 @@ defmodule Qblog.Blocks do
     end
   end
 
-  defp page_attachable_attrs(%Page{id: page_id}) do
-    %{
-      attachable_id: page_id,
-      attachable_type: "page"
-    }
+  def move_placed_block_down(placement, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    case get_next_placement(placement, scope) do
+      nil ->
+        {:ok, placement}
+
+      next_placement ->
+        order_key =
+          case get_next_placement(next_placement, scope) do
+            nil ->
+              next_placement.order_key |> LexSortKey.key_after()
+
+            after_next_placement ->
+              LexSortKey.between(next_placement.order_key, after_next_placement.order_key)
+          end
+
+        update_placed_block_order_key(placement, order_key, scope)
+    end
   end
 
-  defp get_next_order_key(attachable_attrs, scope) do
-    case last_placement(attachable_attrs, scope) do
+  def move_placed_block_up(placement, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    case get_prev_block_placement(placement, scope) do
+      nil ->
+        {:ok, placement}
+
+      prev_placement ->
+        order_key =
+          case get_prev_block_placement(prev_placement, scope) do
+            nil ->
+              prev_placement.order_key |> LexSortKey.key_before()
+
+            before_prev_placement ->
+              LexSortKey.between(
+                before_prev_placement.order_key,
+                prev_placement.order_key
+              )
+          end
+
+        update_placed_block_order_key(placement, order_key, scope)
+    end
+  end
+
+  defp get_next_order_key(scope, attachable_attrs) do
+    case get_last_placement(attachable_attrs, scope) do
       nil -> {:ok, LexSortKey.first()}
       placement -> LexSortKey.key_after(placement.order_key)
     end
   end
 
-  defp last_placement(%{attachable_id: attachable_id, attachable_type: attachable_type}, scope) do
+  defp get_last_placement(%{attachable_id: id, attachable_type: type}, scope) do
     BlockPlacement
-    |> Ash.Query.filter(attachable_id == ^attachable_id and attachable_type == ^attachable_type)
+    |> Ash.Query.filter(attachable_id == ^id and attachable_type == ^type)
     |> Query.sort(order_key: :desc)
     |> Query.limit(1)
     |> Ash.read!(scope: scope)
     |> List.first()
+  end
+
+  defp get_next_placement(placement, scope) do
+    BlockPlacement
+    |> Ash.Query.filter(
+      attachable_id == ^placement.attachable_id and
+        attachable_type == ^placement.attachable_type and
+        order_key > ^placement.order_key
+    )
+    |> Query.sort(order_key: :asc)
+    |> Query.limit(1)
+    |> Ash.read!(scope: scope)
+    |> List.first()
+  end
+
+  defp get_prev_block_placement(placement, scope) do
+    BlockPlacement
+    |> Ash.Query.filter(
+      attachable_id == ^placement.attachable_id and
+        attachable_type == ^placement.attachable_type and
+        order_key < ^placement.order_key
+    )
+    |> Query.sort(order_key: :desc)
+    |> Query.limit(1)
+    |> Ash.read!(scope: scope)
+    |> List.first()
+  end
+
+  defp update_placed_block_order_key(placement, {:ok, order_key}, scope) do
+    placement
+    |> Ash.update(
+      %{order_key: order_key},
+      action: :update_order,
+      scope: scope
+    )
+  end
+
+  defp update_placed_block_order_key(_placement, {:error, error}, _scope) do
+    {:error, error}
   end
 end

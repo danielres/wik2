@@ -215,6 +215,48 @@ defmodule Qblog.BlocksTest do
     end
   end
 
+  describe "move_placed_block_down/2" do
+    test "moves a placement after the next placement" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block1} =
+        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+
+      {:ok, block2} =
+        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+
+      {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
+      {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
+
+      assert {:ok, moved_placement} = Blocks.move_placed_block_down(placement1, scope: scope)
+      assert moved_placement.order_key > placement2.order_key
+    end
+  end
+
+  describe "move_placed_block_up/2" do
+    test "moves a placement before the previous placement" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block1} =
+        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+
+      {:ok, block2} =
+        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+
+      {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
+      {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
+
+      assert {:ok, moved_placement} = Blocks.move_placed_block_up(placement2, scope: scope)
+      assert moved_placement.order_key < placement1.order_key
+    end
+  end
+
   describe "destroy_placed_block/2" do
     test "removes the placement and the block" do
       actor = generate(user())

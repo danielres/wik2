@@ -14,12 +14,15 @@ defmodule Qblog.Blocks.BlockPlacement do
   actions do
     defaults [
       :read,
-      :update,
       :destroy
     ]
 
     create :create do
       accept [:attachable_id, :attachable_type, :block_id, :order_key]
+    end
+
+    update :update_order do
+      accept [:order_key]
     end
   end
 
@@ -32,11 +35,11 @@ defmodule Qblog.Blocks.BlockPlacement do
       authorize_if always()
     end
 
-    policy action_type(:update) do
+    policy action_type(:destroy) do
       authorize_if always()
     end
 
-    policy action_type(:destroy) do
+    policy action(:update_order) do
       authorize_if always()
     end
   end

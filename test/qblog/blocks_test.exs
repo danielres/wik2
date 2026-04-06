@@ -215,6 +215,47 @@ defmodule Qblog.BlocksTest do
     end
   end
 
+  describe "destroy_placed_block/2" do
+    test "removes the placement and the block" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block} =
+        Blocks.create_group_owned_block_on_page(
+          group,
+          page,
+          %{data: %{text: "Hello"}, type: :text},
+          scope: scope
+        )
+
+      placement =
+        BlockPlacement
+        |> Ash.Query.filter(
+          attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id
+        )
+        |> Ash.read_one!(scope: scope)
+
+      assert :ok = Blocks.destroy_placed_block(placement, scope: scope)
+
+      placement =
+        BlockPlacement
+        |> Ash.Query.filter(
+          attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id
+        )
+        |> Ash.read_one!(scope: scope)
+
+      block =
+        Block
+        |> Ash.Query.filter(id == ^block.id)
+        |> Ash.read_one!(scope: scope)
+
+      assert placement == nil
+      assert block == nil
+    end
+  end
+
   describe "BlockPlacement ordering integrity" do
     test "fails when the same order key is reused in the same container" do
       actor = generate(user())

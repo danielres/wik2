@@ -8,8 +8,9 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def mount(params, _session, socket) do
-    path = Enum.join(params["path"], "/")
-    {node, page} = path |> load_page_and_node(socket.assigns.current_scope)
+    path = params["path"] |> Enum.join("/")
+    scope = socket.assigns.current_scope
+    {node, page} = scope |> load_page_and_node_by_path(path)
 
     {:ok,
      socket
@@ -56,7 +57,7 @@ defmodule QblogWeb.PageLive do
                     </div>
                   </.form>
                 <% else %>
-                  <div class="absolute top-2 right-2 opacity-50 hover:opacity-100 transition">
+                  <div class="absolute top-2 right-2 flex gap-1 opacity-50 hover:opacity-100 transition">
                     <.button
                       class="btn btn-ghost btn-circle"
                       phx-click="edit_block_start"
@@ -64,6 +65,15 @@ defmodule QblogWeb.PageLive do
                       type="button"
                     >
                       <.icon name="hero-pencil-mini" />
+                    </.button>
+
+                    <.button
+                      class="btn btn-ghost btn-circle"
+                      phx-click="destroy_block"
+                      phx-value-placement_id={placement.id}
+                      type="button"
+                    >
+                      <.icon name="hero-trash-mini" />
                     </.button>
                   </div>
                   <div class="whitespace-pre-line">
@@ -105,12 +115,14 @@ defmodule QblogWeb.PageLive do
 
     case group |> Blocks.create_group_owned_block_on_page(page, %{type: :text}, scope: scope) do
       {:ok, block} ->
-        {node, page} = socket.assigns.path |> load_page_and_node(scope)
+        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
+        text = block.data |> block_text() || ""
 
         {:noreply,
          socket
          |> assign(node: node, page: page)
-         |> assign_edit_block(block.id)}
+         |> assign(editing_block_id: block.id)
+         |> assign_form_edit_block(text)}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "create_group_owned_block_on_page failed")
@@ -120,7 +132,35 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def handle_event("edit_block_start", %{"block_id" => block_id}, socket) do
-    {:noreply, socket |> assign_edit_block(block_id)}
+    block = socket.assigns.page |> find_block_in_page(block_id)
+    text = block.data |> block_text() || ""
+
+    {:noreply,
+     socket
+     |> assign(editing_block_id: block_id)
+     |> assign_form_edit_block(text)}
+  end
+
+  @impl true
+  def handle_event("destroy_block", %{"placement_id" => placement_id}, socket) do
+    scope = socket.assigns.current_scope
+
+    placement =
+      socket.assigns.page.block_placements
+      |> Enum.find(&(&1.id == placement_id))
+
+    case placement |> Blocks.destroy_placed_block(scope: scope) do
+      :ok ->
+        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
+
+        {:noreply,
+         socket
+         |> assign(node: node, page: page, editing_block_id: nil, form_edit_block: nil)}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "destroy_placed_block failed")
+        {:noreply, socket |> put_flash(:error, "Could not remove block")}
+    end
   end
 
   @impl true
@@ -130,11 +170,11 @@ defmodule QblogWeb.PageLive do
         socket
       ) do
     scope = socket.assigns.current_scope
-    block = socket.assigns.page |> find_block(block_id)
+    block = socket.assigns.page |> find_block_in_page(block_id)
 
     case block |> Blocks.update_block_text(text, scope: scope) do
       {:ok, _block} ->
-        {node, page} = socket.assigns.path |> load_page_and_node(scope)
+        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
 
         {:noreply,
          socket
@@ -151,15 +191,6 @@ defmodule QblogWeb.PageLive do
     end
   end
 
-  defp assign_edit_block(socket, block_id) do
-    block = socket.assigns.page |> find_block(block_id)
-    text = block.data |> block_text() || ""
-
-    socket
-    |> assign(editing_block_id: block_id)
-    |> assign_form_edit_block(text)
-  end
-
   defp assign_form_edit_block(socket, text) do
     socket |> assign(form_edit_block: %{"text" => text} |> to_form(as: :block))
   end
@@ -167,13 +198,13 @@ defmodule QblogWeb.PageLive do
   defp block_text(%{"text" => text}) when is_binary(text), do: text
   defp block_text(_), do: nil
 
-  defp find_block(page, block_id) do
+  defp find_block_in_page(page, block_id) do
     page.block_placements
     |> Enum.find(&(&1.block.id == block_id))
     |> then(& &1.block)
   end
 
-  defp load_page_and_node(path, scope) do
+  defp load_page_and_node_by_path(scope, path) do
     path
     |> Wiki.ensure_node_and_page_at_path(
       scope: scope,

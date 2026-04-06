@@ -20,6 +20,10 @@ defmodule Qblog.Blocks.Block do
     label_field :type
   end
 
+  code_interface do
+    define :get_by_id, action: :read, get_by: [:id]
+  end
+
   actions do
     defaults [
       :read,

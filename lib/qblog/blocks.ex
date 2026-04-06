@@ -100,11 +100,35 @@ defmodule Qblog.Blocks do
     ash_opts = opts |> Keyword.put(:action, :create)
     attachable_attrs = page_attachable_attrs(page)
 
-    with {:ok, order_key} <- next_order_key(attachable_attrs, scope) do
+    with {:ok, order_key} <- get_next_order_key(attachable_attrs, scope) do
       attachable_attrs
       |> Map.put(:block_id, block_id)
       |> Map.put(:order_key, order_key)
       |> then(&Ash.create(BlockPlacement, &1, ash_opts))
+    end
+  end
+
+  def destroy_placed_block(placement, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+    opts = opts |> Keyword.put(:return_notifications?, true)
+
+    case Repo.transaction(fn ->
+           with {:ok, block} <- Block.get_by_id(placement.block_id, scope: scope),
+                {:ok, placement_notifications} <-
+                  placement |> Ash.destroy(opts |> Keyword.put(:action, :destroy)),
+                {:ok, block_notifications} <-
+                  block |> Ash.destroy(opts |> Keyword.put(:action, :destroy)) do
+             placement_notifications ++ block_notifications
+           else
+             {:error, error} -> Repo.rollback(error)
+           end
+         end) do
+      {:ok, notifications} ->
+        Ash.Notifier.notify(notifications)
+        :ok
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -115,7 +139,7 @@ defmodule Qblog.Blocks do
     }
   end
 
-  defp next_order_key(attachable_attrs, scope) do
+  defp get_next_order_key(attachable_attrs, scope) do
     case last_placement(attachable_attrs, scope) do
       nil -> {:ok, LexSortKey.first()}
       placement -> LexSortKey.key_after(placement.order_key)

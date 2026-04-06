@@ -70,7 +70,9 @@ defmodule Qblog.BlocksTest do
 
       placement =
         BlockPlacement
-        |> Ash.Query.filter(attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id)
+        |> Ash.Query.filter(
+          attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id
+        )
         |> Ash.read_one!(scope: scope)
 
       assert block.author_id == actor.id
@@ -97,7 +99,9 @@ defmodule Qblog.BlocksTest do
 
       placement =
         BlockPlacement
-        |> Ash.Query.filter(attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id)
+        |> Ash.Query.filter(
+          attachable_id == ^page.id and attachable_type == "page" and block_id == ^block.id
+        )
         |> Ash.read_one!(scope: scope)
 
       assert block.author_id == actor.id

@@ -64,7 +64,7 @@ defmodule Qblog.Wiki.Page do
       source_attribute :id
       destination_attribute :attachable_id
       filter expr(attachable_type == "page" and attachable_id == parent(id))
-      default_sort position: :asc
+      default_sort order_key: :asc
     end
 
     many_to_many :blocks, Qblog.Blocks.Block do

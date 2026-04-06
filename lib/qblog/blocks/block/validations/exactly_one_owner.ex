@@ -12,8 +12,7 @@ defmodule Qblog.Blocks.Block.Validations.ExactlyOneOwner do
     case {owner_user_id, owner_group_id} do
       {nil, nil} ->
         {:error,
-         fields: [:owner_user_id, :owner_group_id],
-         message: "must have exactly one owner"}
+         fields: [:owner_user_id, :owner_group_id], message: "must have exactly one owner"}
 
       {_, nil} ->
         :ok
@@ -23,8 +22,7 @@ defmodule Qblog.Blocks.Block.Validations.ExactlyOneOwner do
 
       {_, _} ->
         {:error,
-         fields: [:owner_user_id, :owner_group_id],
-         message: "must have exactly one owner"}
+         fields: [:owner_user_id, :owner_group_id], message: "must have exactly one owner"}
     end
   end
 end

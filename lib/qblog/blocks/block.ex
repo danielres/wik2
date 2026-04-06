@@ -37,11 +37,6 @@ defmodule Qblog.Blocks.Block do
     end
   end
 
-  validations do
-    validate ExactlyOneOwner
-    validate ValidDataForType
-  end
-
   policies do
     policy action_type(:read) do
       authorize_if always()
@@ -58,6 +53,11 @@ defmodule Qblog.Blocks.Block do
     policy action_type(:destroy) do
       authorize_if always()
     end
+  end
+
+  validations do
+    validate ExactlyOneOwner
+    validate ValidDataForType
   end
 
   attributes do

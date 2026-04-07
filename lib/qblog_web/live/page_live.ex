@@ -153,7 +153,6 @@ defmodule QblogWeb.PageLive do
 
         {:noreply,
          socket
-         |> reload_page()
          |> assign(editing_block_id: block.id)
          |> assign_form_edit_block(text)}
 
@@ -191,7 +190,7 @@ defmodule QblogWeb.PageLive do
 
     case placement |> Blocks.move_placed_block_down(scope: scope) do
       {:ok, _placement} ->
-        {:noreply, socket |> reload_page()}
+        {:noreply, socket}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "move_placed_block_down failed")
@@ -207,7 +206,7 @@ defmodule QblogWeb.PageLive do
 
     case placement |> Blocks.move_placed_block_up(scope: scope) do
       {:ok, _placement} ->
-        {:noreply, socket |> reload_page()}
+        {:noreply, socket}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "move_placed_block_up failed")
@@ -223,7 +222,7 @@ defmodule QblogWeb.PageLive do
 
     case placement |> Blocks.destroy_placed_block(scope: scope) do
       :ok ->
-        {:noreply, socket |> reload_page()}
+        {:noreply, socket |> assign(editing_block_id: nil, form_edit_block: nil)}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "destroy_placed_block failed")
@@ -249,7 +248,6 @@ defmodule QblogWeb.PageLive do
       {:ok, _block} ->
         {:noreply,
          socket
-         |> reload_page()
          |> assign(editing_block_id: nil, form_edit_block: nil)}
 
       {:error, error} ->

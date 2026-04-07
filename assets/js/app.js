@@ -26,10 +26,14 @@ import { hooks as colocatedHooks } from "phoenix-colocated/qblog";
 import topbar from "../vendor/topbar";
 
 import { CapitalizeFirstLetter } from "./hooks/CapitalizeFirstLetter";
+import { initTheme } from "./theme";
 
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
+
+initTheme();
+
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },

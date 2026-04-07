@@ -170,37 +170,46 @@ defmodule QblogWeb.Layouts do
   end
 
   @doc """
-  Provides dark vs light theme toggle based on themes defined in app.css.
+  Provides a system, light, and dark theme toggle.
 
-  See <head> in root.html.heex which applies the theme before page load.
+  The toggle only deals in semantic modes and leaves the concrete daisyUI
+  theme names to the root layout bootstrap.
   """
+  @theme_modes [
+    %{label: "System", icon: "hero-computer-desktop-micro", mode: "system"},
+    %{label: "Light", icon: "hero-sun-micro", mode: "light"},
+    %{label: "Dark", icon: "hero-moon-micro", mode: "dark"}
+  ]
+
   def theme_toggle(assigns) do
+    assigns = assign(assigns, :theme_modes, @theme_modes)
+
     ~H"""
-    <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
-      <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme-preference=here-now]_&]:left-1/3 [[data-theme-preference=here-now-dark]_&]:left-2/3 transition-[left]" />
+    <div
+      id="theme-toggle"
+      class="card relative flex flex-row items-center rounded-full border-2 border-base-200 bg-base-200 p-1"
+      role="group"
+      aria-label="Theme selector"
+    >
+      <div class={[
+        "pointer-events-none absolute inset-y-1 left-1 w-[calc(33.333%-0.25rem)] rounded-full border border-base-200 bg-base-100 brightness-110 transition-[left]",
+        "[[data-theme-mode=light]_&]:left-[calc(33.333%+0.125rem)]",
+        "[[data-theme-mode=dark]_&]:left-[calc(66.666%+0.125rem)]"
+      ]} />
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="system"
+        :for={theme <- @theme_modes}
+        type="button"
+        class="group relative z-10 flex w-1/3 cursor-pointer justify-center rounded-full p-2"
+        data-theme-toggle
+        data-theme-mode={theme.mode}
+        title={theme.label}
+        aria-label={theme.label}
       >
-        <.icon name="hero-computer-desktop-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
-
-      <button
-        class="flex p-2 cursor-pointer w-1/3"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="here-now"
-      >
-        <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
-
-      <button
-        class="flex p-2 cursor-pointer w-1/3"
-        phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="here-now-dark"
-      >
-        <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
+        <.icon
+          name={theme.icon}
+          class="size-4 opacity-75 transition-opacity group-hover:opacity-100"
+        />
       </button>
     </div>
     """

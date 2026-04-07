@@ -9,13 +9,19 @@ defmodule QblogWeb.PageLive do
   @impl true
   def mount(params, _session, socket) do
     path = params["path"] |> Enum.join("/")
-    scope = socket.assigns.current_scope
-    {node, page} = scope |> load_page_and_node_by_path(path)
 
-    {:ok,
-     socket
-     |> assign(node: node, page: page, path: path)
-     |> assign(editing_block_id: nil, form_edit_block: nil)}
+    socket =
+      socket
+      |> assign(path: path)
+      |> assign(editing_block_id: nil, form_edit_block: nil)
+      |> assign(subscribed_block_ids: MapSet.new())
+      |> reload_page()
+
+    if connected?(socket) do
+      QblogWeb.Endpoint.subscribe("block_placement:page:#{socket.assigns.page.id}")
+    end
+
+    {:ok, socket}
   end
 
   @impl true
@@ -133,12 +139,11 @@ defmodule QblogWeb.PageLive do
 
     case group |> Blocks.create_group_owned_block_on_page(page, %{type: :text}, scope: scope) do
       {:ok, block} ->
-        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
         text = block.data |> get_block_text() || ""
 
         {:noreply,
          socket
-         |> assign(node: node, page: page)
+         |> reload_page()
          |> assign(editing_block_id: block.id)
          |> assign_form_edit_block(text)}
 
@@ -167,11 +172,7 @@ defmodule QblogWeb.PageLive do
 
     case placement |> Blocks.move_placed_block_down(scope: scope) do
       {:ok, _placement} ->
-        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
-
-        {:noreply,
-         socket
-         |> assign(node: node, page: page)}
+        {:noreply, socket |> reload_page()}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "move_placed_block_down failed")
@@ -187,11 +188,7 @@ defmodule QblogWeb.PageLive do
 
     case placement |> Blocks.move_placed_block_up(scope: scope) do
       {:ok, _placement} ->
-        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
-
-        {:noreply,
-         socket
-         |> assign(node: node, page: page)}
+        {:noreply, socket |> reload_page()}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "move_placed_block_up failed")
@@ -207,11 +204,7 @@ defmodule QblogWeb.PageLive do
 
     case placement |> Blocks.destroy_placed_block(scope: scope) do
       :ok ->
-        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
-
-        {:noreply,
-         socket
-         |> assign(node: node, page: page, editing_block_id: nil, form_edit_block: nil)}
+        {:noreply, socket |> reload_page()}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "destroy_placed_block failed")
@@ -230,11 +223,10 @@ defmodule QblogWeb.PageLive do
 
     case block |> Blocks.update_block_text(text, scope: scope) do
       {:ok, _block} ->
-        {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
-
         {:noreply,
          socket
-         |> assign(node: node, page: page, editing_block_id: nil, form_edit_block: nil)}
+         |> reload_page()
+         |> assign(editing_block_id: nil, form_edit_block: nil)}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "update_block_text failed")
@@ -245,6 +237,16 @@ defmodule QblogWeb.PageLive do
          |> assign(editing_block_id: block_id)
          |> assign_form_edit_block(text)}
     end
+  end
+
+  @impl true
+  def handle_info(%{topic: "block:" <> _block_id}, socket) do
+    {:noreply, socket |> reload_page()}
+  end
+
+  @impl true
+  def handle_info(%{topic: "block_placement:page:" <> _page_id}, socket) do
+    {:noreply, socket |> reload_page()}
   end
 
   defp assign_form_edit_block(socket, text) do
@@ -258,6 +260,43 @@ defmodule QblogWeb.PageLive do
     page.block_placements
     |> Enum.find(&(&1.block.id == block_id))
     |> then(& &1.block)
+  end
+
+  defp reload_page(socket) do
+    scope = socket.assigns.current_scope
+    {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
+
+    socket
+    |> sync_block_subscriptions(page)
+    |> assign(node: node, page: page)
+    |> maybe_clear_invalid_edit_state(page)
+  end
+
+  defp sync_block_subscriptions(socket, page) do
+    if connected?(socket) do
+      current_block_ids = page.block_placements |> Enum.map(& &1.block.id) |> MapSet.new()
+      subscribed_block_ids = socket.assigns.subscribed_block_ids
+      block_ids_to_subscribe = current_block_ids |> MapSet.difference(subscribed_block_ids)
+      block_ids_to_unsubscribe = subscribed_block_ids |> MapSet.difference(current_block_ids)
+
+      Enum.each(block_ids_to_subscribe, &QblogWeb.Endpoint.subscribe("block:#{&1}"))
+      Enum.each(block_ids_to_unsubscribe, &QblogWeb.Endpoint.unsubscribe("block:#{&1}"))
+
+      socket |> assign(subscribed_block_ids: current_block_ids)
+    else
+      socket
+    end
+  end
+
+  defp maybe_clear_invalid_edit_state(socket, page) do
+    editing_block_id = socket.assigns.editing_block_id
+    editing_block? = page.block_placements |> Enum.any?(&(&1.block.id == editing_block_id))
+
+    if editing_block? do
+      socket
+    else
+      socket |> assign(editing_block_id: nil, form_edit_block: nil)
+    end
   end
 
   defp load_page_and_node_by_path(scope, path) do

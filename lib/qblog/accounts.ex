@@ -13,6 +13,7 @@ defmodule Qblog.Accounts do
   resources do
     resource Qblog.Accounts.Token
     resource Qblog.Accounts.User
+    resource Qblog.Accounts.Profile
 
     resource Qblog.Accounts.Group do
       define :get_group_by_name, action: :read, get_by_identity: :unique_name

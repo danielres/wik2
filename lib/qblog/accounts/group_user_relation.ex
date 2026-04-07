@@ -80,6 +80,10 @@ defmodule Qblog.Accounts.GroupUserRelation do
       allow_nil? false
     end
 
+    has_one :profile, Qblog.Accounts.Profile do
+      destination_attribute :group_user_relation_id
+    end
+
     belongs_to :user, Qblog.Accounts.User do
       allow_nil? false
     end

@@ -1,8 +1,8 @@
 defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
 
-  alias Qblog.Blocks
   alias Qblog.Wiki
+  alias QblogWeb.Blocks
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
 
@@ -52,11 +52,9 @@ defmodule QblogWeb.PageLive do
                     phx-submit="edit_block_submit"
                     phx-value-block_id={placement.block.id}
                   >
-                    <.input
-                      field={@form_edit_block[:text]}
-                      id={"edit-block-text-#{placement.block.id}"}
-                      phx-mounted={JS.focus()}
-                      type="textarea"
+                    <Blocks.Components.form
+                      block={placement.block}
+                      form={@form_edit_block}
                     />
 
                     <div class="flex justify-end gap-2">
@@ -110,9 +108,7 @@ defmodule QblogWeb.PageLive do
                       <.icon name="hero-trash-mini" />
                     </.button>
                   </div>
-                  <div class="whitespace-pre-line">
-                    {placement.block.data |> get_block_text() || "Empty block"}
-                  </div>
+                  <Blocks.Components.view block={placement.block} />
                 <% end %>
               </div>
             </div>
@@ -128,7 +124,8 @@ defmodule QblogWeb.PageLive do
           <div class="flex justify-end join">
             <.button
               class="btn btn-sm btn-primary join-item"
-              phx-click="add_block_text"
+              phx-click="add_block"
+              phx-value-type="text"
             >
               Add block
             </.button>
@@ -191,17 +188,18 @@ defmodule QblogWeb.PageLive do
         "space-y-[1px]"
       ]}>
         <.button_special_block
-          phx-click="add_block_text"
-          type="Text"
+          :for={block_type <- Qblog.Blocks.types_available()}
+          label={block_type.label}
+          phx-click="add_block"
+          phx-value-type={block_type.type}
         />
-        <.button_special_block type="Google Maps" />
       </div>
     </div>
     """
   end
 
+  attr :label, :string, required: true
   attr :rest, :global
-  attr :type, :string, required: true
 
   def button_special_block(assigns) do
     ~H"""
@@ -209,41 +207,35 @@ defmodule QblogWeb.PageLive do
       {@rest}
       class="btn btn-primary btn-ghost btn-sm rounded-sm"
     >
-      {@type}
+      {@label}
     </button>
     """
   end
 
   @impl true
-  def handle_event("add_block_text", _params, socket) do
+  def handle_event("add_block", %{"type" => type_param}, socket) do
     scope = socket.assigns.current_scope
     group = scope.tenant
     page = socket.assigns.page
 
-    case group |> Blocks.create_group_owned_block_on_page(page, %{type: :text}, scope: scope) do
-      {:ok, block} ->
-        text = block.data |> get_block_text() || ""
+    case type_param do
+      "text" ->
+        add_block(socket, group, page, :text, scope)
 
-        {:noreply,
-         socket
-         |> assign(editing_block_id: block.id)
-         |> assign_form_edit_block(text)}
+      "google_maps" ->
+        add_block(socket, group, page, :google_maps, scope)
 
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "create_group_owned_block_on_page failed")
-        {:noreply, socket |> put_flash(:error, "Could not add block to page")}
+      _ ->
+        {:noreply, socket |> put_flash(:error, "Unknown block type")}
     end
   end
 
   @impl true
   def handle_event("edit_block_start", %{"block_id" => block_id}, socket) do
-    block = socket.assigns.page |> find_block_in_page(block_id)
-    text = block.data |> get_block_text() || ""
-
     {:noreply,
      socket
      |> assign(editing_block_id: block_id)
-     |> assign_form_edit_block(text)}
+     |> assign_form_edit_block(socket.assigns.page |> find_block_in_page(block_id))}
   end
 
   @impl true
@@ -258,10 +250,9 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("move_block_down", %{"placement_id" => placement_id}, socket) do
     scope = socket.assigns.current_scope
-    block_placements = socket.assigns.page.block_placements
-    placement = block_placements |> Enum.find(&(&1.id == placement_id))
+    placement = socket.assigns.page |> find_placement_in_page(placement_id)
 
-    case placement |> Blocks.move_placed_block_down(scope: scope) do
+    case placement |> Qblog.Blocks.move_placed_block_down(scope: scope) do
       {:ok, _placement} ->
         {:noreply, socket}
 
@@ -274,10 +265,9 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("move_block_up", %{"placement_id" => placement_id}, socket) do
     scope = socket.assigns.current_scope
-    block_placements = socket.assigns.page.block_placements
-    placement = block_placements |> Enum.find(&(&1.id == placement_id))
+    placement = socket.assigns.page |> find_placement_in_page(placement_id)
 
-    case placement |> Blocks.move_placed_block_up(scope: scope) do
+    case placement |> Qblog.Blocks.move_placed_block_up(scope: scope) do
       {:ok, _placement} ->
         {:noreply, socket}
 
@@ -290,10 +280,9 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("destroy_block", %{"placement_id" => placement_id}, socket) do
     scope = socket.assigns.current_scope
-    block_placements = socket.assigns.page.block_placements
-    placement = block_placements |> Enum.find(&(&1.id == placement_id))
+    placement = socket.assigns.page |> find_placement_in_page(placement_id)
 
-    case placement |> Blocks.destroy_placed_block(scope: scope) do
+    case placement |> Qblog.Blocks.destroy_placed_block(scope: scope) do
       :ok ->
         {:noreply, socket |> assign(editing_block_id: nil, form_edit_block: nil)}
 
@@ -306,31 +295,31 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event(
         "edit_block_submit",
-        %{"block" => %{"text" => text}, "block_id" => block_id},
+        %{"block" => params, "block_id" => block_id},
         socket
       ) do
     socket
-    |> save_block_edit(block_id, text)
+    |> save_block_edit(block_id, params)
   end
 
-  defp save_block_edit(socket, block_id, text) do
+  defp save_block_edit(socket, block_id, params) do
     scope = socket.assigns.current_scope
     block = socket.assigns.page |> find_block_in_page(block_id)
 
-    case block |> Blocks.update_block_text(text, scope: scope) do
+    case block |> Qblog.Blocks.update_block(params, scope: scope) do
       {:ok, _block} ->
         {:noreply,
          socket
          |> assign(editing_block_id: nil, form_edit_block: nil)}
 
       {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "update_block_text failed")
+        Utils.Log.scoped_error(scope, error, "save block failed")
 
         {:noreply,
          socket
          |> put_flash(:error, "Could not save block")
          |> assign(editing_block_id: block_id)
-         |> assign_form_edit_block(text)}
+         |> assign_form_edit_block(block, params)}
     end
   end
 
@@ -344,17 +333,39 @@ defmodule QblogWeb.PageLive do
     {:noreply, socket |> reload_page()}
   end
 
-  defp assign_form_edit_block(socket, text) do
-    socket |> assign(form_edit_block: %{"text" => text} |> to_form(as: :block))
+  defp assign_form_edit_block(socket, block) do
+    socket
+    |> assign(form_edit_block: block |> Qblog.Blocks.block_to_form_params() |> to_form(as: :block))
   end
 
-  defp get_block_text(%{"text" => text}) when is_binary(text), do: text
-  defp get_block_text(_), do: nil
+  defp assign_form_edit_block(socket, block, params) do
+    socket
+    |> assign(form_edit_block: block |> Qblog.Blocks.block_to_form_params(params) |> to_form(as: :block))
+  end
+
+  defp add_block(socket, group, page, type, scope) do
+    case group |> Qblog.Blocks.create_group_owned_block_on_page(page, %{type: type}, scope: scope) do
+      {:ok, block} ->
+        {:noreply,
+         socket
+         |> assign(editing_block_id: block.id)
+         |> assign_form_edit_block(block)}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "create_group_owned_block_on_page failed")
+        {:noreply, socket |> put_flash(:error, "Could not add block to page")}
+    end
+  end
 
   defp find_block_in_page(page, block_id) do
     page.block_placements
     |> Enum.find(&(&1.block.id == block_id))
     |> then(& &1.block)
+  end
+
+  defp find_placement_in_page(page, placement_id) do
+    page.block_placements
+    |> Enum.find(&(&1.id == placement_id))
   end
 
   defp reload_page(socket) do

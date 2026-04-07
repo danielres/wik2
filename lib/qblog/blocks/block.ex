@@ -1,8 +1,11 @@
 defmodule Qblog.Blocks.Block do
   alias Qblog.Accounts.Group
   alias Qblog.Accounts.User
+  alias Qblog.Blocks.Block.Validations.DataMatchesType
   alias Qblog.Blocks.Block.Validations.ExactlyOneOwner
-  alias Qblog.Blocks.Block.Validations.ValidDataForType
+  alias Qblog.Blocks.Types
+
+  @supported_types Types.available() |> Enum.map(& &1.type)
 
   use Ash.Resource,
     otp_app: :qblog,
@@ -67,8 +70,8 @@ defmodule Qblog.Blocks.Block do
   end
 
   validations do
+    validate DataMatchesType
     validate ExactlyOneOwner
-    validate ValidDataForType
   end
 
   attributes do
@@ -76,7 +79,7 @@ defmodule Qblog.Blocks.Block do
     timestamps()
 
     attribute :type, :atom do
-      constraints one_of: [:text]
+      constraints one_of: @supported_types
       public? true
       allow_nil? false
     end

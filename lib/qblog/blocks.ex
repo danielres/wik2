@@ -10,6 +10,7 @@ defmodule Qblog.Blocks do
   alias LexSortKey
   alias Qblog.Blocks.Block
   alias Qblog.Blocks.BlockPlacement
+  alias Qblog.Blocks.Types
   alias Qblog.Repo
   alias Qblog.Wiki.Page
 
@@ -24,15 +25,10 @@ defmodule Qblog.Blocks do
     resource Qblog.Blocks.BlockPlacement
   end
 
-  def create_group_owned_block(%{id: group_id}, block_attrs, opts) do
-    _scope = Keyword.fetch!(opts, :scope)
-    ash_opts = opts |> Keyword.put(:action, :create)
-
-    block_attrs
-    |> Map.delete(:owner_user_id)
-    |> Map.put(:owner_group_id, group_id)
-    |> then(&Ash.create(Block, &1, ash_opts))
-  end
+  defdelegate block_to_form_params(block), to: Types
+  defdelegate block_to_form_params(block, params), to: Types
+  defdelegate types_available(), to: Types, as: :available
+  defdelegate update_block(block, params, opts), to: Types
 
   def create_group_owned_block_on_page(%{} = group, %Page{} = page, block_attrs, opts) do
     transaction_opts = opts |> Keyword.put(:return_notifications?, true)
@@ -54,23 +50,6 @@ defmodule Qblog.Blocks do
       {:error, error} ->
         {:error, error}
     end
-  end
-
-  def update_block_text(block, text, opts) do
-    _scope = Keyword.fetch!(opts, :scope)
-
-    block
-    |> Ash.update(%{data: %{text: text}}, opts |> Keyword.put(:action, :update))
-  end
-
-  def create_user_owned_block(block_attrs, opts) do
-    scope = Keyword.fetch!(opts, :scope)
-    ash_opts = opts |> Keyword.put(:action, :create)
-
-    block_attrs
-    |> Map.delete(:owner_group_id)
-    |> Map.put(:owner_user_id, scope.actor.id)
-    |> then(&Ash.create(Block, &1, ash_opts))
   end
 
   def create_user_owned_block_on_page(%Page{} = page, block_attrs, opts) do
@@ -156,13 +135,13 @@ defmodule Qblog.Blocks do
   def move_placed_block_up(placement, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
-    case get_prev_block_placement(placement, scope) do
+    case get_prev_placement(placement, scope) do
       nil ->
         {:ok, placement}
 
       prev_placement ->
         order_key =
-          case get_prev_block_placement(prev_placement, scope) do
+          case get_prev_placement(prev_placement, scope) do
             nil ->
               prev_placement.order_key |> LexSortKey.key_before()
 
@@ -175,6 +154,28 @@ defmodule Qblog.Blocks do
 
         update_placed_block_order_key(placement, order_key, scope)
     end
+  end
+
+  # Internal  ==================================================================
+
+  def create_group_owned_block(%{id: group_id}, block_attrs, opts) do
+    _scope = Keyword.fetch!(opts, :scope)
+    ash_opts = opts |> Keyword.put(:action, :create)
+
+    block_attrs
+    |> Map.delete(:owner_user_id)
+    |> Map.put(:owner_group_id, group_id)
+    |> then(&Ash.create(Block, &1, ash_opts))
+  end
+
+  def create_user_owned_block(block_attrs, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+    ash_opts = opts |> Keyword.put(:action, :create)
+
+    block_attrs
+    |> Map.delete(:owner_group_id)
+    |> Map.put(:owner_user_id, scope.actor.id)
+    |> then(&Ash.create(Block, &1, ash_opts))
   end
 
   defp get_next_order_key(scope, attachable_attrs) do
@@ -206,7 +207,7 @@ defmodule Qblog.Blocks do
     |> List.first()
   end
 
-  defp get_prev_block_placement(placement, scope) do
+  defp get_prev_placement(placement, scope) do
     BlockPlacement
     |> Ash.Query.filter(
       attachable_id == ^placement.attachable_id and

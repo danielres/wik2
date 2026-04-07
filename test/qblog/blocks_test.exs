@@ -19,7 +19,7 @@ defmodule Qblog.BlocksTest do
       assert {:ok, block} =
                Blocks.create_user_owned_block(
                  %{
-                   data: %{text: "Hello"},
+                   data: %{"text" => "Hello"},
                    owner_group_id: group.id,
                    type: :text
                  },
@@ -41,7 +41,7 @@ defmodule Qblog.BlocksTest do
                Blocks.create_group_owned_block(
                  group,
                  %{
-                   data: %{text: "Hello"},
+                   data: %{"text" => "Hello"},
                    owner_user_id: actor.id,
                    type: :text
                  },
@@ -64,7 +64,7 @@ defmodule Qblog.BlocksTest do
       assert {:ok, block} =
                Blocks.create_user_owned_block_on_page(
                  page,
-                 %{data: %{text: "Hello"}, type: :text},
+                 %{data: %{"text" => "Hello"}, type: :text},
                  scope: scope
                )
 
@@ -93,7 +93,7 @@ defmodule Qblog.BlocksTest do
                Blocks.create_group_owned_block_on_page(
                  group,
                  page,
-                 %{data: %{text: "Hello"}, type: :text},
+                 %{data: %{"text" => "Hello"}, type: :text},
                  scope: scope
                )
 
@@ -119,7 +119,7 @@ defmodule Qblog.BlocksTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{text: "Hello"},
+                   data: %{"text" => "Hello"},
                    type: :text
                  },
                  action: :create,
@@ -135,7 +135,7 @@ defmodule Qblog.BlocksTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{text: "Hello"},
+                   data: %{"text" => "Hello"},
                    owner_group_id: group.id,
                    owner_user_id: actor.id,
                    type: :text
@@ -152,7 +152,7 @@ defmodule Qblog.BlocksTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{text: " "},
+                   data: %{"text" => " "},
                    owner_user_id: actor.id,
                    type: :text
                  },
@@ -168,12 +168,119 @@ defmodule Qblog.BlocksTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{text: 123},
+                   data: %{"text" => 123},
                    owner_user_id: actor.id,
                    type: :text
                  },
                  action: :create,
                  scope: scope(actor)
+               )
+    end
+
+    test "allows blank google maps url on create" do
+      actor = generate(user())
+
+      assert {:ok, _block} =
+               Ash.create(
+                 Block,
+                 %{
+                   data: %{"url" => ""},
+                   owner_user_id: actor.id,
+                   type: :google_maps
+                 },
+                 action: :create,
+                 scope: scope(actor)
+               )
+    end
+
+    test "fails when google maps url is not a string" do
+      actor = generate(user())
+
+      assert {:error, _error} =
+               Ash.create(
+                 Block,
+                 %{
+                   data: %{"url" => 123},
+                   owner_user_id: actor.id,
+                   type: :google_maps
+                 },
+                 action: :create,
+                 scope: scope(actor)
+               )
+    end
+
+    test "fails when google maps url is not an embed url" do
+      actor = generate(user())
+
+      assert {:error, _error} =
+               Ash.create(
+                 Block,
+                 %{
+                   data: %{"url" => "https://www.google.com/maps/place/Berlin"},
+                   owner_user_id: actor.id,
+                   type: :google_maps
+                 },
+                 action: :create,
+                 scope: scope(actor)
+               )
+    end
+  end
+
+  describe "update_block/3" do
+    test "accepts a raw google maps embed url" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :google_maps},
+          scope: scope
+        )
+
+      embed_url = "https://www.google.com/maps/embed?pb=example"
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(block, %{"url" => embed_url}, scope: scope)
+
+      assert updated_block.data == %{"url" => embed_url}
+    end
+
+    test "accepts iframe embed code and stores only the url" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :google_maps},
+          scope: scope
+        )
+
+      iframe =
+        ~s(<iframe src="https://www.google.com/maps/embed?pb=example&amp;foo=bar" width="600" height="450"></iframe>)
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(block, %{"url" => iframe}, scope: scope)
+
+      assert updated_block.data == %{
+               "url" => "https://www.google.com/maps/embed?pb=example&foo=bar"
+             }
+    end
+
+    test "rejects a regular google maps url" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :google_maps},
+          scope: scope
+        )
+
+      assert {:error, _error} =
+               Blocks.update_block(
+                 block,
+                 %{"url" => "https://www.google.com/maps/place/Berlin"},
+                 scope: scope
                )
     end
   end
@@ -186,7 +293,7 @@ defmodule Qblog.BlocksTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block} =
-        Blocks.create_user_owned_block(%{data: %{text: "Hello"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "Hello"}, type: :text}, scope: scope)
 
       assert {:ok, placement} = Blocks.place_block_on_page(block, page, scope: scope)
 
@@ -203,10 +310,10 @@ defmodule Qblog.BlocksTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
-        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "First"}, type: :text}, scope: scope)
 
       {:ok, block2} =
-        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "Second"}, type: :text}, scope: scope)
 
       assert {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
       assert {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
@@ -223,10 +330,10 @@ defmodule Qblog.BlocksTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
-        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "First"}, type: :text}, scope: scope)
 
       {:ok, block2} =
-        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "Second"}, type: :text}, scope: scope)
 
       {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
       {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
@@ -244,10 +351,10 @@ defmodule Qblog.BlocksTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
-        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "First"}, type: :text}, scope: scope)
 
       {:ok, block2} =
-        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "Second"}, type: :text}, scope: scope)
 
       {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
       {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
@@ -268,7 +375,7 @@ defmodule Qblog.BlocksTest do
         Blocks.create_group_owned_block_on_page(
           group,
           page,
-          %{data: %{text: "Hello"}, type: :text},
+          %{data: %{"text" => "Hello"}, type: :text},
           scope: scope
         )
 
@@ -306,10 +413,10 @@ defmodule Qblog.BlocksTest do
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
-        Blocks.create_user_owned_block(%{data: %{text: "First"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "First"}, type: :text}, scope: scope)
 
       {:ok, block2} =
-        Blocks.create_user_owned_block(%{data: %{text: "Second"}, type: :text}, scope: scope)
+        Blocks.create_user_owned_block(%{data: %{"text" => "Second"}, type: :text}, scope: scope)
 
       {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
 

@@ -3,6 +3,9 @@ defmodule QblogWeb.PageLive do
 
   alias Qblog.Wiki
   alias QblogWeb.Blocks
+  alias QblogWeb.PageLive.Block.ActionButtons
+  alias QblogWeb.PageLive.Block.AddBlockMenuButton
+  alias QblogWeb.PageLive.Block.Form
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
 
@@ -46,68 +49,12 @@ defmodule QblogWeb.PageLive do
             >
               <div class="card-body">
                 <%= if @editing_block_id == placement.block.id do %>
-                  <.form
-                    for={@form_edit_block}
-                    id={"edit-block-form-#{placement.block.id}"}
-                    phx-submit="edit_block_submit"
-                    phx-value-block_id={placement.block.id}
-                  >
-                    <Blocks.Components.form
-                      block={placement.block}
-                      form={@form_edit_block}
-                    />
-
-                    <div class="flex justify-end gap-2">
-                      <.button
-                        class="btn btn-ghost"
-                        phx-click="edit_block_cancel"
-                        phx-value-block_id={placement.block.id}
-                        type="button"
-                      >
-                        Cancel
-                      </.button>
-
-                      <.button class="btn btn-primary" type="submit">Save</.button>
-                    </div>
-                  </.form>
+                  <Form.render
+                    block={placement.block}
+                    form={@form_edit_block}
+                  />
                 <% else %>
-                  <div class="absolute top-2 right-2 flex gap-1 opacity-50 hover:opacity-100 transition">
-                    <.button
-                      class="btn btn-ghost btn-circle"
-                      phx-click="move_block_up"
-                      phx-value-placement_id={placement.id}
-                      type="button"
-                    >
-                      <.icon name="hero-chevron-up-mini" />
-                    </.button>
-
-                    <.button
-                      class="btn btn-ghost btn-circle"
-                      phx-click="move_block_down"
-                      phx-value-placement_id={placement.id}
-                      type="button"
-                    >
-                      <.icon name="hero-chevron-down-mini" />
-                    </.button>
-
-                    <.button
-                      class="btn btn-ghost btn-circle"
-                      phx-click="edit_block_start"
-                      phx-value-block_id={placement.block.id}
-                      type="button"
-                    >
-                      <.icon name="hero-pencil-mini" />
-                    </.button>
-
-                    <.button
-                      class="btn btn-ghost btn-circle"
-                      phx-click="destroy_block"
-                      phx-value-placement_id={placement.id}
-                      type="button"
-                    >
-                      <.icon name="hero-trash-mini" />
-                    </.button>
-                  </div>
+                  <ActionButtons.render placement={placement} />
                   <Blocks.Components.view block={placement.block} />
                 <% end %>
               </div>
@@ -130,85 +77,19 @@ defmodule QblogWeb.PageLive do
               Add block
             </.button>
 
-            <.special_blocks_choice_button
+            <AddBlockMenuButton.render
               id="popover-special-blocks"
               class={[
                 "btn btn-sm btn-primary join-item",
                 "btn-square",
                 "border-l border-base-300"
               ]}
+              open?={false}
             />
           </div>
         </section>
       </Layouts.group>
     </Layouts.app>
-    """
-  end
-
-  attr :class, :any, default: ""
-  attr :id, :string, required: true
-  attr :open?, :boolean, default: false
-
-  def special_blocks_choice_button(assigns) do
-    ~H"""
-    <.popover_special_blocks id={@id} open?={@open?} />
-
-    <button
-      class={@class}
-      popovertarget="popover-special-blocks"
-      style={ "anchor-name:--anchor-#{@id}" }
-    >
-      <.icon name="hero-ellipsis-horizontal-mini" />
-    </button>
-    """
-  end
-
-  attr :id, :string, required: true
-  attr :open?, :boolean, default: false
-
-  def popover_special_blocks(assigns) do
-    ~H"""
-    <div
-      popover
-      id={@id}
-      style={ "position-anchor:--anchor-#{@id}" }
-      class={[
-        "dropdown dropdown-top dropdown-end",
-        @open? and "dropdown-open",
-        "bg-base-300 rounded",
-        "p-2",
-        "border-1 border-base-300",
-        "mb-1"
-      ]}
-    >
-      <div class={[
-        "grid",
-        "[&_button]:justify-start",
-        "rounded",
-        "space-y-[1px]"
-      ]}>
-        <.button_special_block
-          :for={block_type <- Qblog.Blocks.types_available()}
-          label={block_type.label}
-          phx-click="add_block"
-          phx-value-type={block_type.type}
-        />
-      </div>
-    </div>
-    """
-  end
-
-  attr :label, :string, required: true
-  attr :rest, :global
-
-  def button_special_block(assigns) do
-    ~H"""
-    <button
-      {@rest}
-      class="btn btn-primary btn-ghost btn-sm rounded-sm"
-    >
-      {@label}
-    </button>
     """
   end
 
@@ -335,16 +216,21 @@ defmodule QblogWeb.PageLive do
 
   defp assign_form_edit_block(socket, block) do
     socket
-    |> assign(form_edit_block: block |> Qblog.Blocks.block_to_form_params() |> to_form(as: :block))
+    |> assign(
+      form_edit_block: block |> Qblog.Blocks.block_to_form_params() |> to_form(as: :block)
+    )
   end
 
   defp assign_form_edit_block(socket, block, params) do
     socket
-    |> assign(form_edit_block: block |> Qblog.Blocks.block_to_form_params(params) |> to_form(as: :block))
+    |> assign(
+      form_edit_block: block |> Qblog.Blocks.block_to_form_params(params) |> to_form(as: :block)
+    )
   end
 
   defp add_block(socket, group, page, type, scope) do
-    case group |> Qblog.Blocks.create_group_owned_block_on_page(page, %{type: type}, scope: scope) do
+    case group
+         |> Qblog.Blocks.create_group_owned_block_on_page(page, %{type: type}, scope: scope) do
       {:ok, block} ->
         {:noreply,
          socket

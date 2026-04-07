@@ -23,7 +23,7 @@ defmodule QblogWeb.Blocks.Components.GoogleMaps do
   attr :block, :map, required: true
   attr :form, :any, required: true
 
-  def form(assigns) do
+  def form_fields(assigns) do
     ~H"""
     <.input
       field={@form[:url]}

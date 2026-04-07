@@ -15,10 +15,11 @@ defmodule QblogWeb.Blocks.Components do
   attr :block, :map, required: true
   attr :form, :any, required: true
 
-  def form(assigns) do
+  # TODO: rename to form_fields
+  def form_fields(assigns) do
     case assigns.block.type do
-      :text -> Components.Text.form(assigns)
-      :google_maps -> Components.GoogleMaps.form(assigns)
+      :text -> Components.Text.form_fields(assigns)
+      :google_maps -> Components.GoogleMaps.form_fields(assigns)
     end
   end
 end

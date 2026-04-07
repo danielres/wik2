@@ -96,7 +96,7 @@
 }
 
 :root {
-  --color-primary: oklch(65% 0.1 255);
+  --color-primary: oklch(60% 0.1 255);
   --color-primary-content: oklch(20% 0.1 255);
   --color-secondary: oklch(65% 0.07 255);
   --color-secondary-content: oklch(20% 0.07 255);

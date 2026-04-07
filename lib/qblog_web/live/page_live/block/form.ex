@@ -3,6 +3,7 @@ defmodule QblogWeb.PageLive.Block.Form do
 
   alias QblogWeb.Blocks
 
+  # TODO: pass phx-submit and cancel_event (for phx-click) as attrs
   attr :form, :any, required: true
   attr :block, :map, required: true
 

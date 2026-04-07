@@ -125,15 +125,22 @@ defmodule QblogWeb.PageLive do
             </div>
           </div>
 
-          <div class="flex justify-end">
+          <div class="flex justify-end join">
             <.button
-              id="add-block"
-              class="btn btn-primary"
-              phx-click="add_block"
-              type="button"
+              class="btn btn-sm btn-primary join-item"
+              phx-click="add_block_text"
             >
               Add block
             </.button>
+
+            <.special_blocks_choice_button
+              id="popover-special-blocks"
+              class={[
+                "btn btn-sm btn-primary join-item",
+                "btn-square",
+                "border-l border-base-300"
+              ]}
+            />
           </div>
         </section>
       </Layouts.group>
@@ -141,8 +148,74 @@ defmodule QblogWeb.PageLive do
     """
   end
 
+  attr :class, :any, default: ""
+  attr :id, :string, required: true
+  attr :open?, :boolean, default: false
+
+  def special_blocks_choice_button(assigns) do
+    ~H"""
+    <.popover_special_blocks id={@id} open?={@open?} />
+
+    <button
+      class={@class}
+      popovertarget="popover-special-blocks"
+      style={ "anchor-name:--anchor-#{@id}" }
+    >
+      <.icon name="hero-ellipsis-horizontal-mini" />
+    </button>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :open?, :boolean, default: false
+
+  def popover_special_blocks(assigns) do
+    ~H"""
+    <div
+      popover
+      id={@id}
+      style={ "position-anchor:--anchor-#{@id}" }
+      class={[
+        "dropdown dropdown-top dropdown-end",
+        @open? and "dropdown-open",
+        "bg-base-300 rounded",
+        "p-2",
+        "border-1 border-base-300",
+        "mb-1"
+      ]}
+    >
+      <div class={[
+        "grid",
+        "[&_button]:justify-start",
+        "rounded",
+        "space-y-[1px]"
+      ]}>
+        <.button_special_block
+          phx-click="add_block_text"
+          type="Text"
+        />
+        <.button_special_block type="Google Maps" />
+      </div>
+    </div>
+    """
+  end
+
+  attr :rest, :global
+  attr :type, :string, required: true
+
+  def button_special_block(assigns) do
+    ~H"""
+    <button
+      {@rest}
+      class="btn btn-primary btn-ghost btn-sm rounded-sm"
+    >
+      {@type}
+    </button>
+    """
+  end
+
   @impl true
-  def handle_event("add_block", _params, socket) do
+  def handle_event("add_block_text", _params, socket) do
     scope = socket.assigns.current_scope
     group = scope.tenant
     page = socket.assigns.page

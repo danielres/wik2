@@ -59,7 +59,16 @@ defmodule QblogWeb.PageLive do
                       type="textarea"
                     />
 
-                    <div class="absolute bottom-2 right-2">
+                    <div class="flex justify-end gap-2">
+                      <.button
+                        class="btn btn-ghost"
+                        phx-click="edit_block_cancel"
+                        phx-value-block_id={placement.block.id}
+                        type="button"
+                      >
+                        Cancel
+                      </.button>
+
                       <.button class="btn btn-primary" type="submit">Save</.button>
                     </div>
                   </.form>
@@ -166,6 +175,15 @@ defmodule QblogWeb.PageLive do
   end
 
   @impl true
+  def handle_event("edit_block_cancel", %{"block_id" => block_id}, socket) do
+    if socket.assigns.editing_block_id == block_id do
+      {:noreply, socket |> assign(editing_block_id: nil, form_edit_block: nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event("move_block_down", %{"placement_id" => placement_id}, socket) do
     scope = socket.assigns.current_scope
     block_placements = socket.assigns.page.block_placements
@@ -219,6 +237,11 @@ defmodule QblogWeb.PageLive do
         %{"block" => %{"text" => text}, "block_id" => block_id},
         socket
       ) do
+    socket
+    |> save_block_edit(block_id, text)
+  end
+
+  defp save_block_edit(socket, block_id, text) do
     scope = socket.assigns.current_scope
     block = socket.assigns.page |> find_block_in_page(block_id)
 

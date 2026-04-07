@@ -22,7 +22,7 @@ defmodule QblogWeb.PageLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <Layouts.group scope={@current_scope}>
+      <Layouts.group scope={@current_scope} view="wiki">
         <section class="space-y-4">
           <header class="space-y-1">
             <h1 class="text-2xl">{@node.title}</h1>
@@ -35,7 +35,7 @@ defmodule QblogWeb.PageLive do
           <div class="space-y-2">
             <div
               :for={placement <- @page.block_placements}
-              class="card bg-base-100"
+              class="card bg-base-200/50"
               id={"block-#{placement.block.id}"}
             >
               <div class="card-body">

@@ -26,8 +26,8 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
   def button(assigns) do
     variant_class =
       case assigns.variant do
-        "error" -> "hover:btn-error tooltip-error"
-        _ -> "hover:btn-primary tooltip-primary"
+        "error" -> "btn-neutral hover:btn-error tooltip-error"
+        _ -> "btn-neutral hover:btn-primary tooltip-primary"
       end
 
     assigns = assigns |> assign(variant_class: variant_class)

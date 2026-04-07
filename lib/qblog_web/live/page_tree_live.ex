@@ -17,7 +17,7 @@ defmodule QblogWeb.PageTreeLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <Layouts.group scope={@current_scope}>
+      <Layouts.group scope={@current_scope} view="tree">
         <.live_component
           current_scope={@current_scope}
           editable?={true}

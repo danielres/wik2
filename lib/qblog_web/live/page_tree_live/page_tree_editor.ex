@@ -33,12 +33,11 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="flex items-center justify-between gap-4">
-        <h1 class="text-2xl font-[100]">Page Tree</h1>
+      <div class="flex items-center justify-end gap-4 mb-2">
         <ActionButtons.wrapper>
           <ActionButtons.button
             :if={@editable?}
-            class="[&:not(:hover)]:bg-base-100"
+            class="[&:not(:hover)]:bg-base-300"
             data-tip="add at top level"
             data-testid="page-tree-editor-add-root"
             icon="hero-plus-mini"
@@ -77,10 +76,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
               <span class="badge-xs bg-base-200 px-2">id {props.node.id}</span>
               <span class="badge-xs bg-base-200 pr-1 opacity-80">
                 <span :if={!props.node.page_id}>
-                  <.icon name="hero-x-circle-solid" class="text-red-500 size-4" /> no page
+                  <.icon name="hero-x-circle-solid" class="text-error size-4" /> no page
                 </span>
                 <span :if={props.node.page_id}>
-                  <.icon name="hero-check-circle-solid" class="text-green-500 size-4" /> page
+                  <.icon name="hero-check-circle-solid" class="text-success size-4" /> page
                 </span>
               </span>
             <% end %>

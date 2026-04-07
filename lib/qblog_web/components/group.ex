@@ -14,7 +14,7 @@ defmodule QblogWeb.Components.Group do
         phx-change="validate"
         phx-submit="submit"
       >
-        <div class="card bg-base-300">
+        <div class="card bg-base-200">
           <div class="card-body">
             <.input field={@form[:name]} label="Name" />
             <.input field={@form[:description]} label="Description" type="textarea" />
@@ -33,18 +33,22 @@ defmodule QblogWeb.Components.Group do
 
   def list(assigns) do
     ~H"""
-    <.link
-      :for={group <- @groups}
-      class="btn btn-soft justify-between"
-      navigate={~p"/#{group.name}"}
-    >
-      {group.name}
-      <span class="font-thin">{group.author |> to_string}</span>
-    </.link>
+    <ul class="menu bg-base-200 rounded-box w-full p-2">
+      <li>
+        <.link
+          :for={group <- @groups}
+          class="justify-between"
+          navigate={~p"/#{group.name}"}
+        >
+          {group.name}
+          <span class="font-thin">{group.author |> to_string}</span>
+        </.link>
 
-    <span :if={@groups == []} class="opacity-70">
-      You are not a member of any groups yet.
-    </span>
+        <span :if={@groups == []} class="opacity-70">
+          You are not a member of any groups yet.
+        </span>
+      </li>
+    </ul>
     """
   end
 end

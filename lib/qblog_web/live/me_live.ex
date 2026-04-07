@@ -27,31 +27,30 @@ defmodule QblogWeb.MeLive do
         </div>
 
         <div class="flex flex-col md:flex-row gap-4 mt-4 [&>div]:flex-1">
-          <div class="card bg-base-100 shadow flex-1">
-            <div class="card-body">
-              <h2 class="text-xl">Your groups</h2>
-              <Components.Group.list groups={@groups} />
-            </div>
+          <div class="flex-1">
+            <h2 class="text-xl mb-1">Your groups</h2>
+            <Components.Group.list groups={@groups} />
           </div>
 
-          <div class="card bg-base-100 shadow">
-            <div class="card-body">
-              <h2 class="text-xl">Details</h2>
-
-              <table class="text-left space-y-2">
-                <tr>
-                  <th>role</th>
-                  <td>{@current_user.role}</td>
-                </tr>
-                <tr>
-                  <th>email</th>
-                  <td>{@current_user.email}</td>
-                </tr>
-                <tr>
-                  <th>username</th>
-                  <td>{@current_user |> to_string()}</td>
-                </tr>
-              </table>
+          <div>
+            <h2 class="text-xl mb-1">Details</h2>
+            <div class="card bg-base-200 shadow h-min">
+              <div class="card-body py-2">
+                <table class="text-left space-y-2 leading-8">
+                  <tr>
+                    <th>role</th>
+                    <td>{@current_user.role}</td>
+                  </tr>
+                  <tr>
+                    <th>email</th>
+                    <td>{@current_user.email}</td>
+                  </tr>
+                  <tr>
+                    <th>username</th>
+                    <td>{@current_user |> to_string()}</td>
+                  </tr>
+                </table>
+              </div>
             </div>
           </div>
         </div>

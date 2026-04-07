@@ -31,12 +31,10 @@ defmodule QblogWeb.GroupLive do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
       <Layouts.group scope={@current_scope}>
-        <h1 class="text-2xl font-[100] flex items-center justify-between gap-4">
+        <h1 class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
           <div>
-            <span>{@current_scope.tenant.name |> String.capitalize()}</span>
-            <span class="opacity-50">
-              <span>|</span>
-              <span>group details</span>
+            <span class="font-[400] opacity-70">
+              {@current_scope.tenant.name |> String.capitalize()}
             </span>
           </div>
 
@@ -48,6 +46,8 @@ defmodule QblogWeb.GroupLive do
             <.icon name="hero-pencil-mini" />
           </button>
         </h1>
+
+        <div class="opacity-50 text-sm">{@group.description}</div>
 
         <Modal.render
           cancel="update_group_cancel"
@@ -71,9 +71,7 @@ defmodule QblogWeb.GroupLive do
           <.new_owner_selector group={@group} />
         </Modal.render>
 
-        <div class="opacity-80">{@group.description}</div>
-
-        <div class="card card-sm bg-base-100">
+        <div class="card card-sm bg-base-200">
           <div class="card-body">
             <h2 class="text-xl">Members</h2>
 
@@ -219,7 +217,7 @@ defmodule QblogWeb.GroupLive do
         :for={membership <- @memberships}
         class={[
           "flex items-center justify-between gap-1 flex-wrap",
-          "rounded bg-base-200/50 px-3 py-2"
+          "rounded bg-base-100/50 px-3 py-2"
         ]}
       >
         <span>{membership.user |> to_string()}</span>

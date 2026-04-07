@@ -22,11 +22,10 @@ defmodule QblogWeb.HomeLive do
     <Layouts.app flash={@flash} scope={@current_scope}>
       <Layouts.container>
         <h1 class="text-2xl font-[100]">Your groups</h1>
+
         <div class="flex gap-4">
-          <div class="card bg-base-100 shadow flex-1">
-            <div class="card-body">
-              <Components.Group.list groups={@groups} />
-            </div>
+          <div class="flex-1">
+            <Components.Group.list groups={@groups} />
           </div>
 
           <Components.Group.form

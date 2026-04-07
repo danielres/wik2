@@ -299,7 +299,7 @@ defmodule QblogWeb.CoreComponents do
   def error(assigns) do
     ~H"""
     <p class="text-content flex items-center gap-2">
-      <.icon name="hero-exclamation-triangle-micro" class="size-5 opacity-60 text-error-content" />
+      <.icon name="hero-exclamation-triangle-micro" class="size-5 opacity-60 text-error" />
       {render_slot(@inner_block)}
     </p>
     """

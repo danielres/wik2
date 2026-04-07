@@ -8,7 +8,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
   def render(assigns) do
     ~H"""
     <%= if @nodes_flat == [] do %>
-      <div class="card bg-base-100 shadow">
+      <div class="card bg-base-200/50">
         <div class="card-body">
           No nodes yet.
         </div>
@@ -38,7 +38,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
     <ul class={[@depth == 0 and "space-y-3"]}>
       <li
         :for={node <- @nodes_tree}
-        class={["card", "bg-base-100"]}
+        class={["card", @depth == 0 and "bg-base-300/50"]}
         data-testid={"page-tree-node-#{node.id}"}
       >
         <.page_tree_node node={node} nodes_flat={@nodes_flat} depth={@depth + 1}>

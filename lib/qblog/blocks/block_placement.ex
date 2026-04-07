@@ -4,7 +4,8 @@ defmodule Qblog.Blocks.BlockPlacement do
     domain: Qblog.Blocks,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "block_placements"
@@ -42,6 +43,14 @@ defmodule Qblog.Blocks.BlockPlacement do
     policy action(:update_order) do
       authorize_if always()
     end
+  end
+
+  pub_sub do
+    module QblogWeb.Endpoint
+    prefix "block_placement"
+    publish :create, [:attachable_type, :attachable_id]
+    publish :update_order, [:attachable_type, :attachable_id]
+    publish :destroy, [:attachable_type, :attachable_id]
   end
 
   attributes do

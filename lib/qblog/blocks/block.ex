@@ -9,7 +9,8 @@ defmodule Qblog.Blocks.Block do
     domain: Qblog.Blocks,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "blocks"
@@ -57,6 +58,12 @@ defmodule Qblog.Blocks.Block do
     policy action_type(:destroy) do
       authorize_if always()
     end
+  end
+
+  pub_sub do
+    module QblogWeb.Endpoint
+    prefix "block"
+    publish :update, [:id]
   end
 
   validations do

@@ -55,6 +55,7 @@ defmodule QblogWeb.PageLive do
                     <.input
                       field={@form_edit_block[:text]}
                       id={"edit-block-text-#{placement.block.id}"}
+                      phx-mounted={JS.focus()}
                       type="textarea"
                     />
 

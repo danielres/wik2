@@ -8,20 +8,14 @@ defmodule QblogWeb.Components.Block do
   attr :block, :map, required: true
 
   defp dispatch_render(assigns) do
-    case assigns.block.type do
-      :text -> Block.Types.Text.render(assigns)
-      :google_maps -> Block.Types.GoogleMaps.render(assigns)
-    end
+    assigns.block.type |> type_to_module() |> then(& &1.render(assigns))
   end
 
   attr :block, :map, required: true
   attr :form, :any, required: true
 
   defp dispatch_form_fields(assigns) do
-    case assigns.block.type do
-      :text -> Block.Types.Text.form_fields(assigns)
-      :google_maps -> Block.Types.GoogleMaps.form_fields(assigns)
-    end
+    assigns.block.type |> type_to_module() |> then(& &1.form_fields(assigns))
   end
 
   # Regular components =========================================================
@@ -66,5 +60,16 @@ defmodule QblogWeb.Components.Block do
       </div>
     </Phoenix.Component.form>
     """
+  end
+
+  defp type_to_module(type) do
+    Qblog.Blocks.Types.modules()
+    |> Enum.find_value(fn
+      module ->
+        if module.type() == type do
+          type_name = module |> Module.split() |> List.last()
+          Module.concat([Block.Types, type_name])
+        end
+    end)
   end
 end

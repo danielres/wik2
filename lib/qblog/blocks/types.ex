@@ -1,11 +1,14 @@
 defmodule Qblog.Blocks.Types do
   alias Qblog.Blocks.Types.GoogleMaps
+  alias Qblog.Blocks.Types.SoundCloud
   alias Qblog.Blocks.Types.Text
 
-  @types [GoogleMaps, Text]
+  @modules [GoogleMaps, SoundCloud, Text]
+
+  def modules, do: @modules
 
   def available do
-    @types
+    @modules
     |> Enum.map(fn module ->
       %{label: module.label(), type: module.type()}
     end)
@@ -29,7 +32,7 @@ defmodule Qblog.Blocks.Types do
   end
 
   defp type_to_module(type) do
-    @types
+    @modules
     |> Enum.find_value(fn
       module ->
         if module.type() == type, do: module

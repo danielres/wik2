@@ -95,8 +95,7 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
                Blocks.update_block(block, %{"url" => iframe}, scope: scope)
 
       assert updated_block.data == %{
-               "url" =>
-                 "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?si=example&start=30"
+               "url" => "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?si=example&start=30"
              }
     end
 

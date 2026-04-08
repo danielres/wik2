@@ -31,11 +31,13 @@ defmodule Qblog.Blocks.Types.GoogleCalendar do
         if embed_url?(url) do
           :ok
         else
-          {:error, field: :data, message: "google calendar blocks must store a Google Calendar embed URL"}
+          {:error,
+           field: :data, message: "google calendar blocks must store a Google Calendar embed URL"}
         end
 
       _ ->
-        {:error, field: :data, message: "google calendar blocks must store a Google Calendar embed URL"}
+        {:error,
+         field: :data, message: "google calendar blocks must store a Google Calendar embed URL"}
     end
   end
 
@@ -54,13 +56,15 @@ defmodule Qblog.Blocks.Types.GoogleCalendar do
       true ->
         case extract_iframe_src(input) do
           nil ->
-            {:error, "Google Calendar blocks only accept Google Calendar embed URLs or embed iframe code"}
+            {:error,
+             "Google Calendar blocks only accept Google Calendar embed URLs or embed iframe code"}
 
           url when is_binary(url) ->
             if embed_url?(url) do
               {:ok, url}
             else
-              {:error, "Google Calendar blocks only accept Google Calendar embed URLs or embed iframe code"}
+              {:error,
+               "Google Calendar blocks only accept Google Calendar embed URLs or embed iframe code"}
             end
         end
     end

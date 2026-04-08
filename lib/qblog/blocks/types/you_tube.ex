@@ -73,7 +73,12 @@ defmodule Qblog.Blocks.Types.YouTube do
   def embed_url?(url) when is_binary(url) do
     case URI.parse(url) do
       %URI{scheme: "https", host: host, path: path}
-      when host in ["youtube.com", "www.youtube.com", "youtube-nocookie.com", "www.youtube-nocookie.com"] ->
+      when host in [
+             "youtube.com",
+             "www.youtube.com",
+             "youtube-nocookie.com",
+             "www.youtube-nocookie.com"
+           ] ->
         String.starts_with?(path || "", "/embed/")
 
       _ ->

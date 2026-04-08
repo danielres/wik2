@@ -24,7 +24,9 @@ defmodule QblogWeb.Components.Block do
 
   def render(assigns) do
     ~H"""
-    <Block.ActionButtons.render placement={@placement} />
+    <div class="bg-base-300 self-end absolute top-0 right-0 rounded">
+      <Block.ActionButtons.render placement={@placement} />
+    </div>
 
     <.dispatch_render block={@placement.block} />
     """
@@ -46,9 +48,9 @@ defmodule QblogWeb.Components.Block do
     >
       <.dispatch_form_fields block={@block} form={@form} />
 
-      <div class="flex justify-end gap-2">
+      <div class="flex justify-between gap-2">
         <.button
-          class="btn btn-ghost"
+          class="btn btn-ghost btn-sm"
           phx-click="edit_block_cancel"
           phx-value-block_id={@block.id}
           type="button"
@@ -56,7 +58,7 @@ defmodule QblogWeb.Components.Block do
           Cancel
         </.button>
 
-        <.button class="btn btn-primary" type="submit">Save</.button>
+        <.button class="btn btn-primary btn-sm" type="submit">Save</.button>
       </div>
     </Phoenix.Component.form>
     """

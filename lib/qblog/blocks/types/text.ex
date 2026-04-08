@@ -1,3 +1,5 @@
+# TODO: Create behavior for Qblog.Blocks.Types.*
+
 defmodule Qblog.Blocks.Types.Text do
   def label, do: "Text"
   def type, do: :text

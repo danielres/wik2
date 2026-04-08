@@ -5,9 +5,7 @@ defmodule QblogWeb.Components.Block.Types.Text do
 
   def render(assigns) do
     ~H"""
-    <div class="whitespace-pre-line">
-      {@block.data["text"] || "Empty block"}
-    </div>
+    <div class="whitespace-pre-line">{@block.data["text"] || "Empty block"}</div>
     """
   end
 

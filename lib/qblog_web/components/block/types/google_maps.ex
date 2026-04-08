@@ -8,7 +8,7 @@ defmodule QblogWeb.Components.Block.Types.GoogleMaps do
     <%= if @block.data["url"] do %>
       <iframe
         allowfullscreen
-        class="aspect-video w-full rounded-lg border-0"
+        class="aspect-video w-full rounded border-0"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade"
         src={@block.data["url"]}

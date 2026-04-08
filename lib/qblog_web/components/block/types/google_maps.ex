@@ -1,9 +1,9 @@
-defmodule QblogWeb.Blocks.Components.GoogleMaps do
+defmodule QblogWeb.Components.Block.Types.GoogleMaps do
   use QblogWeb, :html
 
   attr :block, :map, required: true
 
-  def view(assigns) do
+  def render(assigns) do
     ~H"""
     <%= if @block.data["url"] do %>
       <iframe

@@ -2,10 +2,7 @@ defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
 
   alias Qblog.Wiki
-  alias QblogWeb.Blocks
-  alias QblogWeb.PageLive.Block.ActionButtons
-  alias QblogWeb.PageLive.Block.AddBlockMenuButton
-  alias QblogWeb.PageLive.Block.Form
+  alias QblogWeb.Components
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
 
@@ -49,13 +46,9 @@ defmodule QblogWeb.PageLive do
             >
               <div class="card-body">
                 <%= if @editing_block_id == placement.block.id do %>
-                  <Form.render
-                    block={placement.block}
-                    form={@form_edit_block}
-                  />
+                  <Components.Block.form placement={placement} form={@form_edit_block} />
                 <% else %>
-                  <ActionButtons.render placement={placement} />
-                  <Blocks.Components.view block={placement.block} />
+                  <Components.Block.render placement={placement} />
                 <% end %>
               </div>
             </div>
@@ -77,7 +70,7 @@ defmodule QblogWeb.PageLive do
               Add block
             </.button>
 
-            <AddBlockMenuButton.render
+            <Components.Block.AddBlockMenuButton.render
               id="popover-special-blocks"
               class={[
                 "btn btn-sm btn-primary join-item",

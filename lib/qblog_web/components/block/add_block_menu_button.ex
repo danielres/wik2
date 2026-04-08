@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageLive.Block.AddBlockMenuButton do
+defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   use QblogWeb, :html
 
   attr :class, :any, default: ""
@@ -11,7 +11,7 @@ defmodule QblogWeb.PageLive.Block.AddBlockMenuButton do
 
     <button
       class={@class}
-      popovertarget="popover-special-blocks"
+      popovertarget={@id}
       style={ "anchor-name:--anchor-#{@id}" }
     >
       <.icon name="hero-ellipsis-horizontal-mini" />

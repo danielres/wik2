@@ -1,9 +1,9 @@
-defmodule QblogWeb.Blocks.Components.Text do
+defmodule QblogWeb.Components.Block.Types.Text do
   use QblogWeb, :html
 
   attr :block, :map, required: true
 
-  def view(assigns) do
+  def render(assigns) do
     ~H"""
     <div class="whitespace-pre-line">
       {@block.data["text"] || "Empty block"}

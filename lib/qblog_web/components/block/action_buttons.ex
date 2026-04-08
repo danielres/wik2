@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageLive.Block.ActionButtons do
+defmodule QblogWeb.Components.Block.ActionButtons do
   use QblogWeb, :html
 
   attr :placement, :map, required: true

@@ -2,8 +2,9 @@ defmodule Qblog.Blocks.Types do
   alias Qblog.Blocks.Types.GoogleMaps
   alias Qblog.Blocks.Types.SoundCloud
   alias Qblog.Blocks.Types.Text
+  alias Qblog.Blocks.Types.YouTube
 
-  @modules [GoogleMaps, SoundCloud, Text]
+  @modules [GoogleMaps, SoundCloud, Text, YouTube]
 
   def modules, do: @modules
 

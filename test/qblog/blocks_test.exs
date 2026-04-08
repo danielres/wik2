@@ -272,6 +272,54 @@ defmodule Qblog.BlocksTest do
                  scope: scope(actor)
                )
     end
+
+    test "allows blank youtube url on create" do
+      actor = generate(user())
+
+      assert {:ok, _block} =
+               Ash.create(
+                 Block,
+                 %{
+                   data: %{"url" => ""},
+                   owner_user_id: actor.id,
+                   type: :youtube
+                 },
+                 action: :create,
+                 scope: scope(actor)
+               )
+    end
+
+    test "fails when youtube url is not a string" do
+      actor = generate(user())
+
+      assert {:error, _error} =
+               Ash.create(
+                 Block,
+                 %{
+                   data: %{"url" => 123},
+                   owner_user_id: actor.id,
+                   type: :youtube
+                 },
+                 action: :create,
+                 scope: scope(actor)
+               )
+    end
+
+    test "fails when youtube url is not an embed url" do
+      actor = generate(user())
+
+      assert {:error, _error} =
+               Ash.create(
+                 Block,
+                 %{
+                   data: %{"url" => "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+                   owner_user_id: actor.id,
+                   type: :youtube
+                 },
+                 action: :create,
+                 scope: scope(actor)
+               )
+    end
   end
 
   describe "update_block/3" do
@@ -387,6 +435,66 @@ defmodule Qblog.BlocksTest do
                Blocks.update_block(
                  block,
                  %{"url" => "https://soundcloud.com/forss/flickermood"},
+                 scope: scope
+               )
+    end
+
+    test "accepts a raw youtube embed url" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :youtube},
+          scope: scope
+        )
+
+      embed_url = "https://www.youtube.com/embed/dQw4w9WgXcQ?si=example"
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(block, %{"url" => embed_url}, scope: scope)
+
+      assert updated_block.data == %{
+               "url" => "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?si=example"
+             }
+    end
+
+    test "accepts youtube iframe embed code and stores only the url" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :youtube},
+          scope: scope
+        )
+
+      iframe =
+        ~s(<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=example&amp;start=30" allowfullscreen></iframe>)
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(block, %{"url" => iframe}, scope: scope)
+
+      assert updated_block.data == %{
+               "url" =>
+                 "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?si=example&start=30"
+             }
+    end
+
+    test "rejects a regular youtube url" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :youtube},
+          scope: scope
+        )
+
+      assert {:error, _error} =
+               Blocks.update_block(
+                 block,
+                 %{"url" => "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
                  scope: scope
                )
     end

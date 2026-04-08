@@ -91,16 +91,14 @@ defmodule QblogWeb.PageLive do
     scope = socket.assigns.current_scope
     group = scope.tenant
     page = socket.assigns.page
+    type = Qblog.Blocks.types_available() |> Enum.find_value(&if("#{&1.type}" == type_param, do: &1.type))
 
-    case type_param do
-      "text" ->
-        add_block(socket, group, page, :text, scope)
-
-      "google_maps" ->
-        add_block(socket, group, page, :google_maps, scope)
-
-      _ ->
+    case type do
+      nil ->
         {:noreply, socket |> put_flash(:error, "Unknown block type")}
+
+      type ->
+        add_block(socket, group, page, type, scope)
     end
   end
 

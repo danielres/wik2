@@ -29,7 +29,7 @@ defmodule QblogWeb.PageLive do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
       <Layouts.group scope={@current_scope} view="wiki">
-        <section class="space-y-4">
+        <section class="space-y-8">
           <header class="space-y-1">
             <h1 class="text-2xl">{@node.title}</h1>
             <div class="text-sm opacity-60">page author: {@page.author |> to_string()}</div>
@@ -38,13 +38,13 @@ defmodule QblogWeb.PageLive do
             </div>
           </header>
 
-          <div class="space-y-2">
+          <div class="space-y-8">
             <div
               :for={placement <- @page.block_placements}
-              class="card bg-base-200/50"
+              class="card rounded"
               id={"block-#{placement.block.id}"}
             >
-              <div class="card-body">
+              <div class="card-body py-0.5 px-0 ">
                 <%= if @editing_block_id == placement.block.id do %>
                   <Components.Block.form placement={placement} form={@form_edit_block} />
                 <% else %>
@@ -91,7 +91,10 @@ defmodule QblogWeb.PageLive do
     scope = socket.assigns.current_scope
     group = scope.tenant
     page = socket.assigns.page
-    type = Qblog.Blocks.types_available() |> Enum.find_value(&if("#{&1.type}" == type_param, do: &1.type))
+
+    type =
+      Qblog.Blocks.types_available()
+      |> Enum.find_value(&if("#{&1.type}" == type_param, do: &1.type))
 
     case type do
       nil ->

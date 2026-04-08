@@ -24,7 +24,7 @@ defmodule QblogWeb.Components.Block do
 
   def render(assigns) do
     ~H"""
-    <div class="bg-base-300 self-end absolute top-0 right-0 rounded">
+    <div class="absolute top-0 right-0">
       <Block.ActionButtons.render placement={@placement} />
     </div>
 
@@ -45,6 +45,7 @@ defmodule QblogWeb.Components.Block do
       id={"edit-block-form-#{@block.id}"}
       phx-submit="edit_block_submit"
       phx-value-block_id={@block.id}
+      class="bg-base-200 p-4 rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-secondary"
     >
       <.dispatch_form_fields block={@block} form={@form} />
 

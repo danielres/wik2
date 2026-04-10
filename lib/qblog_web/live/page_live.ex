@@ -38,10 +38,16 @@ defmodule QblogWeb.PageLive do
             </div>
           </header>
 
-          <div class="space-y-8">
+          <div class={[
+            "grid gap-8 sm:grid-cols-2"
+          ]}>
             <div
               :for={placement <- @page.block_placements}
-              class="card rounded"
+              class={[
+                "card rounded col-span-1",
+                placement.width == "half" && "sm:col-span-1",
+                placement.width == "full" && "sm:col-span-2"
+              ]}
               id={"block-#{placement.block.id}"}
             >
               <div class="card-body py-0.5 px-0 ">
@@ -55,7 +61,12 @@ defmodule QblogWeb.PageLive do
 
             <div
               :if={Enum.empty?(@page.block_placements)}
-              class="rounded bg-base-300/30 p-8 text-center"
+              class={[
+                "sm:col-span-2",
+                "p-8",
+                "rounded bg-base-300/30",
+                "text-center"
+              ]}
             >
               No blocks yet
             </div>
@@ -164,6 +175,21 @@ defmodule QblogWeb.PageLive do
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "destroy_placed_block failed")
         {:noreply, socket |> put_flash(:error, "Could not remove block")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_block_width", %{"placement_id" => placement_id}, socket) do
+    scope = socket.assigns.current_scope
+    placement = socket.assigns.page |> find_placement_in_page(placement_id)
+
+    case placement |> Qblog.Blocks.toggle_placed_block_width(scope: scope) do
+      {:ok, _placement} ->
+        {:noreply, socket}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "toggle_placed_block_width failed")
+        {:noreply, socket |> put_flash(:error, "Could not update block width")}
     end
   end
 

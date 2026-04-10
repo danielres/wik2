@@ -3,6 +3,7 @@ defmodule QblogWeb.Components.Block.ActionButtons do
 
   attr :placement, :map, required: true
 
+  # TODO: set title attributes for buttons
   def render(assigns) do
     ~H"""
     <div class={[
@@ -32,6 +33,17 @@ defmodule QblogWeb.Components.Block.ActionButtons do
         popover
         style={"position-anchor:--anchor-#{@placement.id}"}
       >
+        <.action_button
+          icon={
+            if @placement.width == "half",
+              do: "hero-arrows-pointing-out",
+              else: "hero-arrows-pointing-in"
+          }
+          phx-click="toggle_block_width"
+          phx-value-placement_id={@placement.id}
+          title={if @placement.width == "half", do: "Set full width", else: "Set half width"}
+        />
+
         <.action_button
           icon="hero-trash-mini"
           phx-click="destroy_block"

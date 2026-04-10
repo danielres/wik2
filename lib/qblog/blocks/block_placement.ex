@@ -19,11 +19,16 @@ defmodule Qblog.Blocks.BlockPlacement do
     ]
 
     create :create do
-      accept [:attachable_id, :attachable_type, :block_id, :order_key]
+      accept [:attachable_id, :attachable_type, :block_id, :order_key, :width]
     end
 
     update :update_order do
       accept [:order_key]
+    end
+
+    # TODO: tighten policies
+    update :update_width do
+      accept [:width]
     end
   end
 
@@ -43,6 +48,10 @@ defmodule Qblog.Blocks.BlockPlacement do
     policy action(:update_order) do
       authorize_if always()
     end
+
+    policy action(:update_width) do
+      authorize_if always()
+    end
   end
 
   pub_sub do
@@ -50,6 +59,7 @@ defmodule Qblog.Blocks.BlockPlacement do
     prefix "block_placement"
     publish :create, [:attachable_type, :attachable_id]
     publish :update_order, [:attachable_type, :attachable_id]
+    publish :update_width, [:attachable_type, :attachable_id]
     publish :destroy, [:attachable_type, :attachable_id]
   end
 
@@ -57,12 +67,12 @@ defmodule Qblog.Blocks.BlockPlacement do
     uuid_v7_primary_key :id
     timestamps()
 
-    attribute :attachable_type, :string do
+    attribute :attachable_id, :uuid do
       public? true
       allow_nil? false
     end
 
-    attribute :attachable_id, :uuid do
+    attribute :attachable_type, :string do
       public? true
       allow_nil? false
     end
@@ -70,6 +80,13 @@ defmodule Qblog.Blocks.BlockPlacement do
     attribute :order_key, :string do
       public? true
       allow_nil? false
+    end
+
+    attribute :width, :string do
+      public? true
+      allow_nil? false
+      constraints match: ~r/^(full|half)$/
+      default "full"
     end
   end
 

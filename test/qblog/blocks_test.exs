@@ -79,6 +79,7 @@ defmodule Qblog.BlocksTest do
       assert block.owner_user_id == actor.id
       assert block.owner_group_id == nil
       assert placement.block_id == block.id
+      assert placement.width == "full"
     end
   end
 
@@ -108,6 +109,7 @@ defmodule Qblog.BlocksTest do
       assert block.owner_group_id == group.id
       assert block.owner_user_id == nil
       assert placement.block_id == block.id
+      assert placement.width == "full"
     end
   end
 
@@ -187,6 +189,32 @@ defmodule Qblog.BlocksTest do
 
       assert {:ok, moved_placement} = Blocks.move_placed_block_up(placement2, scope: scope)
       assert moved_placement.order_key < placement1.order_key
+    end
+  end
+
+  describe "toggle_placed_block_width/2" do
+    test "toggles a placement between full and half width" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "Hello"}, type: :text}, scope: scope)
+
+      {:ok, placement} = Blocks.place_block_on_page(block, page, scope: scope)
+
+      assert placement.width == "full"
+
+      assert {:ok, half_width_placement} =
+               Blocks.toggle_placed_block_width(placement, scope: scope)
+
+      assert half_width_placement.width == "half"
+
+      assert {:ok, full_width_placement} =
+               Blocks.toggle_placed_block_width(half_width_placement, scope: scope)
+
+      assert full_width_placement.width == "full"
     end
   end
 

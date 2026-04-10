@@ -156,6 +156,21 @@ defmodule Qblog.Blocks do
     end
   end
 
+  def toggle_placed_block_width(placement, opts) do
+    width =
+      case placement.width do
+        "half" -> "full"
+        _ -> "half"
+      end
+
+    placement
+    |> Ash.update(
+      %{width: width},
+      action: :update_width,
+      scope: Keyword.fetch!(opts, :scope)
+    )
+  end
+
   # Internal  ==================================================================
 
   def create_group_owned_block(%{id: group_id}, block_attrs, opts) do

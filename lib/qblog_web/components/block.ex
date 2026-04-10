@@ -24,11 +24,13 @@ defmodule QblogWeb.Components.Block do
 
   def render(assigns) do
     ~H"""
+    <div class="@container/block">
+      <.dispatch_render block={@placement.block} />
+    </div>
+
     <div class="absolute top-0 right-0">
       <Block.ActionButtons.render placement={@placement} />
     </div>
-
-    <.dispatch_render block={@placement.block} />
     """
   end
 

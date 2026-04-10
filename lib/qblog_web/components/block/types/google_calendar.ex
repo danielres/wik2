@@ -7,7 +7,11 @@ defmodule QblogWeb.Components.Block.Types.GoogleCalendar do
     ~H"""
     <%= if @block.data["url"] do %>
       <iframe
-        class="aspect-video w-full rounded border-0"
+        class={[
+          "aspect-square @sm/block:aspect-video",
+          "w-full rounded-lg border-0",
+          "dark:invert dark:hue-rotate-180 dark:contrast-80"
+        ]}
         src={@block.data["url"]}
       >
       </iframe>

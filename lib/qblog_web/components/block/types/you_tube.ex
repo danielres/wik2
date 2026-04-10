@@ -6,14 +6,25 @@ defmodule QblogWeb.Components.Block.Types.YouTube do
   def render(assigns) do
     ~H"""
     <%= if @block.data["url"] do %>
-      <iframe
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen
-        class="aspect-video w-full rounded border-0"
-        referrerpolicy="strict-origin-when-cross-origin"
-        src={@block.data["url"]}
-      >
-      </iframe>
+      <div class={[
+        "@lg/block:grid @lg/block:py-4",
+        "justify-center items-center",
+        "bg-base-200/50 rounded"
+      ]}>
+        <iframe
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          class={[
+            "@lg/block:h-64",
+            "aspect-video w-full",
+            "rounded-lg",
+            "border-0"
+          ]}
+          referrerpolicy="strict-origin-when-cross-origin"
+          src={@block.data["url"]}
+        >
+        </iframe>
+      </div>
     <% else %>
       <div class="opacity-60">Empty YouTube block</div>
     <% end %>

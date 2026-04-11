@@ -24,12 +24,22 @@ defmodule QblogWeb.Components.Block do
 
   def render(assigns) do
     ~H"""
-    <div class="@container/block">
-      <.dispatch_render block={@placement.block} />
-    </div>
+    <div class={[
+      "relative",
+      "ring-2 rounded ring-secondary/10 transition",
+      "[&:has(>.ACTION-BUTTONS:hover)]:ring-secondary/50",
+      "@container/block"
+    ]}>
+      <div class="">
+        <.dispatch_render block={@placement.block} />
+      </div>
 
-    <div class="absolute top-0 right-0">
-      <Block.ActionButtons.render placement={@placement} />
+      <div class={[
+        "ACTION-BUTTONS",
+        "absolute top-0 right-0"
+      ]}>
+        <Block.ActionButtons.render placement={@placement} />
+      </div>
     </div>
     """
   end

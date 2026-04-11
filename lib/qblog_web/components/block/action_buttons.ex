@@ -7,19 +7,19 @@ defmodule QblogWeb.Components.Block.ActionButtons do
   def render(assigns) do
     ~H"""
     <div class={[
-      "bg-base-100/70 backdrop-blur",
-      "rounded-bl"
+      "bg-base-100/70 backdrop-blur"
     ]}>
       <button
         class={[
           "btn btn-square btn-ghost btn-xs hover:btn-primary",
-          "rounded"
+          "opacity-50",
+          "rounded-xs"
         ]}
         popovertarget={"popover-#{@placement.id}"}
         style={"anchor-name:--anchor-#{@placement.id}"}
         type="button"
       >
-        <.icon name="hero-bars-3" />
+        <.icon name="hero-bars-3-micro" class="size-3" />
       </button>
 
       <div
@@ -34,6 +34,13 @@ defmodule QblogWeb.Components.Block.ActionButtons do
         style={"position-anchor:--anchor-#{@placement.id}"}
       >
         <.action_button
+          icon="hero-trash-mini"
+          phx-click="destroy_block"
+          phx-value-placement_id={@placement.id}
+          variant="danger"
+        />
+
+        <.action_button
           icon={
             if @placement.width == "half",
               do: "hero-arrows-pointing-out",
@@ -42,13 +49,6 @@ defmodule QblogWeb.Components.Block.ActionButtons do
           phx-click="toggle_block_width"
           phx-value-placement_id={@placement.id}
           title={if @placement.width == "half", do: "Set full width", else: "Set half width"}
-        />
-
-        <.action_button
-          icon="hero-trash-mini"
-          phx-click="destroy_block"
-          phx-value-placement_id={@placement.id}
-          variant="danger"
         />
 
         <.action_button

@@ -15,6 +15,7 @@ defmodule QblogWeb.PageLive do
       |> assign(path: path)
       |> assign(editing_block_id: nil, form_edit_block: nil)
       |> assign(subscribed_block_ids: MapSet.new())
+      |> assign(editing?: false)
       |> reload_page()
 
     if connected?(socket) do
@@ -31,7 +32,20 @@ defmodule QblogWeb.PageLive do
       <Layouts.group scope={@current_scope} view="wiki">
         <section class="space-y-8">
           <header class="space-y-1">
-            <h1 class="text-2xl">{@node.title}</h1>
+            <div class="flex justify-between gap-4">
+              <h1 class="text-2xl">{@node.title}</h1>
+              <button
+                class={[
+                  "btn btn-sm btn-square btn-xs",
+                  "opacity-80 hover:opacity-100",
+                  @editing? && "btn-primary",
+                  !@editing? && "btn-ghost"
+                ]}
+                phx-click="toggle_edit_mode"
+              >
+                <.icon name="hero-pencil-square-mini" />
+              </button>
+            </div>
             <div class="text-sm opacity-60">page author: {@page.author |> to_string()}</div>
             <div class="text-sm opacity-60">
               inserted_at: {@page.inserted_at |> Utils.Time.relative()}
@@ -54,7 +68,7 @@ defmodule QblogWeb.PageLive do
                 <%= if @editing_block_id == placement.block.id do %>
                   <Components.Block.form placement={placement} form={@form_edit_block} />
                 <% else %>
-                  <Components.Block.render placement={placement} />
+                  <Components.Block.render placement={placement} editing?={@editing?} />
                 <% end %>
               </div>
             </div>
@@ -72,7 +86,10 @@ defmodule QblogWeb.PageLive do
             </div>
           </div>
 
-          <div class="flex justify-end join">
+          <div
+            :if={@editing?}
+            class="flex justify-end join"
+          >
             <.button
               class="btn btn-sm btn-primary join-item"
               phx-click="add_block"
@@ -95,6 +112,12 @@ defmodule QblogWeb.PageLive do
       </Layouts.group>
     </Layouts.app>
     """
+  end
+
+  @impl true
+  def handle_event("toggle_edit_mode", _params, socket) do
+    # TODO: add Ash.can? check to only allow users with edit permissions to toggle edit mode
+    {:noreply, socket |> assign(editing?: !socket.assigns.editing?)}
   end
 
   @impl true

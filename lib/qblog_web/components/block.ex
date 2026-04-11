@@ -21,12 +21,14 @@ defmodule QblogWeb.Components.Block do
   # Regular components =========================================================
 
   attr :placement, :map, required: true
+  attr :editing?, :boolean, default: false
 
   def render(assigns) do
     ~H"""
     <div class={[
       "relative",
-      "ring-2 rounded ring-secondary/10 transition",
+      @editing? and "ring-2",
+      "rounded ring-secondary/10 transition",
       "[&:has(>.ACTION-BUTTONS:hover)]:ring-secondary/50",
       "@container/block"
     ]}>
@@ -34,10 +36,13 @@ defmodule QblogWeb.Components.Block do
         <.dispatch_render block={@placement.block} />
       </div>
 
-      <div class={[
-        "ACTION-BUTTONS",
-        "absolute top-0 right-0"
-      ]}>
+      <div
+        :if={@editing?}
+        class={[
+          "ACTION-BUTTONS",
+          "absolute top-0 right-0"
+        ]}
+      >
         <Block.ActionButtons.render placement={@placement} />
       </div>
     </div>

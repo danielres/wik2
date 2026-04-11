@@ -9,20 +9,45 @@ defmodule QblogWeb.PageLive do
   @impl true
   def mount(params, _session, socket) do
     path = params["path"] |> Enum.join("/")
+    scope = socket.assigns.current_scope
+    {node, page} = scope |> load_page_and_node_by_path(path)
 
-    socket =
-      socket
-      |> assign(path: path)
-      |> assign(editing_block_id: nil, form_edit_block: nil)
-      |> assign(subscribed_block_ids: MapSet.new())
-      |> assign(editing?: false)
-      |> reload_page()
+    page_exists? = page != nil
+    can_create_page? = Ash.can?({Qblog.Wiki.Page, :create}, scope)
 
-    if connected?(socket) do
-      QblogWeb.Endpoint.subscribe("block_placement:page:#{socket.assigns.page.id}")
+    if page_exists? or can_create_page? do
+      socket =
+        socket
+        |> assign(path: path)
+        |> assign(editing_block_id: nil, form_edit_block: nil)
+        |> assign(subscribed_block_ids: MapSet.new())
+        |> assign(editing?: false)
+        |> sync_block_subscriptions(page)
+        |> assign(node: node, page: page)
+
+      if connected?(socket) do
+        QblogWeb.Endpoint.subscribe("block_placement:page:#{socket.assigns.page.id}")
+      end
+
+      {:ok, socket}
+    else
+      socket = socket |> assign(not_found_path: path)
+      {:ok, socket}
     end
+  end
 
-    {:ok, socket}
+  def render(%{not_found_path: path} = assigns) do
+    ~H"""
+    <Layouts.app flash={@flash} scope={@current_scope}>
+      <Layouts.group scope={@current_scope} view="wiki">
+        <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
+          <div>Ooops...</div>
+          <div class="font-bold">"{path}"</div>
+          <div>Could not be found</div>
+        </div>
+      </Layouts.group>
+    </Layouts.app>
+    """
   end
 
   @impl true

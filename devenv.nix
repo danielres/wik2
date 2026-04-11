@@ -49,11 +49,11 @@
     '';
   };
 
-  processes.phx-server = {
-    exec = "PORT=4000 mix phx.server";
-    # if your Phoenix app is in a subdir, set cwd explicitly, e.g.:
-    # cwd = "${config.git.root}/youmap";
-  };
+  # processes.phx-server = {
+  #   exec = "PORT=4000 mix phx.server";
+  #   # if your Phoenix app is in a subdir, set cwd explicitly, e.g.:
+  #   # cwd = "${config.git.root}/youmap";
+  # };
 
   process.manager.implementation = "overmind";
 

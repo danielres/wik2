@@ -35,9 +35,7 @@ defmodule Qblog.Wiki.Page do
     end
 
     policy action_type(:create) do
-      # forbid_if always()
       authorize_if actor_attribute_equals(:role, :superadmin)
-      authorize_if relates_to_actor_via([:group, :users])
     end
   end
 

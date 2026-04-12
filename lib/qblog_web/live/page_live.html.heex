@@ -1,0 +1,95 @@
+<Layouts.app flash={@flash} scope={@current_scope}>
+  <Layouts.group presences={@presences} scope={@current_scope} view="wiki">
+    <%= if assigns[:not_found_path] do %>
+      <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
+        <div>Ooops...</div>
+        <div class="font-bold">"{@not_found_path}"</div>
+        <div>Could not be found</div>
+      </div>
+    <% else %>
+      <section class="space-y-8">
+        <header class="space-y-1">
+          <div class="flex justify-between gap-4">
+            <h1 class="text-2xl">{@node.title}</h1>
+            <button
+              class={[
+                "btn btn-sm btn-square btn-xs",
+                "opacity-80 hover:opacity-100",
+                @editing? && "btn-primary",
+                !@editing? && "btn-ghost"
+              ]}
+              phx-click="toggle_edit_mode"
+            >
+              <.icon name="hero-pencil-square-mini" />
+            </button>
+          </div>
+          <div class="text-sm opacity-60">page author: {@page.author |> to_string()}</div>
+          <div class="text-sm opacity-60">
+            inserted_at: {@page.inserted_at |> Utils.Time.relative()}
+          </div>
+        </header>
+
+        <div class={[
+          "grid gap-8 sm:grid-cols-2"
+        ]}>
+          <div
+            :for={placement <- @page.block_placements}
+            class={[
+              "card rounded col-span-1",
+              placement.width == "half" && "sm:col-span-1",
+              placement.width == "full" && "sm:col-span-2"
+            ]}
+            id={"block-#{placement.block.id}"}
+          >
+            <div class="card-body py-0.5 px-0 ">
+              <%= if @editing_block_id == placement.block.id do %>
+                <QblogWeb.Components.Block.form placement={placement} form={@form_edit_block} />
+              <% else %>
+                <QblogWeb.Components.Block.render
+                  editing?={@editing?}
+                  lock={@locks[placement.block.id]}
+                  placement={placement}
+                />
+              <% end %>
+            </div>
+          </div>
+
+          <div
+            :if={Enum.empty?(@page.block_placements)}
+            class={[
+              "sm:col-span-2",
+              "p-8",
+              "rounded bg-base-300/30",
+              "text-center"
+            ]}
+          >
+            No blocks yet
+          </div>
+        </div>
+
+        <div
+          :if={@editing?}
+          class="flex justify-end join"
+        >
+          <.button
+            class="btn btn-sm btn-primary join-item"
+            phx-click="add_block"
+            phx-value-type="text"
+          >
+            Add block
+          </.button>
+
+          <QblogWeb.Components.Block.AddBlockMenuButton.render
+            id="popover-special-blocks"
+            class={[
+              "btn btn-sm btn-primary join-item",
+              "btn-square",
+              "border-l border-base-300"
+            ]}
+            open?={false}
+          />
+        </div>
+      </section>
+    <% end %>
+  </Layouts.group>
+</Layouts.app>

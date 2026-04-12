@@ -38,6 +38,8 @@ defmodule QblogWeb.PageLive do
     end
   end
 
+  # Presence ===================================================================
+
   def handle_presence_change(socket) do
     socket
     |> Handlers.handle_presence_change()
@@ -49,17 +51,26 @@ defmodule QblogWeb.PageLive do
     {:noreply, socket |> Presence.track_in_liveview(url)}
   end
 
+  # subscriptions ==============================================================
+
+  @impl true
+  def handle_info(%{topic: "block:" <> _block_id}, socket) do
+    {:noreply, socket |> PageState.reload()}
+  end
+
+  @impl true
+  def handle_info(%{topic: "block_placement:page:" <> _page_id}, socket) do
+    {:noreply, socket |> PageState.reload()}
+  end
+
+  # Edit =======================================================================
+
   @impl true
   def handle_event("toggle_edit_mode", _params, socket) do
     # TODO: add Ash.can? check to only allow users with edit permissions to toggle edit mode
     socket = socket |> assign(editing?: !socket.assigns.editing?)
     socket = if socket.assigns.editing?, do: socket, else: socket |> BlockEdit.clear()
     {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("add_block", %{"type" => type_param}, socket) do
-    {:noreply, socket |> BlockActions.add(type_param)}
   end
 
   @impl true
@@ -75,6 +86,22 @@ defmodule QblogWeb.PageLive do
       {:noreply, socket}
     end
   end
+
+  @impl true
+  def handle_event(
+        "edit_block_submit",
+        %{"block" => params, "block_id" => block_id},
+        socket
+      ) do
+    {:noreply, socket |> BlockActions.save_edit(block_id, params)}
+  end
+
+
+  @impl true
+  def handle_event("add_block", %{"type" => type_param}, socket) do
+    {:noreply, socket |> BlockActions.add(type_param)}
+  end
+
 
   @impl true
   def handle_event("move_block_down", %{"placement_id" => placement_id}, socket) do
@@ -96,22 +123,4 @@ defmodule QblogWeb.PageLive do
     {:noreply, socket |> BlockActions.toggle_width(placement_id)}
   end
 
-  @impl true
-  def handle_event(
-        "edit_block_submit",
-        %{"block" => params, "block_id" => block_id},
-        socket
-      ) do
-    {:noreply, socket |> BlockActions.save_edit(block_id, params)}
-  end
-
-  @impl true
-  def handle_info(%{topic: "block:" <> _block_id}, socket) do
-    {:noreply, socket |> PageState.reload()}
-  end
-
-  @impl true
-  def handle_info(%{topic: "block_placement:page:" <> _page_id}, socket) do
-    {:noreply, socket |> PageState.reload()}
-  end
 end

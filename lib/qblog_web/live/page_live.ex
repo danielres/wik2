@@ -2,10 +2,13 @@
 
 defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
-  use QblogWeb.Presence.Handlers
 
+  alias Qblog.Blocks
   alias Qblog.Wiki
   alias QblogWeb.Components
+  alias QblogWeb.PageLive.BlockEdit
+  alias QblogWeb.PageLive.Locks
+  alias QblogWeb.Presence
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
   on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
@@ -21,12 +24,10 @@ defmodule QblogWeb.PageLive do
     if page_exists? or Ash.can?({Wiki.Page, :create}, scope) do
       socket =
         socket
-        |> assign(path: path)
-        |> assign(editing_block_id: nil, form_edit_block: nil)
-        |> assign(subscribed_block_ids: MapSet.new())
-        |> assign(editing?: false)
+        |> assign(path: path, node: node, page: page)
+        |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
         |> sync_block_subscriptions(page)
-        |> assign(node: node, page: page)
+        |> Locks.assign_locks()
 
       if connected?(socket) do
         QblogWeb.Endpoint.subscribe("block_placement:page:#{socket.assigns.page.id}")
@@ -96,7 +97,11 @@ defmodule QblogWeb.PageLive do
                 <%= if @editing_block_id == placement.block.id do %>
                   <Components.Block.form placement={placement} form={@form_edit_block} />
                 <% else %>
-                  <Components.Block.render placement={placement} editing?={@editing?} />
+                  <Components.Block.render
+                    editing?={@editing?}
+                    lock={@locks[placement.block.id]}
+                    placement={placement}
+                  />
                 <% end %>
               </div>
             </div>
@@ -144,13 +149,22 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def handle_params(_params, url, socket) do
-    {:noreply, QblogWeb.Presence.track_in_liveview(socket, url)}
+    {:noreply, Presence.track_in_liveview(socket, url)}
   end
 
   @impl true
   def handle_event("toggle_edit_mode", _params, socket) do
     # TODO: add Ash.can? check to only allow users with edit permissions to toggle edit mode
-    {:noreply, socket |> assign(editing?: !socket.assigns.editing?)}
+    socket = socket |> assign(editing?: !socket.assigns.editing?)
+
+    socket =
+      if socket.assigns.editing? do
+        socket
+      else
+        socket |> BlockEdit.clear()
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -160,7 +174,7 @@ defmodule QblogWeb.PageLive do
     page = socket.assigns.page
 
     type =
-      Qblog.Blocks.types_available()
+      Blocks.types_available()
       |> Enum.find_value(&if("#{&1.type}" == type_param, do: &1.type))
 
     case type do
@@ -174,16 +188,23 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def handle_event("edit_block_start", %{"block_id" => block_id}, socket) do
-    {:noreply,
-     socket
-     |> assign(editing_block_id: block_id)
-     |> assign_form_edit_block(socket.assigns.page |> find_block_in_page(block_id))}
+    locks = socket.assigns.locks
+
+    case Map.get(locks, block_id) do
+      nil ->
+        {:noreply,
+         socket
+         |> BlockEdit.start(socket.assigns.page |> find_block_in_page(block_id))}
+
+      %{user: user} ->
+        {:noreply, socket |> put_flash(:error, "#{user} is already editing this block")}
+    end
   end
 
   @impl true
   def handle_event("edit_block_cancel", %{"block_id" => block_id}, socket) do
     if socket.assigns.editing_block_id == block_id do
-      {:noreply, socket |> assign(editing_block_id: nil, form_edit_block: nil)}
+      {:noreply, socket |> BlockEdit.clear()}
     else
       {:noreply, socket}
     end
@@ -194,7 +215,7 @@ defmodule QblogWeb.PageLive do
     scope = socket.assigns.current_scope
     placement = socket.assigns.page |> find_placement_in_page(placement_id)
 
-    case placement |> Qblog.Blocks.move_placed_block_down(scope: scope) do
+    case placement |> Blocks.move_placed_block_down(scope: scope) do
       {:ok, _placement} ->
         {:noreply, socket}
 
@@ -209,7 +230,7 @@ defmodule QblogWeb.PageLive do
     scope = socket.assigns.current_scope
     placement = socket.assigns.page |> find_placement_in_page(placement_id)
 
-    case placement |> Qblog.Blocks.move_placed_block_up(scope: scope) do
+    case placement |> Blocks.move_placed_block_up(scope: scope) do
       {:ok, _placement} ->
         {:noreply, socket}
 
@@ -224,9 +245,16 @@ defmodule QblogWeb.PageLive do
     scope = socket.assigns.current_scope
     placement = socket.assigns.page |> find_placement_in_page(placement_id)
 
-    case placement |> Qblog.Blocks.destroy_placed_block(scope: scope) do
+    case placement |> Blocks.destroy_placed_block(scope: scope) do
       :ok ->
-        {:noreply, socket |> assign(editing_block_id: nil, form_edit_block: nil)}
+        socket =
+          if socket.assigns.editing_block_id == placement.block.id do
+            socket |> BlockEdit.clear()
+          else
+            socket
+          end
+
+        {:noreply, socket}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "destroy_placed_block failed")
@@ -239,7 +267,7 @@ defmodule QblogWeb.PageLive do
     scope = socket.assigns.current_scope
     placement = socket.assigns.page |> find_placement_in_page(placement_id)
 
-    case placement |> Qblog.Blocks.toggle_placed_block_width(scope: scope) do
+    case placement |> Blocks.toggle_placed_block_width(scope: scope) do
       {:ok, _placement} ->
         {:noreply, socket}
 
@@ -263,11 +291,9 @@ defmodule QblogWeb.PageLive do
     scope = socket.assigns.current_scope
     block = socket.assigns.page |> find_block_in_page(block_id)
 
-    case block |> Qblog.Blocks.update_block(params, scope: scope) do
+    case block |> Blocks.update_block(params, scope: scope) do
       {:ok, _block} ->
-        {:noreply,
-         socket
-         |> assign(editing_block_id: nil, form_edit_block: nil)}
+        {:noreply, socket |> BlockEdit.clear()}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "save block failed")
@@ -275,8 +301,7 @@ defmodule QblogWeb.PageLive do
         {:noreply,
          socket
          |> put_flash(:error, "Could not save block")
-         |> assign(editing_block_id: block_id)
-         |> assign_form_edit_block(block, params)}
+         |> BlockEdit.continue(block_id, block, params)}
     end
   end
 
@@ -290,28 +315,26 @@ defmodule QblogWeb.PageLive do
     {:noreply, socket |> reload_page()}
   end
 
-  defp assign_form_edit_block(socket, block) do
-    socket
-    |> assign(
-      form_edit_block: block |> Qblog.Blocks.block_to_form_params() |> to_form(as: :block)
-    )
+  @impl true
+  def handle_info({QblogWeb.Presence, {:join, _presence}}, socket) do
+    {:noreply, socket |> Locks.refresh_presence()}
   end
 
-  defp assign_form_edit_block(socket, block, params) do
-    socket
-    |> assign(
-      form_edit_block: block |> Qblog.Blocks.block_to_form_params(params) |> to_form(as: :block)
-    )
+  @impl true
+  def handle_info({QblogWeb.Presence, {:leave, _presence}}, socket) do
+    {:noreply, socket |> Locks.refresh_presence()}
+  end
+
+  @impl true
+  def handle_info({QblogWeb.Presence, {:update, %{id: _id, meta: _meta}}}, socket) do
+    {:noreply, socket |> Locks.refresh_presence()}
   end
 
   defp add_block(socket, group, page, type, scope) do
     case group
-         |> Qblog.Blocks.create_group_owned_block_on_page(page, %{type: type}, scope: scope) do
+         |> Blocks.create_group_owned_block_on_page(page, %{type: type}, scope: scope) do
       {:ok, block} ->
-        {:noreply,
-         socket
-         |> assign(editing_block_id: block.id)
-         |> assign_form_edit_block(block)}
+        {:noreply, socket |> BlockEdit.start(block)}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "create_group_owned_block_on_page failed")
@@ -343,7 +366,7 @@ defmodule QblogWeb.PageLive do
   defp sync_block_subscriptions(socket, page) do
     if connected?(socket) do
       current_block_ids = page.block_placements |> Enum.map(& &1.block.id) |> MapSet.new()
-      subscribed_block_ids = socket.assigns.subscribed_block_ids
+      subscribed_block_ids = socket.assigns[:subscribed_block_ids] || MapSet.new()
       block_ids_to_subscribe = current_block_ids |> MapSet.difference(subscribed_block_ids)
       block_ids_to_unsubscribe = subscribed_block_ids |> MapSet.difference(current_block_ids)
 
@@ -363,7 +386,7 @@ defmodule QblogWeb.PageLive do
     if editing_block? do
       socket
     else
-      socket |> assign(editing_block_id: nil, form_edit_block: nil)
+      socket |> BlockEdit.clear()
     end
   end
 

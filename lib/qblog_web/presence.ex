@@ -77,8 +77,14 @@ defmodule QblogWeb.Presence do
       case socket.assigns[:current_scope] do
         %{actor: user, tenant: group} when not is_nil(user) and not is_nil(group) ->
           path = url |> URI.parse() |> Map.get(:path, "/")
-          _ = track_user_presence(user, path, group.id)
-          socket
+
+          _ =
+            track_user_presence(user, path, group.id,
+              editing_block_id: socket.assigns[:editing_block_id],
+              tab_id: socket.assigns[:tab_id]
+            )
+
+          Phoenix.Component.assign(socket, :presence_path, path)
 
         _ ->
           socket
@@ -88,10 +94,10 @@ defmodule QblogWeb.Presence do
     end
   end
 
-  @spec track_user_presence(Qblog.Accounts.User.t(), String.t(), String.t()) ::
+  @spec track_user_presence(Qblog.Accounts.User.t(), String.t(), String.t(), keyword()) ::
           {:ok, map()} | {:error, term()}
-  def track_user_presence(user, path, group_id) do
-    meta = %{group_id: group_id, path: path}
+  def track_user_presence(user, path, group_id, opts \\ []) do
+    meta = build_presence_meta(path, group_id, opts)
     topic = build_group_topic(group_id)
 
     case track(self(), topic, user.id, meta) do
@@ -120,8 +126,55 @@ defmodule QblogWeb.Presence do
         do: presence.user |> to_string()
   end
 
+  @spec presences_to_locks([map()], String.t()) :: %{optional(String.t()) => map()}
+  def presences_to_locks(presences, current_user_id) do
+    presences_to_locks(presences, current_user_id, nil)
+  end
+
+  @spec presences_to_locks([map()], String.t(), String.t() | nil) ::
+          %{optional(String.t()) => map()}
+  def presences_to_locks(presences, current_user_id, current_tab_id) do
+    presences
+    |> Enum.flat_map(fn presence ->
+      presence
+      |> Map.get(:metas, [])
+      |> Enum.map(&{presence, &1})
+    end)
+    |> Enum.reduce(%{}, fn {presence, meta}, locks ->
+      case meta[:editing_block_id] do
+        nil ->
+          locks
+
+        block_id ->
+          if presence.id == current_user_id and
+               meta[:tab_id] == current_tab_id do
+            locks
+          else
+            Map.put_new(locks, block_id, %{
+              block_id: block_id,
+              user: presence.user,
+              user_id: presence.id
+            })
+          end
+      end
+    end)
+  end
+
   defp broadcast_proxy_event(topic, event, payload) do
-    Phoenix.PubSub.local_broadcast(Qblog.PubSub, build_proxy_topic(topic), {__MODULE__, {event, payload}})
+    Phoenix.PubSub.local_broadcast(
+      Qblog.PubSub,
+      build_proxy_topic(topic),
+      {__MODULE__, {event, payload}}
+    )
+  end
+
+  defp build_presence_meta(path, group_id, opts) do
+    %{
+      editing_block_id: Keyword.get(opts, :editing_block_id),
+      group_id: group_id,
+      tab_id: Keyword.get(opts, :tab_id),
+      path: path
+    }
   end
 
   defp build_group_topic(group_id), do: "group:#{group_id}:users"

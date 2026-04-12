@@ -20,6 +20,7 @@ defmodule QblogWeb.Components.Block do
 
   # Regular components =========================================================
 
+  attr :lock, :map, default: nil
   attr :placement, :map, required: true
   attr :editing?, :boolean, default: false
 
@@ -32,12 +33,19 @@ defmodule QblogWeb.Components.Block do
       "[&:has(>.ACTION-BUTTONS:hover)]:ring-secondary/50",
       "@container/block"
     ]}>
+      <div
+        :if={@lock}
+        class="absolute left-0 top-0 z-10 rounded-br-md bg-warning/85 px-2 py-1 text-xs font-medium text-warning-content shadow-sm"
+      >
+        {to_string(@lock.user)} editing
+      </div>
+
       <div class="">
         <.dispatch_render block={@placement.block} />
       </div>
 
       <div
-        :if={@editing?}
+        :if={@editing? and is_nil(@lock)}
         class={[
           "ACTION-BUTTONS",
           "absolute top-0 right-0"

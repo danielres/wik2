@@ -37,4 +37,40 @@ defmodule QblogWeb.PresenceTest do
 
     assert ["tree"] = QblogWeb.Presence.users_at_path(presences, "/group-1/tree")
   end
+
+  test "presences_to_locks ignores the current tab and keeps locks from other tabs" do
+    current_user = generate(user(email: "current@example.com"))
+    other_user = generate(user(email: "other@example.com"))
+    current_user_id = current_user.id
+    other_user_id = other_user.id
+
+    presences = [
+      %{
+        id: current_user.id,
+        metas: [
+          %{
+            editing_block_id: "block-a",
+            path: "/group-1/wiki/home",
+            tab_id: "tab-1"
+          },
+          %{editing_block_id: "block-c", path: "/group-1/blog", tab_id: "tab-2"}
+        ],
+        user: current_user
+      },
+      %{
+        id: other_user.id,
+        metas: [
+          %{editing_block_id: "block-a", path: "/group-1/wiki/home", tab_id: "tab-3"},
+          %{editing_block_id: "block-b", path: "/group-1/tree", tab_id: "tab-4"}
+        ],
+        user: other_user
+      }
+    ]
+
+    assert %{
+             "block-a" => %{block_id: "block-a", user: ^other_user, user_id: ^other_user_id},
+             "block-b" => %{block_id: "block-b", user: ^other_user, user_id: ^other_user_id},
+             "block-c" => %{block_id: "block-c", user: ^current_user, user_id: ^current_user_id}
+           } = QblogWeb.Presence.presences_to_locks(presences, current_user.id, "tab-1")
+  end
 end

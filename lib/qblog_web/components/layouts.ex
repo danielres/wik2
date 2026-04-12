@@ -11,6 +11,8 @@ defmodule QblogWeb.Layouts do
   # and other static content.
   embed_templates "layouts/*"
 
+  alias QblogWeb.Components
+
   @doc """
   Renders your app layout.
 
@@ -30,22 +32,27 @@ defmodule QblogWeb.Layouts do
     default: %{tenant: nil, user: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :presences, :list, default: []
   attr :view, :string, default: nil, doc: "the current view for active menu state"
   slot :inner_block, required: true
 
   def group(assigns) do
     ~H"""
-    <menu class={[
-      "px-2 sm:px-6 lg:px-8",
-      "menu menu-horizontal",
-      "rounded"
+    <div class={[
+      "flex flex-wrap items-center justify-between gap-4",
+      "px-2 sm:px-4 lg:px-8",
+      "mb-8"
     ]}>
-      <ul class="flex flex-wrap gap-1">
-        <.menu_item tenant={@scope.tenant} view={@view} target="wiki">Wiki</.menu_item>
-        <.menu_item tenant={@scope.tenant} view={@view} target="tree">Page tree</.menu_item>
-        <.menu_item tenant={@scope.tenant} view={@view} target="blog">Blog</.menu_item>
-      </ul>
-    </menu>
+      <menu class={[]}>
+        <ul class="menu menu-horizontal gap-1">
+          <.menu_item tenant={@scope.tenant} view={@view} target="wiki">Wiki</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="tree">Page tree</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="blog">Blog</.menu_item>
+        </ul>
+      </menu>
+
+      <Components.Presences.avatars presences={@presences} />
+    </div>
 
     <.container>
       {render_slot(@inner_block)}
@@ -69,7 +76,7 @@ defmodule QblogWeb.Layouts do
 
   def container(assigns) do
     ~H"""
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
+    <main class="px-4 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl space-y-4">
         {render_slot(@inner_block)}
       </div>
@@ -87,7 +94,7 @@ defmodule QblogWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-2 sm:px-6 lg:px-8">
+    <header class="navbar px-2 sm:px-4 lg:px-8">
       <div class="flex-1">
         <div class="flex-1 flex w-fit items-center gap-2">
           <.link navigate={~p"/"} class="btn btn-circle btn-sm opacity-50 hover:opacity-100">
@@ -109,15 +116,15 @@ defmodule QblogWeb.Layouts do
       <div>
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li class="flex gap-2 items-center">
-            <.link navigate={~p"/me"} class="opacity-50 hover:opacity-100">
-              {@scope.actor |> to_string()}
-            </.link>
-
             <.link navigate={~p"/sign-out"} class="btn btn-ghost btn-square rounded-full">
               <.icon
                 name="hero-arrow-right-on-rectangle"
                 class="size-4 opacity-75 hover:opacity-100"
               />
+            </.link>
+
+            <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
+              <Components.User.avatar user={@scope.actor} />
             </.link>
           </li>
         </ul>

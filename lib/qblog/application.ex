@@ -14,6 +14,7 @@ defmodule Qblog.Application do
        repos: Application.fetch_env!(:qblog, :ecto_repos), skip: skip_migrations?()},
       {DNSCluster, query: Application.get_env(:qblog, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Qblog.PubSub},
+      QblogWeb.Presence,
       # Start a worker by calling: Qblog.Worker.start_link(arg)
       # {Qblog.Worker, arg},
       # Start to serve requests, typically the last entry

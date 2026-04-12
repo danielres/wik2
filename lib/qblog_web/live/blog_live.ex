@@ -1,5 +1,6 @@
 defmodule QblogWeb.BlogLive do
   use QblogWeb, :live_view
+  use QblogWeb.Presence.Handlers
 
   alias Qblog.Blog
   alias Qblog.Blog.Post
@@ -8,7 +9,9 @@ defmodule QblogWeb.BlogLive do
   alias Utils.Log
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
+  on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
 
+  @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
 
@@ -22,10 +25,11 @@ defmodule QblogWeb.BlogLive do
      |> assign(fields: Ash.Resource.Info.action(Post, :create).accept)}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <Layouts.group scope={@current_scope} view="blog">
+      <Layouts.group presences={@presences} scope={@current_scope} view="blog">
         <h1 class="text-2xl font-[100]">Blog Posts</h1>
         <div class="grid sm:grid-cols-2 gap-4">
           <ul class="space-y-2">
@@ -86,10 +90,17 @@ defmodule QblogWeb.BlogLive do
     """
   end
 
+  @impl true
+  def handle_params(_params, url, socket) do
+    {:noreply, QblogWeb.Presence.track_in_liveview(socket, url)}
+  end
+
+  @impl true
   def handle_event("validate", %{"form" => params}, socket) do
     {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
   end
 
+  @impl true
   def handle_event("destroy-post", %{"post_id" => post_id}, socket) do
     scope = socket.assigns.current_scope
 
@@ -105,6 +116,7 @@ defmodule QblogWeb.BlogLive do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_event("submit", %{"form" => params}, socket) do
     case socket.assigns.form |> Form.submit(params: params) do
       {:ok, _post} ->
@@ -117,10 +129,12 @@ defmodule QblogWeb.BlogLive do
     end
   end
 
+  @impl true
   def handle_info(:clear_new_post_id, socket) do
     {:noreply, socket |> assign(:new_post_id, nil)}
   end
 
+  @impl true
   def handle_info(%{topic: "post:created:" <> _tenant, payload: %{data: new_post}}, socket) do
     Process.send_after(self(), :clear_new_post_id, 200)
     scope = socket.assigns.current_scope

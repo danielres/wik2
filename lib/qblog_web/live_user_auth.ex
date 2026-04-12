@@ -54,4 +54,18 @@ defmodule QblogWeb.LiveUserAuth do
       {:cont, assign(socket, :current_user, nil)}
     end
   end
+
+  def on_mount(:subscribe_presence, _params, _session, socket) do
+    socket =
+      case {Phoenix.LiveView.connected?(socket), socket.assigns[:current_scope]} do
+        {true, %{tenant: %{id: group_id}}} ->
+          :ok = QblogWeb.Presence.subscribe_to_group(group_id)
+          assign(socket, :presences, QblogWeb.Presence.list_online_users_in_group(group_id))
+
+        _ ->
+          assign(socket, :presences, [])
+      end
+
+    {:cont, socket}
+  end
 end

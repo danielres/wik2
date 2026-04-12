@@ -1,11 +1,13 @@
 defmodule QblogWeb.GroupLive do
   use QblogWeb, :live_view
+  use QblogWeb.Presence.Handlers
 
   alias AshPhoenix.Form
   alias QblogWeb.Components.Modal
   alias QblogWeb.Components
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
+  on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -30,7 +32,7 @@ defmodule QblogWeb.GroupLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <Layouts.group scope={@current_scope}>
+      <Layouts.group presences={@presences} scope={@current_scope}>
         <h1 class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
           <div>
             <span class="font-[400] opacity-70">
@@ -84,6 +86,11 @@ defmodule QblogWeb.GroupLive do
       </Layouts.group>
     </Layouts.app>
     """
+  end
+
+  @impl true
+  def handle_params(_params, url, socket) do
+    {:noreply, QblogWeb.Presence.track_in_liveview(socket, url)}
   end
 
   @impl true

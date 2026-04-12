@@ -1,10 +1,14 @@
+# TODO: break this up, too much going on in this file.
+
 defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
+  use QblogWeb.Presence.Handlers
 
   alias Qblog.Wiki
   alias QblogWeb.Components
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
+  on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
 
   @impl true
   def mount(params, _session, socket) do
@@ -13,9 +17,8 @@ defmodule QblogWeb.PageLive do
     {node, page} = scope |> load_page_and_node_by_path(path)
 
     page_exists? = page != nil
-    can_create_page? = Ash.can?({Qblog.Wiki.Page, :create}, scope)
 
-    if page_exists? or can_create_page? do
+    if page_exists? or Ash.can?({Wiki.Page, :create}, scope) do
       socket =
         socket
         |> assign(path: path)
@@ -36,13 +39,13 @@ defmodule QblogWeb.PageLive do
     end
   end
 
-  def render(%{not_found_path: path} = assigns) do
+  def render(%{not_found_path: _not_found_path} = assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <Layouts.group scope={@current_scope} view="wiki">
+      <Layouts.group presences={@presences} scope={@current_scope} view="wiki">
         <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
           <div>Ooops...</div>
-          <div class="font-bold">"{path}"</div>
+          <div class="font-bold">"{@not_found_path}"</div>
           <div>Could not be found</div>
         </div>
       </Layouts.group>
@@ -54,7 +57,7 @@ defmodule QblogWeb.PageLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <Layouts.group scope={@current_scope} view="wiki">
+      <Layouts.group presences={@presences} scope={@current_scope} view="wiki">
         <section class="space-y-8">
           <header class="space-y-1">
             <div class="flex justify-between gap-4">
@@ -137,6 +140,11 @@ defmodule QblogWeb.PageLive do
       </Layouts.group>
     </Layouts.app>
     """
+  end
+
+  @impl true
+  def handle_params(_params, url, socket) do
+    {:noreply, QblogWeb.Presence.track_in_liveview(socket, url)}
   end
 
   @impl true

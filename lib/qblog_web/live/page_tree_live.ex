@@ -1,10 +1,12 @@
 defmodule QblogWeb.PageTreeLive do
   use QblogWeb, :live_view
+  use QblogWeb.Presence.Handlers
 
   alias Qblog.Wiki
   alias QblogWeb.PageTreeLive.PageTreeEditor
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
+  on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,7 +19,7 @@ defmodule QblogWeb.PageTreeLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
-      <Layouts.group scope={@current_scope} view="tree">
+      <Layouts.group presences={@presences} scope={@current_scope} view="tree">
         <.live_component
           current_scope={@current_scope}
           editable?={true}
@@ -28,6 +30,11 @@ defmodule QblogWeb.PageTreeLive do
       </Layouts.group>
     </Layouts.app>
     """
+  end
+
+  @impl true
+  def handle_params(_params, url, socket) do
+    {:noreply, QblogWeb.Presence.track_in_liveview(socket, url)}
   end
 
   @impl true

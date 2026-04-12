@@ -19,16 +19,25 @@ defmodule QblogWeb.Presence.Handlers do
 
   defmacro __using__(_opts) do
     quote do
-      def handle_info({Presence, {:join, _presence}}, socket) do
-        {:noreply, Presence.Handlers.handle_presence_change(socket)}
+      def handle_presence_change(socket) do
+        QblogWeb.Presence.Handlers.handle_presence_change(socket)
       end
 
-      def handle_info({Presence, {:leave, _presence}}, socket) do
-        {:noreply, Presence.Handlers.handle_presence_change(socket)}
+      defoverridable handle_presence_change: 1
+
+      @impl true
+      def handle_info({QblogWeb.Presence, {:join, _presence}}, socket) do
+        {:noreply, handle_presence_change(socket)}
       end
 
-      def handle_info({Presence, {:update, %{id: _id, meta: _meta}}}, socket) do
-        {:noreply, Presence.Handlers.handle_presence_change(socket)}
+      @impl true
+      def handle_info({QblogWeb.Presence, {:leave, _presence}}, socket) do
+        {:noreply, handle_presence_change(socket)}
+      end
+
+      @impl true
+      def handle_info({QblogWeb.Presence, {:update, %{id: _id, meta: _meta}}}, socket) do
+        {:noreply, handle_presence_change(socket)}
       end
     end
   end

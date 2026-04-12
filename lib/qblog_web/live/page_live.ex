@@ -2,6 +2,7 @@
 
 defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
+  use QblogWeb.Presence.Handlers
 
   alias Qblog.Wiki
   alias QblogWeb.Endpoint
@@ -24,7 +25,7 @@ defmodule QblogWeb.PageLive do
     if page != nil or Ash.can?({Wiki.Page, :create}, scope) do
       socket =
         socket
-        |> assign(node: node, page: page)
+        |> assign(node: node, page: page, path: path)
         |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
         |> PageState.sync_block_subscriptions(page)
         |> Locks.assign_locks()
@@ -35,6 +36,12 @@ defmodule QblogWeb.PageLive do
       socket = socket |> assign(not_found_path: path)
       {:ok, socket}
     end
+  end
+
+  def handle_presence_change(socket) do
+    socket
+    |> Handlers.handle_presence_change()
+    |> Locks.assign_locks()
   end
 
   @impl true
@@ -106,29 +113,5 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_info(%{topic: "block_placement:page:" <> _page_id}, socket) do
     {:noreply, socket |> PageState.reload()}
-  end
-
-  @impl true
-  def handle_info({Presence, {:join, _presence}}, socket) do
-    {:noreply,
-     socket
-     |> Handlers.handle_presence_change()
-     |> Locks.assign_locks()}
-  end
-
-  @impl true
-  def handle_info({Presence, {:leave, _presence}}, socket) do
-    {:noreply,
-     socket
-     |> Handlers.handle_presence_change()
-     |> Locks.assign_locks()}
-  end
-
-  @impl true
-  def handle_info({Presence, {:update, %{id: _id, meta: _meta}}}, socket) do
-    {:noreply,
-     socket
-     |> Handlers.handle_presence_change()
-     |> Locks.assign_locks()}
   end
 end

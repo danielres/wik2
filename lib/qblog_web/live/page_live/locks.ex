@@ -4,7 +4,6 @@ defmodule QblogWeb.PageLive.Locks do
   import Phoenix.Component, only: [assign: 2]
 
   alias QblogWeb.Presence
-  alias QblogWeb.Presence.Handlers
 
   def assign_locks(socket) do
     presences = socket.assigns.presences
@@ -13,12 +12,6 @@ defmodule QblogWeb.PageLive.Locks do
     locks = Presence.presences_to_locks(presences, actor_id, tab_id)
 
     socket |> assign(locks: locks)
-  end
-
-  def refresh_presence(socket) do
-    socket
-    |> Handlers.handle_presence_change()
-    |> assign_locks()
   end
 
   def sync_presence(socket) do

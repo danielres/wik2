@@ -10,6 +10,7 @@ defmodule QblogWeb.PageLive do
   alias QblogWeb.PageLive.Locks
   alias QblogWeb.PageLive.PageState
   alias QblogWeb.Presence
+  alias QblogWeb.Presence.Handlers
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
   on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
@@ -109,16 +110,25 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def handle_info({Presence, {:join, _presence}}, socket) do
-    {:noreply, socket |> Locks.refresh_presence()}
+    {:noreply,
+     socket
+     |> Handlers.handle_presence_change()
+     |> Locks.assign_locks()}
   end
 
   @impl true
   def handle_info({Presence, {:leave, _presence}}, socket) do
-    {:noreply, socket |> Locks.refresh_presence()}
+    {:noreply,
+     socket
+     |> Handlers.handle_presence_change()
+     |> Locks.assign_locks()}
   end
 
   @impl true
   def handle_info({Presence, {:update, %{id: _id, meta: _meta}}}, socket) do
-    {:noreply, socket |> Locks.refresh_presence()}
+    {:noreply,
+     socket
+     |> Handlers.handle_presence_change()
+     |> Locks.assign_locks()}
   end
 end

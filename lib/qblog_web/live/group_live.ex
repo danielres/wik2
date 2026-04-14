@@ -64,27 +64,38 @@ defmodule QblogWeb.GroupLive do
           />
         </Modal.render>
 
-        <Modal.render
-          cancel="transfer_ownership_cancel"
-          cancel_testid="transfer-ownership-cancel"
-          open?={@transfer_ownership_form != nil}
-          testid="transfer-ownership-dialog"
-        >
-          <.new_owner_selector group={@group} />
-        </Modal.render>
+        <.page_section title="Members">
+          <Modal.render
+            cancel="transfer_ownership_cancel"
+            cancel_testid="transfer-ownership-cancel"
+            open?={@transfer_ownership_form != nil}
+            testid="transfer-ownership-dialog"
+          >
+            <.new_owner_selector group={@group} />
+          </Modal.render>
 
-        <div class="card card-sm bg-base-200">
-          <div class="card-body">
-            <h2 class="text-xl">Members</h2>
-
-            <.memberships_list
-              memberships={@group.memberships}
-              current_scope={@current_scope}
-            />
-          </div>
-        </div>
+          <Components.Group.memberships
+            scope={@current_scope}
+            event_transfer_ownership_start="transfer_ownership_start"
+            memberships={@group.memberships}
+          />
+        </.page_section>
       </Layouts.group>
     </Layouts.app>
+    """
+  end
+
+  attr :title, :string, required: true
+  slot :inner_block, required: true
+
+  def page_section(assigns) do
+    ~H"""
+    <div class="card card-sm bg-base-200">
+      <div class="card-body">
+        <h2 class="text-xl">{@title}</h2>
+        {render_slot(@inner_block)}
+      </div>
+    </div>
     """
   end
 
@@ -212,43 +223,6 @@ defmodule QblogWeb.GroupLive do
             </span>
           </span>
         </button>
-      </li>
-    </ul>
-    """
-  end
-
-  def memberships_list(assigns) do
-    ~H"""
-    <ul class="space-y-0.5">
-      <li
-        :for={membership <- @memberships}
-        class={[
-          "flex items-center justify-between gap-1 flex-wrap",
-          "rounded bg-base-100/50 px-3 py-2"
-        ]}
-      >
-        <span>{membership.user |> to_string()}</span>
-
-        <span class={[
-          "flex flex-wrap gap-1",
-          "text-sm opacity-70"
-        ]}>
-          <span class={["badge badge-sm px-2 bg-base-300"]}>
-            <button
-              :if={Ash.can?({membership, :transfer_ownership}, @current_scope)}
-              phx-click="transfer_ownership_start"
-              phx-value-membership_id={membership.id}
-              class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
-            >
-              <.icon name="hero-cog-micro" class="" />
-            </button>
-            {membership.type |> Atom.to_string() |> String.capitalize()}
-          </span>
-
-          <span class={["badge badge-sm px-2 bg-base-300", "whitespace-nowrap"]}>
-            Since {Calendar.strftime(membership.inserted_at, "%Y-%m-%d %H:%M")}
-          </span>
-        </span>
       </li>
     </ul>
     """

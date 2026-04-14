@@ -51,4 +51,45 @@ defmodule QblogWeb.Components.Group do
     </ul>
     """
   end
+
+  attr :scope, :any, required: true
+  attr :event_transfer_ownership_start, :string, required: true
+  attr :memberships, :list, required: true
+
+  def memberships(assigns) do
+    ~H"""
+    <ul class="space-y-0.5">
+      <li
+        :for={membership <- @memberships}
+        class={[
+          "flex items-center justify-between gap-1 flex-wrap",
+          "rounded bg-base-100/50 px-3 py-2"
+        ]}
+      >
+        <span>{membership.user |> to_string()}</span>
+
+        <span class={[
+          "flex flex-wrap gap-1",
+          "text-sm opacity-70"
+        ]}>
+          <span class={["badge badge-sm px-2 bg-base-300"]}>
+            <button
+              :if={Ash.can?({membership, :transfer_ownership}, @scope)}
+              phx-click={@event_transfer_ownership_start}
+              phx-value-membership_id={membership.id}
+              class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+            >
+              <.icon name="hero-cog-micro" class="" />
+            </button>
+            {membership.type |> Atom.to_string() |> String.capitalize()}
+          </span>
+
+          <span class={["badge badge-sm px-2 bg-base-300", "whitespace-nowrap"]}>
+            Since {Calendar.strftime(membership.inserted_at, "%Y-%m-%d %H:%M")}
+          </span>
+        </span>
+      </li>
+    </ul>
+    """
+  end
 end

@@ -3,6 +3,7 @@ defmodule QblogWeb.GroupLive do
   use QblogWeb.Presence.Handlers
 
   alias AshPhoenix.Form
+  alias Qblog.Blocks
   alias QblogWeb.Components.Modal
   alias QblogWeb.Components
 
@@ -14,10 +15,12 @@ defmodule QblogWeb.GroupLive do
     scope = socket.assigns.current_scope
     group = socket.assigns.current_scope.tenant
     group = Ash.load!(group, [memberships: [:user]], scope: scope)
+    orphan_blocks = Blocks.list_orphan_group_owned_blocks(group, scope: scope)
 
     socket =
       socket
       |> assign(form: nil)
+      |> assign(orphan_blocks: orphan_blocks)
       |> assign(transfer_ownership_form: nil)
       |> assign(group: group)
 
@@ -79,6 +82,28 @@ defmodule QblogWeb.GroupLive do
             event_transfer_ownership_start="transfer_ownership_start"
             memberships={@group.memberships}
           />
+        </.page_section>
+
+        <.page_section
+          :if={Ash.can?({@group, :update}, @current_scope)}
+          title="Orphan blocks"
+        >
+          <p class="text-sm opacity-70">
+            Group-owned blocks that currently have no placements.
+          </p>
+
+          <ul :if={@orphan_blocks != []} class="menu bg-base-200 rounded-box w-full p-2 mt-4">
+            <li :for={block <- @orphan_blocks}>
+              <div class="flex items-center justify-between gap-4">
+                <span class="truncate">{block_summary(block)}</span>
+                <span class="font-thin text-xs opacity-60">{block.id}</span>
+              </div>
+            </li>
+          </ul>
+
+          <div :if={@orphan_blocks == []} class="mt-4 text-sm opacity-60">
+            No orphan blocks.
+          </div>
         </.page_section>
       </Layouts.group>
     </Layouts.app>
@@ -226,5 +251,22 @@ defmodule QblogWeb.GroupLive do
       </li>
     </ul>
     """
+  end
+
+  defp block_summary(%{type: :text, data: %{"text" => text}}) when is_binary(text) do
+    text
+    |> String.trim()
+    |> case do
+      "" -> "Empty text block"
+      text -> text
+    end
+    |> String.slice(0, 80)
+  end
+
+  defp block_summary(block) do
+    block.type
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+    |> String.capitalize()
   end
 end

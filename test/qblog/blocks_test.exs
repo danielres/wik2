@@ -272,6 +272,46 @@ defmodule Qblog.BlocksTest do
     end
   end
 
+  describe "list_orphan_group_owned_blocks/2" do
+    test "returns only group-owned blocks with no placements" do
+      actor = generate(user())
+      other_actor = generate(user())
+      group = generate(group(author: actor))
+      other_group = generate(group(author: other_actor))
+      add_membership(group, actor, :owner)
+      add_membership(other_group, other_actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, orphan_block} =
+        Blocks.create_group_owned_block(
+          group,
+          %{data: %{"text" => "Orphan"}, type: :text},
+          scope: scope
+        )
+
+      {:ok, placed_block} =
+        Blocks.create_group_owned_block_on_page(
+          group,
+          page,
+          %{data: %{"text" => "Placed"}, type: :text},
+          scope: scope
+        )
+
+      {:ok, _other_group_block} =
+        Blocks.create_group_owned_block(
+          other_group,
+          %{data: %{"text" => "Other group"}, type: :text},
+          scope: scope(other_actor, other_group)
+        )
+
+      orphan_blocks = Blocks.list_orphan_group_owned_blocks(group, scope: scope)
+
+      assert Enum.map(orphan_blocks, & &1.id) == [orphan_block.id]
+      refute Enum.any?(orphan_blocks, &(&1.id == placed_block.id))
+    end
+  end
+
   defp scope(actor, tenant \\ nil) do
     %Scope{actor: actor, tenant: tenant}
   end

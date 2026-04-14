@@ -87,6 +87,15 @@ defmodule Qblog.Blocks do
     end
   end
 
+  def list_orphan_group_owned_blocks(%{id: group_id}, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    Block
+    |> Ash.Query.filter(owner_group_id == ^group_id)
+    |> Ash.read!(scope: scope, load: [:placements])
+    |> Enum.filter(&Enum.empty?(&1.placements))
+  end
+
   def destroy_placed_block(placement, opts) do
     opts = opts |> Keyword.put(:return_notifications?, true)
 

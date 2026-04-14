@@ -36,8 +36,7 @@
           <div
             :for={placement <- @page.block_placements}
             class={[
-              "card rounded col-span-1",
-              placement.width == "half" && "sm:col-span-1",
+              "col-span-1",
               placement.width == "full" && "sm:col-span-2"
             ]}
             id={"block-#{placement.block.id}"}

@@ -88,20 +88,9 @@ defmodule Qblog.Blocks do
   end
 
   def destroy_placed_block(placement, opts) do
-    scope = Keyword.fetch!(opts, :scope)
     opts = opts |> Keyword.put(:return_notifications?, true)
 
-    case Repo.transaction(fn ->
-           with {:ok, block} <- Block.get_by_id(placement.block_id, scope: scope),
-                {:ok, placement_notifications} <-
-                  placement |> Ash.destroy(opts |> Keyword.put(:action, :destroy)),
-                {:ok, block_notifications} <-
-                  block |> Ash.destroy(opts |> Keyword.put(:action, :destroy)) do
-             placement_notifications ++ block_notifications
-           else
-             {:error, error} -> Repo.rollback(error)
-           end
-         end) do
+    case placement |> Ash.destroy(opts |> Keyword.put(:action, :destroy)) do
       {:ok, notifications} ->
         Ash.Notifier.notify(notifications)
         :ok

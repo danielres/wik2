@@ -1,6 +1,7 @@
 defmodule Qblog.Blocks.Block do
   alias Qblog.Accounts.Group
   alias Qblog.Accounts.User
+  alias Qblog.Blocks.Block.Checks
   alias Qblog.Blocks.Block.Validations.DataMatchesType
   alias Qblog.Blocks.Block.Validations.ExactlyOneOwner
   alias Qblog.Blocks.Types
@@ -46,20 +47,32 @@ defmodule Qblog.Blocks.Block do
   end
 
   policies do
+    bypass actor_attribute_equals(:role, :superadmin), do: authorize_if(always())
+
     policy action_type(:read) do
-      authorize_if always()
+      authorize_if relates_to_actor_via(:owner_user)
+      authorize_if relates_to_actor_via([:owner_group, :users])
+      authorize_if relates_to_actor_via([:placements, :group, :users])
     end
 
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if relating_to_actor(:owner_user)
+      authorize_if Checks.ActorCanCreateCurrentTenantGroupOwnedBlock
     end
 
-    policy action_type(:update) do
-      authorize_if always()
+    policy_group expr(
+                   exists(
+                     owner_group.memberships,
+                     user_id == ^actor(:id) and type in [:owner, :admin]
+                   )
+                 ) do
+      policy action_type(:update), do: authorize_if(always())
+      policy action_type(:destroy), do: authorize_if(always())
     end
 
-    policy action_type(:destroy) do
-      authorize_if always()
+    policy_group relates_to_actor_via(:owner_user) do
+      policy action_type(:update), do: authorize_if(always())
+      policy action_type(:destroy), do: authorize_if(always())
     end
   end
 

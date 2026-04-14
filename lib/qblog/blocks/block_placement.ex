@@ -1,4 +1,8 @@
 defmodule Qblog.Blocks.BlockPlacement do
+  alias Qblog.Accounts.Group
+  alias Qblog.Blocks.BlockPlacement.Checks
+  alias Qblog.Blocks.BlockPlacement.Changes
+
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Blocks,
@@ -13,44 +17,40 @@ defmodule Qblog.Blocks.BlockPlacement do
   end
 
   actions do
-    defaults [
-      :read,
-      :destroy
-    ]
+    defaults [:read, :destroy]
 
     create :create do
       accept [:attachable_id, :attachable_type, :block_id, :order_key, :width]
+      change Changes.SetGroupFromAttachable
     end
 
-    update :update_order do
-      accept [:order_key]
-    end
-
-    # TODO: tighten policies
-    update :update_width do
-      accept [:width]
-    end
+    update :update_order, do: accept([:order_key])
+    update :update_width, do: accept([:width])
   end
 
   policies do
-    policy action_type(:read) do
+    bypass actor_attribute_equals(:role, :superadmin) do
       authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
     end
 
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if Checks.ActorCanCreateCurrentTenantPagePlacement
     end
 
     policy action_type(:destroy) do
-      authorize_if always()
+      authorize_if Group.Checks.ActorCanManageResourceGroup
     end
 
     policy action(:update_order) do
-      authorize_if always()
+      authorize_if Group.Checks.ActorCanManageResourceGroup
     end
 
     policy action(:update_width) do
-      authorize_if always()
+      authorize_if Group.Checks.ActorCanManageResourceGroup
     end
   end
 
@@ -91,9 +91,8 @@ defmodule Qblog.Blocks.BlockPlacement do
   end
 
   relationships do
-    belongs_to :block, Qblog.Blocks.Block do
-      allow_nil? false
-    end
+    belongs_to :block, Qblog.Blocks.Block, do: allow_nil?(false)
+    belongs_to :group, Group, do: allow_nil?(false)
   end
 
   identities do

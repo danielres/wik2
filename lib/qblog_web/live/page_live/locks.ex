@@ -15,7 +15,8 @@ defmodule QblogWeb.PageLive.Locks do
   end
 
   def sync_presence(socket) do
-    case {Phoenix.LiveView.connected?(socket), socket.assigns[:presence_path], socket.assigns[:current_scope]} do
+    case {Phoenix.LiveView.connected?(socket), socket.assigns[:presence_path],
+          socket.assigns[:current_scope]} do
       {true, path, %{actor: user, tenant: group}} when is_binary(path) ->
         _ =
           Presence.track_user_presence(

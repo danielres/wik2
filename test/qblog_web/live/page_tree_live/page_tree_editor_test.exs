@@ -83,7 +83,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
 
     refute has_element?(view, testid("move-node-modal"))
 
-    assert Enum.any?(page_tree_for(group.name, superadmin.id).nodes, &(&1.id == 3 and &1.parent_id == 1))
+    assert Enum.any?(
+             page_tree_for(group.name, superadmin.id).nodes,
+             &(&1.id == 3 and &1.parent_id == 1)
+           )
   end
 
   test "remove node deletes a leaf node from the rendered tree and persisted state", %{conn: conn} do
@@ -126,7 +129,9 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
   end
 
   defp page_tree_for(tenant, actor_id) do
-    superadmin = Ash.get!(Qblog.Accounts.User, actor_id, authorize?: false, domain: Qblog.Accounts)
+    superadmin =
+      Ash.get!(Qblog.Accounts.User, actor_id, authorize?: false, domain: Qblog.Accounts)
+
     {:ok, page_tree} = PageTree.ensure(scope: %{actor: superadmin, tenant: tenant})
     page_tree
   end

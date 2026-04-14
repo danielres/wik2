@@ -3,6 +3,7 @@ defmodule Qblog.BlocksTest do
 
   import Qblog.TestGenerators
 
+  alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Blocks
   alias Qblog.Blocks.Block
   alias Qblog.Blocks.BlockPlacement
@@ -36,6 +37,7 @@ defmodule Qblog.BlocksTest do
     test "sets author and group owner and clears user owner" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
 
       assert {:ok, block} =
                Blocks.create_group_owned_block(
@@ -45,7 +47,7 @@ defmodule Qblog.BlocksTest do
                    owner_user_id: actor.id,
                    type: :text
                  },
-                 scope: scope(actor)
+                 scope: scope(actor, group)
                )
 
       assert block.author_id == actor.id
@@ -58,6 +60,7 @@ defmodule Qblog.BlocksTest do
     test "creates a user-owned block and places it on the page" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -79,6 +82,7 @@ defmodule Qblog.BlocksTest do
       assert block.owner_user_id == actor.id
       assert block.owner_group_id == nil
       assert placement.block_id == block.id
+      assert placement.group_id == group.id
       assert placement.width == "full"
     end
   end
@@ -87,6 +91,7 @@ defmodule Qblog.BlocksTest do
     test "creates a group-owned block and places it on the page" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -109,6 +114,7 @@ defmodule Qblog.BlocksTest do
       assert block.owner_group_id == group.id
       assert block.owner_user_id == nil
       assert placement.block_id == block.id
+      assert placement.group_id == group.id
       assert placement.width == "full"
     end
   end
@@ -117,6 +123,7 @@ defmodule Qblog.BlocksTest do
     test "creates a placement for the parent" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -128,12 +135,14 @@ defmodule Qblog.BlocksTest do
       assert placement.attachable_id == page.id
       assert placement.attachable_type == "page"
       assert placement.block_id == block.id
+      assert placement.group_id == group.id
       assert is_binary(placement.order_key)
     end
 
     test "assigns later order keys after earlier placements" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -154,6 +163,7 @@ defmodule Qblog.BlocksTest do
     test "moves a placement after the next placement" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -175,6 +185,7 @@ defmodule Qblog.BlocksTest do
     test "moves a placement before the previous placement" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -196,6 +207,7 @@ defmodule Qblog.BlocksTest do
     test "toggles a placement between full and half width" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -219,9 +231,10 @@ defmodule Qblog.BlocksTest do
   end
 
   describe "destroy_placed_block/2" do
-    test "removes the placement and the block" do
+    test "removes the placement and keeps the block" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -249,17 +262,26 @@ defmodule Qblog.BlocksTest do
         )
         |> Ash.read_one!(scope: scope)
 
-      block =
+      persisted_block =
         Block
         |> Ash.Query.filter(id == ^block.id)
         |> Ash.read_one!(scope: scope)
 
       assert placement == nil
-      assert block == nil
+      assert persisted_block.id == block.id
     end
   end
 
   defp scope(actor, tenant \\ nil) do
     %Scope{actor: actor, tenant: tenant}
+  end
+
+  defp add_membership(group, user, type) do
+    Ash.create!(
+      GroupUserRelation,
+      %{group_id: group.id, type: type, user_id: user.id},
+      authorize?: false,
+      domain: Qblog.Accounts
+    )
   end
 end

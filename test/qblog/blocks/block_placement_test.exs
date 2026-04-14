@@ -3,6 +3,7 @@ defmodule Qblog.Blocks.BlockPlacementTest do
 
   import Qblog.TestGenerators
 
+  alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Blocks
   alias Qblog.Blocks.BlockPlacement
   alias Qblog.Scope
@@ -12,6 +13,7 @@ defmodule Qblog.Blocks.BlockPlacementTest do
     test "fails when the same order key is reused in the same container" do
       actor = generate(user())
       group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
       scope = make_scope(actor, group)
       {:ok, page} = Page.create(scope: scope)
 
@@ -41,5 +43,14 @@ defmodule Qblog.Blocks.BlockPlacementTest do
 
   defp make_scope(actor, tenant) do
     %Scope{actor: actor, tenant: tenant}
+  end
+
+  defp add_membership(group, user, type) do
+    Ash.create!(
+      GroupUserRelation,
+      %{group_id: group.id, type: type, user_id: user.id},
+      authorize?: false,
+      domain: Qblog.Accounts
+    )
   end
 end

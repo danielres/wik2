@@ -2,18 +2,21 @@ defmodule QblogWeb.PageTreeEditorTestLive do
   use QblogWeb, :live_view
 
   alias Qblog.Accounts
+  alias Qblog.Accounts.User
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.PageTreeEditor
 
   @impl true
-  def mount(_params, %{"tenant" => tenant_name}, socket) do
+  def mount(_params, %{"actor_id" => actor_id, "tenant" => tenant_name} = session, socket) do
+    {:ok, actor} = Ash.get(User, actor_id, authorize?: false, domain: Qblog.Accounts)
     {:ok, tenant} = Accounts.get_group_by_name(tenant_name, authorize?: false)
-    current_scope = %{tenant: tenant}
+    current_scope = %{actor: actor, tenant: tenant}
     {:ok, page_tree} = PageTree.ensure(scope: current_scope)
+    editable? = Map.get(session, "editable?", Map.get(session, :editable?, true))
 
     {:ok,
      socket
-     |> assign(current_scope: current_scope, page_tree: page_tree)}
+     |> assign(current_scope: current_scope, page_tree: page_tree, editable?: editable?)}
   end
 
   @impl true
@@ -23,7 +26,7 @@ defmodule QblogWeb.PageTreeEditorTestLive do
       module={PageTreeEditor}
       id="page_tree_editor"
       current_scope={@current_scope}
-      editable?={true}
+      editable?={@editable?}
       page_tree={@page_tree}
     />
     """

@@ -189,9 +189,15 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
   @impl true
   def handle_event("move_node_start", %{"node_id" => node_id}, socket) do
-    {:noreply,
-     socket
-     |> assign(flow_move_node: node_id |> FlowMoveNode.open())}
+    socket =
+      if socket.assigns.editable? do
+        socket
+        |> assign(flow_move_node: node_id |> FlowMoveNode.open())
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   # add child ================================================================
@@ -205,29 +211,39 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
   @impl true
   def handle_event("add_child_start", %{"node_id" => node_id}, socket) do
-    {:noreply,
-     socket
-     |> assign(flow_add_child: socket.assigns.flow_add_child |> FlowAddChild.open(node_id))}
+    socket =
+      if socket.assigns.editable? do
+        socket
+        |> assign(flow_add_child: socket.assigns.flow_add_child |> FlowAddChild.open(node_id))
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   # remove node ================================================================
 
   @impl true
   def handle_event("destroy_node", %{"node_id" => node_id}, socket) do
-    page_tree = socket.assigns.page_tree
-    scope = socket.assigns.current_scope
+    if socket.assigns.editable? do
+      page_tree = socket.assigns.page_tree
+      scope = socket.assigns.current_scope
 
-    case PageTree.destroy_node(page_tree, node_id, destroy_page?: true, scope: scope) do
-      {:ok, page_tree} ->
-        send(self(), {:page_tree_updated, page_tree})
+      case PageTree.destroy_node(page_tree, node_id, destroy_page?: true, scope: scope) do
+        {:ok, page_tree} ->
+          send(self(), {:page_tree_updated, page_tree})
 
-        {:noreply,
-         socket
-         |> assign(page_tree: page_tree)}
+          {:noreply,
+           socket
+           |> assign(page_tree: page_tree)}
 
-      {:error, err} ->
-        Log.scoped_error(scope, err, "page_tree destroy_node failed")
-        {:noreply, socket}
+        {:error, err} ->
+          Log.scoped_error(scope, err, "page_tree destroy_node failed")
+          {:noreply, socket}
+      end
+    else
+      {:noreply, socket}
     end
   end
 end

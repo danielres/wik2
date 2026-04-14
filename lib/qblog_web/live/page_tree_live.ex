@@ -2,7 +2,6 @@ defmodule QblogWeb.PageTreeLive do
   use QblogWeb, :live_view
   use QblogWeb.Presence.Handlers
 
-  alias Qblog.Wiki
   alias QblogWeb.PageTreeLive.PageTreeEditor
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
@@ -11,8 +10,15 @@ defmodule QblogWeb.PageTreeLive do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
-    page_tree = scope |> Wiki.load_page_tree()
-    {:ok, socket |> assign(page_tree: page_tree)}
+
+    case Qblog.Wiki.PageTree.ensure(scope: scope) do
+      {:ok, page_tree} ->
+        editable? = Ash.can?({page_tree, :manage_tree}, scope)
+        {:ok, socket |> assign(page_tree: page_tree, editable?: editable?)}
+
+      {:error, _error} ->
+        {:ok, socket |> assign(page_tree: %Qblog.Wiki.PageTree{nodes: []}, editable?: false)}
+    end
   end
 
   @impl true
@@ -22,7 +28,7 @@ defmodule QblogWeb.PageTreeLive do
       <Layouts.group presences={@presences} scope={@current_scope} view="tree">
         <.live_component
           current_scope={@current_scope}
-          editable?={true}
+          editable?={@editable?}
           id="page_tree_editor"
           module={PageTreeEditor}
           page_tree={@page_tree}

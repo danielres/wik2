@@ -37,4 +37,8 @@ defmodule Qblog.Accounts do
       {:error, _reason} -> nil
     end
   end
+
+  def tenant_to_group_id(%{id: group_id}), do: group_id
+  def tenant_to_group_id(group_name) when is_binary(group_name), do: group_name_to_id(group_name)
+  def tenant_to_group_id(_), do: nil
 end

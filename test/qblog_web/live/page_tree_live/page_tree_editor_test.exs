@@ -4,13 +4,15 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
   import Qblog.TestGenerators
   import Phoenix.LiveViewTest
 
+  alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeEditorTestLive
 
   test "add child flow resets on cancel and persists a valid submission", %{conn: conn} do
     group = generate(group())
+    superadmin = generate(user(role: :superadmin))
     generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.name)
+    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
 
     render_click(element(view, testid("page-tree-editor-node-2-add-child")))
 
@@ -52,13 +54,17 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
     refute has_element?(view, testid("add-child-modal"))
     assert has_element?(view, testid("page-tree-node-5"))
 
-    assert Enum.any?(page_tree_for(group.name).nodes, &(&1.parent_id == 2 and &1.slug == "guide"))
+    assert Enum.any?(
+             page_tree_for(group.name, superadmin.id).nodes,
+             &(&1.parent_id == 2 and &1.slug == "guide")
+           )
   end
 
   test "move node flow can be canceled and persists the selected parent", %{conn: conn} do
     group = generate(group())
+    superadmin = generate(user(role: :superadmin))
     generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.name)
+    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
 
     render_click(element(view, testid("page-tree-editor-node-3-move")))
 
@@ -77,31 +83,64 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
 
     refute has_element?(view, testid("move-node-modal"))
 
-    assert Enum.any?(page_tree_for(group.name).nodes, &(&1.id == 3 and &1.parent_id == 1))
+    assert Enum.any?(page_tree_for(group.name, superadmin.id).nodes, &(&1.id == 3 and &1.parent_id == 1))
   end
 
   test "remove node deletes a leaf node from the rendered tree and persisted state", %{conn: conn} do
     group = generate(group())
+    superadmin = generate(user(role: :superadmin))
     generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.name)
+    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
 
     assert has_element?(view, testid("page-tree-node-3"))
 
     render_click(element(view, testid("page-tree-editor-node-3-remove")))
 
     refute has_element?(view, testid("page-tree-node-3"))
-    refute Enum.any?(page_tree_for(group.name).nodes, &(&1.id == 3))
+    refute Enum.any?(page_tree_for(group.name, superadmin.id).nodes, &(&1.id == 3))
+  end
+
+  test "read-only mode hides all action buttons", %{conn: conn} do
+    group = generate(group())
+    member = generate(user())
+    add_membership(group, member, :member)
+    generate(page_tree(group: group, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, group.name, member.id, editable?: false)
+
+    refute has_element?(view, testid("page-tree-editor-add-root"))
+    refute has_element?(view, testid("page-tree-editor-node-2-add-child"))
+    refute has_element?(view, testid("page-tree-editor-node-2-move"))
+    refute has_element?(view, testid("page-tree-editor-node-3-remove"))
   end
 
   defp testid(value), do: ~s([data-testid="#{value}"])
 
-  defp mount_editor(conn, tenant) do
-    live_isolated(conn, PageTreeEditorTestLive, session: %{"tenant" => tenant})
+  defp mount_editor(conn, tenant, actor_id, extra_session \\ %{}) do
+    extra_session =
+      extra_session
+      |> Map.new()
+      |> Map.new(fn {key, value} -> {to_string(key), value} end)
+
+    session = Map.merge(%{"actor_id" => actor_id, "tenant" => tenant}, extra_session)
+    live_isolated(conn, PageTreeEditorTestLive, session: session)
   end
 
-  defp page_tree_for(tenant) do
-    {:ok, page_tree} = PageTree.ensure(scope: %{tenant: tenant})
+  defp page_tree_for(tenant, actor_id) do
+    superadmin = Ash.get!(Qblog.Accounts.User, actor_id, authorize?: false, domain: Qblog.Accounts)
+    {:ok, page_tree} = PageTree.ensure(scope: %{actor: superadmin, tenant: tenant})
     page_tree
+  end
+
+  defp add_membership(group, user, type) do
+    {:ok, membership} =
+      Ash.create(
+        GroupUserRelation,
+        %{group_id: group.id, type: type, user_id: user.id},
+        authorize?: false,
+        domain: Qblog.Accounts
+      )
+
+    membership
   end
 
   defp base_nodes do

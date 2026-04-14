@@ -3,6 +3,7 @@ defmodule Qblog.Wiki.PageTree.DestroyNodeTest do
 
   import Qblog.TestGenerators
 
+  alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Scope
   alias Qblog.Wiki.Page
   alias Qblog.Wiki.PageTree
@@ -10,8 +11,9 @@ defmodule Qblog.Wiki.PageTree.DestroyNodeTest do
   test "destroy_node keeps the associated page by default" do
     author = generate(user())
     group = generate(group(author: author))
+    add_membership(group, author, :owner)
     scope = %Scope{actor: author, tenant: group}
-    {:ok, page} = Page.create(scope: scope)
+    {:ok, page} = Page.create(authorize?: false, scope: scope)
 
     page_tree =
       generate(
@@ -32,8 +34,9 @@ defmodule Qblog.Wiki.PageTree.DestroyNodeTest do
   test "destroy_node destroys the associated page when destroy_page? is true" do
     author = generate(user())
     group = generate(group(author: author))
+    add_membership(group, author, :owner)
     scope = %Scope{actor: author, tenant: group}
-    {:ok, page} = Page.create(scope: scope)
+    {:ok, page} = Page.create(authorize?: false, scope: scope)
 
     page_tree =
       generate(
@@ -50,5 +53,14 @@ defmodule Qblog.Wiki.PageTree.DestroyNodeTest do
 
     assert page_tree.nodes == []
     assert {:error, _error} = Page.get_by_id(page.id, authorize?: false, scope: scope)
+  end
+
+  defp add_membership(group, user, type) do
+    Ash.create!(
+      GroupUserRelation,
+      %{group_id: group.id, type: type, user_id: user.id},
+      authorize?: false,
+      domain: Qblog.Accounts
+    )
   end
 end

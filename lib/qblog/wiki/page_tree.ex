@@ -1,4 +1,6 @@
 defmodule Qblog.Wiki.PageTree do
+  alias Qblog.Accounts.Group
+
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Wiki,
@@ -18,13 +20,13 @@ defmodule Qblog.Wiki.PageTree do
     define :link_page, args: [:node_id, :page_id]
     define :move_node, args: [:node_id, :new_parent_id]
     define :ensure, action: :ensure, args: []
+
+    # Used for authorization semantics with Ash.can?(), not for mutating data
+    define :manage_tree, action: :manage_tree, args: []
   end
 
   actions do
-    defaults [
-      :read,
-      :destroy
-    ]
+    defaults [:read]
 
     create :create do
       change Qblog.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
@@ -34,6 +36,8 @@ defmodule Qblog.Wiki.PageTree do
       constraints instance_of: __MODULE__
       run Qblog.Wiki.PageTree.Actions.Ensure
     end
+
+    update :manage_tree, do: require_atomic?(false)
 
     update :add_child do
       require_atomic? false
@@ -119,29 +123,28 @@ defmodule Qblog.Wiki.PageTree do
   end
 
   policies do
-    policy action_type(:read) do
-      # TODO: implement proper permissions
+    bypass actor_attribute_equals(:role, :superadmin) do
       authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
     end
 
     policy action_type(:create) do
-      # TODO: implement proper permissions
-      authorize_if always()
+      authorize_if Group.Checks.ActorIsMemberOfCurrentTenantGroup
     end
 
     policy action_type(:update) do
-      # TODO: implement proper permissions
-      authorize_if always()
-    end
-
-    policy action_type(:destroy) do
-      # TODO: implement proper permissions
-      authorize_if always()
+      authorize_if Group.Checks.ActorCanManageResourceGroup
     end
 
     policy action(:ensure) do
-      # TODO: implement proper permissions
-      authorize_if always()
+      authorize_if Group.Checks.ActorIsMemberOfCurrentTenantGroup
+    end
+
+    policy action(:manage_tree) do
+      authorize_if Group.Checks.ActorCanManageResourceGroup
     end
   end
 

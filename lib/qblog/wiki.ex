@@ -13,6 +13,8 @@ defmodule Qblog.Wiki do
   alias Qblog.Wiki.PageTree.TreeQueries
   alias Utils.Log
 
+  require Ash.Query
+
   admin do
     show? true
   end
@@ -37,7 +39,7 @@ defmodule Qblog.Wiki do
     scope = Keyword.fetch!(opts, :scope)
     load = Keyword.get(opts, :load, [])
     title = path |> default_page_title_from_path()
-    node = scope |> TreeQueries.load_node_by_path(path)
+    node = scope |> load_node_by_path(path)
 
     case {node, title} do
       {nil, title} ->
@@ -71,7 +73,7 @@ defmodule Qblog.Wiki do
            end
          end) do
       {:ok, page} ->
-        node = scope |> TreeQueries.load_node_by_path(path)
+        node = scope |> load_node_by_path(path)
 
         case page |> Ash.load(load, scope: scope) do
           {:ok, page} -> {:ok, node, page}
@@ -83,6 +85,16 @@ defmodule Qblog.Wiki do
     end
   end
 
+  def load_node_by_path(scope, path) do
+    page_tree = scope |> load_page_tree()
+
+    case TreeQueries.get_node_by_path(page_tree.nodes, path) do
+      {:ok, node} -> node
+      {:error, _error} -> nil
+    end
+  end
+
+  # TODO: rename to "_to_" convention: path_to_default_page_title
   defp default_page_title_from_path(path) do
     path
     |> String.split("/", trim: true)

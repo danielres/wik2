@@ -1,7 +1,4 @@
 defmodule Qblog.Wiki.PageTree.TreeQueries do
-  alias Qblog.Wiki.PageTree
-  alias Utils.Log
-
   def get_node(nodes, node_id) do
     Enum.find(nodes, &(&1.id == node_id))
   end
@@ -86,28 +83,5 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
         |> child_nodes(node.id)
         |> Enum.map(&build_subtree(nodes, &1))
     }
-  end
-
-  def load_node_by_path(scope, path) do
-    page_tree = scope |> load_page_tree()
-
-    case get_node_by_path(page_tree.nodes, path) do
-      {:ok, node} ->
-        node
-
-      {:error, _err} ->
-        nil
-    end
-  end
-
-  defp load_page_tree(scope) do
-    case PageTree.ensure(scope: scope) do
-      {:ok, page_tree} ->
-        page_tree
-
-      {:error, err} ->
-        Log.scoped_error(scope, err, "PageTree.ensure failed")
-        %PageTree{nodes: []}
-    end
   end
 end

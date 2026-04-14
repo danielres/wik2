@@ -1,4 +1,6 @@
 defmodule Qblog.Wiki.Page do
+  alias Qblog.Accounts.Group
+
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Wiki,
@@ -29,13 +31,24 @@ defmodule Qblog.Wiki.Page do
   end
 
   policies do
+    bypass actor_attribute_equals(:role, :superadmin) do
+      authorize_if always()
+    end
+
     policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :superadmin)
-      authorize_if relates_to_actor_via([:group, :users])
+      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
     end
 
     policy action_type(:create) do
-      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if Group.Checks.ActorCanManageCurrentTenantGroup
+    end
+
+    policy action_type(:update) do
+      authorize_if Group.Checks.ActorCanManageResourceGroup
+    end
+
+    policy action_type(:destroy) do
+      authorize_if Group.Checks.ActorCanManageResourceGroup
     end
   end
 

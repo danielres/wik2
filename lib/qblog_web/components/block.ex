@@ -20,6 +20,16 @@ defmodule QblogWeb.Components.Block do
 
   # Regular components =========================================================
 
+  attr :block, :map, required: true
+
+  def preview(assigns) do
+    ~H"""
+    <div class="rounded bg-base-200/50 p-4">
+      <.dispatch_render block={@block} />
+    </div>
+    """
+  end
+
   attr :lock, :map, default: nil
   attr :placement, :map, required: true
   attr :editing?, :boolean, default: false

@@ -21,6 +21,7 @@ defmodule QblogWeb.GroupLive do
       socket
       |> assign(form: nil)
       |> assign(orphan_blocks: orphan_blocks)
+      |> assign(selected_orphan_block: nil)
       |> assign(transfer_ownership_form: nil)
       |> assign(group: group)
 
@@ -88,16 +89,29 @@ defmodule QblogWeb.GroupLive do
           :if={Ash.can?({@group, :update}, @current_scope)}
           title="Orphan blocks"
         >
-          <p class="text-sm opacity-70">
-            Group-owned blocks that currently have no placements.
-          </p>
+          <Modal.render
+            cancel="orphan_block_preview_cancel"
+            cancel_testid="orphan-block-preview-cancel"
+            open?={@selected_orphan_block != nil}
+            testid="orphan-block-preview-dialog"
+          >
+            <div :if={@selected_orphan_block} class="space-y-4">
+              <div class="text-sm opacity-60">{@selected_orphan_block.id}</div>
+              <QblogWeb.Components.Block.preview block={@selected_orphan_block} />
+            </div>
+          </Modal.render>
 
-          <ul :if={@orphan_blocks != []} class="menu bg-base-200 rounded-box w-full p-2 mt-4">
-            <li :for={block <- @orphan_blocks}>
-              <div class="flex items-center justify-between gap-4">
-                <span class="truncate">{block_summary(block)}</span>
-                <span class="font-thin text-xs opacity-60">{block.id}</span>
-              </div>
+          <ul :if={@orphan_blocks != []} class="menu w-full p-0 rounded space-y-0.5">
+            <li
+              :for={block <- @orphan_blocks}
+              class="bg-base-100/50"
+            >
+              <button
+                phx-click="orphan_block_preview_start"
+                phx-value-block_id={block.id}
+              >
+                <div class="truncate">{block_summary(block)}</div>
+              </button>
             </li>
           </ul>
 
@@ -187,6 +201,20 @@ defmodule QblogWeb.GroupLive do
   end
 
   @impl true
+  def handle_event("orphan_block_preview_start", %{"block_id" => block_id}, socket) do
+    selected_orphan_block =
+      socket.assigns.orphan_blocks
+      |> Enum.find(&(&1.id == block_id))
+
+    {:noreply, socket |> assign(selected_orphan_block: selected_orphan_block)}
+  end
+
+  @impl true
+  def handle_event("orphan_block_preview_cancel", _params, socket) do
+    {:noreply, socket |> assign(selected_orphan_block: nil)}
+  end
+
+  @impl true
   def handle_event("validate", %{"form" => params}, socket) do
     {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
   end
@@ -260,7 +288,7 @@ defmodule QblogWeb.GroupLive do
       "" -> "Empty text block"
       text -> text
     end
-    |> String.slice(0, 80)
+    |> String.slice(0, 40)
   end
 
   defp block_summary(block) do

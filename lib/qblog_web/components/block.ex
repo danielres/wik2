@@ -50,18 +50,18 @@ defmodule QblogWeb.Components.Block do
         {to_string(@lock.user)} editing
       </div>
 
-      <div class="">
-        <.dispatch_render block={@placement.block} />
-      </div>
-
       <div
         :if={@editing? and is_nil(@lock)}
         class={[
           "ACTION-BUTTONS",
-          "absolute top-0 right-0"
+          "opacity-50 hover:opacity-100 transition-opacity"
         ]}
       >
         <Block.ActionButtons.render placement={@placement} />
+      </div>
+
+      <div class="">
+        <.dispatch_render block={@placement.block} />
       </div>
     </div>
     """

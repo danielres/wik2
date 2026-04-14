@@ -6,9 +6,33 @@ defmodule QblogWeb.PageLive.PageState do
   alias Qblog.Wiki
   alias QblogWeb.PageLive.BlockEdit
 
+  def ensure_page_and_node_by_path(scope, path) do
+    {node, page} = scope |> load_page_and_node_by_path(path)
+
+    if page == nil do
+      case path
+           |> Wiki.ensure_page_and_node_at_path(
+             scope: scope,
+             load: [:author, block_placements: :block]
+           ) do
+        {:ok, node, page} ->
+          {node, page}
+
+        {:error, %Ash.Error.Forbidden{}} ->
+          {node, page}
+
+        {:error, error} ->
+          Utils.Log.scoped_error(scope, error, "ensure_page_and_node_by_path failed")
+          {node, page}
+      end
+    else
+      {node, page}
+    end
+  end
+
   def load_page_and_node_by_path(scope, path) do
     path
-    |> Wiki.ensure_node_and_page_at_path(
+    |> Wiki.load_page_and_node_by_path(
       scope: scope,
       load: [:author, block_placements: :block]
     )
@@ -31,13 +55,23 @@ defmodule QblogWeb.PageLive.PageState do
 
     socket
     |> sync_block_subscriptions(page)
-    |> assign(node: node, page: page)
+    |> assign(
+      node: node,
+      page: page,
+      not_found_path: if(page == nil, do: socket.assigns.path, else: nil)
+    )
     |> clear_invalid_edit_state(page)
   end
 
   def sync_block_subscriptions(socket, page) do
     if Phoenix.LiveView.connected?(socket) do
-      current_block_ids = page.block_placements |> Enum.map(& &1.block.id) |> MapSet.new()
+      current_block_ids =
+        page
+        |> case do
+          nil -> MapSet.new()
+          page -> page.block_placements |> Enum.map(& &1.block.id) |> MapSet.new()
+        end
+
       subscribed_block_ids = socket.assigns[:subscribed_block_ids] || MapSet.new()
       block_ids_to_subscribe = current_block_ids |> MapSet.difference(subscribed_block_ids)
       block_ids_to_unsubscribe = subscribed_block_ids |> MapSet.difference(current_block_ids)
@@ -53,7 +87,9 @@ defmodule QblogWeb.PageLive.PageState do
 
   defp clear_invalid_edit_state(socket, page) do
     editing_block_id = socket.assigns.editing_block_id
-    editing_block? = page.block_placements |> Enum.any?(&(&1.block.id == editing_block_id))
+
+    editing_block? =
+      page != nil and page.block_placements |> Enum.any?(&(&1.block.id == editing_block_id))
 
     if editing_block? do
       socket

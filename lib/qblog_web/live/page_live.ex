@@ -4,7 +4,6 @@ defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
   use QblogWeb.Presence.Handlers
 
-  alias Qblog.Wiki
   alias QblogWeb.Endpoint
   alias QblogWeb.PageLive.BlockActions
   alias QblogWeb.PageLive.BlockEdit
@@ -20,9 +19,12 @@ defmodule QblogWeb.PageLive do
   def mount(params, _session, socket) do
     path = params["path"] |> Enum.join("/")
     scope = socket.assigns.current_scope
-    {node, page} = scope |> PageState.load_page_and_node_by_path(path)
+    {node, page} = scope |> PageState.ensure_page_and_node_by_path(path)
 
-    if page != nil or Ash.can?({Wiki.Page, :create}, scope) do
+    if page == nil do
+      socket = socket |> assign(not_found_path: path)
+      {:ok, socket}
+    else
       socket =
         socket
         |> assign(node: node, page: page, path: path)
@@ -31,9 +33,6 @@ defmodule QblogWeb.PageLive do
         |> Locks.assign_locks()
 
       if connected?(socket), do: Endpoint.subscribe("block_placement:page:#{page.id}")
-      {:ok, socket}
-    else
-      socket = socket |> assign(not_found_path: path)
       {:ok, socket}
     end
   end
@@ -96,12 +95,10 @@ defmodule QblogWeb.PageLive do
     {:noreply, socket |> BlockActions.save_edit(block_id, params)}
   end
 
-
   @impl true
   def handle_event("add_block", %{"type" => type_param}, socket) do
     {:noreply, socket |> BlockActions.add(type_param)}
   end
-
 
   @impl true
   def handle_event("move_block_down", %{"placement_id" => placement_id}, socket) do
@@ -122,5 +119,4 @@ defmodule QblogWeb.PageLive do
   def handle_event("toggle_block_width", %{"placement_id" => placement_id}, socket) do
     {:noreply, socket |> BlockActions.toggle_width(placement_id)}
   end
-
 end

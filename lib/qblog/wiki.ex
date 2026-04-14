@@ -35,26 +35,41 @@ defmodule Qblog.Wiki do
     end
   end
 
-  def ensure_node_and_page_at_path(path, opts) do
+  def load_page_and_node_by_path(path, opts) do
     scope = Keyword.fetch!(opts, :scope)
     load = Keyword.get(opts, :load, [])
-    title = path |> default_page_title_from_path()
     node = scope |> load_node_by_path(path)
+    page = scope |> Node.load_page(node, load: load)
+    {node, page}
+  end
 
-    case {node, title} do
-      {nil, title} ->
-        case path |> create_page_and_node_at_path(title, scope: scope, load: load) do
-          {:ok, node, page} ->
-            {node, page}
+  def ensure_page_and_node_at_path(path, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+    load = Keyword.get(opts, :load, [])
+    {node, page} = path |> load_page_and_node_by_path(scope: scope, load: load)
 
-          {:error, error} ->
-            Utils.Log.scoped_error(scope, error, "create_page_and_node_at_path failed")
-            {nil, nil}
-        end
+    case {node, page} do
+      {node, page} when not is_nil(page) ->
+        {:ok, node, page}
 
-      {node, _title} ->
-        page = scope |> Node.load_or_create_page(node, load: load)
-        {node, page}
+      {nil, nil} ->
+        path
+        |> create_page_and_node_at_path(path_to_default_page_title(path),
+          scope: scope,
+          load: load
+        )
+
+      {node, nil} ->
+        node |> create_page_for_existing_node(scope: scope, load: load)
+    end
+  end
+
+  def load_node_by_path(scope, path) do
+    page_tree = scope |> load_page_tree()
+
+    case TreeQueries.get_node_by_path(page_tree.nodes, path) do
+      {:ok, node} -> node
+      {:error, _error} -> nil
     end
   end
 
@@ -85,17 +100,31 @@ defmodule Qblog.Wiki do
     end
   end
 
-  def load_node_by_path(scope, path) do
-    page_tree = scope |> load_page_tree()
+  defp create_page_for_existing_node(node, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+    load = Keyword.get(opts, :load, [])
 
-    case TreeQueries.get_node_by_path(page_tree.nodes, path) do
-      {:ok, node} -> node
-      {:error, _error} -> nil
+    case Repo.transaction(fn ->
+           with {:ok, page} <- Page.create(scope: scope),
+                {:ok, page_tree} <- PageTree.ensure(scope: scope),
+                {:ok, _page_tree} <- PageTree.link_page(page_tree, node.id, page.id, scope: scope) do
+             page
+           else
+             {:error, error} -> Repo.rollback(error)
+           end
+         end) do
+      {:ok, page} ->
+        case page |> Ash.load(load, scope: scope) do
+          {:ok, page} -> {:ok, node, page}
+          {:error, error} -> {:error, error}
+        end
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  # TODO: rename to "_to_" convention: path_to_default_page_title
-  defp default_page_title_from_path(path) do
+  defp path_to_default_page_title(path) do
     path
     |> String.split("/", trim: true)
     |> List.last()

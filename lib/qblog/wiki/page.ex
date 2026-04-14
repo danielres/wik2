@@ -16,6 +16,9 @@ defmodule Qblog.Wiki.Page do
   code_interface do
     define :get_by_id, action: :read, get_by: [:id]
     define :create, action: :create, args: []
+
+    # Used for authorization semantics with Ash.can?(), not for mutating data
+    define :manage_page, action: :manage_page, args: []
   end
 
   actions do
@@ -28,6 +31,8 @@ defmodule Qblog.Wiki.Page do
     create :create do
       change relate_actor(:author, allow_nil?: false)
     end
+
+    update :manage_page, do: require_atomic?(false)
   end
 
   policies do
@@ -48,6 +53,10 @@ defmodule Qblog.Wiki.Page do
     end
 
     policy action_type(:destroy) do
+      authorize_if Group.Checks.ActorCanManageResourceGroup
+    end
+
+    policy action(:manage_page) do
       authorize_if Group.Checks.ActorCanManageResourceGroup
     end
   end

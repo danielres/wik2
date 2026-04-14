@@ -12,6 +12,7 @@
           <div class="flex justify-between gap-4">
             <h1 class="text-2xl">{@node.title}</h1>
             <button
+              :if={@can_manage_page?}
               class={[
                 "btn btn-sm btn-square btn-xs",
                 "opacity-80 hover:opacity-100",

@@ -22,12 +22,14 @@ defmodule QblogWeb.PageLive do
     {node, page} = scope |> PageState.ensure_page_and_node_by_path(path)
 
     if page == nil do
-      socket = socket |> assign(not_found_path: path)
+      socket = socket |> assign(not_found_path: path, can_manage_page?: false)
       {:ok, socket}
     else
+      can_manage_page? = Ash.can?({page, :manage_page}, scope)
+
       socket =
         socket
-        |> assign(node: node, page: page, path: path)
+        |> assign(node: node, page: page, path: path, can_manage_page?: can_manage_page?)
         |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
         |> PageState.sync_block_subscriptions(page)
         |> Locks.assign_locks()

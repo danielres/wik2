@@ -48,6 +48,7 @@ defmodule QblogWeb.Layouts do
           <.menu_item tenant={@scope.tenant} view={@view} target="wiki">Wiki</.menu_item>
           <.menu_item tenant={@scope.tenant} view={@view} target="tree">Page tree</.menu_item>
           <.menu_item tenant={@scope.tenant} view={@view} target="blog">Blog</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="admin">Admin</.menu_item>
         </ul>
       </menu>
 

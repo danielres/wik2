@@ -52,10 +52,12 @@ defmodule QblogWeb.PageLive.PageState do
   def reload(socket) do
     scope = socket.assigns.current_scope
     {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
+    can_manage_page? = page != nil and Ash.can?({page, :manage_page}, scope)
 
     socket
     |> sync_block_subscriptions(page)
     |> assign(
+      can_manage_page?: can_manage_page?,
       node: node,
       page: page,
       not_found_path: if(page == nil, do: socket.assigns.path, else: nil)

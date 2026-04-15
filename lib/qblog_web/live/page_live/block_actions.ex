@@ -2,6 +2,7 @@ defmodule QblogWeb.PageLive.BlockActions do
   @moduledoc false
 
   alias Qblog.Blocks
+  alias Qblog.Blocks.Types.Embed
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.PageState
 
@@ -9,14 +10,19 @@ defmodule QblogWeb.PageLive.BlockActions do
     scope = socket.assigns.current_scope
     group = scope.tenant
     page = socket.assigns.page
-    type = find_type(type_param)
 
-    case type do
-      nil ->
-        socket |> Phoenix.LiveView.put_flash(:error, "Unknown block type")
+    case type_param do
+      "embed" ->
+        socket |> add_block(group, page, Embed.default_type(), scope)
 
-      type ->
-        add_block(socket, group, page, type, scope)
+      _ ->
+        case find_type(type_param) do
+          nil ->
+            socket |> Phoenix.LiveView.put_flash(:error, "Unknown block type")
+
+          type ->
+            socket |> add_block(group, page, type, scope)
+        end
     end
   end
 

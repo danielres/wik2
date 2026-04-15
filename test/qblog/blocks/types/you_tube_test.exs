@@ -116,6 +116,26 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
                  scope: scope
                )
     end
+
+    test "switches to another embed provider when the input matches it" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :youtube},
+          scope: scope
+        )
+
+      soundcloud_embed_url =
+        "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&color=%23ff5500"
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(block, %{"url" => soundcloud_embed_url}, scope: scope)
+
+      assert updated_block.type == :soundcloud
+      assert updated_block.data == %{"url" => soundcloud_embed_url}
+    end
   end
 
   defp scope(actor, tenant \\ nil) do

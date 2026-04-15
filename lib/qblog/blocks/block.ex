@@ -41,7 +41,7 @@ defmodule Qblog.Blocks.Block do
     end
 
     update :update do
-      accept [:data, :owner_group_id, :owner_user_id]
+      accept [:data, :owner_group_id, :owner_user_id, :type]
       require_atomic? false
     end
   end

@@ -1,6 +1,8 @@
 defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   use QblogWeb, :html
 
+  alias Qblog.Blocks.Types.Embed
+
   attr :class, :any, default: ""
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
@@ -43,12 +45,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
         "rounded",
         "space-y-[1px]"
       ]}>
-        <.button_special_block
-          :for={block_type <- Qblog.Blocks.types_available()}
-          label={block_type.label}
-          phx-click="add_block"
-          phx-value-type={block_type.type}
-        />
+        <.button_special_block label={Embed.label()} phx-click="add_block" phx-value-type="embed" />
       </div>
     </div>
     """

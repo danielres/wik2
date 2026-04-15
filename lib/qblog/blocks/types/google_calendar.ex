@@ -1,21 +1,12 @@
 defmodule Qblog.Blocks.Types.GoogleCalendar do
+  alias Qblog.Blocks.Types.Embed
+
   def label, do: "Google Calendar"
   def type, do: :google_calendar
 
-  def block_to_form_params(block), do: block |> block_to_form_params(%{})
-
-  def block_to_form_params(block, params) do
-    %{"url" => params["url"] || block.data |> get_url() || ""}
-  end
-
-  def update_block(block, params, opts) do
-    _scope = Keyword.fetch!(opts, :scope)
-
-    with {:ok, url} <- params["url"] |> normalize_embed_input() do
-      block
-      |> Ash.update(%{data: %{"url" => url}}, opts |> Keyword.put(:action, :update))
-    end
-  end
+  defdelegate block_to_form_params(block), to: Embed
+  defdelegate block_to_form_params(block, params), to: Embed
+  defdelegate update_block(block, params, opts), to: Embed
 
   def validate_data(data) do
     url = data |> get_url()

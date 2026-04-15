@@ -1,6 +1,8 @@
 defmodule QblogWeb.Components.Block.Types.SoundCloud do
   use QblogWeb, :html
 
+  alias QblogWeb.Components.Block.Types.Embed
+
   attr :block, :map, required: true
 
   def render(assigns) do
@@ -22,15 +24,5 @@ defmodule QblogWeb.Components.Block.Types.SoundCloud do
   attr :block, :map, required: true
   attr :form, :any, required: true
 
-  def form_fields(assigns) do
-    ~H"""
-    <.input
-      field={@form[:url]}
-      id={"edit-block-url-#{@block.id}"}
-      label="url"
-      phx-mounted={JS.focus()}
-      type="text"
-    />
-    """
-  end
+  def form_fields(assigns), do: Embed.form_fields(assigns)
 end

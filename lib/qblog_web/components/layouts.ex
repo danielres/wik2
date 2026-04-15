@@ -63,8 +63,7 @@ defmodule QblogWeb.Layouts do
     ~H"""
     <li class={[
       "bg-base-200 rounded",
-      @view != @target and "opacity-40",
-      @view == @target and "pointer-events-none"
+      @view != @target and "opacity-40"
     ]}>
       <.link navigate={"/#{@tenant}/#{@target}"}>
         {render_slot(@inner_block)}

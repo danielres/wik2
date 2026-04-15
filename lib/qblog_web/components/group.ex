@@ -38,7 +38,7 @@ defmodule QblogWeb.Components.Group do
         <.link
           :for={group <- @groups}
           class="justify-between"
-          navigate={~p"/#{group.name}"}
+          navigate={~p"/#{group.name}/wiki"}
         >
           {group.name}
           <span class="font-thin">{group.author |> to_string}</span>

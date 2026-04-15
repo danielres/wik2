@@ -32,6 +32,7 @@ defmodule QblogWeb.GroupLive do
     group |> Form.for_update(:update, scope: scope) |> to_form()
   end
 
+  # socket.assigns.live_action #=> :page_tree
   @impl true
   def render(assigns) do
     ~H"""
@@ -68,59 +69,104 @@ defmodule QblogWeb.GroupLive do
           />
         </Modal.render>
 
-        <.page_section title="Members">
-          <Modal.render
-            cancel="transfer_ownership_cancel"
-            cancel_testid="transfer-ownership-cancel"
-            open?={@transfer_ownership_form != nil}
-            testid="transfer-ownership-dialog"
-          >
-            <.new_owner_selector group={@group} />
-          </Modal.render>
+        <div class="bg-base-200 rounded-box border-4 border-base-200">
+          <div role="tablist" class="tabs tabs-box p-0 pb-0.5">
+            <.tab active?={@live_action == :members} patch={~p"/#{@group.name}/members"}>
+              <span class="badge badge-xs badge-neutral mr-1">{@group.memberships |> length()}</span>
+              Members
+            </.tab>
 
-          <Components.Group.memberships
-            scope={@current_scope}
-            event_transfer_ownership_start="transfer_ownership_start"
-            memberships={@group.memberships}
-          />
-        </.page_section>
+            <.tab active?={@live_action == :orphans} patch={~p"/#{@group.name}/orphans"}>
+              <span class="badge badge-xs badge-warning mr-1">{@orphan_blocks |> length()}</span>
+              Orphan blocks
+            </.tab>
 
-        <.page_section
-          :if={Ash.can?({@group, :update}, @current_scope)}
-          title="Orphan blocks"
-        >
-          <Modal.render
-            cancel="orphan_block_preview_cancel"
-            cancel_testid="orphan-block-preview-cancel"
-            open?={@selected_orphan_block != nil}
-            testid="orphan-block-preview-dialog"
-          >
-            <div :if={@selected_orphan_block} class="space-y-4">
-              <div class="text-sm opacity-60">{@selected_orphan_block.id}</div>
-              <QblogWeb.Components.Block.preview block={@selected_orphan_block} />
-            </div>
-          </Modal.render>
-
-          <ul :if={@orphan_blocks != []} class="menu w-full p-0 rounded space-y-0.5">
-            <li
-              :for={block <- @orphan_blocks}
-              class="bg-base-100/50"
-            >
-              <button
-                phx-click="orphan_block_preview_start"
-                phx-value-block_id={block.id}
-              >
-                <div class="truncate">{block_summary(block)}</div>
-              </button>
-            </li>
-          </ul>
-
-          <div :if={@orphan_blocks == []} class="mt-4 text-sm opacity-60">
-            No orphan blocks.
+            <.tab active?={@live_action == :page_tree} navigate={~p"/#{@group.name}/tree"}>
+              Page tree <.icon name="hero-arrow-up-right-micro" class="ml-1" />
+            </.tab>
           </div>
-        </.page_section>
+
+          <.tab_content active?={@live_action == :members}>
+            <Modal.render
+              cancel="transfer_ownership_cancel"
+              cancel_testid="transfer-ownership-cancel"
+              open?={@transfer_ownership_form != nil}
+              testid="transfer-ownership-dialog"
+            >
+              <.new_owner_selector group={@group} />
+            </Modal.render>
+
+            <Components.Group.memberships
+              scope={@current_scope}
+              event_transfer_ownership_start="transfer_ownership_start"
+              memberships={@group.memberships}
+            />
+          </.tab_content>
+
+          <.tab_content active?={@live_action == :orphans}>
+            <Modal.render
+              cancel="orphan_block_preview_cancel"
+              cancel_testid="orphan-block-preview-cancel"
+              open?={@selected_orphan_block != nil}
+              testid="orphan-block-preview-dialog"
+            >
+              <div :if={@selected_orphan_block} class="space-y-4">
+                <div class="text-sm opacity-60">{@selected_orphan_block.id}</div>
+                <QblogWeb.Components.Block.preview block={@selected_orphan_block} />
+              </div>
+            </Modal.render>
+
+            <ul :if={@orphan_blocks != []} class="menu w-full p-0 rounded space-y-0.5">
+              <li
+                :for={block <- @orphan_blocks}
+                class="bg-base-100/50"
+              >
+                <button
+                  phx-click="orphan_block_preview_start"
+                  phx-value-block_id={block.id}
+                >
+                  <div class="truncate">{block_summary(block)}</div>
+                </button>
+              </li>
+            </ul>
+
+            <div :if={@orphan_blocks == []} class="mt-4 text-sm opacity-60">
+              No orphan blocks.
+            </div>
+          </.tab_content>
+        </div>
       </Layouts.group>
     </Layouts.app>
+    """
+  end
+
+  attr :active?, :boolean, default: false
+  slot :inner_block, required: true
+  attr :rest, :global, include: ~w(navigate patch replace)
+
+  def tab(assigns) do
+    ~H"""
+    <.link
+      role="tab"
+      class={["tab", @active? && "tab-active"]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  attr :active?, :boolean, default: false
+  slot :inner_block, required: true
+
+  def tab_content(assigns) do
+    ~H"""
+    <div class={[
+      "tab-content",
+      @active? && "block"
+    ]}>
+      {render_slot(@inner_block)}
+    </div>
     """
   end
 

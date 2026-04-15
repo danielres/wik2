@@ -77,9 +77,11 @@ defmodule QblogWeb.Router do
 
       scope "/:group_name" do
         pipe_through [:group_tenant]
-        live "/", GroupLive
-        live "/blog", BlogLive, :index
+        live "/", GroupLive, :members
+        live "/members", GroupLive, :members
+        live "/orphans", GroupLive, :orphans
         live "/tree", PageTreeLive, :index
+        live "/blog", BlogLive, :index
 
         scope "/wiki" do
           get "/", WikiRedirectController, :home

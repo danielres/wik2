@@ -38,9 +38,7 @@ defmodule QblogWeb.Components.Block do
     ~H"""
     <div class={[
       "relative",
-      @editing? and "ring-2",
-      "rounded ring-secondary/10 transition",
-      "[&:has(>.ACTION-BUTTONS:hover)]:ring-secondary/50",
+      "[&:has(>.ACTION-BUTTONS:hover)_.BLOCK]:ring-secondary/70",
       "@container/block"
     ]}>
       <div
@@ -60,7 +58,11 @@ defmodule QblogWeb.Components.Block do
         <Block.ActionButtons.render placement={@placement} />
       </div>
 
-      <div class="">
+      <div class={[
+        "BLOCK",
+        @editing? and "ring-2",
+        "rounded ring-secondary/10 transition"
+      ]}>
         <.dispatch_render block={@placement.block} />
       </div>
     </div>

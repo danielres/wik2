@@ -2,11 +2,11 @@ defmodule QblogWeb.Components.Group do
   use Phoenix.Component
   use QblogWeb, :live_view
 
-  attr :form, :any, required: true
-  attr :class, :string, default: ""
   attr :action_type, :string, default: "create"
-  attr :event_submit, :string, default: "submit"
-  attr :event_validate, :string, default: "validate"
+  attr :class, :string, default: ""
+  attr :event_submit, :string, required: true
+  attr :event_validate, :string, required: true
+  attr :form, :any, required: true
 
   def form(assigns) do
     ~H"""

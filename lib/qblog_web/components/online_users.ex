@@ -6,6 +6,7 @@ defmodule QblogWeb.Components.Presences do
   use QblogWeb, :html
 
   attr :presences, :list, default: []
+  attr :tenant, :map, required: true
 
   def avatars(assigns) do
     ~H"""
@@ -14,9 +15,16 @@ defmodule QblogWeb.Components.Presences do
         :for={presence <- @presences}
         id={"online-user-#{presence.id}"}
       >
-        <Components.User.avatar user={presence.user} />
+        <Components.User.avatar
+          user={presence.user}
+          href={profile_path(@tenant, presence.user)}
+        />
       </li>
     </ul>
     """
+  end
+
+  defp profile_path(tenant, user) do
+    "/#{tenant.name}/wiki/members/#{user |> to_string()}"
   end
 end

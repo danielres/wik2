@@ -50,7 +50,7 @@ defmodule QblogWeb.Layouts do
         </ul>
       </menu>
 
-      <Components.Presences.avatars presences={@presences} />
+      <Components.Presences.avatars presences={@presences} tenant={@scope.tenant} />
     </div>
 
     <.container>

@@ -36,7 +36,7 @@ defmodule QblogWeb.PageTreeLive do
                 >
                   {@current_scope.tenant.name |> String.capitalize()}
                 </.link>
-                <.icon name="hero-chevron-right-mini" class="opacity-50" /> 
+                <.icon name="hero-chevron-right-mini" class="opacity-50" />
                 <span class="text-base">Page tree</span>
               </span>
             </div>

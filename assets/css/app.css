@@ -116,9 +116,9 @@
 
 [data-color-mode="light"] {
   --h: 220;
-  --color-base-100: oklch(88% 0 var(--h));
+  --color-base-100: oklch(93% 0 var(--h));
   --color-base-200: oklch(82% 0 var(--h));
-  --color-base-300: oklch(76% 0.01 var(--h));
+  --color-base-300: oklch(76% 0 var(--h));
 }
 
 .btn,

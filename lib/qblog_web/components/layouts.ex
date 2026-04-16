@@ -153,7 +153,9 @@ defmodule QblogWeb.Layouts do
       </div>
     </header>
 
-    {render_slot(@inner_block)}
+    <div class="mb-8">
+      {render_slot(@inner_block)}
+    </div>
 
     <.flash_group flash={@flash} />
     """

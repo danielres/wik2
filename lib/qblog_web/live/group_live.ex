@@ -85,7 +85,10 @@ defmodule QblogWeb.GroupLive do
 
         <div class="bg-base-200 rounded-box border-4 border-base-200">
           <div role="tablist" class="tabs tabs-box p-0 pb-0.5">
-            <Components.Tabs.tab active?={@live_action == :members} patch={~p"/#{@group.name}/members"}>
+            <Components.Tabs.tab
+              active?={@live_action == :members}
+              patch={~p"/#{@group.name}/members"}
+            >
               <span class="badge badge-xs badge-neutral mr-1">{@group.memberships |> length()}</span>
               Members
             </Components.Tabs.tab>
@@ -99,7 +102,10 @@ defmodule QblogWeb.GroupLive do
               Orphan blocks
             </Components.Tabs.tab>
 
-            <Components.Tabs.tab active?={@live_action == :page_tree} navigate={~p"/#{@group.name}/tree"}>
+            <Components.Tabs.tab
+              active?={@live_action == :page_tree}
+              navigate={~p"/#{@group.name}/tree"}
+            >
               Page tree <.icon name="hero-arrow-up-right-micro" class="ml-1" />
             </Components.Tabs.tab>
           </div>

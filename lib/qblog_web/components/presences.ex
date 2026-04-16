@@ -16,15 +16,12 @@ defmodule QblogWeb.Components.Presences do
         id={"online-user-#{presence.id}"}
       >
         <Components.User.avatar
+          link?
+          tenant={@tenant}
           user={presence.user}
-          href={profile_path(@tenant, presence.user)}
         />
       </li>
     </ul>
     """
-  end
-
-  defp profile_path(tenant, user) do
-    "/#{tenant.name}/wiki/members/#{user |> to_string()}"
   end
 end

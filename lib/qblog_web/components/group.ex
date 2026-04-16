@@ -5,14 +5,16 @@ defmodule QblogWeb.Components.Group do
   attr :form, :any, required: true
   attr :class, :string, default: ""
   attr :action_type, :string, default: "create"
+  attr :event_submit, :string, default: "submit"
+  attr :event_validate, :string, default: "validate"
 
   def form(assigns) do
     ~H"""
     <div class={[@class]}>
       <Phoenix.Component.form
         for={@form}
-        phx-change="validate"
-        phx-submit="submit"
+        phx-change={@event_validate}
+        phx-submit={@event_submit}
       >
         <div class="card bg-base-200">
           <div class="card-body">

@@ -22,7 +22,7 @@ defmodule QblogWeb.GroupLive do
     socket =
       socket
       |> assign(form: nil)
-      |> assign(selected_orphan_block: nil)
+      |> assign(orphan_block_selected: nil)
       |> assign(transfer_ownership_form: nil)
       |> assign(group: group)
       |> assign_orphan_blocks(orphan_blocks)
@@ -77,6 +77,8 @@ defmodule QblogWeb.GroupLive do
           <Components.Group.form
             :if={Ash.can?({@group, :update}, @current_scope)}
             action_type="update"
+            event_submit="submit"
+            event_validate="validate"
             form={@form}
           />
         </Modal.render>
@@ -109,21 +111,27 @@ defmodule QblogWeb.GroupLive do
               open?={@transfer_ownership_form != nil}
               testid="transfer-ownership-dialog"
             >
-              <NewOwnerSelector.render memberships={@group.memberships} />
+              <NewOwnerSelector.render
+                event_transfer_ownership="transfer_ownership"
+                memberships={@group.memberships}
+              />
             </Modal.render>
 
             <Components.Group.memberships
-              scope={@current_scope}
               event_transfer_ownership_start="transfer_ownership_start"
               memberships={@group.memberships}
+              scope={@current_scope}
             />
           </.tab_content>
 
           <.tab_content active?={@live_action == :orphans}>
             <OrphanBlocks.render
+              event_orphan_block_destroy="orphan_block_destroy"
+              event_preview_cancel="orphan_block_preview_cancel"
+              event_preview_start="orphan_block_preview_start"
+              orphan_block_selected={@orphan_block_selected}
               orphan_blocks={@orphan_blocks}
               scope={@current_scope}
-              selected_orphan_block={@selected_orphan_block}
             />
           </.tab_content>
         </div>
@@ -240,16 +248,16 @@ defmodule QblogWeb.GroupLive do
 
   @impl true
   def handle_event("orphan_block_preview_start", %{"block_id" => block_id}, socket) do
-    selected_orphan_block =
+    orphan_block_selected =
       socket.assigns.orphan_blocks
       |> Enum.find(&(&1.id == block_id))
 
-    {:noreply, socket |> assign(selected_orphan_block: selected_orphan_block)}
+    {:noreply, socket |> assign(orphan_block_selected: orphan_block_selected)}
   end
 
   @impl true
   def handle_event("orphan_block_preview_cancel", _params, socket) do
-    {:noreply, socket |> assign(selected_orphan_block: nil)}
+    {:noreply, socket |> assign(orphan_block_selected: nil)}
   end
 
   @impl true
@@ -261,16 +269,16 @@ defmodule QblogWeb.GroupLive do
       :ok ->
         orphan_blocks = Blocks.list_orphan_group_owned_blocks(group, scope: scope)
 
-        selected_orphan_block =
-          case socket.assigns.selected_orphan_block do
+        orphan_block_selected =
+          case socket.assigns.orphan_block_selected do
             %{id: ^block_id} -> nil
-            selected_orphan_block -> selected_orphan_block
+            orphan_block_selected -> orphan_block_selected
           end
 
         {:noreply,
          socket
          |> assign_orphan_blocks(orphan_blocks)
-         |> assign(selected_orphan_block: selected_orphan_block)}
+         |> assign(orphan_block_selected: orphan_block_selected)}
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "destroy_orphan_group_owned_block failed")
@@ -279,7 +287,7 @@ defmodule QblogWeb.GroupLive do
         {:noreply,
          socket
          |> assign_orphan_blocks(orphan_blocks)
-         |> assign(selected_orphan_block: nil)}
+         |> assign(orphan_block_selected: nil)}
     end
   end
 

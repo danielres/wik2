@@ -1,6 +1,7 @@
 defmodule QblogWeb.GroupLive.NewOwnerSelector do
   use QblogWeb, :html
 
+  attr :event_transfer_ownership, :string, required: true
   attr :memberships, :list, required: true
 
   def render(assigns) do
@@ -27,7 +28,7 @@ defmodule QblogWeb.GroupLive.NewOwnerSelector do
             "flex items-center justify-between gap-1 flex-wrap",
             "rounded bg-base-300 hover:bg-info/20 px-3 py-2"
           ]}
-          phx-click="transfer_ownership"
+          phx-click={@event_transfer_ownership}
           phx-value-target_membership_id={membership.id}
         >
           <span>{membership.user |> to_string()}</span>

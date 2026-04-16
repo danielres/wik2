@@ -87,7 +87,7 @@ defmodule QblogWeb.Components.Group do
           </span>
 
           <span class={["badge badge-sm px-2 bg-base-300", "whitespace-nowrap"]}>
-            Since {Calendar.strftime(membership.inserted_at, "%Y-%m-%d %H:%M")}
+            {Utils.Time.relative(membership.inserted_at)}
           </span>
         </span>
       </li>

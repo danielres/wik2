@@ -35,4 +35,6 @@ defmodule QblogWeb.ConnCase do
     Qblog.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  def testid(value), do: ~s([data-testid="#{value}"])
 end

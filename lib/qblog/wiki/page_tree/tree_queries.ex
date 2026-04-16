@@ -58,8 +58,24 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
     get_node_path_segments(nodes, node_id) |> Enum.join("/")
   end
 
-  def child_nodes(nodes, node_id) do
+  def get_child_nodes(nodes, node_id) do
     Enum.filter(nodes, &(&1.parent_id == node_id))
+  end
+
+  def get_child_nodes_with_pages(nodes, node_id) do
+    nodes
+    |> get_child_nodes(node_id)
+    |> get_nodes_with_pages()
+  end
+
+  def get_nodes_with_pages(nodes) do
+    Enum.filter(nodes, &(not is_nil(&1.page_id)))
+  end
+
+  def get_nodes_with_child_pages(nodes) do
+    nodes
+    |> get_nodes_with_pages()
+    |> Enum.filter(&(get_child_nodes_with_pages(nodes, &1.id) != []))
   end
 
   def leaf?(nodes, node_id) do
@@ -80,7 +96,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
       title: node.title,
       children:
         nodes
-        |> child_nodes(node.id)
+        |> get_child_nodes(node.id)
         |> Enum.map(&build_subtree(nodes, &1))
     }
   end

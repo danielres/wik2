@@ -43,12 +43,21 @@
           >
             <div class="card-body py-0.5 px-0 ">
               <%= if @editing_block_id == placement.block.id do %>
-                <QblogWeb.Components.Block.form placement={placement} form={@form_edit_block} />
+                <QblogWeb.Components.Block.form
+                  placement={placement}
+                  form={@form_edit_block}
+                  node={@node}
+                  path={@path}
+                  scope={@current_scope}
+                />
               <% else %>
                 <QblogWeb.Components.Block.render
                   editing?={@editing?}
                   lock={@locks[placement.block.id]}
                   placement={placement}
+                  node={@node}
+                  path={@path}
+                  scope={@current_scope}
                 />
               <% end %>
             </div>
@@ -87,6 +96,7 @@
               "border-l border-base-300"
             ]}
             open?={false}
+            scope={@current_scope}
           />
         </div>
       </section>

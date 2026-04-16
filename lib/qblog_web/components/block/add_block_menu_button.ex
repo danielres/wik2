@@ -1,15 +1,30 @@
 defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   use QblogWeb, :html
 
+  alias Qblog.Blocks.Types.ChildPages
   alias Qblog.Blocks.Types.Embed
+  alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree.TreeQueries
 
   attr :class, :any, default: ""
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
+  attr :scope, :map, required: true
 
   def render(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :child_pages_available?,
+        child_pages_available?(assigns.scope)
+      )
+
     ~H"""
-    <.popover_special_blocks id={@id} open?={@open?} />
+    <.popover_special_blocks
+      child_pages_available?={@child_pages_available?}
+      id={@id}
+      open?={@open?}
+    />
 
     <button
       class={@class}
@@ -21,6 +36,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
     """
   end
 
+  attr :child_pages_available?, :boolean, default: false
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
 
@@ -46,6 +62,12 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
         "space-y-[1px]"
       ]}>
         <.button_special_block label={Embed.label()} phx-click="add_block" phx-value-type="embed" />
+        <.button_special_block
+          :if={@child_pages_available?}
+          label={ChildPages.label()}
+          phx-click="add_block"
+          phx-value-type="child_pages"
+        />
       </div>
     </div>
     """
@@ -63,5 +85,13 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
       {@label}
     </button>
     """
+  end
+
+  defp child_pages_available?(scope) do
+    scope
+    |> Wiki.load_page_tree()
+    |> Map.get(:nodes, [])
+    |> TreeQueries.get_nodes_with_child_pages()
+    |> Enum.any?()
   end
 end

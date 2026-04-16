@@ -1,11 +1,19 @@
 defmodule Qblog.Blocks.Types do
+  alias Qblog.Blocks.Types.ChildPages
   alias Qblog.Blocks.Types.GoogleCalendar
   alias Qblog.Blocks.Types.GoogleMaps
   alias Qblog.Blocks.Types.SoundCloud
   alias Qblog.Blocks.Types.Text
   alias Qblog.Blocks.Types.YouTube
 
-  @modules [GoogleCalendar, GoogleMaps, SoundCloud, Text, YouTube]
+  @modules [
+    ChildPages,
+    GoogleCalendar,
+    GoogleMaps,
+    SoundCloud,
+    Text,
+    YouTube
+  ]
 
   def modules, do: @modules
 

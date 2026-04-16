@@ -122,7 +122,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueriesTest do
     assert [
              %{id: 2, page_id: nil, parent_id: 1},
              %{id: 3, page_id: nil, parent_id: 1}
-           ] = TreeQueries.child_nodes(nodes, 1)
+           ] = TreeQueries.get_child_nodes(nodes, 1)
   end
 
   test "child_nodes returns an empty list when a node has no children" do
@@ -131,7 +131,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueriesTest do
       %{id: 2, page_id: nil, parent_id: 1}
     ]
 
-    assert [] == TreeQueries.child_nodes(nodes, 2)
+    assert [] == TreeQueries.get_child_nodes(nodes, 2)
   end
 
   test "leaf? returns true when a node has no children" do

@@ -116,8 +116,6 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
     refute has_element?(view, testid("page-tree-editor-node-3-remove"))
   end
 
-  defp testid(value), do: ~s([data-testid="#{value}"])
-
   defp mount_editor(conn, tenant, actor_id, extra_session \\ %{}) do
     extra_session =
       extra_session

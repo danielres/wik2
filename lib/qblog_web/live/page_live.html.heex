@@ -99,6 +99,15 @@
             scope={@current_scope}
           />
         </div>
+
+        <QblogWeb.Components.Block.Types.ChildPages.render
+          :if={!@editing?}
+          block={%{data: %{"source" => "current_page"}, type: :child_pages}}
+          class="bg-base-200 rounded-box p-4 text-sm"
+          node={@node}
+          path={@path}
+          scope={@current_scope}
+        />
       </section>
     <% end %>
   </Layouts.group>

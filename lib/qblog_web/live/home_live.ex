@@ -31,6 +31,8 @@ defmodule QblogWeb.HomeLive do
           <Components.Group.form
             :if={Ash.can?({Group, :create}, @current_scope)}
             class="flex-1"
+            event_validate="validate"
+            event_submit="submit"
             form={@form}
           />
         </div>

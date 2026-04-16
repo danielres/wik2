@@ -4,8 +4,10 @@ defmodule QblogWeb.GroupLive do
 
   alias AshPhoenix.Form
   alias Qblog.Blocks
-  alias QblogWeb.Components.Modal
   alias QblogWeb.Components
+  alias QblogWeb.Components.Modal
+  alias QblogWeb.GroupLive.NewOwnerSelector
+  alias QblogWeb.GroupLive.OrphanBlocks
 
   on_mount {QblogWeb.LiveUserAuth, :live_scope_required}
   on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
@@ -20,16 +22,26 @@ defmodule QblogWeb.GroupLive do
     socket =
       socket
       |> assign(form: nil)
-      |> assign(orphan_blocks: orphan_blocks)
       |> assign(selected_orphan_block: nil)
       |> assign(transfer_ownership_form: nil)
       |> assign(group: group)
+      |> assign_orphan_blocks(orphan_blocks)
 
     {:ok, socket}
   end
 
   defp init_form(group, scope) do
     group |> Form.for_update(:update, scope: scope) |> to_form()
+  end
+
+  defp assign_orphan_blocks(socket, orphan_blocks) do
+    scope = socket.assigns.current_scope
+
+    socket
+    |> assign(orphan_blocks: orphan_blocks)
+    |> assign(
+      can_destroy_orphan_blocks?: Enum.any?(orphan_blocks, &Ash.can?({&1, :destroy}, scope))
+    )
   end
 
   # socket.assigns.live_action #=> :page_tree
@@ -76,7 +88,11 @@ defmodule QblogWeb.GroupLive do
               Members
             </.tab>
 
-            <.tab active?={@live_action == :orphans} patch={~p"/#{@group.name}/orphans"}>
+            <.tab
+              :if={@can_destroy_orphan_blocks?}
+              active?={@live_action == :orphans}
+              patch={~p"/#{@group.name}/orphans"}
+            >
               <span class="badge badge-xs badge-warning mr-1">{@orphan_blocks |> length()}</span>
               Orphan blocks
             </.tab>
@@ -93,7 +109,7 @@ defmodule QblogWeb.GroupLive do
               open?={@transfer_ownership_form != nil}
               testid="transfer-ownership-dialog"
             >
-              <.new_owner_selector group={@group} />
+              <NewOwnerSelector.render memberships={@group.memberships} />
             </Modal.render>
 
             <Components.Group.memberships
@@ -104,35 +120,11 @@ defmodule QblogWeb.GroupLive do
           </.tab_content>
 
           <.tab_content active?={@live_action == :orphans}>
-            <Modal.render
-              cancel="orphan_block_preview_cancel"
-              cancel_testid="orphan-block-preview-cancel"
-              open?={@selected_orphan_block != nil}
-              testid="orphan-block-preview-dialog"
-            >
-              <div :if={@selected_orphan_block} class="space-y-4">
-                <div class="text-sm opacity-60">{@selected_orphan_block.id}</div>
-                <QblogWeb.Components.Block.preview block={@selected_orphan_block} />
-              </div>
-            </Modal.render>
-
-            <ul :if={@orphan_blocks != []} class="menu w-full p-0 rounded space-y-0.5">
-              <li
-                :for={block <- @orphan_blocks}
-                class="bg-base-100/50"
-              >
-                <button
-                  phx-click="orphan_block_preview_start"
-                  phx-value-block_id={block.id}
-                >
-                  <div class="truncate">{block_summary(block)}</div>
-                </button>
-              </li>
-            </ul>
-
-            <div :if={@orphan_blocks == []} class="mt-4 text-sm opacity-60">
-              No orphan blocks.
-            </div>
+            <OrphanBlocks.render
+              orphan_blocks={@orphan_blocks}
+              scope={@current_scope}
+              selected_orphan_block={@selected_orphan_block}
+            />
           </.tab_content>
         </div>
       </Layouts.group>
@@ -261,6 +253,37 @@ defmodule QblogWeb.GroupLive do
   end
 
   @impl true
+  def handle_event("orphan_block_destroy", %{"block_id" => block_id}, socket) do
+    group = socket.assigns.group
+    scope = socket.assigns.current_scope
+
+    case Blocks.destroy_orphan_group_owned_block(group, block_id, scope: scope) do
+      :ok ->
+        orphan_blocks = Blocks.list_orphan_group_owned_blocks(group, scope: scope)
+
+        selected_orphan_block =
+          case socket.assigns.selected_orphan_block do
+            %{id: ^block_id} -> nil
+            selected_orphan_block -> selected_orphan_block
+          end
+
+        {:noreply,
+         socket
+         |> assign_orphan_blocks(orphan_blocks)
+         |> assign(selected_orphan_block: selected_orphan_block)}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "destroy_orphan_group_owned_block failed")
+        orphan_blocks = Blocks.list_orphan_group_owned_blocks(group, scope: scope)
+
+        {:noreply,
+         socket
+         |> assign_orphan_blocks(orphan_blocks)
+         |> assign(selected_orphan_block: nil)}
+    end
+  end
+
+  @impl true
   def handle_event("validate", %{"form" => params}, socket) do
     {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
   end
@@ -282,65 +305,5 @@ defmodule QblogWeb.GroupLive do
          socket
          |> assign(form: form)}
     end
-  end
-
-  defp new_owner_selector(assigns) do
-    ~H"""
-    <div class="alert bg-error/50 text-error-content mb-4">
-      <.icon name="hero-exclamation-circle-micro self-start" class="size-6 opacity-50" />
-
-      <div class="leading-tight space-y-2">
-        <p class="font-bold">This action will transfer ownership to the selected member.</p>
-        <p>
-          You will become administrator of the group, and won't be able to transfer ownership again unless the new owner transfers it back to you.
-        </p>
-      </div>
-    </div>
-
-    <h3 class="text-xl mb-2">Select new owner</h3>
-
-    <ul class="space-y-0.5">
-      <li :for={membership <- @group.memberships |> Enum.filter(&(&1.type != :owner))}>
-        <button
-          class={[
-            "w-full",
-            "opacity-80 hover:opacity-100 transition-all cursor-pointer",
-            "flex items-center justify-between gap-1 flex-wrap",
-            "rounded bg-base-300 hover:bg-info/20 px-3 py-2"
-          ]}
-          phx-click="transfer_ownership"
-          phx-value-target_membership_id={membership.id}
-        >
-          <span>{membership.user |> to_string()}</span>
-
-          <span class={[
-            "flex flex-wrap gap-1",
-            "text-sm opacity-70"
-          ]}>
-            <span class={["badge badge-sm px-2 bg-base-300"]}>
-              {membership.type |> Atom.to_string() |> String.capitalize()}
-            </span>
-          </span>
-        </button>
-      </li>
-    </ul>
-    """
-  end
-
-  defp block_summary(%{type: :text, data: %{"text" => text}}) when is_binary(text) do
-    text
-    |> String.trim()
-    |> case do
-      "" -> "Empty text block"
-      text -> text
-    end
-    |> String.slice(0, 40)
-  end
-
-  defp block_summary(block) do
-    block.type
-    |> Atom.to_string()
-    |> String.replace("_", " ")
-    |> String.capitalize()
   end
 end

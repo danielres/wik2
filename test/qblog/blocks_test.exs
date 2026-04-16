@@ -312,6 +312,53 @@ defmodule Qblog.BlocksTest do
     end
   end
 
+  describe "destroy_orphan_group_owned_block/3" do
+    test "destroys a group-owned orphan block" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+
+      {:ok, orphan_block} =
+        Blocks.create_group_owned_block(
+          group,
+          %{data: %{"text" => "Orphan"}, type: :text},
+          scope: scope
+        )
+
+      assert :ok = Blocks.destroy_orphan_group_owned_block(group, orphan_block.id, scope: scope)
+
+      persisted_block =
+        Block
+        |> Ash.Query.filter(id == ^orphan_block.id)
+        |> Ash.read_one!(scope: scope)
+
+      assert persisted_block == nil
+    end
+
+    test "does not destroy placed blocks" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, placed_block} =
+        Blocks.create_group_owned_block_on_page(
+          group,
+          page,
+          %{data: %{"text" => "Placed"}, type: :text},
+          scope: scope
+        )
+
+      assert {:error, :not_found} =
+               Blocks.destroy_orphan_group_owned_block(group, placed_block.id, scope: scope)
+
+      assert {:ok, persisted_block} = Ash.get(Block, placed_block.id, scope: scope)
+      assert persisted_block.id == placed_block.id
+    end
+  end
+
   defp scope(actor, tenant \\ nil) do
     %Scope{actor: actor, tenant: tenant}
   end

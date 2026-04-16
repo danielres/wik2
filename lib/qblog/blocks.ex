@@ -96,6 +96,29 @@ defmodule Qblog.Blocks do
     |> Enum.filter(&Enum.empty?(&1.placements))
   end
 
+  def destroy_orphan_group_owned_block(group, block_id, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+    opts = opts |> Keyword.put(:return_notifications?, true)
+
+    group
+    |> list_orphan_group_owned_blocks(scope: scope)
+    |> Enum.find(&(&1.id == block_id))
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      block ->
+        case block |> Ash.destroy(opts |> Keyword.put(:action, :destroy)) do
+          {:ok, notifications} ->
+            Ash.Notifier.notify(notifications)
+            :ok
+
+          {:error, error} ->
+            {:error, error}
+        end
+    end
+  end
+
   def destroy_placed_block(placement, opts) do
     opts = opts |> Keyword.put(:return_notifications?, true)
 

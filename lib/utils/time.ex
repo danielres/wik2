@@ -1,4 +1,8 @@
 defmodule Utils.Time do
+  def precise(%DateTime{} = datetime) do
+    Calendar.strftime(datetime, "%Y-%m-%d %H:%M")
+  end
+
   def relative(%DateTime{} = datetime) do
     datetime
     |> DateTime.diff(DateTime.utc_now(), :second)

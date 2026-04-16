@@ -112,17 +112,41 @@ defmodule QblogWeb.Layouts do
       </div>
 
       <div>
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li class="flex gap-2 items-center">
-            <.link navigate={~p"/sign-out"} class="btn btn-ghost btn-square rounded-full">
-              <.icon
-                name="hero-arrow-right-on-rectangle"
-                class="size-4 opacity-75 hover:opacity-100"
-              />
-            </.link>
+        <button
+          class="opacity-80 hover:opacity-100 transition cursor-pointer"
+          popovertarget="popover-user-dropdown"
+          style="anchor-name:--anchor-user-dropdown"
+        >
+          <Components.User.avatar user={@scope.actor} />
+        </button>
 
+        <ul
+          class={[
+            "dropdown dropdown-end mt-1",
+            "menu bg-base-200",
+            "rounded-box"
+          ]}
+          popover
+          id="popover-user-dropdown"
+          style="position-anchor:--anchor-user-dropdown"
+        >
+          <li>
             <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
-              <Components.User.avatar user={@scope.actor} />
+              <.icon name="hero-user" /> Account
+            </.link>
+          </li>
+
+          <li>
+            <.link navigate={~p"/sign-out"} class="">
+              <.icon name="hero-arrow-right-on-rectangle" /> Log out
+            </.link>
+          </li>
+          <li :if={@scope.tenant} class="border-t-1 border-base-content/20 pt-2 mt-2">
+            <.link
+              navigate={~p"/#{@scope.tenant.name}/wiki/members/#{@scope.actor |> to_string()}"}
+              class="opacity-80 hover:opacity-100 transition"
+            >
+              <.icon name="hero-face-smile" /> Profile
             </.link>
           </li>
         </ul>

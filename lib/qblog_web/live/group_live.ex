@@ -85,26 +85,26 @@ defmodule QblogWeb.GroupLive do
 
         <div class="bg-base-200 rounded-box border-4 border-base-200">
           <div role="tablist" class="tabs tabs-box p-0 pb-0.5">
-            <.tab active?={@live_action == :members} patch={~p"/#{@group.name}/members"}>
+            <Components.Tabs.tab active?={@live_action == :members} patch={~p"/#{@group.name}/members"}>
               <span class="badge badge-xs badge-neutral mr-1">{@group.memberships |> length()}</span>
               Members
-            </.tab>
+            </Components.Tabs.tab>
 
-            <.tab
+            <Components.Tabs.tab
               :if={@can_destroy_orphan_blocks?}
               active?={@live_action == :orphans}
               patch={~p"/#{@group.name}/orphans"}
             >
               <span class="badge badge-xs badge-warning mr-1">{@orphan_blocks |> length()}</span>
               Orphan blocks
-            </.tab>
+            </Components.Tabs.tab>
 
-            <.tab active?={@live_action == :page_tree} navigate={~p"/#{@group.name}/tree"}>
+            <Components.Tabs.tab active?={@live_action == :page_tree} navigate={~p"/#{@group.name}/tree"}>
               Page tree <.icon name="hero-arrow-up-right-micro" class="ml-1" />
-            </.tab>
+            </Components.Tabs.tab>
           </div>
 
-          <.tab_content active?={@live_action == :members}>
+          <Components.Tabs.tab_content active?={@live_action == :members}>
             <Modal.render
               cancel="transfer_ownership_cancel"
               cancel_testid="transfer-ownership-cancel"
@@ -122,9 +122,9 @@ defmodule QblogWeb.GroupLive do
               memberships={@group.memberships}
               scope={@current_scope}
             />
-          </.tab_content>
+          </Components.Tabs.tab_content>
 
-          <.tab_content active?={@live_action == :orphans}>
+          <Components.Tabs.tab_content active?={@live_action == :orphans}>
             <OrphanBlocks.render
               event_orphan_block_destroy="orphan_block_destroy"
               event_preview_cancel="orphan_block_preview_cancel"
@@ -133,40 +133,10 @@ defmodule QblogWeb.GroupLive do
               orphan_blocks={@orphan_blocks}
               scope={@current_scope}
             />
-          </.tab_content>
+          </Components.Tabs.tab_content>
         </div>
       </Layouts.group>
     </Layouts.app>
-    """
-  end
-
-  attr :active?, :boolean, default: false
-  slot :inner_block, required: true
-  attr :rest, :global, include: ~w(navigate patch replace)
-
-  def tab(assigns) do
-    ~H"""
-    <.link
-      role="tab"
-      class={["tab", @active? && "tab-active"]}
-      {@rest}
-    >
-      {render_slot(@inner_block)}
-    </.link>
-    """
-  end
-
-  attr :active?, :boolean, default: false
-  slot :inner_block, required: true
-
-  def tab_content(assigns) do
-    ~H"""
-    <div class={[
-      "tab-content",
-      @active? && "block"
-    ]}>
-      {render_slot(@inner_block)}
-    </div>
     """
   end
 

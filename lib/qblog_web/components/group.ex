@@ -86,7 +86,15 @@ defmodule QblogWeb.Components.Group do
             {membership.type |> Atom.to_string() |> String.capitalize()}
           </span>
 
-          <span class={["badge badge-sm px-2 bg-base-300", "whitespace-nowrap"]}>
+          <span
+            class={[
+              "badge badge-sm px-2 bg-base-300",
+              "whitespace-nowrap",
+              "tooltip tooltip-primary tooltip-left tooltip-delayed",
+              "cursor-default"
+            ]}
+            data-tip={"Member since #{Utils.Time.precise(membership.inserted_at)}"}
+          >
             {Utils.Time.relative(membership.inserted_at)}
           </span>
         </span>

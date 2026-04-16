@@ -77,8 +77,8 @@ defmodule QblogWeb.GroupLive do
           <Components.Group.form
             :if={Ash.can?({@group, :update}, @current_scope)}
             action_type="update"
-            event_submit="submit"
-            event_validate="validate"
+            event_submit="group_submit"
+            event_validate="group_validate"
             form={@form}
           />
         </Modal.render>
@@ -292,12 +292,12 @@ defmodule QblogWeb.GroupLive do
   end
 
   @impl true
-  def handle_event("validate", %{"form" => params}, socket) do
+  def handle_event("group_validate", %{"form" => params}, socket) do
     {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
   end
 
   @impl true
-  def handle_event("submit", %{"form" => params}, socket) do
+  def handle_event("group_submit", %{"form" => params}, socket) do
     prev_group = socket.assigns.group
 
     case socket.assigns.form |> Form.submit(params: params) do

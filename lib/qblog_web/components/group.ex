@@ -2,6 +2,8 @@ defmodule QblogWeb.Components.Group do
   use Phoenix.Component
   use QblogWeb, :live_view
 
+  alias QblogWeb.Components
+
   attr :action_type, :string, default: "create"
   attr :class, :string, default: ""
   attr :event_submit, :string, required: true
@@ -68,7 +70,10 @@ defmodule QblogWeb.Components.Group do
           "rounded bg-base-100/50 px-3 py-2"
         ]}
       >
-        <span>{membership.user |> to_string()}</span>
+        <div class="flex items-center gap-2">
+          <Components.User.avatar user={membership.user} tenant={@scope.tenant} link? />
+          {membership.user |> to_string()}
+        </div>
 
         <span class={[
           "flex flex-wrap gap-1",

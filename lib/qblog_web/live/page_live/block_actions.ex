@@ -1,10 +1,13 @@
 defmodule QblogWeb.PageLive.BlockActions do
   @moduledoc false
 
+  import Phoenix.Component
+
   alias Qblog.Blocks
   alias Qblog.Blocks.Types.Embed
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.PageState
+
 
   def add(socket, type_param) do
     scope = socket.assigns.current_scope
@@ -15,6 +18,9 @@ defmodule QblogWeb.PageLive.BlockActions do
       "embed" ->
         socket |> add_block(group, page, Embed.default_type(), scope)
 
+      "linked_copy" ->
+        socket |> start_linked_copy()
+
       _ ->
         case find_type(type_param) do
           nil ->
@@ -23,6 +29,26 @@ defmodule QblogWeb.PageLive.BlockActions do
           type ->
             socket |> add_block(group, page, type, scope)
         end
+    end
+  end
+
+  def add_linked_copy(socket, block_id) do
+    scope = socket.assigns.current_scope
+    group = scope.tenant
+    page = socket.assigns.page
+
+    case Blocks.place_group_owned_block_on_page(group, block_id, page, scope: scope) do
+      {:ok, _placement} ->
+        socket |> assign(linked_copy_form: nil, linked_copy_error: nil)
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "place_group_owned_block_on_page failed")
+
+        socket
+        |> assign(
+          :linked_copy_error,
+          "Could not link block. Please ensure the block isn't alrady on this page."
+        )
     end
   end
 
@@ -126,6 +152,15 @@ defmodule QblogWeb.PageLive.BlockActions do
         Utils.Log.scoped_error(scope, error, "create_group_owned_block_on_page failed")
         socket |> Phoenix.LiveView.put_flash(:error, "Could not add block to page")
     end
+  end
+
+  defp start_linked_copy(socket) do
+    socket
+    |> assign(
+      :linked_copy_form,
+      Phoenix.Component.to_form(%{"block_id" => nil}, as: :linked_copy)
+    )
+    |> assign(:linked_copy_error, nil)
   end
 
   defp find_type(type_param) do

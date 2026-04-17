@@ -5,6 +5,7 @@ defmodule QblogWeb.PageLive do
   use QblogWeb.Presence.Handlers
 
   alias QblogWeb.Endpoint
+  alias QblogWeb.Components.Modal
   alias QblogWeb.PageLive.BlockActions
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.Locks
@@ -22,7 +23,10 @@ defmodule QblogWeb.PageLive do
     {node, page} = scope |> PageState.ensure_page_and_node_by_path(path)
 
     if page == nil do
-      socket = socket |> assign(not_found_path: path, can_manage_page?: false)
+      socket =
+        socket
+        |> assign(not_found_path: path, can_manage_page?: false, block_info_placement: nil)
+
       {:ok, socket}
     else
       can_manage_page? = Ash.can?({page, :manage_page}, scope)
@@ -31,6 +35,8 @@ defmodule QblogWeb.PageLive do
         socket
         |> assign(node: node, page: page, path: path, can_manage_page?: can_manage_page?)
         |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
+        |> assign(linked_copy_form: nil, linked_copy_error: nil)
+        |> assign(block_info_placement: nil)
         |> PageState.sync_block_subscriptions(page)
         |> Locks.assign_locks()
 
@@ -102,6 +108,15 @@ defmodule QblogWeb.PageLive do
     {:noreply, socket |> BlockActions.add(type_param)}
   end
 
+  @impl true
+  def handle_event("linked_copy_cancel", _params, socket) do
+    {:noreply, socket |> assign(linked_copy_form: nil, linked_copy_error: nil)}
+  end
+
+  @impl true
+  def handle_event("linked_copy_submit", %{"linked_copy" => %{"block_id" => block_id}}, socket) do
+    {:noreply, socket |> BlockActions.add_linked_copy(block_id)}
+  end
   @impl true
   def handle_event("move_block_down", %{"placement_id" => placement_id}, socket) do
     {:noreply, socket |> BlockActions.move_down(placement_id)}

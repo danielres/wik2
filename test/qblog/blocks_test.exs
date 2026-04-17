@@ -312,6 +312,70 @@ defmodule Qblog.BlocksTest do
     end
   end
 
+  describe "place_group_owned_block_on_page/4" do
+    test "places an existing group-owned block on a page" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block} =
+        Blocks.create_group_owned_block(
+          group,
+          %{data: %{"text" => "Reusable"}, type: :text},
+          scope: scope
+        )
+
+      assert {:ok, placement} =
+               Blocks.place_group_owned_block_on_page(group, block.id, page, scope: scope)
+
+      assert placement.block_id == block.id
+      assert placement.attachable_id == page.id
+      assert placement.attachable_type == "page"
+    end
+
+    test "rejects blocks owned by another group" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      other_group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      add_membership(other_group, actor, :owner)
+      scope = scope(actor, group)
+      other_scope = scope(actor, other_group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, other_block} =
+        Blocks.create_group_owned_block(
+          other_group,
+          %{data: %{"text" => "Other"}, type: :text},
+          scope: other_scope
+        )
+
+      assert {:error, :not_found} =
+               Blocks.place_group_owned_block_on_page(group, other_block.id, page, scope: scope)
+    end
+
+    test "rejects a block that is already placed on the page" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block} =
+        Blocks.create_group_owned_block_on_page(
+          group,
+          page,
+          %{data: %{"text" => "Reusable"}, type: :text},
+          scope: scope
+        )
+
+      assert {:error, :already_placed} =
+               Blocks.place_group_owned_block_on_page(group, block.id, page, scope: scope)
+    end
+  end
+
   describe "destroy_orphan_group_owned_block/3" do
     test "destroys a group-owned orphan block" do
       actor = generate(user())

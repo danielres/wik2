@@ -87,6 +87,33 @@ defmodule Qblog.Blocks do
     end
   end
 
+  def place_group_owned_block_on_page(%{id: group_id}, block_id, %Page{} = page, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    Block
+    |> Query.filter(id == ^block_id and owner_group_id == ^group_id)
+    |> Ash.read_one(scope: scope)
+    |> case do
+      {:ok, nil} -> {:error, :not_found}
+      {:ok, block} -> place_block_on_page_once(block, page, opts)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp place_block_on_page_once(%{id: block_id} = block, %Page{} = page, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    BlockPlacement
+    |> Query.filter(
+      attachable_id == ^page.id and attachable_type == "page" and block_id == ^block_id
+    )
+    |> Ash.exists?(scope: scope)
+    |> case do
+      true -> {:error, :already_placed}
+      false -> place_block_on_page(block, page, opts)
+    end
+  end
+
   def list_orphan_group_owned_blocks(%{id: group_id}, opts) do
     scope = Keyword.fetch!(opts, :scope)
 

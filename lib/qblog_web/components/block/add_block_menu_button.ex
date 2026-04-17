@@ -63,6 +63,11 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
       ]}>
         <.button_special_block label={Embed.label()} phx-click="add_block" phx-value-type="embed" />
         <.button_special_block
+          label="Linked copy"
+          phx-click="add_block"
+          phx-value-type="linked_copy"
+        />
+        <.button_special_block
           :if={@child_pages_available?}
           label={ChildPages.label()}
           phx-click="add_block"

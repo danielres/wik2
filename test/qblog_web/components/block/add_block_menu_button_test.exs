@@ -35,6 +35,8 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
       })
 
     assert html =~ "Embed"
+    assert html =~ "Linked copy"
+    assert html =~ ~s(phx-value-type="linked_copy")
     assert html =~ "Child pages"
     assert html =~ ~s(phx-value-type="child_pages")
   end
@@ -63,6 +65,8 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
       })
 
     assert html =~ "Embed"
+    assert html =~ "Linked copy"
+    assert html =~ ~s(phx-value-type="linked_copy")
     refute html =~ "Child pages"
   end
 

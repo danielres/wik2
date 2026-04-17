@@ -59,7 +59,7 @@ defmodule QblogWeb.Components.Block do
 
       <div class={[
         "BLOCK",
-        @editing? and "ring-2",
+        @editing? and "ring-2 p-2",
         "rounded ring-secondary/10 transition"
       ]}>
         <.dispatch_render

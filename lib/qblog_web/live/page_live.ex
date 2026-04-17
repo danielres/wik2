@@ -116,6 +116,27 @@ defmodule QblogWeb.PageLive do
   def handle_event("linked_copy_submit", %{"linked_copy" => %{"block_id" => block_id}}, socket) do
     {:noreply, socket |> BlockActions.add_linked_copy(block_id)}
   end
+
+  @impl true
+  def handle_event("show_block_info", %{"placement_id" => placement_id}, socket) do
+    scope = socket.assigns.current_scope
+    placement = socket.assigns.page |> PageState.find_placement(placement_id)
+
+    case load_block_info_placement(placement, scope) do
+      {:ok, placement} ->
+        {:noreply, socket |> assign(block_info_placement: placement)}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "load_block_info_placement failed")
+        {:noreply, socket |> assign(block_info_placement: nil)}
+    end
+  end
+
+  @impl true
+  def handle_event("hide_block_info", _params, socket) do
+    {:noreply, socket |> assign(block_info_placement: nil)}
+  end
+
   @impl true
   def handle_event("move_block_down", %{"placement_id" => placement_id}, socket) do
     {:noreply, socket |> BlockActions.move_down(placement_id)}
@@ -134,5 +155,11 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("toggle_block_width", %{"placement_id" => placement_id}, socket) do
     {:noreply, socket |> BlockActions.toggle_width(placement_id)}
+  end
+
+  defp load_block_info_placement(nil, _scope), do: {:error, :not_found}
+
+  defp load_block_info_placement(placement, scope) do
+    placement |> Ash.load([block: [:author, :placements]], scope: scope)
   end
 end

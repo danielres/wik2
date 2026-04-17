@@ -100,6 +100,35 @@
           />
         </div>
 
+        <.form
+          :if={@linked_copy_form}
+          for={@linked_copy_form}
+          id="linked-copy-form"
+          phx-submit="linked_copy_submit"
+          class="bg-base-200 rounded-box p-4 space-y-3"
+        >
+          <.input field={@linked_copy_form[:block_id]} label="Block ID" phx-mounted={JS.focus()} />
+
+          <div :if={@linked_copy_error} class="text-error text-sm">{@linked_copy_error}</div>
+
+          <div class="flex justify-end gap-2">
+            <.button
+              class="btn btn-ghost btn-sm"
+              phx-click="linked_copy_cancel"
+              type="button"
+            >
+              Cancel
+            </.button>
+            <.button class="btn btn-primary btn-sm" type="submit">Link block</.button>
+          </div>
+        </.form>
+
+        <QblogWeb.PageLive.BlockInfoModal.render
+          :if={@block_info_placement}
+          placement={@block_info_placement}
+          scope={@current_scope}
+        />
+
         <QblogWeb.Components.Block.Types.ChildPages.render
           :if={!@editing?}
           block={%{data: %{"source" => "current_page"}, type: :child_pages}}

@@ -6,6 +6,8 @@ defmodule QblogWeb.PageLive.PageState do
   alias Qblog.Wiki
   alias QblogWeb.PageLive.BlockEdit
 
+  @page_load [:author, block_placements: [block: :author]]
+
   def ensure_page_and_node_by_path(scope, path) do
     {node, page} = scope |> load_page_and_node_by_path(path)
 
@@ -13,7 +15,7 @@ defmodule QblogWeb.PageLive.PageState do
       case path
            |> Wiki.ensure_page_and_node_at_path(
              scope: scope,
-             load: [:author, block_placements: :block]
+             load: @page_load
            ) do
         {:ok, node, page} ->
           {node, page}
@@ -34,7 +36,7 @@ defmodule QblogWeb.PageLive.PageState do
     path
     |> Wiki.load_page_and_node_by_path(
       scope: scope,
-      load: [:author, block_placements: :block]
+      load: @page_load
     )
   end
 

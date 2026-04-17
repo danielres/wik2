@@ -14,23 +14,26 @@ defmodule QblogWeb.Components.Block.ActionButtons do
         variant="danger"
       />
 
-      <div class="join">
+      <div>
         <.action_button
-          class="join-item"
+          data-testid={"block-#{@placement.id}-info"}
+          icon="hero-information-circle-micro"
+          phx-click="show_block_info"
+          phx-value-placement_id={@placement.id}
+        />
+        <.action_button
           icon="hero-chevron-up-mini"
           phx-click="move_block_up"
           phx-value-placement_id={@placement.id}
         />
 
         <.action_button
-          class="join-item"
           icon="hero-chevron-down-mini"
           phx-click="move_block_down"
           phx-value-placement_id={@placement.id}
         />
 
         <.action_button
-          class="join-item"
           icon={
             if @placement.width == "half",
               do: "hero-arrows-pointing-out",
@@ -42,7 +45,6 @@ defmodule QblogWeb.Components.Block.ActionButtons do
         />
 
         <.action_button
-          class="join-item"
           icon="hero-pencil-mini"
           phx-click="edit_block_start"
           phx-value-block_id={@placement.block.id}

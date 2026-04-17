@@ -4,11 +4,25 @@ defmodule QblogWeb.Components.User do
   attr :link?, :boolean, default: false
   attr :tenant, :map, default: nil
   attr :user, :map, required: true
+  attr :size, :string, default: "md"
 
   def avatar(assigns) do
+    size_class =
+      case assigns.size do
+        "xs" -> "size-4 text-[0.6rem]"
+        "sm" -> "size-6 text-[0.7rem]"
+        "md" -> "size-8"
+        _ -> "size-8"
+      end
+
+    assigns = assigns |> assign(size_class: size_class)
+
     ~H"""
     <div class="avatar avatar-placeholder">
-      <div class="bg-neutral text-neutral-content size-8 rounded-full text-xs">
+      <div class={[
+        "bg-neutral text-neutral-content rounded-full text-xs",
+        @size_class
+      ]}>
         <%= if @link? and @tenant != nil  do %>
           <.link
             navigate={profile_path(@tenant, @user)}

@@ -18,6 +18,7 @@ defmodule QblogWeb.Components.Presences do
         <Components.User.avatar
           link?
           tenant={@tenant}
+          size="sm"
           user={presence.user}
         />
       </li>

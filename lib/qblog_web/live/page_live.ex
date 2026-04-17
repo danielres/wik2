@@ -5,7 +5,6 @@ defmodule QblogWeb.PageLive do
   use QblogWeb.Presence.Handlers
 
   alias QblogWeb.Endpoint
-  alias QblogWeb.Components.Modal
   alias QblogWeb.PageLive.BlockActions
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.Locks

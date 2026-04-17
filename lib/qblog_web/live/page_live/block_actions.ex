@@ -8,7 +8,6 @@ defmodule QblogWeb.PageLive.BlockActions do
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.PageState
 
-
   def add(socket, type_param) do
     scope = socket.assigns.current_scope
     group = scope.tenant

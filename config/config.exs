@@ -7,6 +7,8 @@
 # General application configuration
 import Config
 
+config :cinder, default_theme: "modern"
+
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,
   include_embedded_source_by_default?: false,
@@ -18,7 +20,8 @@ config :ash,
   read_action_after_action_hooks_in_order?: true,
   bulk_actions_default_to_errors?: true,
   transaction_rollback_on_error?: true,
-  known_types: [AshPostgres.Timestamptz, AshPostgres.TimestamptzUsec]
+  known_types: [AshPostgres.Timestamptz, AshPostgres.TimestamptzUsec],
+  redact_sensitive_values_in_errors?: true
 
 config :spark,
   formatter: [

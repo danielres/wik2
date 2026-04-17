@@ -1,5 +1,6 @@
 [
   import_deps: [
+    :cinder,
     :ash_postgres,
     :ash_admin,
     :ash_authentication_phoenix,

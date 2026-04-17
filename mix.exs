@@ -41,6 +41,7 @@ defmodule Qblog.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:cinder, "~> 0.12"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:lex_sort_key, "~> 0.1.0"},
       {:mix_test_interactive, "~> 5.1", only: :dev, runtime: false},

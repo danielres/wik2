@@ -38,13 +38,26 @@ defmodule QblogWeb.Components.Block do
     <div class={[
       "relative",
       "[&:has(>.ACTION-BUTTONS:hover)_.BLOCK]:ring-secondary/70",
-      "@container/block"
+      "@container/block",
+      @lock && "ring-2 ring-warning/50 rounded"
     ]}>
-      <div
-        :if={@lock}
-        class="absolute left-0 top-0 z-10 rounded-br-md bg-warning/85 px-2 py-1 text-xs font-medium text-warning-content shadow-sm"
-      >
-        {to_string(@lock.user)} editing
+      <div :if={@lock} class="absolute left-0 top-0 z-10">
+        <div class={[
+          "absolute bottom-0",
+          "rounded-t-md",
+          "px-1 py-0.5",
+          "bg-warning text-warning-content",
+          "h-5 leading-none text-xs",
+          "flex items-center gap-1"
+        ]}>
+          <QblogWeb.Components.User.avatar
+            link?
+            tenant={@scope.tenant}
+            user={@lock.user}
+            size="xs"
+          />
+          <.icon name="hero-ellipsis-horizontal-mini" class="size-4 animate-pulse" />
+        </div>
       </div>
 
       <div

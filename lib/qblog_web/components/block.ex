@@ -39,7 +39,7 @@ defmodule QblogWeb.Components.Block do
       "relative",
       "[&:has(>.ACTION-BUTTONS:hover)_.BLOCK]:ring-secondary/70",
       "@container/block",
-      @lock && "ring-2 ring-warning/50 rounded"
+      @lock && "ring-2 ring-warning/80 rounded p-1"
     ]}>
       <div :if={@lock} class="absolute left-0 top-0 z-10">
         <div class={[

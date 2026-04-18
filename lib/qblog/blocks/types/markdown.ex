@@ -13,7 +13,7 @@ defmodule Qblog.Blocks.Types.Markdown do
 
     block
     |> Ash.update(
-      %{data: %{"text" => params["text"] || ""}},
+      %{data: %{"text" => params |> get_text() |> trim_text()}},
       opts |> Keyword.put(:action, :update)
     )
   end
@@ -35,4 +35,7 @@ defmodule Qblog.Blocks.Types.Markdown do
 
   defp get_text(%{"text" => text}), do: text
   defp get_text(_), do: nil
+
+  defp trim_text(text) when is_binary(text), do: String.trim(text)
+  defp trim_text(_text), do: ""
 end

@@ -4,11 +4,17 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
   attr :block, :map, required: true
 
   def render(assigns) do
+    assigns =
+      assigns
+      |> assign(:html, assigns.block.data |> get_text() |> markdown_to_html())
+
     ~H"""
-    <pre class={[
-      "whitespace-pre-wrap",
-      "overflow-x-auto"
-    ]}><code>{@block.data["text"] || "Empty Markdown block"}</code></pre>
+    <div
+      data-testid="markdown-block"
+      class={["BLOCK_MARKDOWN"]}
+    >
+      {raw(@html)}
+    </div>
     """
   end
 
@@ -32,5 +38,16 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
     >
     </div>
     """
+  end
+
+  defp get_text(%{"text" => text}) when is_binary(text), do: text
+  defp get_text(_data), do: ""
+
+  defp markdown_to_html(""), do: "<p>Empty Markdown block</p>"
+
+  defp markdown_to_html(markdown) do
+    markdown
+    |> Earmark.as_html!(escape: true, compact_output: true)
+    |> HtmlSanitizeEx.markdown_html()
   end
 end

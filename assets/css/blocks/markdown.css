@@ -1,0 +1,39 @@
+.BLOCK_MARKDOWN {
+  @apply space-y-3;
+
+  a {
+    @apply link;
+  }
+
+  code {
+    @apply rounded bg-base-200 px-1;
+  }
+
+  h1 {
+    @apply text-2xl font-bold;
+  }
+
+  h2 {
+    @apply text-xl font-bold;
+  }
+
+  h3 {
+    @apply text-lg font-bold;
+  }
+
+  ol {
+    @apply list-decimal pl-6;
+  }
+
+  pre {
+    @apply overflow-x-auto rounded-box bg-base-200 p-3;
+  }
+
+  ul {
+    @apply list-disc pl-6;
+  }
+
+  img {
+    @apply rounded border border-base-200;
+  }
+}

@@ -4,6 +4,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.1",
     "@codemirror/lang-markdown": "^6.3.4",
     "@codemirror/language": "^6.12.3",
     "@lezer/highlight": "^1.2.3",

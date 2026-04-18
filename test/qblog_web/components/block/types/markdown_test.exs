@@ -16,6 +16,17 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
     assert html =~ "<ul><li>One</li><li>Two</li></ul>"
   end
 
+  test "render converts wikilinks to wiki page links" do
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[recipes]] and [[recipes/soup]]"}},
+        scope: %{tenant: %{name: "cool-stuff"}}
+      })
+
+    assert html =~ ~s(href="/cool-stuff/wiki/recipes")
+    assert html =~ ~s(href="/cool-stuff/wiki/recipes/soup")
+  end
+
   test "render sanitizes unsafe html" do
     html =
       render_component(&Markdown.render/1, %{

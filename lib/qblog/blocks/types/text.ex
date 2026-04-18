@@ -1,12 +1,11 @@
-# TODO: Create behavior for Qblog.Blocks.Types.*
-
 defmodule Qblog.Blocks.Types.Text do
+  @behaviour Qblog.Blocks.Types.Behaviour
+
   def label, do: "Text"
   def type, do: :text
+  def default_data, do: %{"text" => ""}
 
-  def block_to_form_params(block), do: block |> block_to_form_params(%{})
-
-  def block_to_form_params(block, params) do
+  def block_to_form_params(block, params, _page_tree) do
     %{"text" => params["text"] || block.data |> get_text() || ""}
   end
 

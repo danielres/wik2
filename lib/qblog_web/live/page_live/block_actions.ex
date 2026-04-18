@@ -101,7 +101,8 @@ defmodule QblogWeb.PageLive.BlockActions do
     scope = socket.assigns.current_scope
     block = socket.assigns.page |> PageState.find_block(block_id)
 
-    case block |> Blocks.update_block(params, scope: scope) do
+    case block
+         |> Blocks.update_block(params, scope: scope) do
       {:ok, _block} ->
         socket |> BlockEdit.clear()
 

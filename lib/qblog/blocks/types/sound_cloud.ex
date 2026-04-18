@@ -1,11 +1,13 @@
 defmodule Qblog.Blocks.Types.SoundCloud do
+  @behaviour Qblog.Blocks.Types.Behaviour
+
   alias Qblog.Blocks.Types.Embed
 
   def label, do: "SoundCloud"
   def type, do: :soundcloud
 
-  defdelegate block_to_form_params(block), to: Embed
-  defdelegate block_to_form_params(block, params), to: Embed
+  defdelegate default_data(), to: Embed
+  defdelegate block_to_form_params(block, params, page_tree), to: Embed
   defdelegate update_block(block, params, opts), to: Embed
 
   def validate_data(data) do

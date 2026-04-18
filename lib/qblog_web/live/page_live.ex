@@ -19,12 +19,17 @@ defmodule QblogWeb.PageLive do
   def mount(params, _session, socket) do
     path = params["path"] |> Enum.join("/")
     scope = socket.assigns.current_scope
-    {node, page} = scope |> PageState.ensure_page_and_node_by_path(path)
+    %{node: node, page: page, page_tree: page_tree} = scope |> PageState.ensure_by_path(path)
 
     if page == nil do
       socket =
         socket
-        |> assign(not_found_path: path, can_manage_page?: false, block_info_placement: nil)
+        |> assign(
+          not_found_path: path,
+          can_manage_page?: false,
+          block_info_placement: nil,
+          page_tree: page_tree
+        )
 
       {:ok, socket}
     else
@@ -32,7 +37,13 @@ defmodule QblogWeb.PageLive do
 
       socket =
         socket
-        |> assign(node: node, page: page, path: path, can_manage_page?: can_manage_page?)
+        |> assign(
+          node: node,
+          page: page,
+          page_tree: page_tree,
+          path: path,
+          can_manage_page?: can_manage_page?
+        )
         |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
         |> assign(linked_copy_form: nil, linked_copy_error: nil)
         |> assign(block_info_placement: nil)

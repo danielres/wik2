@@ -28,10 +28,12 @@ defmodule Qblog.Blocks.Types do
     end)
   end
 
-  def block_to_form_params(block), do: block |> block_to_form_params(%{})
+  def default_data(type) do
+    type |> type_to_module() |> then(& &1.default_data())
+  end
 
-  def block_to_form_params(block, params) do
-    block.type |> type_to_module() |> then(& &1.block_to_form_params(block, params))
+  def block_to_form_params(block, params, page_tree) do
+    block.type |> type_to_module() |> then(& &1.block_to_form_params(block, params, page_tree))
   end
 
   def update_block(block, params, opts) do

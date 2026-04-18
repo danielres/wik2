@@ -1,10 +1,11 @@
 defmodule Qblog.Blocks.Types.ChildPages do
+  @behaviour Qblog.Blocks.Types.Behaviour
+
   def label, do: "Child pages"
   def type, do: :child_pages
+  def default_data, do: %{"source" => "current_page"}
 
-  def block_to_form_params(block), do: block |> block_to_form_params(%{})
-
-  def block_to_form_params(block, params) do
+  def block_to_form_params(block, params, _page_tree) do
     source = params["source"] || block.data["source"]
     node_id = params["node_id"] || block.data["node_id"]
 

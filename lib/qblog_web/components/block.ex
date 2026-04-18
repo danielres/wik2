@@ -2,6 +2,7 @@ defmodule QblogWeb.Components.Block do
   use QblogWeb, :html
 
   alias Qblog.Blocks
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.Components
 
   # Dispatchers per block type =================================================
@@ -21,7 +22,7 @@ defmodule QblogWeb.Components.Block do
   def preview(assigns) do
     ~H"""
     <div class="rounded bg-base-200/50 p-4">
-      <.dispatch_render block={@block} />
+      <.dispatch_render block={@block} page_tree={%PageTree{nodes: []}} />
     </div>
     """
   end
@@ -30,6 +31,7 @@ defmodule QblogWeb.Components.Block do
   attr :placement, :map, required: true
   attr :editing?, :boolean, default: false
   attr :node, :map, default: nil
+  attr :page_tree, :map, default: nil
   attr :path, :string, default: nil
   attr :scope, :map, default: nil
 
@@ -78,6 +80,7 @@ defmodule QblogWeb.Components.Block do
         <.dispatch_render
           block={@placement.block}
           node={@node}
+          page_tree={@page_tree}
           path={@path}
           scope={@scope}
         />
@@ -90,6 +93,7 @@ defmodule QblogWeb.Components.Block do
   attr :form, :any, required: true
   attr :placement, :map, required: true
   attr :node, :map, default: nil
+  attr :page_tree, :map, default: nil
   attr :path, :string, default: nil
   attr :scope, :map, default: nil
 
@@ -108,6 +112,7 @@ defmodule QblogWeb.Components.Block do
         block={@block}
         form={@form}
         node={@node}
+        page_tree={@page_tree}
         path={@path}
         scope={@scope}
       />

@@ -73,7 +73,7 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
     end
   end
 
-  describe "block_to_form_params/2" do
+  describe "block_to_form_params/3" do
     test "exposes the selected source page for the form" do
       block = %Block{data: %{"node_id" => 2, "source" => "node"}, type: :child_pages}
 
@@ -81,7 +81,7 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
                "node_id" => "2",
                "source" => "node",
                "source_page" => "2"
-             } = Blocks.block_to_form_params(block)
+             } = Blocks.block_to_form_params(block, %{}, nil)
     end
   end
 

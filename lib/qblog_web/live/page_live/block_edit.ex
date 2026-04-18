@@ -26,13 +26,14 @@ defmodule QblogWeb.PageLive.BlockEdit do
     |> Locks.sync_presence()
   end
 
-  defp assign_form(socket, block) do
-    form = block |> Blocks.block_to_form_params() |> to_form(as: :block)
-    socket |> assign(:form_edit_block, form)
-  end
+  defp assign_form(socket, block, params \\ %{}) do
+    page_tree = socket.assigns.page_tree
 
-  defp assign_form(socket, block, params) do
-    form = block |> Blocks.block_to_form_params(params) |> to_form(as: :block)
+    form =
+      block
+      |> Blocks.block_to_form_params(params, page_tree)
+      |> to_form(as: :block)
+
     socket |> assign(:form_edit_block, form)
   end
 end

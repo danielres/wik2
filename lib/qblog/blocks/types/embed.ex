@@ -15,11 +15,11 @@ defmodule Qblog.Blocks.Types.Embed do
 
   def label, do: "Embed"
 
+  def default_data, do: %{"url" => ""}
+
   def default_type, do: YouTube.type()
 
-  def block_to_form_params(block), do: block |> block_to_form_params(%{})
-
-  def block_to_form_params(block, params) do
+  def block_to_form_params(block, params, _page_tree) do
     %{"url" => params["url"] || block.data |> get_url() || ""}
   end
 

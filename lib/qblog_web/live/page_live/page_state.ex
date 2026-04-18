@@ -4,12 +4,14 @@ defmodule QblogWeb.PageLive.PageState do
   import Phoenix.Component, only: [assign: 2]
 
   alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree.Node
+  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageLive.BlockEdit
 
   @page_load [:author, block_placements: [block: :author]]
 
-  def ensure_page_and_node_by_path(scope, path) do
-    {node, page} = scope |> load_page_and_node_by_path(path)
+  def ensure_by_path(scope, path) do
+    %{node: node, page: page, page_tree: page_tree} = scope |> load_by_path(path)
 
     if page == nil do
       case path
@@ -18,26 +20,31 @@ defmodule QblogWeb.PageLive.PageState do
              load: @page_load
            ) do
         {:ok, node, page} ->
-          {node, page}
+          %{node: node, page: page, page_tree: Wiki.load_page_tree(scope)}
 
         {:error, %Ash.Error.Forbidden{}} ->
-          {node, page}
+          %{node: node, page: page, page_tree: page_tree}
 
         {:error, error} ->
-          Utils.Log.scoped_error(scope, error, "ensure_page_and_node_by_path failed")
-          {node, page}
+          Utils.Log.scoped_error(scope, error, "PageState.ensure_by_path failed")
+          %{node: node, page: page, page_tree: page_tree}
       end
     else
-      {node, page}
+      %{node: node, page: page, page_tree: page_tree}
     end
   end
 
-  def load_page_and_node_by_path(scope, path) do
-    path
-    |> Wiki.load_page_and_node_by_path(
-      scope: scope,
-      load: @page_load
-    )
+  def load_by_path(scope, path) do
+    page_tree = scope |> Wiki.load_page_tree()
+    node_result = TreeQueries.get_node_by_path(page_tree.nodes, path)
+
+    {node, page} =
+      case node_result do
+        {:ok, node} -> {node, scope |> Node.load_page(node, load: @page_load)}
+        {:error, _error} -> {nil, nil}
+      end
+
+    %{node: node, page: page, page_tree: page_tree}
   end
 
   def find_block(page, block_id) do
@@ -53,7 +60,7 @@ defmodule QblogWeb.PageLive.PageState do
 
   def reload(socket) do
     scope = socket.assigns.current_scope
-    {node, page} = scope |> load_page_and_node_by_path(socket.assigns.path)
+    %{node: node, page: page, page_tree: page_tree} = scope |> load_by_path(socket.assigns.path)
     can_manage_page? = page != nil and Ash.can?({page, :manage_page}, scope)
 
     socket
@@ -61,6 +68,7 @@ defmodule QblogWeb.PageLive.PageState do
     |> assign(
       can_manage_page?: can_manage_page?,
       node: node,
+      page_tree: page_tree,
       page: page,
       not_found_path: if(page == nil, do: socket.assigns.path, else: nil)
     )

@@ -1,9 +1,11 @@
 defmodule Qblog.Blocks.Types.Members do
+  @behaviour Qblog.Blocks.Types.Behaviour
+
   def label, do: "Members"
   def type, do: :members
+  def default_data, do: %{}
 
-  def block_to_form_params(_block), do: %{}
-  def block_to_form_params(_block, _params), do: %{}
+  def block_to_form_params(_block, _params, _page_tree), do: %{}
 
   def update_block(block, _params, opts) do
     _scope = Keyword.fetch!(opts, :scope)

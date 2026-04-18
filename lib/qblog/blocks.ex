@@ -25,8 +25,8 @@ defmodule Qblog.Blocks do
     resource Qblog.Blocks.BlockPlacement
   end
 
-  defdelegate block_to_form_params(block), to: Types
-  defdelegate block_to_form_params(block, params), to: Types
+  defdelegate block_to_form_params(block, params, page_tree), to: Types
+  defdelegate default_data(type), to: Types
   defdelegate types_available(), to: Types, as: :available
   defdelegate update_block(block, params, opts), to: Types
 
@@ -224,8 +224,10 @@ defmodule Qblog.Blocks do
   def create_group_owned_block(%{id: group_id}, block_attrs, opts) do
     _scope = Keyword.fetch!(opts, :scope)
     ash_opts = opts |> Keyword.put(:action, :create)
+    default_data = block_attrs.type |> default_data()
 
     block_attrs
+    |> Map.put_new(:data, default_data)
     |> Map.delete(:owner_user_id)
     |> Map.put(:owner_group_id, group_id)
     |> then(&Ash.create(Block, &1, ash_opts))
@@ -234,8 +236,10 @@ defmodule Qblog.Blocks do
   def create_user_owned_block(block_attrs, opts) do
     scope = Keyword.fetch!(opts, :scope)
     ash_opts = opts |> Keyword.put(:action, :create)
+    default_data = block_attrs.type |> default_data()
 
     block_attrs
+    |> Map.put_new(:data, default_data)
     |> Map.delete(:owner_group_id)
     |> Map.put(:owner_user_id, scope.actor.id)
     |> then(&Ash.create(Block, &1, ash_opts))

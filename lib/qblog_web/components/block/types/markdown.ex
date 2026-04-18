@@ -11,6 +11,7 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
     ~H"""
     <div
       data-testid="markdown-block"
+      id={"markdown-block-#{@block.id}"}
       class={["BLOCK_MARKDOWN"]}
     >
       {raw(@html)}

@@ -9,25 +9,28 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
   test "render converts markdown to html" do
     html =
       render_component(&Markdown.render/1, %{
-        block: %{data: %{"text" => "## Title\n\n- One\n- Two"}}
+        block: %{id: "block-1", data: %{"text" => "## Title\n\n- One\n- Two"}}
       })
 
-    document = LazyHTML.from_fragment(html)
-
-    assert document |> LazyHTML.filter("h2") |> Enum.any?()
-    assert document |> LazyHTML.filter("ul li") |> Enum.count() == 2
+    assert html =~ "<h2>Title</h2>"
+    assert html =~ "<ul><li>One</li><li>Two</li></ul>"
   end
 
-  test "render escapes raw html" do
+  test "render sanitizes unsafe html" do
     html =
       render_component(&Markdown.render/1, %{
-        block: %{data: %{"text" => "<script>alert('xss')</script>"}}
+        block: %{
+          id: "block-1",
+          data: %{"text" => "<script>alert('xss')</script><img src=x onerror=alert(1)>"}
+        }
       })
 
     document = LazyHTML.from_fragment(html)
 
     refute document |> LazyHTML.filter("script") |> Enum.any?()
-    assert html =~ "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"
+    refute document |> LazyHTML.filter("img") |> Enum.any?()
+    refute html =~ "onerror"
+    assert html =~ "alert('xss')"
   end
 
   test "form_fields keeps the markdown source editable" do

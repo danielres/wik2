@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@codemirror/lang-markdown": "^6.3.4",
+    "codemirror": "^6.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

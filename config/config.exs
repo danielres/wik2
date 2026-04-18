@@ -7,7 +7,7 @@
 # General application configuration
 import Config
 
-config :cinder, default_theme: "modern"
+config :cinder, default_theme: "daisy_ui"
 
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,

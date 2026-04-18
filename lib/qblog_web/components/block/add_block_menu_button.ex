@@ -3,6 +3,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
 
   alias Qblog.Blocks.Types.ChildPages
   alias Qblog.Blocks.Types.Embed
+  alias Qblog.Blocks.Types.Members
   alias Qblog.Wiki
   alias Qblog.Wiki.PageTree.TreeQueries
 
@@ -66,6 +67,11 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
           label="Linked copy"
           phx-click="add_block"
           phx-value-type="linked_copy"
+        />
+        <.button_special_block
+          label={Members.label()}
+          phx-click="add_block"
+          phx-value-type="members"
         />
         <.button_special_block
           :if={@child_pages_available?}

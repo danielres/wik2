@@ -2,6 +2,7 @@ defmodule Qblog.Blocks.Types do
   alias Qblog.Blocks.Types.ChildPages
   alias Qblog.Blocks.Types.GoogleCalendar
   alias Qblog.Blocks.Types.GoogleMaps
+  alias Qblog.Blocks.Types.Markdown
   alias Qblog.Blocks.Types.Members
   alias Qblog.Blocks.Types.SoundCloud
   alias Qblog.Blocks.Types.Text
@@ -11,6 +12,7 @@ defmodule Qblog.Blocks.Types do
     ChildPages,
     GoogleCalendar,
     GoogleMaps,
+    Markdown,
     Members,
     SoundCloud,
     Text,

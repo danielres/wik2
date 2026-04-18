@@ -22,7 +22,7 @@ defmodule QblogWeb.Components.Block.Types.Members do
     <Cinder.collection
       :if={@query}
       id={"members-block-#{@block.id}"}
-      page_size={[default: 25 ]}
+      page_size={[default: 25]}
       query={@query}
       query_opts={[load: [:user]]}
       scope={@scope}
@@ -32,7 +32,7 @@ defmodule QblogWeb.Components.Block.Types.Members do
         "border-2 border-base-200 rounded-box",
         "@sm/block:[&_th]:px-4 @sm/block:[&_th]:py-2",
         "@sm/block:[&_td]:px-4 @sm/block:[&_td]:py-2",
-        "[&_tr]:hover:bg-base-200/30",
+        "[&_tr]:hover:bg-base-200/30"
       ]}
       }
     >
@@ -57,10 +57,6 @@ defmodule QblogWeb.Components.Block.Types.Members do
 
       <:col :let={membership} field="inserted_at" label="Joined" sort>
         {membership.inserted_at |> Utils.Time.relative()}
-      </:col>
-
-      <:col :let={membership} label="" class="w-0" :if={false}>
-        <.icon name="hero-cog-micro" class="" />
       </:col>
     </Cinder.collection>
     """

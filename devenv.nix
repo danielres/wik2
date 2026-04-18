@@ -12,7 +12,8 @@
       #
       git
       # lefthook
-      # nodejs_24
+      nodejs_24
+      pnpm
       # pgcli
       # secretspec
     ]

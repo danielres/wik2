@@ -21,18 +21,30 @@ function textareaFor(editor: HTMLElement): HTMLTextAreaElement | undefined {
 
 const markdownHighlightStyle = HighlightStyle.define([
   {
-    tag: [
-      tags.heading,
-      tags.heading1,
-      tags.heading2,
-      tags.heading3,
-      tags.heading4,
-      tags.heading5,
-      tags.heading6,
-    ],
+    tag: [tags.heading, tags.heading4, tags.heading5, tags.heading6],
     color: "currentColor",
     fontWeight: "700",
-    fontSize: "1.25em",
+  },
+  {
+    tag: tags.heading1,
+    color: "currentColor",
+    fontSize: "var(--text-2xl)",
+    fontWeight: "700",
+    lineHeight: "var(--text-2xl--line-height)",
+  },
+  {
+    tag: tags.heading2,
+    color: "currentColor",
+    fontSize: "var(--text-xl)",
+    fontWeight: "700",
+    lineHeight: "var(--text-xl--line-height)",
+  },
+  {
+    tag: tags.heading3,
+    color: "currentColor",
+    fontSize: "var(--text-lg)",
+    fontWeight: "700",
+    lineHeight: "var(--text-lg--line-height)",
   },
   {
     tag: [tags.list, tags.processingInstruction, tags.punctuation],

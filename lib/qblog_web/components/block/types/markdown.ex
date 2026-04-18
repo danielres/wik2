@@ -33,12 +33,14 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
   def form_fields(assigns) do
     nodes = assigns.page_tree.nodes
 
-    wikilink_map =
-      nodes
-      |> Wikilinks.nodes_to_id_map()
-      |> Jason.encode!()
+    node_id_by_path = Wikilinks.nodes_to_id_map(nodes)
+    wikilink_map = node_id_by_path |> Jason.encode!()
+    wikilink_paths = node_id_by_path |> Map.keys() |> Jason.encode!()
 
-    assigns = assigns |> assign(wikilink_map: wikilink_map)
+    assigns =
+      assigns
+      |> assign(wikilink_map: wikilink_map)
+      |> assign(wikilink_paths: wikilink_paths)
 
     ~H"""
     <textarea
@@ -58,6 +60,7 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
       phx-hook="MarkdownEditor"
       phx-update="ignore"
       data-textarea-id={"edit-block-markdown-textarea-#{@block.id}"}
+      data-wikilink-paths={@wikilink_paths}
       class=""
     >
     </div>

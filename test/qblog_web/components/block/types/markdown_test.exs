@@ -73,6 +73,7 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
     assert html =~ ~s(id="edit-block-markdown-textarea-block-1")
     assert html =~ ~s(name="block[text]")
     assert html =~ ~s(name="block[wikilink_map]")
+    assert html =~ ~s(data-wikilink-paths=)
     assert html =~ "## Title"
     assert html =~ "&quot;recipes&quot;:1"
     assert html =~ "&quot;recipes/soup&quot;:2"

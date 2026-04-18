@@ -5,6 +5,8 @@
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.3.4",
+    "@codemirror/language": "^6.12.3",
+    "@lezer/highlight": "^1.2.3",
     "codemirror": "^6.0.2"
   },
   "devDependencies": {

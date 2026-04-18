@@ -1,5 +1,7 @@
 import { EditorView, minimalSetup } from "codemirror";
 import { markdown } from "@codemirror/lang-markdown";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
 
 type MarkdownEditorHook = {
   el: HTMLElement;
@@ -17,6 +19,28 @@ function textareaFor(editor: HTMLElement): HTMLTextAreaElement | undefined {
   return undefined;
 }
 
+const markdownHighlightStyle = HighlightStyle.define([
+  {
+    tag: [
+      tags.heading,
+      tags.heading1,
+      tags.heading2,
+      tags.heading3,
+      tags.heading4,
+      tags.heading5,
+      tags.heading6,
+    ],
+    color: "currentColor",
+    fontWeight: "700",
+    fontSize: "1.25em",
+  },
+  {
+    tag: [tags.list, tags.processingInstruction, tags.punctuation],
+    color: "currentColor",
+    opacity: "0.9",
+  },
+]);
+
 export const MarkdownEditor = {
   mounted(this: MarkdownEditorHook) {
     this.textarea = textareaFor(this.el);
@@ -25,6 +49,7 @@ export const MarkdownEditor = {
       doc: this.textarea?.value || "",
       extensions: [
         minimalSetup,
+        syntaxHighlighting(markdownHighlightStyle),
         markdown(),
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
@@ -37,9 +62,12 @@ export const MarkdownEditor = {
           "&": {
             minHeight: "4rem",
           },
-          ".cm-content": {
+          ".cm-cursor, .cm-dropCursor": {
+            borderLeftColor: "currentColor",
+            borderLeftWidth: "2px",
           },
-          ".cm-scroller": {
+          ".cm-selectionCursor": {
+            borderLeftColor: "currentColor",
           },
         }),
       ],

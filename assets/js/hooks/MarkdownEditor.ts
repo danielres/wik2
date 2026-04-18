@@ -109,18 +109,6 @@ export const MarkdownEditor = {
           this.textarea.value = update.state.doc.toString();
           this.textarea.dispatchEvent(new Event("input", { bubbles: true }));
         }),
-        EditorView.theme({
-          "&": {
-            minHeight: "4rem",
-          },
-          ".cm-cursor, .cm-dropCursor": {
-            borderLeftColor: "currentColor",
-            borderLeftWidth: "2px",
-          },
-          ".cm-selectionCursor": {
-            borderLeftColor: "currentColor",
-          },
-        }),
       ],
       parent: this.el,
     });

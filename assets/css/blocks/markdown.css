@@ -1,3 +1,33 @@
+.cm-editor.cm-editor {
+  min-height: 4rem;
+
+  .cm-cursor,
+  .cm-dropCursor {
+    border-left-color: currentColor;
+    border-left-width: 2px;
+  }
+  .cm-selectionCursor {
+    border-left-color: currentColor;
+  }
+  .cm-tooltip-autocomplete {
+    @apply rounded-box bg-base-100 border-secondary/40;
+    @apply shadow-lg;
+    @apply p-2;
+  }
+
+  .cm-tooltip-autocomplete > ul > li {
+    @apply rounded;
+    padding: 0.4rem 0.6rem;
+    &[aria-selected="true"] {
+      @apply bg-secondary/40;
+    }
+
+    &:hover {
+      @apply bg-secondary/20;
+    }
+  }
+}
+
 .BLOCK_MARKDOWN {
   @apply space-y-3;
 

@@ -19,12 +19,9 @@ defmodule QblogWeb.MeLive do
     ~H"""
     <Layouts.app flash={@flash} scope={@current_scope}>
       <Layouts.container>
-        <div>
-          <h1 class="text-2xl font-[100] flex justify-between items-center">
-            <span>Your account</span>
-            <QblogWeb.Layouts.theme_toggle />
-          </h1>
-        </div>
+        <h1 class="text-2xl font-[100] flex justify-between items-center">
+          Your account
+        </h1>
 
         <div class="flex flex-col md:flex-row gap-4 mt-4 [&>div]:flex-1">
           <div class="flex-1">

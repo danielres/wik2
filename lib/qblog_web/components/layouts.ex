@@ -120,36 +120,61 @@ defmodule QblogWeb.Layouts do
           <Components.User.avatar user={@scope.actor} />
         </button>
 
-        <ul
+        <div
           class={[
             "dropdown dropdown-end mt-1",
-            "menu bg-base-200",
-            "rounded-box"
+            "bg-base-200 min-w-36",
+            "rounded-box",
+            "p-2"
           ]}
           popover
           id="popover-user-dropdown"
           style="position-anchor:--anchor-user-dropdown"
         >
-          <li>
-            <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
-              <.icon name="hero-user" /> Account
-            </.link>
-          </li>
+          <ul class={[
+            "menu w-full"
+          ]}>
+            <li>
+              <.link navigate={~p"/sign-out"} class="">
+                <.icon name="hero-arrow-right-on-rectangle" /> Log out
+              </.link>
+            </li>
 
-          <li>
-            <.link navigate={~p"/sign-out"} class="">
-              <.icon name="hero-arrow-right-on-rectangle" /> Log out
-            </.link>
-          </li>
-          <li :if={@scope.tenant} class="border-t-1 border-base-content/20 pt-2 mt-2">
-            <.link
-              navigate={~p"/#{@scope.tenant.name}/wiki/members/#{@scope.actor |> to_string()}"}
-              class="opacity-80 hover:opacity-100 transition"
-            >
-              <.icon name="hero-face-smile" /> Profile
-            </.link>
-          </li>
-        </ul>
+            <li>
+              <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
+                <.icon name="hero-user" /> Account
+              </.link>
+            </li>
+          </ul>
+
+          <ul
+            :if={@scope.tenant}
+            class={[
+              "menu w-full",
+              "border-t-1 border-base-content/20"
+            ]}
+          >
+            <li>
+              <.link
+                navigate={~p"/#{@scope.tenant.name}/wiki/members/#{@scope.actor |> to_string()}"}
+                class="opacity-80 hover:opacity-100 transition"
+              >
+                <.icon name="hero-face-smile" /> Profile
+              </.link>
+            </li>
+          </ul>
+
+          <ul class={[
+            "py-2",
+            "border-t-1 border-base-content/20"
+          ]}>
+            <li>
+              <div class="w-min mx-auto">
+                <QblogWeb.Layouts.theme_toggle />
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
     </header>
 
@@ -222,7 +247,7 @@ defmodule QblogWeb.Layouts do
     ~H"""
     <div
       id="theme-toggle"
-      class="card relative flex flex-row items-center rounded-full border-2 border-base-200 bg-base-200 p-1"
+      class="card relative flex flex-row items-center rounded-full border-2 border-base-200 bg-base-300 p-1"
       role="group"
       aria-label="Theme selector"
     >

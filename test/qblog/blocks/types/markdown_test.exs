@@ -42,7 +42,7 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
   end
 
   describe "update_block/3" do
-    test "trims the submitted markdown text" do
+    test "normalizes the submitted markdown text" do
       actor = generate(user())
       scope = scope(actor)
 
@@ -53,9 +53,13 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
         )
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"text" => "\n\n## Title\n\n"}, scope: scope)
+               Blocks.update_block(
+                 block,
+                 %{"text" => "\n\n## Title\n\n\n\nBody\n\n\n- Item\n\n"},
+                 scope: scope
+               )
 
-      assert updated_block.data == %{"text" => "## Title"}
+      assert updated_block.data == %{"text" => "## Title\n\nBody\n\n- Item"}
     end
   end
 

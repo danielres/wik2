@@ -38,9 +38,22 @@ defmodule Qblog.Blocks.Types.Markdown do
 
   defp normalize_text(text) when is_binary(text) do
     text
+    |> normalize_line_endings()
+    |> trim_trailing_spaces_per_line()
     |> String.trim()
     |> String.replace(~r/\n{3,}/, "\n\n")
   end
 
   defp normalize_text(_text), do: ""
+
+  defp normalize_line_endings(text) do
+    String.replace(text, ~r/\r\n?/, "\n")
+  end
+
+  defp trim_trailing_spaces_per_line(text) do
+    text
+    |> String.split("\n")
+    |> Enum.map(&String.trim_trailing/1)
+    |> Enum.join("\n")
+  end
 end

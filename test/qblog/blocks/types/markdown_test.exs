@@ -55,7 +55,7 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
       assert {:ok, updated_block} =
                Blocks.update_block(
                  block,
-                 %{"text" => "\n\n## Title\n\n\n\nBody\n\n\n- Item\n\n"},
+                 %{"text" => "\r\n\r\n## Title  \r\n\r\n\r\n\r\nBody  \r\n\r\n\r\n- Item  \r\n\r\n"},
                  scope: scope
                )
 

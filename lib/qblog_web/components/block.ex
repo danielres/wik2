@@ -72,7 +72,8 @@ defmodule QblogWeb.Components.Block do
         :if={@editing? and is_nil(@lock)}
         class={[
           "ACTION-BUTTONS",
-          "opacity-50 hover:opacity-100 transition-opacity"
+          "opacity-50 hover:opacity-100 transition-opacity",
+          "mb-1"
         ]}
       >
         <Components.Block.ActionButtons.render placement={@placement} />

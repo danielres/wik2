@@ -130,15 +130,6 @@
           placement={@block_info_placement}
           scope={@current_scope}
         />
-
-        <QblogWeb.Components.Block.Types.ChildPages.render
-          :if={!@editing?}
-          block={%{data: %{"source" => "current_page"}, type: :child_pages}}
-          class={[]}
-          node={@node}
-          path={@path}
-          scope={@current_scope}
-        />
       </section>
     <% end %>
   </Layouts.group>

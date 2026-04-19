@@ -104,7 +104,9 @@ defmodule QblogWeb.PageLive.BlockActions do
     case block
          |> Blocks.update_block(params, scope: scope) do
       {:ok, _block} ->
-        socket |> BlockEdit.clear()
+        socket
+        |> BlockEdit.clear()
+        |> assign(:editing?, false)
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "save block failed")

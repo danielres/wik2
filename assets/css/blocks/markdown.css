@@ -1,3 +1,5 @@
+@import "./markdown/selection-toolbar.css";
+
 .cm-editor.cm-editor {
   min-height: 4rem;
   @apply bg-base-100 rounded-lg p-2;

@@ -1,0 +1,29 @@
+.cm-editor {
+  .cm-markdown-selection-toolbar {
+    @apply rounded-md border-none bg-base-300 shadow;
+    @apply flex items-center gap-1 px-1 py-0.5;
+  }
+
+  .cm-markdown-selection-toolbar-button {
+    @apply btn btn-ghost btn-xs btn-square;
+    @apply opacity-70 hover:opacity-100 transition-opacity;
+    @apply hover:bg-primary/50;
+    @apply text-base-content;
+  }
+
+  .cm-markdown-selection-toolbar-button::after {
+    content: "";
+  }
+
+  .cm-markdown-selection-toolbar-button[data-markdown-action="bold"]::after {
+    @apply hero-bold-micro size-3;
+  }
+
+  .cm-markdown-selection-toolbar-button[data-markdown-action="italic"]::after {
+    @apply hero-italic-micro size-3;
+  }
+
+  .cm-markdown-selection-toolbar-button[data-markdown-action="strikethrough"]::after {
+    @apply hero-strikethrough-micro size-3;
+  }
+}

@@ -9,6 +9,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { EditorView, highlightSpecialChars, keymap } from "@codemirror/view";
 import { styleTags, Tag, tags } from "@lezer/highlight";
+import { markdownSelectionToolbar } from "./MarkdownEditor/selectionToolbar";
 
 type MarkdownEditorHook = {
   el: HTMLElement;
@@ -109,6 +110,7 @@ export const MarkdownEditor = {
         keymap.of([...defaultKeymap, ...historyKeymap]),
         syntaxHighlighting(markdownHighlightStyle),
         markdown({ extensions: markdownSyntaxHighlighting }),
+        markdownSelectionToolbar(),
         autocompletion({
           override: [wikilinkCompletionSource(this.wikilinkCompletions)],
           icons: false,

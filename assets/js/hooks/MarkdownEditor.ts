@@ -112,6 +112,8 @@ export const MarkdownEditor = {
       ],
       parent: this.el,
     });
+
+    requestAnimationFrame(() => this.view?.focus());
   },
 
   destroyed(this: MarkdownEditorHook) {

@@ -133,7 +133,9 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
         "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&color=%23ff5500"
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"title" => "", "url" => soundcloud_embed_url}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => soundcloud_embed_url},
+                 scope: scope
+               )
 
       assert updated_block.type == :soundcloud
       assert updated_block.data == %{"title" => "", "url" => soundcloud_embed_url}

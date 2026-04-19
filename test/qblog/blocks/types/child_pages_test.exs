@@ -67,7 +67,9 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
         )
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"source_page" => "current_page", "title" => ""}, scope: scope)
+               Blocks.update_block(block, %{"source_page" => "current_page", "title" => ""},
+                 scope: scope
+               )
 
       assert updated_block.data == %{"source" => "current_page", "title" => ""}
     end
@@ -90,7 +92,10 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
     end
 
     test "uses persisted title values" do
-      block = %Block{data: %{"source" => "current_page", "title" => "Related pages"}, type: :child_pages}
+      block = %Block{
+        data: %{"source" => "current_page", "title" => "Related pages"},
+        type: :child_pages
+      }
 
       assert %{
                "title" => "Related pages"

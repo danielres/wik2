@@ -19,7 +19,11 @@ defmodule Qblog.Blocks.Types.Markdown do
     }
   end
 
-  def block_to_form_params(_block, %{"text" => _text, "wikilink_map" => _wikilink_map} = params, _page_tree) do
+  def block_to_form_params(
+        _block,
+        %{"text" => _text, "wikilink_map" => _wikilink_map} = params,
+        _page_tree
+      ) do
     params
   end
 

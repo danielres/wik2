@@ -8,17 +8,17 @@ defmodule QblogWeb.Components.Block.Types.SoundCloud do
   def render(assigns) do
     ~H"""
     <Embed.wrapper>
-    <%= if @block.data["url"] do %>
-      <iframe
-        allow="autoplay"
-        class="aspect-video w-full rounded border-0"
-        scrolling="no"
-        src={@block.data["url"]}
-      >
-      </iframe>
-    <% else %>
-      <div class="opacity-60">Empty SoundCloud block</div>
-    <% end %>
+      <%= if @block.data["url"] do %>
+        <iframe
+          allow="autoplay"
+          class="aspect-video w-full rounded border-0"
+          scrolling="no"
+          src={@block.data["url"]}
+        >
+        </iframe>
+      <% else %>
+        <div class="opacity-60">Empty SoundCloud block</div>
+      <% end %>
     </Embed.wrapper>
     """
   end

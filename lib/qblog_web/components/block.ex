@@ -79,12 +79,17 @@ defmodule QblogWeb.Components.Block do
         <Components.Block.ActionButtons.render placement={@placement} />
       </div>
 
-      <div class={[
-        "BLOCK",
-        @editing? and "ring-2 p-2",
-        "rounded ring-secondary/10 transition",
-        "group"
-      ]}>
+      <div
+        class={[
+          "BLOCK",
+          @editing? and "ring-2 p-2 hover:ring-secondary/70 cursor-pointer",
+          @editing? and "[&>*]:pointer-events-none",
+          "rounded ring-secondary/10 transition",
+          "group"
+        ]}
+        phx-click={@editing? and "edit_block_start"}
+        phx-value-block_id={@placement.block.id}
+      >
         <h2
           :if={@block_title != ""}
           class={[

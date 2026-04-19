@@ -43,12 +43,6 @@ defmodule QblogWeb.Components.Block.ActionButtons do
           phx-value-placement_id={@placement.id}
           title={if @placement.width == "half", do: "Set full width", else: "Set half width"}
         />
-
-        <.action_button
-          icon="hero-pencil-mini"
-          phx-click="edit_block_start"
-          phx-value-block_id={@placement.block.id}
-        />
       </div>
     </div>
     """

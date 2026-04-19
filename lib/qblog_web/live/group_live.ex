@@ -83,13 +83,13 @@ defmodule QblogWeb.GroupLive do
           />
         </Modal.render>
 
-        <div class="bg-base-200 rounded-box border-4 border-base-200">
-          <div role="tablist" class="tabs tabs-box p-0 pb-0.5">
+        <div class="rounded-box border-4 border-base-200 bg-base-300">
+          <div role="tablist" class="tabs tabs-box p-0 pb-0.5 bg-base-300">
             <Components.Tabs.tab
               active?={@live_action == :members}
               patch={~p"/#{@group.name}/members"}
             >
-              <span class="badge badge-xs badge-neutral mr-1">{@group.memberships |> length()}</span>
+              <span class="badge badge-xs bg-base-200 mr-1">{@group.memberships |> length()}</span>
               Members
             </Components.Tabs.tab>
 
@@ -123,10 +123,11 @@ defmodule QblogWeb.GroupLive do
               />
             </Modal.render>
 
-            <Components.Group.memberships
+            <Components.Block.Types.Members.render
               event_transfer_ownership_start="transfer_ownership_start"
-              memberships={@group.memberships}
               scope={@current_scope}
+              block={%{id: "members-block"}}
+              actions?
             />
           </Components.Tabs.tab_content>
 

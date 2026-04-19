@@ -2,8 +2,6 @@ defmodule QblogWeb.Components.Group do
   use Phoenix.Component
   use QblogWeb, :live_view
 
-  alias QblogWeb.Components
-
   attr :action_type, :string, default: "create"
   attr :class, :string, default: ""
   attr :event_submit, :string, required: true
@@ -50,58 +48,6 @@ defmodule QblogWeb.Components.Group do
 
         <span :if={@groups == []} class="opacity-70">
           You are not a member of any groups yet.
-        </span>
-      </li>
-    </ul>
-    """
-  end
-
-  attr :scope, :any, required: true
-  attr :event_transfer_ownership_start, :string, required: true
-  attr :memberships, :list, required: true
-
-  def memberships(assigns) do
-    ~H"""
-    <ul class="space-y-0.5">
-      <li
-        :for={membership <- @memberships}
-        class={[
-          "flex items-center justify-between gap-1 flex-wrap",
-          "rounded bg-base-100/50 px-3 py-2"
-        ]}
-      >
-        <div class="flex items-center gap-2">
-          <Components.User.avatar user={membership.user} tenant={@scope.tenant} link? />
-          {membership.user |> to_string()}
-        </div>
-
-        <span class={[
-          "flex flex-wrap gap-1",
-          "text-sm opacity-70"
-        ]}>
-          <span class={["badge badge-sm px-2 bg-base-300"]}>
-            <button
-              :if={Ash.can?({membership, :transfer_ownership}, @scope)}
-              phx-click={@event_transfer_ownership_start}
-              phx-value-membership_id={membership.id}
-              class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
-            >
-              <.icon name="hero-cog-micro" class="" />
-            </button>
-            {membership.type |> Atom.to_string() |> String.capitalize()}
-          </span>
-
-          <span
-            class={[
-              "badge badge-sm px-2 bg-base-300",
-              "whitespace-nowrap",
-              "tooltip tooltip-primary tooltip-left tooltip-delayed",
-              "cursor-default"
-            ]}
-            data-tip={"Member since #{Utils.Time.precise(membership.inserted_at)}"}
-          >
-            {Utils.Time.relative(membership.inserted_at)}
-          </span>
         </span>
       </li>
     </ul>

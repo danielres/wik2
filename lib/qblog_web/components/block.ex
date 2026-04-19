@@ -133,7 +133,7 @@ defmodule QblogWeb.Components.Block do
         :if={@supports_title?}
         field={@form[:title]}
         id={"edit-block-title-#{@block.id}"}
-        label="Title"
+        label="Title (optional)"
         type="text"
       />
 

@@ -12,10 +12,38 @@
           :if={@can_manage_page?}
           class="sticky top-4 z-20 h-0 flex justify-end"
         >
+          <div :if={@editing_block_id} class="">
+            <button
+              type="button"
+              class={[
+                "btn btn-sm btn-soft btn-circle",
+                "hover:btn-error",
+                "mr-2"
+              ]}
+              phx-click="edit_block_cancel"
+              phx-value-block_id={@editing_block_id}
+            >
+              <.icon name="hero-x-mark-mini" />
+            </button>
+
+            <button
+              type="submit"
+              form={"edit-block-form-#{@editing_block_id}"}
+              class={[
+                "btn btn-sm btn-primary btn-circle",
+                "mr-2"
+              ]}
+            >
+              <.icon name="hero-check-mini" />
+            </button>
+          </div>
+
           <button
+            :if={is_nil(@editing_block_id)}
             class={[
               "btn btn-sm btn-circle",
               "opacity-80 hover:opacity-100 transition",
+              "mr-2",
               @editing? && "btn-primary opacity-100",
               !@editing? && "btn-neutral hover:btn-primary"
             ]}
@@ -53,6 +81,7 @@
                   page_tree={@page_tree}
                   path={@path}
                   scope={@current_scope}
+                  actions?={false}
                 />
               <% else %>
                 <QblogWeb.Components.Block.render

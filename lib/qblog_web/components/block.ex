@@ -121,6 +121,7 @@ defmodule QblogWeb.Components.Block do
   attr :page_tree, :map, default: nil
   attr :path, :string, default: nil
   attr :scope, :map, default: nil
+  attr :actions?, :boolean, default: true
 
   def form(assigns) do
     assigns =
@@ -157,6 +158,7 @@ defmodule QblogWeb.Components.Block do
       />
 
       <div class={[
+        !@actions? && "hidden",
         "flex justify-between gap-2",
         @block.type == :markdown && "px-4 pb-4"
       ]}>

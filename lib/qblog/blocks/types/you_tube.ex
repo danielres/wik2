@@ -5,30 +5,33 @@ defmodule Qblog.Blocks.Types.YouTube do
 
   def label, do: "YouTube"
   def type, do: :youtube
+  def supports_title?, do: true
 
   defdelegate default_data(), to: Embed
   defdelegate block_to_form_params(block, params, page_tree), to: Embed
   defdelegate update_block(block, params, opts), to: Embed
 
   def validate_data(data) do
-    url = data |> get_url()
+    with :ok <- Embed.validate_title(data) do
+      url = data |> get_url()
 
-    case url do
-      nil ->
-        :ok
-
-      "" ->
-        :ok
-
-      url when is_binary(url) ->
-        if embed_url?(url) do
+      case url do
+        nil ->
           :ok
-        else
-          {:error, field: :data, message: "youtube blocks must store a YouTube embed URL"}
-        end
 
-      _ ->
-        {:error, field: :data, message: "youtube blocks must store a YouTube embed URL"}
+        "" ->
+          :ok
+
+        url when is_binary(url) ->
+          if embed_url?(url) do
+            :ok
+          else
+            {:error, field: :data, message: "youtube blocks must store a YouTube embed URL"}
+          end
+
+        _ ->
+          {:error, field: :data, message: "youtube blocks must store a YouTube embed URL"}
+      end
     end
   end
 

@@ -21,6 +21,10 @@ defmodule Qblog.Blocks.Types do
 
   def modules, do: @modules
 
+  def supports_title?(type) do
+    type |> type_to_module() |> then(& &1.supports_title?())
+  end
+
   def available do
     @modules
     |> Enum.map(fn module ->

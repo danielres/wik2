@@ -8,6 +8,7 @@ defmodule Qblog.Blocks.Types.Behaviour do
 
   @callback label() :: String.t()
   @callback type() :: atom()
+  @callback supports_title?() :: boolean()
   @callback default_data() :: map()
   @callback block_to_form_params(block :: term(), params :: map(), page_tree :: term()) :: map()
   @callback update_block(block :: term(), params :: map(), opts :: Keyword.t()) ::

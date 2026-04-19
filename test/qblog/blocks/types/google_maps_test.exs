@@ -15,7 +15,7 @@ defmodule Qblog.Blocks.Types.GoogleMapsTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => ""},
+                   data: %{"title" => "", "url" => ""},
                    owner_user_id: actor.id,
                    type: :google_maps
                  },
@@ -31,7 +31,7 @@ defmodule Qblog.Blocks.Types.GoogleMapsTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => 123},
+                   data: %{"title" => "", "url" => 123},
                    owner_user_id: actor.id,
                    type: :google_maps
                  },
@@ -47,7 +47,7 @@ defmodule Qblog.Blocks.Types.GoogleMapsTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => "https://www.google.com/maps/place/Berlin"},
+                   data: %{"title" => "", "url" => "https://www.google.com/maps/place/Berlin"},
                    owner_user_id: actor.id,
                    type: :google_maps
                  },
@@ -71,9 +71,9 @@ defmodule Qblog.Blocks.Types.GoogleMapsTest do
       embed_url = "https://www.google.com/maps/embed?pb=example"
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => embed_url}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => embed_url}, scope: scope)
 
-      assert updated_block.data == %{"url" => embed_url}
+      assert updated_block.data == %{"title" => "", "url" => embed_url}
     end
 
     test "accepts iframe embed code and stores only the url" do
@@ -90,9 +90,10 @@ defmodule Qblog.Blocks.Types.GoogleMapsTest do
         ~s(<iframe src="https://www.google.com/maps/embed?pb=example&amp;foo=bar" width="600" height="450"></iframe>)
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => iframe}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => iframe}, scope: scope)
 
       assert updated_block.data == %{
+               "title" => "",
                "url" => "https://www.google.com/maps/embed?pb=example&foo=bar"
              }
     end
@@ -110,7 +111,7 @@ defmodule Qblog.Blocks.Types.GoogleMapsTest do
       assert {:error, _error} =
                Blocks.update_block(
                  block,
-                 %{"url" => "https://www.google.com/maps/place/Berlin"},
+                 %{"title" => "", "url" => "https://www.google.com/maps/place/Berlin"},
                  scope: scope
                )
     end

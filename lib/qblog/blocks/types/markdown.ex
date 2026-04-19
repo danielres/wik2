@@ -5,23 +5,22 @@ defmodule Qblog.Blocks.Types.Markdown do
 
   def label, do: "Markdown"
   def type, do: :markdown
+  def supports_title?, do: false
   def default_data, do: %{"text" => ""}
 
-  def block_to_form_params(block, params, page_tree) do
-    case params["text"] do
-      nil ->
-        %{"text" => text} = block.data
+  def block_to_form_params(block, %{}, page_tree) do
+    %{"text" => text} = block.data
 
-        wikilink_map = page_tree.nodes |> Wikilinks.nodes_to_id_map() |> Jason.encode!()
+    wikilink_map = page_tree.nodes |> Wikilinks.nodes_to_id_map() |> Jason.encode!()
 
-        %{
-          "text" => Wikilinks.nodes_to_paths(text, page_tree),
-          "wikilink_map" => wikilink_map
-        }
+    %{
+      "text" => Wikilinks.nodes_to_paths(text, page_tree),
+      "wikilink_map" => wikilink_map
+    }
+  end
 
-      _text ->
-        params
-    end
+  def block_to_form_params(_block, %{"text" => _text, "wikilink_map" => _wikilink_map} = params, _page_tree) do
+    params
   end
 
   def update_block(block, params, opts) do

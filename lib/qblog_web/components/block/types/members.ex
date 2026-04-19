@@ -73,7 +73,7 @@ defmodule QblogWeb.Components.Block.Types.Members do
   def form_fields(assigns) do
     ~H"""
     <div class="text-sm opacity-70">
-      This block renders the current group members and has no settings.
+      This block renders the current group members.
     </div>
     """
   end

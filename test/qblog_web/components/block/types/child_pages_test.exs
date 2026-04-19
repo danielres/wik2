@@ -131,7 +131,7 @@ defmodule QblogWeb.Components.Block.Types.ChildPagesTest do
 
     assert html
            |> LazyHTML.from_fragment()
-           |> LazyHTML.filter(testid("child-pages-source-missing"))
+           |> LazyHTML.query(testid("child-pages-source-missing"))
            |> Enum.any?()
   end
 

@@ -6,6 +6,32 @@ defmodule Qblog.Blocks.Types.TextTest do
   alias Qblog.Blocks.Block
   alias Qblog.Scope
 
+  describe "block_to_form_params/3" do
+    test "uses persisted text" do
+      block = %Block{data: %{"text" => "Hello"}, type: :text}
+
+      assert %{"text" => "Hello"} = Qblog.Blocks.block_to_form_params(block, %{}, nil)
+    end
+  end
+
+  describe "update_block/3" do
+    test "stores submitted text" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Qblog.Blocks.create_user_owned_block(
+          %{type: :text},
+          scope: scope
+        )
+
+      assert {:ok, updated_block} =
+               Qblog.Blocks.update_block(block, %{"text" => "Updated"}, scope: scope)
+
+      assert updated_block.data == %{"text" => "Updated"}
+    end
+  end
+
   describe "validate_data/1" do
     test "allows blank text block data on create" do
       actor = generate(user())

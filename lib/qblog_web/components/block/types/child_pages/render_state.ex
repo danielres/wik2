@@ -24,13 +24,6 @@ defmodule QblogWeb.Components.Block.Types.ChildPages.RenderState do
     end
   end
 
-  defp resolve_source(_tree_nodes, nil, _current_path, _block_data), do: :no_source
-
-  defp resolve_source(_tree_nodes, current_node, current_path, %{"source" => "current_page"})
-       when not is_nil(current_node) and is_binary(current_path) and current_path != "" do
-    {:source, current_node, %{path: current_path, title: current_node.title}}
-  end
-
   defp resolve_source(tree_nodes, _current_node, _current_path, %{
          "source" => "node",
          "node_id" => node_id
@@ -39,6 +32,13 @@ defmodule QblogWeb.Components.Block.Types.ChildPages.RenderState do
       nil -> :missing_source_node
       source_node -> {:source, source_node, display_node(source_node, tree_nodes)}
     end
+  end
+
+  defp resolve_source(_tree_nodes, nil, _current_path, _block_data), do: :no_source
+
+  defp resolve_source(_tree_nodes, current_node, current_path, %{"source" => "current_page"})
+       when not is_nil(current_node) and is_binary(current_path) and current_path != "" do
+    {:source, current_node, %{path: current_path, title: current_node.title}}
   end
 
   defp resolve_source(tree_nodes, current_node, _current_path, _block_data) do

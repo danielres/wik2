@@ -15,7 +15,7 @@ defmodule Qblog.Blocks.Types.GoogleCalendarTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => ""},
+                   data: %{"title" => "", "url" => ""},
                    owner_user_id: actor.id,
                    type: :google_calendar
                  },
@@ -31,7 +31,7 @@ defmodule Qblog.Blocks.Types.GoogleCalendarTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => 123},
+                   data: %{"title" => "", "url" => 123},
                    owner_user_id: actor.id,
                    type: :google_calendar
                  },
@@ -47,7 +47,7 @@ defmodule Qblog.Blocks.Types.GoogleCalendarTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => "https://calendar.google.com/calendar/u/0/r"},
+                   data: %{"title" => "", "url" => "https://calendar.google.com/calendar/u/0/r"},
                    owner_user_id: actor.id,
                    type: :google_calendar
                  },
@@ -72,9 +72,9 @@ defmodule Qblog.Blocks.Types.GoogleCalendarTest do
         "https://calendar.google.com/calendar/embed?src=example%40gmail.com&ctz=Europe%2FBerlin"
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => embed_url}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => embed_url}, scope: scope)
 
-      assert updated_block.data == %{"url" => embed_url}
+      assert updated_block.data == %{"title" => "", "url" => embed_url}
     end
 
     test "accepts google calendar iframe embed code and stores only the url" do
@@ -91,9 +91,10 @@ defmodule Qblog.Blocks.Types.GoogleCalendarTest do
         ~s(<iframe src="https://calendar.google.com/calendar/embed?src=example%40gmail.com&amp;ctz=Europe%2FBerlin"></iframe>)
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => iframe}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => iframe}, scope: scope)
 
       assert updated_block.data == %{
+               "title" => "",
                "url" =>
                  "https://calendar.google.com/calendar/embed?src=example%40gmail.com&ctz=Europe%2FBerlin"
              }
@@ -112,7 +113,7 @@ defmodule Qblog.Blocks.Types.GoogleCalendarTest do
       assert {:error, _error} =
                Blocks.update_block(
                  block,
-                 %{"url" => "https://calendar.google.com/calendar/u/0/r"},
+                 %{"title" => "", "url" => "https://calendar.google.com/calendar/u/0/r"},
                  scope: scope
                )
     end

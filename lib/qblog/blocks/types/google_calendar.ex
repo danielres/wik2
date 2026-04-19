@@ -5,32 +5,37 @@ defmodule Qblog.Blocks.Types.GoogleCalendar do
 
   def label, do: "Google Calendar"
   def type, do: :google_calendar
+  def supports_title?, do: true
 
   defdelegate default_data(), to: Embed
   defdelegate block_to_form_params(block, params, page_tree), to: Embed
   defdelegate update_block(block, params, opts), to: Embed
 
+  # TODO: simplify?
   def validate_data(data) do
-    url = data |> get_url()
+    with :ok <- Embed.validate_title(data) do
+      url = data |> get_url()
 
-    case url do
-      nil ->
-        :ok
-
-      "" ->
-        :ok
-
-      url when is_binary(url) ->
-        if embed_url?(url) do
+      case url do
+        nil ->
           :ok
-        else
+
+        "" ->
+          :ok
+
+        url when is_binary(url) ->
+          if embed_url?(url) do
+            :ok
+          else
+            {:error,
+             field: :data,
+             message: "google calendar blocks must store a Google Calendar embed URL"}
+          end
+
+        _ ->
           {:error,
            field: :data, message: "google calendar blocks must store a Google Calendar embed URL"}
-        end
-
-      _ ->
-        {:error,
-         field: :data, message: "google calendar blocks must store a Google Calendar embed URL"}
+      end
     end
   end
 

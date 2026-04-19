@@ -36,6 +36,12 @@ defmodule QblogWeb.Components.Block do
   attr :scope, :map, default: nil
 
   def render(assigns) do
+    block = assigns.placement.block
+
+    assigns =
+      assigns
+      |> assign(:block_title, block_title(block))
+
     ~H"""
     <div class={[
       "relative",
@@ -75,8 +81,20 @@ defmodule QblogWeb.Components.Block do
       <div class={[
         "BLOCK",
         @editing? and "ring-2 p-2",
-        "rounded ring-secondary/10 transition"
+        "rounded ring-secondary/10 transition",
+        "group"
       ]}>
+        <h2
+          :if={@block_title != ""}
+          class={[
+            "text-xl font-bold mb-3",
+            "opacity-60 transition",
+            "group-hover:opacity-90"
+          ]}
+        >
+          {@block_title}
+        </h2>
+
         <.dispatch_render
           block={@placement.block}
           node={@node}
@@ -98,7 +116,10 @@ defmodule QblogWeb.Components.Block do
   attr :scope, :map, default: nil
 
   def form(assigns) do
-    assigns = assign_new(assigns, :block, fn -> assigns.placement.block end)
+    assigns =
+      assigns
+      |> assign_new(:block, fn -> assigns.placement.block end)
+      |> assign(:supports_title?, Blocks.Types.supports_title?(assigns.placement.block.type))
 
     ~H"""
     <Phoenix.Component.form
@@ -108,6 +129,14 @@ defmodule QblogWeb.Components.Block do
       phx-value-block_id={@block.id}
       class="bg-base-200 p-4 rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-secondary"
     >
+      <.input
+        :if={@supports_title?}
+        field={@form[:title]}
+        id={"edit-block-title-#{@block.id}"}
+        label="Title"
+        type="text"
+      />
+
       <.dispatch_form_fields
         block={@block}
         form={@form}
@@ -132,6 +161,13 @@ defmodule QblogWeb.Components.Block do
     </Phoenix.Component.form>
     """
   end
+
+  defp block_title(%{data: %{"title" => title}, type: type})
+       when is_binary(title) and title != "" do
+    if Blocks.Types.supports_title?(type), do: title, else: ""
+  end
+
+  defp block_title(_block), do: ""
 
   defp type_to_module(type) do
     Blocks.Types.modules()

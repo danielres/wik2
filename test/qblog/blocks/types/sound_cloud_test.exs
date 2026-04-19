@@ -15,7 +15,7 @@ defmodule Qblog.Blocks.Types.SoundCloudTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => ""},
+                   data: %{"title" => "", "url" => ""},
                    owner_user_id: actor.id,
                    type: :soundcloud
                  },
@@ -31,7 +31,7 @@ defmodule Qblog.Blocks.Types.SoundCloudTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => 123},
+                   data: %{"title" => "", "url" => 123},
                    owner_user_id: actor.id,
                    type: :soundcloud
                  },
@@ -47,7 +47,7 @@ defmodule Qblog.Blocks.Types.SoundCloudTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => "https://soundcloud.com/forss/flickermood"},
+                   data: %{"title" => "", "url" => "https://soundcloud.com/forss/flickermood"},
                    owner_user_id: actor.id,
                    type: :soundcloud
                  },
@@ -72,9 +72,9 @@ defmodule Qblog.Blocks.Types.SoundCloudTest do
         "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&color=%23ff5500"
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => embed_url}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => embed_url}, scope: scope)
 
-      assert updated_block.data == %{"url" => embed_url}
+      assert updated_block.data == %{"title" => "", "url" => embed_url}
     end
 
     test "accepts soundcloud iframe embed code and stores only the url" do
@@ -91,9 +91,10 @@ defmodule Qblog.Blocks.Types.SoundCloudTest do
         ~s(<iframe src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&amp;color=%23ff5500"></iframe>)
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => iframe}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => iframe}, scope: scope)
 
       assert updated_block.data == %{
+               "title" => "",
                "url" =>
                  "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&color=%23ff5500"
              }
@@ -112,7 +113,7 @@ defmodule Qblog.Blocks.Types.SoundCloudTest do
       assert {:error, _error} =
                Blocks.update_block(
                  block,
-                 %{"url" => "https://soundcloud.com/forss/flickermood"},
+                 %{"title" => "", "url" => "https://soundcloud.com/forss/flickermood"},
                  scope: scope
                )
     end

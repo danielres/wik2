@@ -3,37 +3,26 @@ defmodule Qblog.Blocks.Types.Text do
 
   def label, do: "Text"
   def type, do: :text
+  def supports_title?, do: false
   def default_data, do: %{"text" => ""}
 
-  def block_to_form_params(block, params, _page_tree) do
-    %{"text" => params["text"] || block.data |> get_text() || ""}
+  def block_to_form_params(%{data: %{"text" => text}}, _params, _page_tree) do
+    %{"text" => text}
   end
 
-  def update_block(block, params, opts) do
+  def update_block(block, %{"text" => text}, opts) do
     _scope = Keyword.fetch!(opts, :scope)
 
     block
     |> Ash.update(
-      %{data: %{"text" => params["text"] || ""}},
+      %{data: %{"text" => text}},
       opts |> Keyword.put(:action, :update)
     )
   end
 
-  def validate_data(data) do
-    text = data |> get_text()
+  def validate_data(%{"text" => text}) when is_binary(text), do: :ok
 
-    case text do
-      nil ->
-        :ok
-
-      text when is_binary(text) ->
-        :ok
-
-      _ ->
-        {:error, field: :data, message: "text blocks must store text as a string"}
-    end
+  def validate_data(_data) do
+    {:error, field: :data, message: "text blocks must store text as a string"}
   end
-
-  defp get_text(%{"text" => text}), do: text
-  defp get_text(_), do: nil
 end

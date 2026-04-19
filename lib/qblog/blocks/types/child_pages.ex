@@ -3,16 +3,21 @@ defmodule Qblog.Blocks.Types.ChildPages do
 
   def label, do: "Child pages"
   def type, do: :child_pages
-  def default_data, do: %{"source" => "current_page"}
+  def supports_title?, do: true
+  def default_data, do: %{"source" => "current_page", "title" => ""}
 
-  def block_to_form_params(block, params, _page_tree) do
-    source = params["source"] || block.data["source"]
-    node_id = params["node_id"] || block.data["node_id"]
+  def block_to_form_params(%{data: %{"title" => title} = block_data}, _params, _page_tree) do
+    source = block_data["source"]
+    node_id = block_data["node_id"]
+    source_page = source_page_value(source, node_id)
 
+    # TODO: rename source_page to source_node?
+    # TODO: add support for root node + max depth
     %{
       "node_id" => source_page_value(source, node_id) || "",
-      "source" => source || "current_page",
-      "source_page" => params["source_page"] || source_page_value(source, node_id)
+      "source" => source,
+      "source_page" => source_page,
+      "title" => title
     }
   end
 
@@ -26,30 +31,41 @@ defmodule Qblog.Blocks.Types.ChildPages do
     )
   end
 
+  # TODO: simplify?
   def validate_data(data) do
-    case {data["source"], data["node_id"]} do
-      {nil, nil} ->
-        :ok
+    with :ok <- validate_title(data) do
+      case {data["source"], data["node_id"]} do
+        {nil, nil} ->
+          :ok
 
-      {"current_page", nil} ->
-        :ok
+        {"current_page", nil} ->
+          :ok
 
-      {"node", node_id} when is_integer(node_id) ->
-        :ok
+        {"node", node_id} when is_integer(node_id) ->
+          :ok
 
-      {"current_page", node_id} when node_id in ["", nil] ->
-        :ok
+        {"current_page", node_id} when node_id in ["", nil] ->
+          :ok
 
-      _ ->
-        {:error, field: :data, message: "child pages blocks need a valid source"}
+        _ ->
+          {:error, field: :data, message: "child pages blocks need a valid source"}
+      end
     end
   end
 
-  defp params_to_data(%{"source_page" => "current_page"}) do
+  # TODO: simplify?
+  defp params_to_data(params) do
+    params
+    |> source_params_to_data()
+    |> Map.put("title", params["title"])
+  end
+
+  defp source_params_to_data(%{"source_page" => "current_page"}) do
     %{"source" => "current_page"}
   end
 
-  defp params_to_data(%{"source_page" => node_id}) when is_binary(node_id) and node_id != "" do
+  defp source_params_to_data(%{"source_page" => node_id})
+       when is_binary(node_id) and node_id != "" do
     with {node_id, ""} <- Integer.parse(node_id) do
       %{"node_id" => node_id, "source" => "node"}
     else
@@ -57,15 +73,22 @@ defmodule Qblog.Blocks.Types.ChildPages do
     end
   end
 
-  defp params_to_data(%{"source" => "node", "node_id" => node_id}) when is_integer(node_id) do
+  defp source_params_to_data(%{"source" => "node", "node_id" => node_id})
+       when is_integer(node_id) do
     %{"node_id" => node_id, "source" => "node"}
   end
 
-  defp params_to_data(_params) do
+  defp source_params_to_data(_params) do
     %{"source" => "current_page"}
   end
 
   defp source_page_value("node", node_id) when node_id not in [nil, ""], do: to_string(node_id)
   defp source_page_value("current_page", _node_id), do: "current_page"
   defp source_page_value(_source, _node_id), do: nil
+
+  defp validate_title(%{"title" => title}) when is_binary(title), do: :ok
+
+  defp validate_title(_data) do
+    {:error, field: :data, message: "block title must be a string"}
+  end
 end

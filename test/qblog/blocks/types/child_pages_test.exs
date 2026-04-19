@@ -14,7 +14,7 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
              Ash.create(
                Block,
                %{
-                 data: %{},
+                 data: %{"source" => "current_page", "title" => ""},
                  owner_user_id: actor.id,
                  type: :child_pages
                },
@@ -30,7 +30,7 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
              Ash.create(
                Block,
                %{
-                 data: %{"source" => "invalid"},
+                 data: %{"source" => "invalid", "title" => ""},
                  owner_user_id: actor.id,
                  type: :child_pages
                },
@@ -51,9 +51,9 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
         )
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"source_page" => "2"}, scope: scope)
+               Blocks.update_block(block, %{"source_page" => "2", "title" => ""}, scope: scope)
 
-      assert updated_block.data == %{"node_id" => 2, "source" => "node"}
+      assert updated_block.data == %{"node_id" => 2, "source" => "node", "title" => ""}
     end
 
     test "keeps current_page when it is explicitly selected" do
@@ -67,20 +67,33 @@ defmodule Qblog.Blocks.Types.ChildPagesTest do
         )
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"source_page" => "current_page"}, scope: scope)
+               Blocks.update_block(block, %{"source_page" => "current_page", "title" => ""}, scope: scope)
 
-      assert updated_block.data == %{"source" => "current_page"}
+      assert updated_block.data == %{"source" => "current_page", "title" => ""}
     end
   end
 
   describe "block_to_form_params/3" do
     test "exposes the selected source page for the form" do
-      block = %Block{data: %{"node_id" => 2, "source" => "node"}, type: :child_pages}
+      block =
+        %Block{
+          data: %{"node_id" => 2, "source" => "node", "title" => "Related pages"},
+          type: :child_pages
+        }
 
       assert %{
                "node_id" => "2",
                "source" => "node",
-               "source_page" => "2"
+               "source_page" => "2",
+               "title" => "Related pages"
+             } = Blocks.block_to_form_params(block, %{}, nil)
+    end
+
+    test "uses persisted title values" do
+      block = %Block{data: %{"source" => "current_page", "title" => "Related pages"}, type: :child_pages}
+
+      assert %{
+               "title" => "Related pages"
              } = Blocks.block_to_form_params(block, %{}, nil)
     end
   end

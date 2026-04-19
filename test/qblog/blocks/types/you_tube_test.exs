@@ -15,7 +15,7 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => ""},
+                   data: %{"title" => "", "url" => ""},
                    owner_user_id: actor.id,
                    type: :youtube
                  },
@@ -31,7 +31,7 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => 123},
+                   data: %{"title" => "", "url" => 123},
                    owner_user_id: actor.id,
                    type: :youtube
                  },
@@ -47,7 +47,7 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
                Ash.create(
                  Block,
                  %{
-                   data: %{"url" => "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+                   data: %{"title" => "", "url" => "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
                    owner_user_id: actor.id,
                    type: :youtube
                  },
@@ -71,9 +71,10 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
       embed_url = "https://www.youtube.com/embed/dQw4w9WgXcQ?si=example"
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => embed_url}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => embed_url}, scope: scope)
 
       assert updated_block.data == %{
+               "title" => "",
                "url" => "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?si=example"
              }
     end
@@ -92,9 +93,10 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
         ~s(<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=example&amp;start=30" allowfullscreen></iframe>)
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => iframe}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => iframe}, scope: scope)
 
       assert updated_block.data == %{
+               "title" => "",
                "url" => "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?si=example&start=30"
              }
     end
@@ -112,7 +114,7 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
       assert {:error, _error} =
                Blocks.update_block(
                  block,
-                 %{"url" => "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+                 %{"title" => "", "url" => "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
                  scope: scope
                )
     end
@@ -131,10 +133,10 @@ defmodule Qblog.Blocks.Types.YouTubeTest do
         "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&color=%23ff5500"
 
       assert {:ok, updated_block} =
-               Blocks.update_block(block, %{"url" => soundcloud_embed_url}, scope: scope)
+               Blocks.update_block(block, %{"title" => "", "url" => soundcloud_embed_url}, scope: scope)
 
       assert updated_block.type == :soundcloud
-      assert updated_block.data == %{"url" => soundcloud_embed_url}
+      assert updated_block.data == %{"title" => "", "url" => soundcloud_embed_url}
     end
   end
 

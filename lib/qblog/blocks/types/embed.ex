@@ -15,12 +15,13 @@ defmodule Qblog.Blocks.Types.Embed do
 
   def label, do: "Embed"
 
-  def default_data, do: %{"url" => ""}
+  def default_data, do: %{"title" => "", "url" => ""}
 
+  # TODO: remove default_type?
   def default_type, do: YouTube.type()
 
-  def block_to_form_params(block, params, _page_tree) do
-    %{"url" => params["url"] || block.data |> get_url() || ""}
+  def block_to_form_params(%{data: %{"title" => title, "url" => url}}, _params, _page_tree) do
+    %{"title" => title, "url" => url}
   end
 
   def update_block(block, params, opts) do
@@ -29,10 +30,16 @@ defmodule Qblog.Blocks.Types.Embed do
     with {:ok, type, url} <- detect_embed(block.type, params["url"]) do
       block
       |> Ash.update(
-        %{data: %{"url" => url}, type: type},
+        %{data: %{"title" => params["title"], "url" => url}, type: type},
         opts |> Keyword.put(:action, :update)
       )
     end
+  end
+
+  def validate_title(%{"title" => title}) when is_binary(title), do: :ok
+
+  def validate_title(_data) do
+    {:error, field: :data, message: "block title must be a string"}
   end
 
   defp detect_embed(nil, input), do: input |> detect_embed(default_type())
@@ -80,7 +87,4 @@ defmodule Qblog.Blocks.Types.Embed do
       [current_module | remaining_modules]
     end
   end
-
-  defp get_url(%{"url" => url}), do: url
-  defp get_url(_), do: nil
 end

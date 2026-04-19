@@ -2,28 +2,33 @@ import { EditorSelection, StateField, type EditorState } from "@codemirror/state
 import { EditorView, showTooltip, type Tooltip } from "@codemirror/view";
 
 type MarkdownToggle = {
-  action: "bold" | "italic" | "strikethrough";
-  delimiter: string;
+  action: "bold" | "italic" | "strikethrough" | "wikilink";
+  open: string;
+  close: string;
   title: string;
 };
 
 const markdownToggles: readonly MarkdownToggle[] = [
-  { action: "bold", delimiter: "**", title: "Bold" },
-  { action: "italic", delimiter: "_", title: "Italic" },
-  { action: "strikethrough", delimiter: "~~", title: "Strikethrough" },
+  { action: "bold", open: "**", close: "**", title: "Bold" },
+  { action: "italic", open: "_", close: "_", title: "Italic" },
+  { action: "strikethrough", open: "~~", close: "~~", title: "Strikethrough" },
+  { action: "wikilink", open: "[[", close: "]]", title: "Wikilink" },
 ];
 
-function toggleMarkdownSelection(view: EditorView, delimiter: string): void {
+function toggleMarkdownSelection(
+  view: EditorView,
+  open: string,
+  close: string,
+): void {
   const range = view.state.selection.main;
   if (range.empty) return;
 
   const selectedText = view.state.sliceDoc(range.from, range.to);
-  const alreadyWrapped =
-    selectedText.startsWith(delimiter) && selectedText.endsWith(delimiter);
+  const alreadyWrapped = selectedText.startsWith(open) && selectedText.endsWith(close);
 
   const nextText = alreadyWrapped
-    ? selectedText.slice(delimiter.length, selectedText.length - delimiter.length)
-    : `${delimiter}${selectedText}${delimiter}`;
+    ? selectedText.slice(open.length, selectedText.length - close.length)
+    : `${open}${selectedText}${close}`;
 
   view.dispatch({
     changes: { from: range.from, to: range.to, insert: nextText },
@@ -57,7 +62,7 @@ function markdownSelectionToolbarTooltip(state: EditorState): Tooltip | null {
         button.addEventListener("mousedown", (event) => event.preventDefault());
         button.addEventListener("click", (event) => {
           event.preventDefault();
-          toggleMarkdownSelection(view, toggle.delimiter);
+          toggleMarkdownSelection(view, toggle.open, toggle.close);
         });
         dom.append(button);
       }

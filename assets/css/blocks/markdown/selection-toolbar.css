@@ -26,4 +26,8 @@
   .cm-markdown-selection-toolbar-button[data-markdown-action="strikethrough"]::after {
     @apply hero-strikethrough-micro size-3;
   }
+
+  .cm-markdown-selection-toolbar-button[data-markdown-action="wikilink"]::after {
+    @apply hero-link-micro size-3;
+  }
 }

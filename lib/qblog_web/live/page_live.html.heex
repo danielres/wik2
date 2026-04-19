@@ -7,23 +7,26 @@
         <div>Could not be found</div>
       </div>
     <% else %>
-      <section class="space-y-12">
+      <section class="relative space-y-12">
+        <div
+          :if={@can_manage_page?}
+          class="sticky top-4 z-20 h-0 flex justify-end"
+        >
+          <button
+            class={[
+              "btn btn-sm btn-circle",
+              "opacity-80 hover:opacity-100 transition",
+              @editing? && "btn-primary opacity-100",
+              !@editing? && "btn-neutral hover:btn-primary"
+            ]}
+            phx-click="toggle_edit_mode"
+          >
+            <.icon name="hero-pencil-square-mini" />
+          </button>
+        </div>
+
         <header class="space-y-1">
-          <div class="flex justify-between gap-4">
-            <h1 class="text-2xl font-bold opacity-90">{@node.title}</h1>
-            <button
-              :if={@can_manage_page?}
-              class={[
-                "btn btn-sm btn-circle ",
-                "opacity-80 hover:opacity-100 transition",
-                @editing? && "btn-primary opacity-100",
-                !@editing? && "btn-neutral hover:btn-primary"
-              ]}
-              phx-click="toggle_edit_mode"
-            >
-              <.icon name="hero-pencil-square-mini" />
-            </button>
-          </div>
+          <h1 class="text-2xl font-bold opacity-90 pr-12">{@node.title}</h1>
           <div class="text-sm opacity-60">page author: {@page.author |> to_string()}</div>
           <div class="text-sm opacity-60">
             inserted_at: {@page.inserted_at |> Utils.Time.relative()}

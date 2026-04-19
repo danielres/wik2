@@ -77,7 +77,8 @@
 }
 
 :root {
-  font-family: "Nunito Variable";
+  --font-family: "Nunito Variable";
+  font-family: var(--font-family);
   @apply sm:text-[1.175em];
 }
 
@@ -137,4 +138,8 @@
 }
 .btn {
   @apply hover:brightness-130;
+}
+
+*::selection {
+  background-color: color-mix(in oklch, var(--color-primary) 30%, transparent);
 }

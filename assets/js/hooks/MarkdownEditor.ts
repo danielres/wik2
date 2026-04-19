@@ -4,10 +4,11 @@ import {
   type CompletionContext,
   type CompletionResult,
 } from "@codemirror/autocomplete";
-import { EditorView, minimalSetup } from "codemirror";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import { tags } from "@lezer/highlight";
+import { EditorView, highlightSpecialChars, keymap } from "@codemirror/view";
+import { styleTags, Tag, tags } from "@lezer/highlight";
 
 type MarkdownEditorHook = {
   el: HTMLElement;
@@ -52,6 +53,16 @@ function wikilinkCompletionSource(
   };
 }
 
+const markdownHeaderMark = Tag.define();
+
+const markdownSyntaxHighlighting = {
+  props: [
+    styleTags({
+      HeaderMark: markdownHeaderMark,
+    }),
+  ],
+};
+
 const markdownHighlightStyle = HighlightStyle.define([
   {
     tag: [tags.heading, tags.heading4, tags.heading5, tags.heading6],
@@ -80,9 +91,8 @@ const markdownHighlightStyle = HighlightStyle.define([
     lineHeight: "var(--text-lg--line-height)",
   },
   {
-    tag: [tags.list, tags.processingInstruction, tags.punctuation],
-    color: "currentColor",
-    opacity: "0.9",
+    tag: markdownHeaderMark,
+    opacity: "0.4",
   },
 ]);
 
@@ -94,9 +104,11 @@ export const MarkdownEditor = {
     this.view = new EditorView({
       doc: this.textarea?.value || "",
       extensions: [
-        minimalSetup,
+        highlightSpecialChars(),
+        history(),
+        keymap.of([...defaultKeymap, ...historyKeymap]),
         syntaxHighlighting(markdownHighlightStyle),
-        markdown(),
+        markdown({ extensions: markdownSyntaxHighlighting }),
         autocompletion({
           override: [wikilinkCompletionSource(this.wikilinkCompletions)],
           icons: false,

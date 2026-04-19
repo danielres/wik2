@@ -2,14 +2,15 @@
   min-height: 4rem;
   @apply bg-base-100 rounded-lg p-2;
 
-  .cm-cursor,
-  .cm-dropCursor {
-    border-left-color: currentColor;
-    border-left-width: 2px;
+  .cm-content {
+    font-family: var(--font-family);
+    caret-color: color-mix(
+      in oklch,
+      var(--color-primary-content) 80%,
+      transparent
+    );
   }
-  .cm-selectionCursor {
-    border-left-color: currentColor;
-  }
+
   .cm-tooltip-autocomplete {
     @apply rounded-box bg-base-100 border-secondary/40;
     @apply shadow-lg;
@@ -17,7 +18,8 @@
   }
 
   .cm-tooltip-autocomplete > ul > li {
-    @apply rounded;
+    font-family: var(--font-family);
+    @apply rounded text-xs;
     padding: 0.4rem 0.6rem;
     &[aria-selected="true"] {
       @apply bg-secondary/40;

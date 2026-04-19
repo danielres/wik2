@@ -85,19 +85,38 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
   def build_tree(nodes) do
     nodes
     |> root_nodes()
-    |> Enum.map(&build_subtree(nodes, &1))
+    |> Enum.map(&build_subtree(nodes, &1, :infinity))
   end
 
-  defp build_subtree(nodes, node) do
+  def get_node_tree(nodes, source_node_id, max_depth) when is_integer(max_depth) do
+    case get_node(nodes, source_node_id) do
+      nil -> []
+      node -> [build_subtree(nodes, node, max_depth)]
+    end
+  end
+
+  def get_root_descendant_tree(nodes, max_depth) when is_integer(max_depth) do
+    nodes
+    |> root_nodes()
+    |> Enum.map(&build_subtree(nodes, &1, max_depth))
+  end
+
+  defp build_subtree(nodes, node, depth) do
     %{
       id: node.id,
       page_id: node.page_id,
       slug: node.slug,
       title: node.title,
       children:
-        nodes
-        |> get_child_nodes(node.id)
-        |> Enum.map(&build_subtree(nodes, &1))
+        if depth == 1 do
+          []
+        else
+          child_depth = depth - 1
+
+          nodes
+          |> get_child_nodes(node.id)
+          |> Enum.map(&build_subtree(nodes, &1, child_depth))
+        end
     }
   end
 end

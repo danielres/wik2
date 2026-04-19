@@ -4,6 +4,7 @@ defmodule Qblog.Blocks.Types do
   alias Qblog.Blocks.Types.GoogleMaps
   alias Qblog.Blocks.Types.Markdown
   alias Qblog.Blocks.Types.Members
+  alias Qblog.Blocks.Types.Pages
   alias Qblog.Blocks.Types.SoundCloud
   alias Qblog.Blocks.Types.Text
   alias Qblog.Blocks.Types.YouTube
@@ -14,6 +15,7 @@ defmodule Qblog.Blocks.Types do
     GoogleMaps,
     Markdown,
     Members,
+    Pages,
     SoundCloud,
     Text,
     YouTube

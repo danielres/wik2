@@ -5,6 +5,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   alias Qblog.Blocks.Types.Embed
   alias Qblog.Blocks.Types.Markdown
   alias Qblog.Blocks.Types.Members
+  alias Qblog.Blocks.Types.Pages
   alias Qblog.Wiki
   alias Qblog.Wiki.PageTree.TreeQueries
 
@@ -78,6 +79,11 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
           label={Markdown.label()}
           phx-click="add_block"
           phx-value-type="markdown"
+        />
+        <.button_special_block
+          label={Pages.label()}
+          phx-click="add_block"
+          phx-value-type="pages"
         />
         <.button_special_block
           :if={@child_pages_available?}

@@ -78,6 +78,7 @@
 
 :root {
   font-family: "Nunito Variable";
+  @apply sm:text-[1.175em];
 }
 
 :root {
@@ -100,21 +101,21 @@
 
 :root {
   --color-primary: oklch(60% 0.1 255);
-  --color-primary-content: oklch(20% 0.1 255);
+  --color-primary-content: oklch(98% 0.1 255);
   --color-secondary: oklch(65% 0.07 255);
-  --color-secondary-content: oklch(20% 0.07 255);
+  --color-secondary-content: oklch(98% 0.07 255);
   --color-accent: oklch(65% 0.1 215);
   --color-accent-content: oklch(20% 0.1 215);
   --color-neutral: var(--color-base-300);
   --color-neutral-content: var(--color-base-content);
   --color-info: oklch(65% 0.1 255);
-  --color-info-content: oklch(20% 0.1 255);
+  --color-info-content: oklch(98% 0.1 255);
   --color-success: oklch(65% 0.15 130);
-  --color-success-content: oklch(20% 0.1 130);
+  --color-success-content: oklch(98% 0.1 130);
   --color-warning: oklch(65% 0.1 83);
-  --color-warning-content: oklch(20% 0.1 83);
+  --color-warning-content: oklch(98% 0.1 83);
   --color-error: oklch(65% 0.15 15);
-  --color-error-content: oklch(20% 0.05 15);
+  --color-error-content: oklch(98% 0.05 15);
 }
 
 [data-color-mode="light"] {

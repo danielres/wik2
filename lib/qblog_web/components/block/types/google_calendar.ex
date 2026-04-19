@@ -13,7 +13,6 @@ defmodule QblogWeb.Components.Block.Types.GoogleCalendar do
           class={[
             "aspect-square @sm/block:aspect-video",
             "w-full rounded border-0",
-            "contrast-99",
             "dark:contrast-80",
             "dark:invert dark:hue-rotate-180"
           ]}

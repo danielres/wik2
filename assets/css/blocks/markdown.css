@@ -30,6 +30,7 @@
 
 .BLOCK_MARKDOWN {
   @apply space-y-3;
+  @apply text-base-content/80;
 
   a {
     @apply link;
@@ -45,10 +46,19 @@
 
   h2 {
     @apply text-xl font-bold;
+    @apply text-base-content/100;
+    &:not(:first-child) {
+      @apply mt-12;
+    }
   }
 
   h3 {
     @apply text-lg font-bold;
+    @apply text-base-content/80;
+
+    &:not(:first-child) {
+      @apply mt-8;
+    }
   }
 
   ol {

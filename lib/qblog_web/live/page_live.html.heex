@@ -7,17 +7,17 @@
         <div>Could not be found</div>
       </div>
     <% else %>
-      <section class="space-y-8">
+      <section class="space-y-12">
         <header class="space-y-1">
           <div class="flex justify-between gap-4">
-            <h1 class="text-2xl">{@node.title}</h1>
+            <h1 class="text-2xl font-bold opacity-90">{@node.title}</h1>
             <button
               :if={@can_manage_page?}
               class={[
-                "btn btn-sm btn-square btn-xs",
-                "opacity-80 hover:opacity-100",
-                @editing? && "btn-primary",
-                !@editing? && "btn-ghost"
+                "btn btn-sm btn-circle ",
+                "opacity-80 hover:opacity-100 transition",
+                @editing? && "btn-primary opacity-100",
+                !@editing? && "btn-neutral hover:btn-primary"
               ]}
               phx-click="toggle_edit_mode"
             >
@@ -31,7 +31,7 @@
         </header>
 
         <div class={[
-          "grid gap-6 sm:grid-cols-2"
+          "grid gap-y-12 gap-x-8 sm:grid-cols-2"
         ]}>
           <div
             :for={placement <- @page.block_placements}
@@ -134,13 +134,7 @@
         <QblogWeb.Components.Block.Types.ChildPages.render
           :if={!@editing?}
           block={%{data: %{"source" => "current_page"}, type: :child_pages}}
-          class={[
-            "rounded-box p-4 text-sm",
-            "border-1 border-base-200/50",
-            "shadow",
-            "bg-white",
-            "dark:bg-base-300/20"
-          ]}
+          class={[]}
           node={@node}
           path={@path}
           scope={@current_scope}

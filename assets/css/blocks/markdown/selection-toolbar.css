@@ -30,4 +30,38 @@
   .cm-markdown-selection-toolbar-button[data-markdown-action="wikilink"]::after {
     @apply hero-link-micro size-3;
   }
+
+  .cm-markdown-selection-toolbar-button[data-markdown-action="external-link"]::after {
+    @apply hero-arrow-top-right-on-square-micro size-3;
+  }
+
+  .cm-markdown-external-link-form {
+    @apply rounded-md border-none bg-base-300 shadow;
+    @apply flex items-center gap-1 px-1 py-1;
+  }
+
+  .cm-markdown-external-link-input {
+    @apply input input-xs bg-base-100/60;
+    @apply w-48;
+  }
+
+  .cm-markdown-external-link-submit,
+  .cm-markdown-external-link-cancel {
+    @apply btn btn-ghost btn-xs btn-square;
+    @apply opacity-70 hover:opacity-100 transition-opacity;
+    @apply hover:bg-primary/50;
+  }
+
+  .cm-markdown-external-link-submit::after,
+  .cm-markdown-external-link-cancel::after {
+    content: "";
+  }
+
+  .cm-markdown-external-link-submit::after {
+    @apply hero-check-micro size-3;
+  }
+
+  .cm-markdown-external-link-cancel::after {
+    @apply hero-x-mark-micro size-3;
+  }
 }

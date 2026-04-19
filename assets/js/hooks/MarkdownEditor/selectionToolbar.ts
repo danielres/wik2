@@ -2,9 +2,10 @@ import {
   EditorSelection,
   StateEffect,
   StateField,
+  type Extension,
   type EditorState,
 } from "@codemirror/state";
-import { EditorView, showTooltip, type Tooltip } from "@codemirror/view";
+import { EditorView, keymap, showTooltip, type Tooltip } from "@codemirror/view";
 
 type MarkdownToggle = {
   action: "bold" | "italic" | "strikethrough" | "wikilink" | "external-link";
@@ -33,6 +34,11 @@ const markdownToggles: readonly MarkdownToggle[] = [
 
 const openExternalLinkForm = StateEffect.define<ExternalLinkRange>();
 const closeExternalLinkForm = StateEffect.define();
+
+function closeExternalLinkTooltip(view: EditorView): void {
+  view.dispatch({ effects: closeExternalLinkForm.of(null) });
+  view.focus();
+}
 
 function defaultToolbarState(state: EditorState): ToolbarState {
   const range = state.selection.main;
@@ -80,8 +86,7 @@ function insertExternalLink(
   const trimmedUrl = url.trim();
 
   if (trimmedUrl == "") {
-    view.dispatch({ effects: closeExternalLinkForm.of(null) });
-    view.focus();
+    closeExternalLinkTooltip(view);
     return;
   }
 
@@ -128,17 +133,18 @@ function externalLinkTooltip(range: ExternalLinkRange): Tooltip {
 
       cancelButton.addEventListener("click", (event) => {
         event.preventDefault();
-        view.dispatch({ effects: closeExternalLinkForm.of(null) });
-        view.focus();
+        closeExternalLinkTooltip(view);
       });
 
-      input.addEventListener("keydown", (event) => {
+      const closeOnEscape = (event: KeyboardEvent) => {
         if (event.key != "Escape") return;
 
         event.preventDefault();
-        view.dispatch({ effects: closeExternalLinkForm.of(null) });
-        view.focus();
-      });
+        event.stopPropagation();
+        closeExternalLinkTooltip(view);
+      };
+
+      form.addEventListener("keydown", closeOnEscape, { capture: true });
 
       form.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -150,7 +156,11 @@ function externalLinkTooltip(range: ExternalLinkRange): Tooltip {
       return {
         dom: form,
         mount() {
+          window.addEventListener("keydown", closeOnEscape, { capture: true });
           input.focus();
+        },
+        destroy() {
+          window.removeEventListener("keydown", closeOnEscape, { capture: true });
         },
       };
     },
@@ -205,12 +215,13 @@ function tooltipFor(toolbarState: ToolbarState): Tooltip | null {
 }
 
 export function markdownSelectionToolbar() {
-  return StateField.define<ToolbarState>({
+  const toolbarState = StateField.define<ToolbarState>({
     create(state) {
       return defaultToolbarState(state);
     },
     update(toolbarState, transaction) {
       let nextToolbarState = toolbarState;
+      let forceClosed = false;
 
       if (nextToolbarState?.mode == "external-link" && transaction.docChanged) {
         const from = transaction.changes.mapPos(nextToolbarState.range.from);
@@ -225,9 +236,12 @@ export function markdownSelectionToolbar() {
         }
 
         if (effect.is(closeExternalLinkForm)) {
-          nextToolbarState = defaultToolbarState(transaction.state);
+          forceClosed = true;
+          nextToolbarState = null;
         }
       }
+
+      if (forceClosed) return null;
 
       if (nextToolbarState?.mode == "external-link") return nextToolbarState;
 
@@ -237,4 +251,20 @@ export function markdownSelectionToolbar() {
       return showTooltip.from(field, tooltipFor);
     },
   });
+
+  return [
+    toolbarState,
+    keymap.of([
+      {
+        key: "Escape",
+        run(view) {
+          if (view.state.field(toolbarState)?.mode != "external-link") return false;
+
+          view.dispatch({ effects: closeExternalLinkForm.of(null) });
+          view.focus();
+          return true;
+        },
+      },
+    ]),
+  ] satisfies Extension;
 }

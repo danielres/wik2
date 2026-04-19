@@ -38,7 +38,22 @@
   @apply text-base-content/80;
 
   a {
-    @apply link;
+    @apply text-primary underline;
+    @apply brightness-80 hover:brightness-50;
+    @apply dark:brightness-120 dark:hover:brightness-140;
+    @apply decoration-primary/40 decoration-2 underline-offset-3;
+    @apply hover:decoration-solid hover:decoration-primary/60;
+    @apply transition;
+  }
+
+  a[href^="http"] {
+    @apply inline-flex items-center;
+    &::after {
+      content: "";
+      @apply hero-arrow-top-right-on-square-mini;
+      @apply size-3.5;
+      @apply inline-block mx-0.5;
+    }
   }
 
   code {

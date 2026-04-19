@@ -29,10 +29,15 @@ defmodule QblogWeb.Components.Block.Types.Members do
       show_filters={false}
       theme={QblogWeb.Cinder.Themes.Dense}
       class={[
-        "border-2 border-base-200 rounded-box",
+        "border-1 border-base-200/50 rounded-box",
+        "shadow",
         "@sm/block:[&_th]:px-4 @sm/block:[&_th]:py-2",
         "@sm/block:[&_td]:px-4 @sm/block:[&_td]:py-2",
-        "[&_tr]:hover:bg-base-200/30"
+        "[&_tr]:hover:bg-base-100",
+        "[&_th:first-child]:rounded-tl-md",
+        "[&_th:last-child]:rounded-tr-md",
+        "[&_th]:bg-base-200",
+        "[&_table]:bg-white/80 dark:[&_table]:bg-base-300/20"
       ]}
       }
     >
@@ -50,7 +55,7 @@ defmodule QblogWeb.Components.Block.Types.Members do
       </:col>
 
       <:col :let={membership} field="type" label="Role" sort>
-        <span class={["badge badge-sm px-2 bg-base-300"]}>
+        <span class={["badge badge-sm px-2 bg-base-200"]}>
           {membership.type |> Atom.to_string() |> String.capitalize()}
         </span>
       </:col>

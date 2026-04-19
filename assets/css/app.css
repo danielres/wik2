@@ -118,10 +118,16 @@
 }
 
 [data-color-mode="light"] {
-  --h: 220;
-  --color-base-100: oklch(93% 0 var(--h));
-  --color-base-200: oklch(82% 0 var(--h));
-  --color-base-300: oklch(76% 0 var(--h));
+  body,
+  html {
+    /* background: #eee; */
+    min-height: 100vh;
+  }
+  --h: 250;
+  --c: 0.012;
+  --color-base-100: oklch(98% 0 var(--h));
+  --color-base-200: oklch(90% var(--c) var(--h));
+  --color-base-300: oklch(85% var(--c) var(--h));
 }
 
 .btn,

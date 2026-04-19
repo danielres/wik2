@@ -20,7 +20,7 @@ defmodule QblogWeb.Components.User do
     ~H"""
     <div class="avatar avatar-placeholder">
       <div class={[
-        "bg-neutral text-neutral-content rounded-full text-xs",
+        "bg-base-300 rounded-full text-xs",
         @size_class
       ]}>
         <%= if @link? and @tenant != nil  do %>

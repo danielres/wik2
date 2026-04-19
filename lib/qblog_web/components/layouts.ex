@@ -122,8 +122,11 @@ defmodule QblogWeb.Layouts do
 
         <div
           class={[
+            "min-w-36",
             "dropdown dropdown-end mt-1",
-            "bg-base-200 min-w-36",
+            "bg-base-200/80 backdrop-blur",
+            "shadow",
+            "border border-base-200",
             "rounded-box",
             "p-2"
           ]}

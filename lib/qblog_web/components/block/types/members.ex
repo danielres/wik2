@@ -8,6 +8,8 @@ defmodule QblogWeb.Components.Block.Types.Members do
 
   attr :block, :map, required: true
   attr :scope, :map, default: nil
+  attr :event_transfer_ownership_start, :string, default: nil
+  attr :actions?, :boolean, default: false
 
   def render(assigns) do
     assigns =
@@ -44,7 +46,7 @@ defmodule QblogWeb.Components.Block.Types.Members do
       <:col :let={membership} label="" class="w-0">
         <Components.User.avatar
           link?
-          size="sm"
+          size="md"
           tenant={@scope.tenant}
           user={membership.user}
         />
@@ -55,13 +57,32 @@ defmodule QblogWeb.Components.Block.Types.Members do
       </:col>
 
       <:col :let={membership} field="type" label="Role" sort>
-        <span class={["badge badge-sm px-2 bg-base-200"]}>
-          {membership.type |> Atom.to_string() |> String.capitalize()}
+        <span class={["badge badge-sm bg-base-200"]}>
+          <span>{membership.type |> Atom.to_string() |> String.capitalize()}</span>
+
+          <button
+            :if={@actions? and Ash.can?({membership, :transfer_ownership}, @scope)}
+            phx-click={assigns[:event_transfer_ownership_start]}
+            phx-value-membership_id={membership.id}
+            class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+          >
+            <.icon name="hero-cog-micro" class="" />
+          </button>
         </span>
       </:col>
 
       <:col :let={membership} field="inserted_at" label="Joined" sort>
-        {membership.inserted_at |> Utils.Time.relative()}
+        <span
+          class={[
+            "badge badge-sm px-2 bg-base-200",
+            "whitespace-nowrap",
+            "tooltip tooltip-primary tooltip-left tooltip-delayed",
+            "cursor-default"
+          ]}
+          data-tip={"Member since #{Utils.Time.precise(membership.inserted_at)}"}
+        >
+          {Utils.Time.relative(membership.inserted_at)}
+        </span>
       </:col>
     </Cinder.collection>
     """

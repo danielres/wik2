@@ -5,7 +5,7 @@ defmodule QblogWeb.Components.Block.Types.ChildPages do
   alias QblogWeb.Components.Block.Types.ChildPages.RenderState
 
   attr :block, :map, required: true
-  attr :class, :string, default: ""
+  attr :class, :any, default: ""
   attr :node, :map, default: nil
   attr :path, :string, default: nil
   attr :scope, :map, default: nil

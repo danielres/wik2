@@ -76,6 +76,13 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
     |> render_visible_wikilinks(scope)
     |> Earmark.as_html!(escape: true, compact_output: true)
     |> HtmlSanitizeEx.markdown_html()
+    |> open_external_links_in_new_tab()
+  end
+
+  defp open_external_links_in_new_tab(html) do
+    Regex.replace(~r/<a href="https?:\/\/[^"]*"/, html, fn link ->
+      link <> ~s( target="_blank" rel="noopener noreferrer")
+    end)
   end
 
   defp render_visible_wikilinks(markdown, %{tenant: %{name: group_name}})

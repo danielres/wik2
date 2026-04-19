@@ -44,6 +44,44 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
            |> Enum.any?()
   end
 
+  test "render opens external links in a new tab" do
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[Phoenix](https://phoenixframework.org)"}},
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(
+             ~s(a[href="https://phoenixframework.org"][target="_blank"][rel="noopener noreferrer"])
+           )
+           |> Enum.any?()
+  end
+
+  test "render does not open internal wiki links in a new tab" do
+    page_tree = page_tree_fixture()
+    scope = %Scope{tenant: %{name: "cool-stuff"}}
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[node:1]]"}},
+        page_tree: page_tree,
+        scope: scope
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/recipes"]))
+           |> Enum.any?()
+
+    refute document
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/recipes"][target="_blank"]))
+           |> Enum.any?()
+  end
+
   test "render sanitizes unsafe html" do
     html =
       render_component(&Markdown.render/1, %{

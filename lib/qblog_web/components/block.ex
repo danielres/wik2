@@ -127,7 +127,10 @@ defmodule QblogWeb.Components.Block do
       id={"edit-block-form-#{@block.id}"}
       phx-submit="edit_block_submit"
       phx-value-block_id={@block.id}
-      class="bg-base-200 p-4 rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-secondary"
+      class={[
+        "rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-secondary",
+        @block.type != :markdown && "bg-base-200 p-4"
+      ]}
     >
       <.input
         :if={@supports_title?}
@@ -146,9 +149,12 @@ defmodule QblogWeb.Components.Block do
         scope={@scope}
       />
 
-      <div class="flex justify-between gap-2">
+      <div class={[
+        "flex justify-between gap-2",
+        @block.type == :markdown && "px-4 pb-4"
+      ]}>
         <.button
-          class="btn btn-ghost btn-sm"
+          class="btn btn-soft btn-sm"
           phx-click="edit_block_cancel"
           phx-value-block_id={@block.id}
           type="button"

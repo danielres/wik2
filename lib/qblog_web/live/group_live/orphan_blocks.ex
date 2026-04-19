@@ -20,7 +20,7 @@ defmodule QblogWeb.GroupLive.OrphanBlocks do
     >
       <div :if={@orphan_block_selected} class="space-y-4">
         <div class="text-sm opacity-60">{@orphan_block_selected.id}</div>
-        <QblogWeb.Components.Block.preview block={@orphan_block_selected} />
+        <QblogWeb.Components.Block.preview block={@orphan_block_selected} scope={@scope} />
       </div>
     </Modal.render>
 

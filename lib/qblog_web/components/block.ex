@@ -18,11 +18,12 @@ defmodule QblogWeb.Components.Block do
   # Regular components =========================================================
 
   attr :block, :map, required: true
+  attr :scope, :map, default: nil
 
   def preview(assigns) do
     ~H"""
     <div class="rounded bg-base-200/50 p-4">
-      <.dispatch_render block={@block} page_tree={%PageTree{nodes: []}} />
+      <.dispatch_render block={@block} page_tree={%PageTree{nodes: []}} scope={@scope} />
     </div>
     """
   end

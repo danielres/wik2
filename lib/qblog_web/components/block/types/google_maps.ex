@@ -7,18 +7,20 @@ defmodule QblogWeb.Components.Block.Types.GoogleMaps do
 
   def render(assigns) do
     ~H"""
-    <%= if @block.data["url"] do %>
-      <iframe
-        allowfullscreen
-        class="aspect-video w-full rounded border-0"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        src={@block.data["url"]}
-      >
-      </iframe>
-    <% else %>
-      <div class="opacity-60">Empty Google Maps block</div>
-    <% end %>
+    <Embed.wrapper>
+      <%= if @block.data["url"] do %>
+        <iframe
+          allowfullscreen
+          class="aspect-video w-full"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          src={@block.data["url"]}
+        >
+        </iframe>
+      <% else %>
+        <div class="opacity-60">Empty Google Maps block</div>
+      <% end %>
+    </Embed.wrapper>
     """
   end
 

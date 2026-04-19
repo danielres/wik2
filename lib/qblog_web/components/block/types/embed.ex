@@ -27,4 +27,17 @@ defmodule QblogWeb.Components.Block.Types.Embed do
     />
     """
   end
+
+  def wrapper(assigns) do
+    # "border-2 border-base-200 rounded-box"
+    ~H"""
+    <div class={[
+      "ring-1 ring-base-200/50",
+      "rounded-box [&>*]:rounded-lg",
+      "shadow"
+    ]}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
 end

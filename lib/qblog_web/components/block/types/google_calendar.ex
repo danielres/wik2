@@ -7,20 +7,23 @@ defmodule QblogWeb.Components.Block.Types.GoogleCalendar do
 
   def render(assigns) do
     ~H"""
-    <%= if @block.data["url"] do %>
-      <iframe
-        class={[
-          "aspect-square @sm/block:aspect-video",
-          "w-full rounded-lg border-0",
-          "contrast-80",
-          "dark:invert dark:hue-rotate-180"
-        ]}
-        src={@block.data["url"]}
-      >
-      </iframe>
-    <% else %>
-      <div class="opacity-60">Empty Google Calendar block</div>
-    <% end %>
+    <Embed.wrapper>
+      <%= if @block.data["url"] do %>
+        <iframe
+          class={[
+            "aspect-square @sm/block:aspect-video",
+            "w-full rounded border-0",
+            "contrast-99",
+            "dark:contrast-80",
+            "dark:invert dark:hue-rotate-180"
+          ]}
+          src={@block.data["url"]}
+        >
+        </iframe>
+      <% else %>
+        <div class="opacity-60">Empty Google Calendar block</div>
+      <% end %>
+    </Embed.wrapper>
     """
   end
 

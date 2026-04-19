@@ -7,6 +7,7 @@ defmodule QblogWeb.Components.Block.Types.SoundCloud do
 
   def render(assigns) do
     ~H"""
+    <Embed.wrapper>
     <%= if @block.data["url"] do %>
       <iframe
         allow="autoplay"
@@ -18,6 +19,7 @@ defmodule QblogWeb.Components.Block.Types.SoundCloud do
     <% else %>
       <div class="opacity-60">Empty SoundCloud block</div>
     <% end %>
+    </Embed.wrapper>
     """
   end
 

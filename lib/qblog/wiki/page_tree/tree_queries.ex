@@ -111,7 +111,11 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
         if depth == 1 do
           []
         else
-          child_depth = depth - 1
+          child_depth =
+            case depth do
+              :infinity -> :infinity
+              depth -> depth - 1
+            end
 
           nodes
           |> get_child_nodes(node.id)

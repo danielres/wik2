@@ -33,7 +33,9 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
         id: "special-blocks",
         event_cancel: "add_block_modal_cancel",
         event_open: "add_block_modal_open",
+        event_position_select: "add_block_position_select",
         open?: true,
+        position: "bottom",
         scope: scope
       })
 
@@ -50,6 +52,11 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     assert html =~ ~s(phx-value-type="pages")
     assert html =~ "Child pages"
     assert html =~ ~s(phx-value-type="child_pages")
+    assert html =~ "Top of page"
+    assert html =~ "Bottom of page"
+    assert html =~ ~s(phx-click="add_block_position_select")
+    assert html =~ ~s(phx-value-position="top")
+    assert html =~ ~s(phx-value-position="bottom")
   end
 
   test "hides the child pages option when no source pages are available" do
@@ -74,7 +81,9 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
         id: "special-blocks",
         event_cancel: "add_block_modal_cancel",
         event_open: "add_block_modal_open",
+        event_position_select: "add_block_position_select",
         open?: true,
+        position: "bottom",
         scope: scope
       })
 
@@ -89,6 +98,8 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     assert html =~ ~s(phx-value-type="markdown")
     assert html =~ "Pages"
     assert html =~ ~s(phx-value-type="pages")
+    assert html =~ "Top of page"
+    assert html =~ "Bottom of page"
     refute html =~ "Child pages"
   end
 

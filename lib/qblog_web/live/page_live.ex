@@ -46,7 +46,7 @@ defmodule QblogWeb.PageLive do
         )
         |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
         |> assign(linked_copy_form: nil, linked_copy_error: nil)
-        |> assign(add_block_modal_open?: false)
+        |> assign(add_block_modal_open?: false, add_block_position: "bottom")
         |> assign(block_info_placement: nil)
         |> PageState.sync_block_subscriptions(page)
         |> Locks.assign_locks()
@@ -130,13 +130,27 @@ defmodule QblogWeb.PageLive do
   end
 
   @impl true
+  def handle_event("add_block_position_select", %{"position" => "top"}, socket) do
+    {:noreply, socket |> assign(add_block_position: "top")}
+  end
+
+  @impl true
+  def handle_event("add_block_position_select", %{"position" => "bottom"}, socket) do
+    {:noreply, socket |> assign(add_block_position: "bottom")}
+  end
+
+  @impl true
   def handle_event("linked_copy_cancel", _params, socket) do
     {:noreply, socket |> assign(linked_copy_form: nil, linked_copy_error: nil)}
   end
 
   @impl true
-  def handle_event("linked_copy_submit", %{"linked_copy" => %{"block_id" => block_id}}, socket) do
-    {:noreply, socket |> BlockActions.add_linked_copy(block_id)}
+  def handle_event(
+        "linked_copy_submit",
+        %{"linked_copy" => %{"block_id" => block_id, "position" => position}},
+        socket
+      ) do
+    {:noreply, socket |> BlockActions.add_linked_copy(block_id, position)}
   end
 
   @impl true

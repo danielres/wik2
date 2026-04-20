@@ -117,6 +117,47 @@ defmodule Qblog.BlocksTest do
       assert placement.group_id == group.id
       assert placement.width == "full"
     end
+
+    test "can place the new block before existing placements" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      assert {:ok, block1} =
+               Blocks.create_group_owned_block_on_page(
+                 group,
+                 page,
+                 %{data: %{"text" => "First"}, type: :text},
+                 scope: scope
+               )
+
+      assert {:ok, block2} =
+               Blocks.create_group_owned_block_on_page(
+                 group,
+                 page,
+                 %{data: %{"text" => "Second"}, type: :text},
+                 position: :top,
+                 scope: scope
+               )
+
+      placement1 =
+        BlockPlacement
+        |> Ash.Query.filter(
+          attachable_id == ^page.id and attachable_type == "page" and block_id == ^block1.id
+        )
+        |> Ash.read_one!(scope: scope)
+
+      placement2 =
+        BlockPlacement
+        |> Ash.Query.filter(
+          attachable_id == ^page.id and attachable_type == "page" and block_id == ^block2.id
+        )
+        |> Ash.read_one!(scope: scope)
+
+      assert placement2.order_key < placement1.order_key
+    end
   end
 
   describe "place_block_on_page/3" do
@@ -156,6 +197,25 @@ defmodule Qblog.BlocksTest do
       assert {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
 
       assert placement1.order_key < placement2.order_key
+    end
+
+    test "can place a block before existing placements" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block1} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "First"}, type: :text}, scope: scope)
+
+      {:ok, block2} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "Second"}, type: :text}, scope: scope)
+
+      assert {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
+      assert {:ok, placement2} = Blocks.place_block_on_page(block2, page, :top, scope: scope)
+
+      assert placement2.order_key < placement1.order_key
     end
   end
 

@@ -130,50 +130,56 @@ defmodule QblogWeb.Components.Block do
       |> assign(:supports_title?, Blocks.Types.supports_title?(assigns.placement.block.type))
 
     ~H"""
-    <Phoenix.Component.form
-      for={@form}
-      id={"edit-block-form-#{@block.id}"}
-      phx-submit="edit_block_submit"
-      phx-value-block_id={@block.id}
-      class={[
-        "rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-secondary",
-        @block.type != :markdown && "bg-base-200 p-4"
-      ]}
+    <div
+      class={["scroll-mt-20"]}
+      id={"active-block-editor-#{@block.id}"}
+      phx-mounted={JS.dispatch("qblog:scroll-into-view")}
     >
-      <.input
-        :if={@supports_title?}
-        field={@form[:title]}
-        id={"edit-block-title-#{@block.id}"}
-        label="Title (optional)"
-        type="text"
-      />
+      <Phoenix.Component.form
+        for={@form}
+        id={"edit-block-form-#{@block.id}"}
+        phx-submit="edit_block_submit"
+        phx-value-block_id={@block.id}
+        class={[
+          "rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-secondary",
+          @block.type != :markdown && "bg-base-200 p-4"
+        ]}
+      >
+        <.input
+          :if={@supports_title?}
+          field={@form[:title]}
+          id={"edit-block-title-#{@block.id}"}
+          label="Title (optional)"
+          type="text"
+        />
 
-      <.dispatch_form_fields
-        block={@block}
-        form={@form}
-        node={@node}
-        page_tree={@page_tree}
-        path={@path}
-        scope={@scope}
-      />
+        <.dispatch_form_fields
+          block={@block}
+          form={@form}
+          node={@node}
+          page_tree={@page_tree}
+          path={@path}
+          scope={@scope}
+        />
 
-      <div class={[
-        !@actions? && "hidden",
-        "flex justify-between gap-2",
-        @block.type == :markdown && "px-4 pb-4"
-      ]}>
-        <.button
-          class="btn btn-soft btn-sm"
-          phx-click="edit_block_cancel"
-          phx-value-block_id={@block.id}
-          type="button"
-        >
-          Cancel
-        </.button>
+        <div class={[
+          !@actions? && "hidden",
+          "flex justify-between gap-2",
+          @block.type == :markdown && "px-4 pb-4"
+        ]}>
+          <.button
+            class="btn btn-soft btn-sm"
+            phx-click="edit_block_cancel"
+            phx-value-block_id={@block.id}
+            type="button"
+          >
+            Cancel
+          </.button>
 
-        <.button class="btn btn-primary btn-sm" type="submit">Save</.button>
-      </div>
-    </Phoenix.Component.form>
+          <.button class="btn btn-primary btn-sm" type="submit">Save</.button>
+        </div>
+      </Phoenix.Component.form>
+    </div>
     """
   end
 

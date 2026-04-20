@@ -51,7 +51,9 @@
               ]}
               event_cancel="add_block_modal_cancel"
               event_open="add_block_modal_open"
+              event_position_select="add_block_position_select"
               open?={@add_block_modal_open?}
+              position={@add_block_position}
               scope={@current_scope}
             />
           </div>
@@ -136,6 +138,11 @@
           class="bg-base-200 rounded-box p-4 space-y-3"
         >
           <.input field={@linked_copy_form[:block_id]} label="Block ID" phx-mounted={JS.focus()} />
+          <input
+            name={@linked_copy_form[:position].name}
+            type="hidden"
+            value={@linked_copy_form[:position].value}
+          />
 
           <div :if={@linked_copy_error} class="text-error text-sm">{@linked_copy_error}</div>
 

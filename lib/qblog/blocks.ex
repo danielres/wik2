@@ -31,13 +31,18 @@ defmodule Qblog.Blocks do
   defdelegate update_block(block, params, opts), to: Types
 
   def create_group_owned_block_on_page(%{} = group, %Page{} = page, block_attrs, opts) do
-    transaction_opts = opts |> Keyword.put(:return_notifications?, true)
+    position = Keyword.get(opts, :position, :bottom)
+
+    transaction_opts =
+      opts
+      |> Keyword.delete(:position)
+      |> Keyword.put(:return_notifications?, true)
 
     case Repo.transaction(fn ->
            with {:ok, block, block_notifications} <-
                   create_group_owned_block(group, block_attrs, transaction_opts),
                 {:ok, _placement, placement_notifications} <-
-                  place_block_on_page(block, page, transaction_opts) do
+                  place_block_on_page(block, page, position, transaction_opts) do
              {block, block_notifications ++ placement_notifications}
            else
              {:error, error} -> Repo.rollback(error)
@@ -53,13 +58,18 @@ defmodule Qblog.Blocks do
   end
 
   def create_user_owned_block_on_page(%Page{} = page, block_attrs, opts) do
-    transaction_opts = opts |> Keyword.put(:return_notifications?, true)
+    position = Keyword.get(opts, :position, :bottom)
+
+    transaction_opts =
+      opts
+      |> Keyword.delete(:position)
+      |> Keyword.put(:return_notifications?, true)
 
     case Repo.transaction(fn ->
            with {:ok, block, block_notifications} <-
                   create_user_owned_block(block_attrs, transaction_opts),
                 {:ok, _placement, placement_notifications} <-
-                  place_block_on_page(block, page, transaction_opts) do
+                  place_block_on_page(block, page, position, transaction_opts) do
              {block, block_notifications ++ placement_notifications}
            else
              {:error, error} -> Repo.rollback(error)
@@ -75,11 +85,15 @@ defmodule Qblog.Blocks do
   end
 
   def place_block_on_page(%{id: block_id}, %Page{} = page, opts) do
+    place_block_on_page(%{id: block_id}, page, :bottom, opts)
+  end
+
+  def place_block_on_page(%{id: block_id}, %Page{} = page, position, opts) do
     scope = opts |> Keyword.fetch!(:scope)
-    ash_opts = opts |> Keyword.put(:action, :create)
+    ash_opts = opts |> Keyword.delete(:position) |> Keyword.put(:action, :create)
     attachable_attrs = %{attachable_id: page.id, attachable_type: "page"}
 
-    with {:ok, order_key} <- scope |> get_next_order_key(attachable_attrs) do
+    with {:ok, order_key} <- get_placement_order_key(position, scope, attachable_attrs) do
       attachable_attrs
       |> Map.put(:block_id, block_id)
       |> Map.put(:order_key, order_key)
@@ -88,6 +102,8 @@ defmodule Qblog.Blocks do
   end
 
   def place_group_owned_block_on_page(%{id: group_id}, block_id, %Page{} = page, opts) do
+    position = Keyword.get(opts, :position, :bottom)
+    opts = Keyword.delete(opts, :position)
     scope = Keyword.fetch!(opts, :scope)
 
     Block
@@ -95,12 +111,12 @@ defmodule Qblog.Blocks do
     |> Ash.read_one(scope: scope)
     |> case do
       {:ok, nil} -> {:error, :not_found}
-      {:ok, block} -> place_block_on_page_once(block, page, opts)
+      {:ok, block} -> place_block_on_page_once(block, page, position, opts)
       {:error, error} -> {:error, error}
     end
   end
 
-  defp place_block_on_page_once(%{id: block_id} = block, %Page{} = page, opts) do
+  defp place_block_on_page_once(%{id: block_id} = block, %Page{} = page, position, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
     BlockPlacement
@@ -110,7 +126,7 @@ defmodule Qblog.Blocks do
     |> Ash.exists?(scope: scope)
     |> case do
       true -> {:error, :already_placed}
-      false -> place_block_on_page(block, page, opts)
+      false -> place_block_on_page(block, page, position, opts)
     end
   end
 
@@ -245,11 +261,35 @@ defmodule Qblog.Blocks do
     |> then(&Ash.create(Block, &1, ash_opts))
   end
 
+  defp get_placement_order_key(:top, scope, attachable_attrs) do
+    scope |> get_prev_order_key(attachable_attrs)
+  end
+
+  defp get_placement_order_key(:bottom, scope, attachable_attrs) do
+    scope |> get_next_order_key(attachable_attrs)
+  end
+
+  defp get_prev_order_key(scope, attachable_attrs) do
+    case get_first_placement(attachable_attrs, scope) do
+      nil -> {:ok, LexSortKey.first()}
+      placement -> LexSortKey.key_before(placement.order_key)
+    end
+  end
+
   defp get_next_order_key(scope, attachable_attrs) do
     case get_last_placement(attachable_attrs, scope) do
       nil -> {:ok, LexSortKey.first()}
       placement -> LexSortKey.key_after(placement.order_key)
     end
+  end
+
+  defp get_first_placement(%{attachable_id: id, attachable_type: type}, scope) do
+    BlockPlacement
+    |> Ash.Query.filter(attachable_id == ^id and attachable_type == ^type)
+    |> Query.sort(order_key: :asc)
+    |> Query.limit(1)
+    |> Ash.read!(scope: scope)
+    |> List.first()
   end
 
   defp get_last_placement(%{attachable_id: id, attachable_type: type}, scope) do

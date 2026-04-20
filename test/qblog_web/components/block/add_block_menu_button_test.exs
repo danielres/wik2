@@ -31,9 +31,14 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
       render_component(&AddBlockMenuButton.render/1, %{
         class: "btn",
         id: "special-blocks",
+        event_cancel: "add_block_modal_cancel",
+        event_open: "add_block_modal_open",
+        open?: true,
         scope: scope
       })
 
+    assert html =~ ~s(data-testid="special-blocks")
+    assert html =~ ~s(phx-click="add_block_modal_open")
     assert html =~ "Embed"
     assert html =~ "Linked copy"
     assert html =~ ~s(phx-value-type="linked_copy")
@@ -67,9 +72,14 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
       render_component(&AddBlockMenuButton.render/1, %{
         class: "btn",
         id: "special-blocks",
+        event_cancel: "add_block_modal_cancel",
+        event_open: "add_block_modal_open",
+        open?: true,
         scope: scope
       })
 
+    assert html =~ ~s(data-testid="special-blocks")
+    assert html =~ ~s(phx-click="add_block_modal_open")
     assert html =~ "Embed"
     assert html =~ "Linked copy"
     assert html =~ ~s(phx-value-type="linked_copy")

@@ -9,6 +9,7 @@ defmodule QblogWeb.PageLive.BlockActions do
   alias QblogWeb.PageLive.PageState
 
   def add(socket, type_param) do
+    socket = socket |> assign(add_block_modal_open?: false)
     scope = socket.assigns.current_scope
     group = scope.tenant
     page = socket.assigns.page

@@ -8,8 +8,11 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   alias Qblog.Blocks.Types.Pages
   alias Qblog.Wiki
   alias Qblog.Wiki.PageTree.TreeQueries
+  alias QblogWeb.Components.Modal
 
   attr :class, :any, default: ""
+  attr :event_cancel, :string, required: true
+  attr :event_open, :string, required: true
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
   attr :scope, :map, required: true
@@ -23,16 +26,16 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
       )
 
     ~H"""
-    <.popover_special_blocks
+    <.modal_special_blocks
       child_pages_available?={@child_pages_available?}
+      event_cancel={@event_cancel}
       id={@id}
       open?={@open?}
     />
 
     <button
       class={@class}
-      popovertarget={@id}
-      style={ "anchor-name:--anchor-#{@id}" }
+      phx-click={@event_open}
     >
       <.icon name="hero-plus-mini" />
     </button>
@@ -40,29 +43,25 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   end
 
   attr :child_pages_available?, :boolean, default: false
+  attr :event_cancel, :string, required: true
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
 
-  defp popover_special_blocks(assigns) do
+  defp modal_special_blocks(assigns) do
     ~H"""
-    <div
-      popover
-      id={@id}
-      style={ "position-anchor:--anchor-#{@id}" }
-      class={[
-        "dropdown dropdown-down dropdown-end",
-        @open? and "dropdown-open",
-        "bg-base-300 rounded",
-        "p-2",
-        "border-1 border-base-300",
-        "mt-1"
-      ]}
+    <Modal.render
+      cancel={@event_cancel}
+      cancel_testid={"#{@id}-cancel"}
+      open?={@open?}
+      testid={@id}
     >
+      <:title>Add block</:title>
+
       <div class={[
         "grid",
         "[&_button]:justify-start",
         "rounded",
-        "space-y-[1px]"
+        "space-y-1"
       ]}>
         <.button_special_block
           label={Markdown.label()}
@@ -97,7 +96,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
           phx-value-type="child_pages"
         />
       </div>
-    </div>
+    </Modal.render>
     """
   end
 

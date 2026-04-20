@@ -43,13 +43,15 @@
             class="flex justify-end"
           >
             <QblogWeb.Components.Block.AddBlockMenuButton.render
-              id="popover-special-blocks"
+              id="add-block-dialog"
               class={[
                 "btn btn-sm btn-circle hover:btn-primary",
                 "border-l border-base-300",
                 "mr-3"
               ]}
-              open?={false}
+              event_cancel="add_block_modal_cancel"
+              event_open="add_block_modal_open"
+              open?={@add_block_modal_open?}
               scope={@current_scope}
             />
           </div>

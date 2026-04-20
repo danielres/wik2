@@ -46,6 +46,7 @@ defmodule QblogWeb.PageLive do
         )
         |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
         |> assign(linked_copy_form: nil, linked_copy_error: nil)
+        |> assign(add_block_modal_open?: false)
         |> assign(block_info_placement: nil)
         |> PageState.sync_block_subscriptions(page)
         |> Locks.assign_locks()
@@ -116,6 +117,16 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("add_block", %{"type" => type_param}, socket) do
     {:noreply, socket |> BlockActions.add(type_param)}
+  end
+
+  @impl true
+  def handle_event("add_block_modal_open", _params, socket) do
+    {:noreply, socket |> assign(add_block_modal_open?: true)}
+  end
+
+  @impl true
+  def handle_event("add_block_modal_cancel", _params, socket) do
+    {:noreply, socket |> assign(add_block_modal_open?: false)}
   end
 
   @impl true

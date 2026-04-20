@@ -34,7 +34,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
       popovertarget={@id}
       style={ "anchor-name:--anchor-#{@id}" }
     >
-      <.icon name="hero-ellipsis-horizontal-mini" />
+      <.icon name="hero-plus-mini" />
     </button>
     """
   end
@@ -50,12 +50,12 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
       id={@id}
       style={ "position-anchor:--anchor-#{@id}" }
       class={[
-        "dropdown dropdown-top dropdown-end",
+        "dropdown dropdown-down dropdown-end",
         @open? and "dropdown-open",
         "bg-base-300 rounded",
         "p-2",
         "border-1 border-base-300",
-        "mb-1"
+        "mt-1"
       ]}
     >
       <div class={[
@@ -64,27 +64,32 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
         "rounded",
         "space-y-[1px]"
       ]}>
-        <.button_special_block label={Embed.label()} phx-click="add_block" phx-value-type="embed" />
-        <.button_special_block
-          label="Linked copy"
-          phx-click="add_block"
-          phx-value-type="linked_copy"
-        />
-        <.button_special_block
-          label={Members.label()}
-          phx-click="add_block"
-          phx-value-type="members"
-        />
         <.button_special_block
           label={Markdown.label()}
           phx-click="add_block"
           phx-value-type="markdown"
         />
+
+        <.button_special_block label={Embed.label()} phx-click="add_block" phx-value-type="embed" />
+
         <.button_special_block
           label={Pages.label()}
           phx-click="add_block"
           phx-value-type="pages"
         />
+
+        <.button_special_block
+          label={Members.label()}
+          phx-click="add_block"
+          phx-value-type="members"
+        />
+
+        <.button_special_block
+          label="Linked copy"
+          phx-click="add_block"
+          phx-value-type="linked_copy"
+        />
+
         <.button_special_block
           :if={@child_pages_available?}
           label={ChildPages.label()}

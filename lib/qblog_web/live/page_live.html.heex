@@ -38,6 +38,22 @@
             </button>
           </div>
 
+          <div
+            :if={@editing? and is_nil(@editing_block_id)}
+            class="flex justify-end"
+          >
+            <QblogWeb.Components.Block.AddBlockMenuButton.render
+              id="popover-special-blocks"
+              class={[
+                "btn btn-sm btn-circle hover:btn-primary",
+                "border-l border-base-300",
+                "mr-3"
+              ]}
+              open?={false}
+              scope={@current_scope}
+            />
+          </div>
+
           <button
             :if={is_nil(@editing_block_id)}
             class={[
@@ -108,30 +124,6 @@
           >
             No blocks yet
           </div>
-        </div>
-
-        <div
-          :if={@editing?}
-          class="flex justify-end join"
-        >
-          <.button
-            class="btn btn-sm btn-primary join-item"
-            phx-click="add_block"
-            phx-value-type="markdown"
-          >
-            Add block
-          </.button>
-
-          <QblogWeb.Components.Block.AddBlockMenuButton.render
-            id="popover-special-blocks"
-            class={[
-              "btn btn-sm btn-primary join-item",
-              "btn-square",
-              "border-l border-base-300"
-            ]}
-            open?={false}
-            scope={@current_scope}
-          />
         </div>
 
         <.form

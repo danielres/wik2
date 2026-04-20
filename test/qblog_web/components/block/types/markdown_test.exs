@@ -44,6 +44,26 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
            |> Enum.any?()
   end
 
+  test "render patches canonical wikilinks through the current LiveView" do
+    page_tree = page_tree_fixture()
+    scope = %Scope{tenant: %{name: "cool-stuff"}}
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[node:1]]"}},
+        page_tree: page_tree,
+        scope: scope
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(
+             ~s(a[href="/#{scope.tenant.name}/wiki/recipes"][data-phx-link="patch"][data-phx-link-state="push"])
+           )
+           |> Enum.any?()
+  end
+
   test "render opens external links in a new tab" do
     html =
       render_component(&Markdown.render/1, %{

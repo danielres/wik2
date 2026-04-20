@@ -77,6 +77,7 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
     |> Earmark.as_html!(escape: true, compact_output: true)
     |> HtmlSanitizeEx.markdown_html()
     |> open_external_links_in_new_tab()
+    |> patch_internal_wiki_links(scope)
   end
 
   defp open_external_links_in_new_tab(html) do
@@ -84,6 +85,15 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
       link <> ~s( target="_blank" rel="noopener noreferrer")
     end)
   end
+
+  defp patch_internal_wiki_links(html, %{tenant: %{name: group_name}})
+       when is_binary(group_name) do
+    Regex.replace(~r/<a href="\/#{Regex.escape(group_name)}\/wiki\/[^"]*"/, html, fn link ->
+      link <> ~s( data-phx-link="patch" data-phx-link-state="push")
+    end)
+  end
+
+  defp patch_internal_wiki_links(html, _scope), do: html
 
   defp render_visible_wikilinks(markdown, %{tenant: %{name: group_name}})
        when is_binary(group_name) do

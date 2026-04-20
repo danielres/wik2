@@ -4,7 +4,6 @@ defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
   use QblogWeb.Presence.Handlers
 
-  alias QblogWeb.Endpoint
   alias QblogWeb.PageLive.BlockActions
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.Locks
@@ -16,44 +15,28 @@ defmodule QblogWeb.PageLive do
   on_mount {QblogWeb.LiveUserAuth, :subscribe_presence}
 
   @impl true
-  def mount(params, _session, socket) do
-    path = params["path"] |> Enum.join("/")
-    scope = socket.assigns.current_scope
-    %{node: node, page: page, page_tree: page_tree} = scope |> PageState.ensure_by_path(path)
+  def mount(_params, _session, socket) do
+    socket =
+      socket
+      |> assign(
+        add_block_modal_open?: false,
+        add_block_position: "bottom",
+        block_info_placement: nil,
+        can_manage_page?: false,
+        editing?: false,
+        editing_block_id: nil,
+        form_edit_block: nil,
+        linked_copy_error: nil,
+        linked_copy_form: nil,
+        node: nil,
+        not_found_path: nil,
+        page: nil,
+        page_tree: nil,
+        path: nil
+      )
+      |> Locks.assign_locks()
 
-    if page == nil do
-      socket =
-        socket
-        |> assign(
-          not_found_path: path,
-          can_manage_page?: false,
-          block_info_placement: nil,
-          page_tree: page_tree
-        )
-
-      {:ok, socket}
-    else
-      can_manage_page? = Ash.can?({page, :manage_page}, scope)
-
-      socket =
-        socket
-        |> assign(
-          node: node,
-          page: page,
-          page_tree: page_tree,
-          path: path,
-          can_manage_page?: can_manage_page?
-        )
-        |> assign(editing_block_id: nil, form_edit_block: nil, editing?: false)
-        |> assign(linked_copy_form: nil, linked_copy_error: nil)
-        |> assign(add_block_modal_open?: false, add_block_position: "bottom")
-        |> assign(block_info_placement: nil)
-        |> PageState.sync_block_subscriptions(page)
-        |> Locks.assign_locks()
-
-      if connected?(socket), do: Endpoint.subscribe("block_placement:page:#{page.id}")
-      {:ok, socket}
-    end
+    {:ok, socket}
   end
 
   # Presence ===================================================================
@@ -65,8 +48,16 @@ defmodule QblogWeb.PageLive do
   end
 
   @impl true
-  def handle_params(_params, url, socket) do
-    {:noreply, socket |> Presence.track_in_liveview(url)}
+  def handle_params(params, url, socket) do
+    path = params["path"] |> Enum.join("/")
+
+    socket =
+      socket
+      |> PageState.load_path(path)
+      |> Presence.track_in_liveview(url)
+      |> Locks.assign_locks()
+
+    {:noreply, socket}
   end
 
   # subscriptions ==============================================================

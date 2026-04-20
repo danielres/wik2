@@ -47,6 +47,30 @@ defmodule QblogWeb.PageLive.PageState do
     %{node: node, page: page, page_tree: page_tree}
   end
 
+  def load_path(socket, path) do
+    scope = socket.assigns.current_scope
+    %{node: node, page: page, page_tree: page_tree} = scope |> ensure_by_path(path)
+    can_manage_page? = page != nil and Ash.can?({page, :manage_page}, scope)
+
+    socket
+    |> sync_page_placement_subscription(page)
+    |> sync_block_subscriptions(page)
+    |> assign(
+      add_block_modal_open?: false,
+      block_info_placement: nil,
+      can_manage_page?: can_manage_page?,
+      editing_block_id: nil,
+      form_edit_block: nil,
+      linked_copy_error: nil,
+      linked_copy_form: nil,
+      node: node,
+      not_found_path: if(page == nil, do: path, else: nil),
+      page: page,
+      page_tree: page_tree,
+      path: path
+    )
+  end
+
   def find_block(page, block_id) do
     page
     |> find_placement_by_block_id(block_id)
@@ -64,6 +88,7 @@ defmodule QblogWeb.PageLive.PageState do
     can_manage_page? = page != nil and Ash.can?({page, :manage_page}, scope)
 
     socket
+    |> sync_page_placement_subscription(page)
     |> sync_block_subscriptions(page)
     |> assign(
       can_manage_page?: can_manage_page?,
@@ -92,6 +117,25 @@ defmodule QblogWeb.PageLive.PageState do
       Enum.each(block_ids_to_unsubscribe, &QblogWeb.Endpoint.unsubscribe("block:#{&1}"))
 
       socket |> assign(subscribed_block_ids: current_block_ids)
+    else
+      socket
+    end
+  end
+
+  defp sync_page_placement_subscription(socket, page) do
+    if Phoenix.LiveView.connected?(socket) do
+      current_page_id = if page == nil, do: nil, else: page.id
+      subscribed_page_id = socket.assigns[:subscribed_block_placement_page_id]
+
+      if subscribed_page_id != nil and subscribed_page_id != current_page_id do
+        QblogWeb.Endpoint.unsubscribe("block_placement:page:#{subscribed_page_id}")
+      end
+
+      if current_page_id != nil and current_page_id != subscribed_page_id do
+        QblogWeb.Endpoint.subscribe("block_placement:page:#{current_page_id}")
+      end
+
+      socket |> assign(subscribed_block_placement_page_id: current_page_id)
     else
       socket
     end

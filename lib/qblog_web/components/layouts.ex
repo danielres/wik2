@@ -45,7 +45,7 @@ defmodule QblogWeb.Layouts do
     ]}>
       <menu class={[]}>
         <ul class="menu menu-horizontal gap-1">
-          <.menu_item tenant={@scope.tenant} view={@view} target="wiki">Wiki</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="wiki/home">Wiki</.menu_item>
           <.menu_item tenant={@scope.tenant} view={@view} target="blog">Blog</.menu_item>
         </ul>
       </menu>
@@ -65,7 +65,7 @@ defmodule QblogWeb.Layouts do
       "bg-base-200 rounded",
       @view != @target and "opacity-40"
     ]}>
-      <.link navigate={"/#{@tenant}/#{@target}"}>
+      <.link patch={"/#{@tenant}/#{@target}"}>
         {render_slot(@inner_block)}
       </.link>
     </li>

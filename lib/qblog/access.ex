@@ -7,10 +7,11 @@ defmodule Qblog.Access do
     ]
 
   alias Ash.Query
-  alias Qblog.Access.Providers.Telegram
   alias Qblog.Access.ExternalIdentity
+  alias Qblog.Access.Providers.Telegram
   alias Qblog.Access.Source
   alias Qblog.Accounts.Group
+  alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Accounts.User
   alias Qblog.Repo
 
@@ -85,6 +86,23 @@ defmodule Qblog.Access do
     end
   end
 
+  def refresh_telegram_grants(%User{} = user, telegram_provider \\ Telegram) do
+    with {:ok, identity} <- load_telegram_identity(user),
+         {:ok, sources} <- list_active_telegram_sources() do
+      sources
+      |> Enum.reduce_while({:ok, []}, fn source, {:ok, grants} ->
+        case refresh_telegram_grant(source, identity, user, telegram_provider) do
+          {:ok, grant} -> {:cont, {:ok, [grant | grants]}}
+          {:error, error} -> {:halt, {:error, error}}
+        end
+      end)
+      |> case do
+        {:ok, grants} -> {:ok, Enum.reverse(grants)}
+        {:error, error} -> {:error, error}
+      end
+    end
+  end
+
   defp create_user_and_identity(provider_user_id, telegram_user) do
     case Repo.transaction(fn ->
            with {:ok, user, user_notifications} <-
@@ -151,6 +169,75 @@ defmodule Qblog.Access do
     |> Query.filter(provider == :telegram and status == :pending)
     |> Query.sort(inserted_at: :desc)
     |> Ash.read(authorize?: false, domain: __MODULE__)
+  end
+
+  defp list_active_telegram_sources do
+    Source
+    |> Query.filter(provider == :telegram and status == :active)
+    |> Query.sort(inserted_at: :desc)
+    |> Ash.read(authorize?: false, domain: __MODULE__)
+  end
+
+  defp refresh_telegram_grant(source, identity, user, telegram_provider) do
+    status = telegram_grant_status(source, identity, telegram_provider)
+
+    case upsert_telegram_grant(source, identity, user, status) do
+      {:ok, grant} ->
+        if status == :active do
+          with :ok <- ensure_group_member(source, user), do: {:ok, grant}
+        else
+          {:ok, grant}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp telegram_grant_status(source, identity, telegram_provider) do
+    case telegram_provider.get_chat_member(source.provider_source_id, identity.provider_user_id) do
+      {:ok, chat_member} ->
+        if Telegram.active_member?(chat_member), do: :active, else: :inactive
+
+      {:error, _error} ->
+        :inactive
+    end
+  end
+
+  defp upsert_telegram_grant(source, identity, user, status) do
+    upsert_grant(
+      %{
+        external_identity_id: identity.id,
+        last_verified_at: DateTime.utc_now(),
+        source_id: source.id,
+        status: status,
+        user_id: user.id
+      },
+      authorize?: false
+    )
+  end
+
+  defp ensure_group_member(%{group_id: group_id}, %{id: user_id}) do
+    GroupUserRelation
+    |> Query.filter(group_id == ^group_id and user_id == ^user_id)
+    |> Ash.read_one(authorize?: false, domain: Qblog.Accounts)
+    |> case do
+      {:ok, nil} -> create_member_relation(group_id, user_id)
+      {:ok, _membership} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp create_member_relation(group_id, user_id) do
+    case Ash.create(
+           GroupUserRelation,
+           %{group_id: group_id, type: :member, user_id: user_id},
+           authorize?: false,
+           domain: Qblog.Accounts
+         ) do
+      {:ok, _membership} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp telegram_source_claimable?(source, identity, telegram_provider) do

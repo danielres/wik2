@@ -22,7 +22,12 @@ defmodule QblogWeb.Components.Modal do
     >
       <div
         :if={@open?}
-        class={["modal-box", "min-w-sm", "bg-base-100", "max-h-[calc(100dvh-4rem)]"]}
+        class={[
+          "modal-box",
+          "bg-base-100",
+          "max-h-[calc(100dvh-4rem)]",
+          "mx-4"
+        ]}
         phx-click-away={@cancel}
         phx-mounted={JS.focus_first(to: "form")}
         phx-target={assigns[:"phx-target"]}

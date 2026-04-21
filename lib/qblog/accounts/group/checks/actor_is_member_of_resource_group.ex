@@ -8,6 +8,14 @@ defmodule Qblog.Accounts.Group.Checks.ActorIsMemberOfResourceGroup do
   def filter(nil, _context, _opts), do: false
 
   def filter(_actor, _context, _opts) do
-    expr(exists(group.memberships, user_id == ^actor(:id)))
+    expr(
+      exists(group.memberships, user_id == ^actor(:id) and type == :owner) or
+        (exists(group.memberships, user_id == ^actor(:id) and type in [:admin, :member]) and
+           exists(
+             group.access_sources,
+             status == :active and
+               exists(grants, user_id == ^actor(:id) and status == :active)
+           ))
+    )
   end
 end

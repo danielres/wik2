@@ -76,6 +76,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       admin = generate(user())
       group = generate(group())
       add_membership(group, admin, :admin)
+      grant_active_telegram_access(group, admin)
 
       assert Ash.can?({group, :read}, scope(admin, group))
     end
@@ -84,6 +85,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       admin = generate(user())
       current_group = generate(group())
       add_membership(current_group, admin, :admin)
+      grant_active_telegram_access(current_group, admin)
 
       assert Ash.can?({Group, :create}, scope(admin, current_group))
     end
@@ -92,8 +94,25 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       admin = generate(user())
       group = generate(group())
       add_membership(group, admin, :admin)
+      grant_active_telegram_access(group, admin)
 
       assert Ash.can?({group, :update}, scope(admin, group))
+    end
+
+    test "cannot read their group without an active grant" do
+      admin = generate(user())
+      group = generate(group())
+      add_membership(group, admin, :admin)
+
+      refute Ash.can?({group, :read}, scope(admin, group))
+    end
+
+    test "cannot update their group without an active grant" do
+      admin = generate(user())
+      group = generate(group())
+      add_membership(group, admin, :admin)
+
+      refute Ash.can?({group, :update}, scope(admin, group))
     end
 
     test "cannot read a group they are not a member of" do
@@ -102,6 +121,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
 
       refute Ash.can?({other_group, :read}, scope(admin, member_group))
     end
@@ -112,6 +132,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
 
       refute Ash.can?({other_group, :update}, scope(admin, member_group))
     end
@@ -122,6 +143,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
 
       refute Ash.can?({other_group, :destroy}, scope(admin, member_group))
     end
@@ -132,6 +154,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
 
       assert {:ok, groups} = Qblog.Accounts.list_groups(scope: scope(admin, member_group))
       assert Enum.any?(groups, &(&1.id == member_group.id))
@@ -142,6 +165,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       admin = generate(user())
       group = generate(group())
       add_membership(group, admin, :admin)
+      grant_active_telegram_access(group, admin)
 
       refute Ash.can?({group, :destroy}, scope(admin, group))
     end
@@ -152,14 +176,24 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       member = generate(user())
       group = generate(group())
       add_membership(group, member, :member)
+      grant_active_telegram_access(group, member)
 
       assert Ash.can?({group, :read}, scope(member, group))
+    end
+
+    test "cannot read their group without an active grant" do
+      member = generate(user())
+      group = generate(group())
+      add_membership(group, member, :member)
+
+      refute Ash.can?({group, :read}, scope(member, group))
     end
 
     test "can create a group once they belong to a group" do
       member = generate(user())
       current_group = generate(group())
       add_membership(current_group, member, :member)
+      grant_active_telegram_access(current_group, member)
 
       assert Ash.can?({Group, :create}, scope(member, current_group))
     end
@@ -168,6 +202,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       member = generate(user())
       group = generate(group())
       add_membership(group, member, :member)
+      grant_active_telegram_access(group, member)
 
       refute Ash.can?({group, :update}, scope(member, group))
     end
@@ -178,6 +213,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, member, :member)
+      grant_active_telegram_access(member_group, member)
 
       refute Ash.can?({other_group, :read}, scope(member, member_group))
     end
@@ -188,6 +224,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, member, :member)
+      grant_active_telegram_access(member_group, member)
 
       refute Ash.can?({other_group, :update}, scope(member, member_group))
     end
@@ -198,6 +235,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, member, :member)
+      grant_active_telegram_access(member_group, member)
 
       refute Ash.can?({other_group, :destroy}, scope(member, member_group))
     end
@@ -208,6 +246,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       other_group = generate(group())
 
       add_membership(member_group, member, :member)
+      grant_active_telegram_access(member_group, member)
 
       assert {:ok, groups} = Qblog.Accounts.list_groups(scope: scope(member, member_group))
       assert Enum.any?(groups, &(&1.id == member_group.id))
@@ -218,6 +257,7 @@ defmodule Qblog.Accounts.GroupPolicyTest do
       member = generate(user())
       group = generate(group())
       add_membership(group, member, :member)
+      grant_active_telegram_access(group, member)
 
       refute Ash.can?({group, :destroy}, scope(member, group))
     end

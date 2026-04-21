@@ -13,6 +13,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
     {:ok, source_page} = Page.create(authorize?: false, scope: scope)
     {:ok, child_page} = Page.create(authorize?: false, scope: scope)
@@ -60,6 +61,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
     {:ok, leaf_page} = Page.create(authorize?: false, scope: scope)
 

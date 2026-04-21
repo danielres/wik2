@@ -110,6 +110,8 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
     add_membership(group, owner, :owner)
     add_membership(group, admin, :admin)
     add_membership(group, member, :member)
+    grant_active_telegram_access(group, admin)
+    grant_active_telegram_access(group, member)
 
     owner_scope = scope(owner, group)
     {:ok, page} = Page.create(authorize?: false, scope: owner_scope)

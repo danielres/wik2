@@ -51,8 +51,37 @@ defmodule Qblog.Blocks.Block do
 
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:owner_user)
-      authorize_if relates_to_actor_via([:owner_group, :users])
-      authorize_if relates_to_actor_via([:placements, :group, :users])
+
+      # TODO: is there a way to simplify?
+      authorize_if expr(
+                     exists(owner_group.memberships, user_id == ^actor(:id) and type == :owner) or
+                       (exists(
+                          owner_group.memberships,
+                          user_id == ^actor(:id) and type in [:admin, :member]
+                        ) and
+                          exists(
+                            owner_group.access_sources,
+                            status == :active and
+                              exists(grants, user_id == ^actor(:id) and status == :active)
+                          ))
+                   )
+
+      # TODO: is there a way to simplify?
+      authorize_if expr(
+                     exists(
+                       placements,
+                       exists(group.memberships, user_id == ^actor(:id) and type == :owner) or
+                         (exists(
+                            group.memberships,
+                            user_id == ^actor(:id) and type in [:admin, :member]
+                          ) and
+                            exists(
+                              group.access_sources,
+                              status == :active and
+                                exists(grants, user_id == ^actor(:id) and status == :active)
+                            ))
+                     )
+                   )
     end
 
     policy action_type(:create) do
@@ -63,8 +92,17 @@ defmodule Qblog.Blocks.Block do
     policy_group expr(
                    exists(
                      owner_group.memberships,
-                     user_id == ^actor(:id) and type in [:owner, :admin]
-                   )
+                     user_id == ^actor(:id) and type == :owner
+                   ) or
+                     (exists(
+                        owner_group.memberships,
+                        user_id == ^actor(:id) and type == :admin
+                      ) and
+                        exists(
+                          owner_group.access_sources,
+                          status == :active and
+                            exists(grants, user_id == ^actor(:id) and status == :active)
+                        ))
                  ) do
       policy action_type(:update), do: authorize_if(always())
       policy action_type(:destroy), do: authorize_if(always())

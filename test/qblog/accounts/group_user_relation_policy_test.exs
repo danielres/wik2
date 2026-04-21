@@ -74,6 +74,7 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
       owner = generate(user())
       owner_membership = add_membership(group, owner, :owner)
       admin_membership = add_membership(group, admin, :admin)
+      grant_active_telegram_access(group, admin)
 
       assert Ash.can?({owner_membership, :read}, scope(admin, group))
       assert Ash.can?({admin_membership, :read}, scope(admin, group))
@@ -86,6 +87,7 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       add_membership(member_group, generate(user()), :owner)
       add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
       other_membership = add_membership(other_group, generate(user()), :member)
 
       refute Ash.can?({other_membership, :read}, scope(admin, member_group))
@@ -98,6 +100,7 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       member_group_owner = add_membership(member_group, generate(user()), :owner)
       admin_membership = add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
       other_group_membership = add_membership(other_group, generate(user()), :member)
 
       assert {:ok, memberships} = Ash.read(GroupUserRelation, scope: scope(admin, member_group))
@@ -123,6 +126,7 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
       group = generate(group())
       owner_membership = add_membership(group, generate(user()), :owner)
       member_membership = add_membership(group, member, :member)
+      grant_active_telegram_access(group, member)
 
       assert Ash.can?({owner_membership, :read}, scope(member, group))
       assert Ash.can?({member_membership, :read}, scope(member, group))
@@ -135,6 +139,7 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       add_membership(member_group, generate(user()), :owner)
       add_membership(member_group, member, :member)
+      grant_active_telegram_access(member_group, member)
       other_membership = add_membership(other_group, generate(user()), :member)
 
       refute Ash.can?({other_membership, :read}, scope(member, member_group))
@@ -147,6 +152,7 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       member_group_owner = add_membership(member_group, generate(user()), :owner)
       member_membership = add_membership(member_group, member, :member)
+      grant_active_telegram_access(member_group, member)
       other_group_membership = add_membership(other_group, generate(user()), :member)
 
       assert {:ok, memberships} = Ash.read(GroupUserRelation, scope: scope(member, member_group))

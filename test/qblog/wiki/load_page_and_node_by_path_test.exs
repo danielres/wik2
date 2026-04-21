@@ -12,6 +12,7 @@ defmodule Qblog.Wiki.LoadPageAndNodeByPathTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
     {:ok, page} = Page.create(authorize?: false, scope: scope)
 
@@ -35,6 +36,7 @@ defmodule Qblog.Wiki.LoadPageAndNodeByPathTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
 
     generate(
@@ -57,6 +59,7 @@ defmodule Qblog.Wiki.LoadPageAndNodeByPathTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
 
     {node, page} = Wiki.load_page_and_node_by_path("missing/path", scope: scope)

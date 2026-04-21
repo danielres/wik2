@@ -43,6 +43,7 @@ defmodule Qblog.Wiki.PagePolicyTest do
       member_group = generate(group())
       other_group = generate(group())
       add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
       other_page = create_page(other_group)
 
       refute Ash.can?({other_page, :read}, scope(admin, member_group))
@@ -96,6 +97,8 @@ defmodule Qblog.Wiki.PagePolicyTest do
     add_membership(group, owner, :owner)
     add_membership(group, admin, :admin)
     add_membership(group, member, :member)
+    grant_active_telegram_access(group, admin)
+    grant_active_telegram_access(group, member)
 
     %{
       admin: admin,

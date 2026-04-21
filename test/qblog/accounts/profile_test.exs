@@ -61,6 +61,7 @@ defmodule Qblog.Accounts.ProfileTest do
 
       membership = add_membership(group, profile_owner, :member)
       add_membership(group, peer, :member)
+      grant_active_telegram_access(group, peer)
       profile = create_profile(membership)
 
       assert Ash.can?({profile, :read}, scope(peer, group))

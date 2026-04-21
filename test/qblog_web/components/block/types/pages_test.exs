@@ -14,6 +14,7 @@ defmodule QblogWeb.Components.Block.Types.PagesTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
     {:ok, docs_page} = Page.create(authorize?: false, scope: scope)
     {:ok, guide_page} = Page.create(authorize?: false, scope: scope)
@@ -46,6 +47,7 @@ defmodule QblogWeb.Components.Block.Types.PagesTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
     {:ok, docs_page} = Page.create(authorize?: false, scope: scope)
     {:ok, guide_page} = Page.create(authorize?: false, scope: scope)
@@ -77,6 +79,7 @@ defmodule QblogWeb.Components.Block.Types.PagesTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
 
     html =

@@ -89,6 +89,9 @@ defmodule Qblog.Blocks.BlockPolicyTest do
     add_membership(group, admin, :admin)
     add_membership(group, member, :member)
     add_membership(group, user_owner, :member)
+    grant_active_telegram_access(group, admin)
+    grant_active_telegram_access(group, member)
+    grant_active_telegram_access(group, user_owner)
 
     group_scope = scope(owner, group)
     {:ok, page} = Page.create(authorize?: false, scope: group_scope)

@@ -50,13 +50,14 @@ defmodule QblogWeb.Components.Block.ActionButtons do
 
   attr :rest, :global
   attr :icon, :string, required: true
-  attr :variant, :string, default: "primary"
+  attr :variant, :string, default: "accent"
 
   defp action_button(assigns) do
     assigns =
       assign_new(assigns, :variant_class, fn ->
         case assigns.variant do
           "primary" -> "hover:btn-primary"
+          "accent" -> "hover:btn-accent"
           "danger" -> "hover:btn-error"
           _ -> ""
         end
@@ -68,7 +69,7 @@ defmodule QblogWeb.Components.Block.ActionButtons do
       class={[
         "btn btn-ghost btn-xs btn-square",
         "join-item",
-        @variant_class
+        @variant_class,
       ]}
       type="button"
     >

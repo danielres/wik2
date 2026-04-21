@@ -46,7 +46,7 @@ defmodule QblogWeb.Components.Block do
     ~H"""
     <div class={[
       "relative",
-      "[&:has(>.ACTION-BUTTONS:hover)_.BLOCK]:ring-secondary/70",
+      "[&:has(>.ACTION-BUTTONS:hover)_.BLOCK]:ring-accent/70",
       "@container/block",
       @lock && "ring-2 ring-warning/80 rounded p-1"
     ]}>
@@ -69,23 +69,29 @@ defmodule QblogWeb.Components.Block do
         </div>
       </div>
 
-      <div
-        :if={@editing? and is_nil(@lock)}
-        class={[
-          "ACTION-BUTTONS",
-          "opacity-50 hover:opacity-100 transition-opacity",
-          "mb-1"
-        ]}
-      >
-        <Components.Block.ActionButtons.render placement={@placement} />
+      <div class="relative">
+        <div
+          :if={@editing? and is_nil(@lock)}
+          class={[
+            "ACTION-BUTTONS",
+            "w-full",
+            "absolute bottom-0 z-10",
+            "opacity-50 hover:opacity-100 transition-opacity",
+            "text-accent",
+            "mb-1"
+          ]}
+        >
+          <Components.Block.ActionButtons.render placement={@placement} />
+        </div>
       </div>
 
       <div
         class={[
           "BLOCK",
-          @editing? and "ring-2 p-2 hover:ring-secondary/70 cursor-pointer",
+          "p-2",
+          @editing? and "ring-2 p-2 hover:ring-accent/70 cursor-pointer",
           @editing? and "[&>*]:pointer-events-none",
-          "rounded ring-secondary/10 transition",
+          "rounded ring-accent/20 transition",
           "group"
         ]}
         phx-click={@editing? and "edit_block_start"}
@@ -141,7 +147,7 @@ defmodule QblogWeb.Components.Block do
         phx-submit="edit_block_submit"
         phx-value-block_id={@block.id}
         class={[
-          "rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-secondary",
+          "rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-accent",
           @block.type != :markdown && "bg-base-200 p-4"
         ]}
       >

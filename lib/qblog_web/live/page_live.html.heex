@@ -7,73 +7,76 @@
         <div>Could not be found</div>
       </div>
     <% else %>
-      <section class="relative space-y-12">
+      <section class="relative">
         <div
           :if={@can_manage_page?}
           class="sticky top-4 z-20 h-0 flex justify-end"
         >
-          <div :if={@editing_block_id} class="">
-            <button
-              type="button"
-              class={[
-                "btn btn-sm btn-soft btn-circle",
-                "hover:btn-error",
-                "mr-2"
-              ]}
-              phx-click="edit_block_cancel"
-              phx-value-block_id={@editing_block_id}
-            >
-              <.icon name="hero-x-mark-mini" />
-            </button>
+          <div>
+            <div class="bg-accent/30 backdrop-blur rounded-full p-1 flex items-center gap-2">
+              <%= if @editing_block_id do %>
+                <button
+                  type="button"
+                  class={[
+                    "btn btn-sm btn-accent btn-circle opacity-40 hover:opacity-100 transition-opacity"
+                  ]}
+                  phx-click="edit_block_cancel"
+                  phx-value-block_id={@editing_block_id}
+                >
+                  <.icon name="hero-x-mark-micro" class="size-5" />
+                </button>
 
-            <button
-              type="submit"
-              form={"edit-block-form-#{@editing_block_id}"}
-              class={[
-                "btn btn-sm btn-primary btn-circle",
-                "mr-2"
-              ]}
-            >
-              <.icon name="hero-check-mini" />
-            </button>
+                <button
+                  type="submit"
+                  form={"edit-block-form-#{@editing_block_id}"}
+                  class={[
+                    "btn btn-sm btn-accent btn-circle"
+                  ]}
+                >
+                  <.icon name="hero-check-micro" class="size-5" />
+                </button>
+              <% else %>
+                <%= if @editing? do %>
+                  <button
+                    class={[
+                      "btn btn-sm btn-accent btn-circle opacity-40 hover:opacity-100 transition-opacity"
+                    ]}
+                    phx-click="toggle_edit_mode"
+                  >
+                    <.icon name="hero-x-mark-micro" class="size-5" />
+                  </button>
+
+                  <QblogWeb.Components.Block.AddBlockMenuButton.render
+                    class={[
+                      "btn btn-sm btn-accent btn-circle"
+                    ]}
+                    event_open="add_block_modal_open"
+                  />
+                <% else %>
+                  <button
+                    class={[
+                      "btn btn-sm btn-accent text-base-content bg-transparent hover:bg-accent btn-circle transition-opacity"
+                    ]}
+                    phx-click="toggle_edit_mode"
+                  >
+                    <.icon name="hero-pencil-square-micro" class="size-5" />
+                  </button>
+                <% end %>
+              <% end %>
+            </div>
           </div>
-
-          <div
-            :if={@editing? and is_nil(@editing_block_id)}
-            class="flex justify-end"
-          >
-            <QblogWeb.Components.Block.AddBlockMenuButton.render
-              id="add-block-dialog"
-              class={[
-                "btn btn-sm btn-circle hover:btn-primary",
-                "border-l border-base-300",
-                "mr-3"
-              ]}
-              event_cancel="add_block_modal_cancel"
-              event_open="add_block_modal_open"
-              event_position_select="add_block_position_select"
-              open?={@add_block_modal_open?}
-              position={@add_block_position}
-              scope={@current_scope}
-            />
-          </div>
-
-          <button
-            :if={is_nil(@editing_block_id)}
-            class={[
-              "btn btn-sm btn-circle",
-              "opacity-80 hover:opacity-100 transition",
-              "mr-2",
-              @editing? && "btn-primary opacity-100",
-              !@editing? && "btn-neutral hover:btn-primary"
-            ]}
-            phx-click="toggle_edit_mode"
-          >
-            <.icon name="hero-pencil-square-mini" />
-          </button>
         </div>
 
-        <header class="space-y-1">
+        <QblogWeb.Components.Block.AddBlockMenuButton.modal_special_blocks
+          scope={@current_scope}
+          event_cancel="add_block_modal_cancel"
+          event_position_select="add_block_position_select"
+          id="add-block-dialog"
+          open?={@add_block_modal_open?}
+          position={@add_block_position}
+        />
+
+        <header class="space-y-1 mb-12 mx-2">
           <h1 class="text-2xl font-bold opacity-90 pr-12">{@node.title}</h1>
           <div class="text-sm opacity-60">page author: {@page.author |> to_string()}</div>
           <div class="text-sm opacity-60">

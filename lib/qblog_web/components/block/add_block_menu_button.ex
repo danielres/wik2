@@ -11,37 +11,15 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   alias QblogWeb.Components.Modal
 
   attr :class, :any, default: ""
-  attr :event_cancel, :string, required: true
   attr :event_open, :string, required: true
-  attr :event_position_select, :string, required: true
-  attr :id, :string, required: true
-  attr :open?, :boolean, default: false
-  attr :position, :string, default: "bottom"
-  attr :scope, :map, required: true
 
   def render(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :child_pages_available?,
-        child_pages_available?(assigns.scope)
-      )
-
     ~H"""
-    <.modal_special_blocks
-      child_pages_available?={@child_pages_available?}
-      event_cancel={@event_cancel}
-      event_position_select={@event_position_select}
-      id={@id}
-      open?={@open?}
-      position={@position}
-    />
-
     <button
       class={@class}
       phx-click={@event_open}
     >
-      <.icon name="hero-plus-mini" />
+      <.icon name="hero-plus-micro" class="size-5" />
     </button>
     """
   end
@@ -52,8 +30,16 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
   attr :position, :string, required: true
+  attr :scope, :map, required: true
 
-  defp modal_special_blocks(assigns) do
+  def modal_special_blocks(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :child_pages_available?,
+        child_pages_available?(assigns.scope)
+      )
+
     ~H"""
     <Modal.render
       cancel={@event_cancel}

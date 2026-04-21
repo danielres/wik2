@@ -1,5 +1,6 @@
 defmodule Qblog.Wiki.PageTree do
   alias Qblog.Accounts.Group
+  alias Qblog.Wiki.PageTree.Node
 
   use Ash.Resource,
     otp_app: :qblog,
@@ -7,6 +8,11 @@ defmodule Qblog.Wiki.PageTree do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshPhoenix]
+
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          nodes: [Node.t()]
+        }
 
   postgres do
     table "page_trees"

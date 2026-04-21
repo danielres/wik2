@@ -5,6 +5,14 @@ defmodule Qblog.Wiki.PageTree.Node do
   alias Qblog.Wiki
   alias Utils.Log
 
+  @type t :: %__MODULE__{
+          id: integer(),
+          page_id: String.t() | nil,
+          parent_id: integer() | nil,
+          slug: String.t(),
+          title: String.t()
+        }
+
   attributes do
     attribute :id, :integer do
       allow_nil? false

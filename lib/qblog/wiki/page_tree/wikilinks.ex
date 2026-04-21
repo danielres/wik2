@@ -1,14 +1,18 @@
 defmodule Qblog.Wiki.PageTree.Wikilinks do
+  alias Qblog.Wiki.PageTree
+  alias Qblog.Wiki.PageTree.Node
   alias Qblog.Wiki.PageTree.TreeQueries
 
   @visible_wikilink_regex ~r/\[\[([^\]\n]+)\]\]/
   @node_wikilink_regex ~r/\[\[node:(\d+)\]\]/
 
+  @spec replace_visible(String.t(), (String.t(), String.t() -> String.t())) :: String.t()
   def replace_visible(markdown, replacement)
       when is_binary(markdown) and is_function(replacement, 2) do
     Regex.replace(@visible_wikilink_regex, markdown, replacement)
   end
 
+  @spec paths_to_nodes(String.t(), %{String.t() => integer()}) :: String.t()
   def paths_to_nodes(markdown, path_to_node_map)
       when is_binary(markdown) and is_map(path_to_node_map) do
     replace_visible(markdown, fn wikilink, path ->
@@ -21,6 +25,7 @@ defmodule Qblog.Wiki.PageTree.Wikilinks do
     end)
   end
 
+  @spec nodes_to_paths(String.t(), PageTree.t()) :: String.t()
   def nodes_to_paths(markdown, %{nodes: nodes}) when is_binary(markdown) do
     Regex.replace(@node_wikilink_regex, markdown, fn wikilink, node_id ->
       node_id = String.to_integer(node_id)
@@ -32,6 +37,7 @@ defmodule Qblog.Wiki.PageTree.Wikilinks do
     end)
   end
 
+  @spec nodes_to_id_map([Node.t()]) :: %{String.t() => integer()}
   def nodes_to_id_map(nodes) when is_list(nodes) do
     nodes
     |> Enum.filter(&(not is_nil(&1.page_id)))

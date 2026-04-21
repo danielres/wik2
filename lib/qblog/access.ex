@@ -7,7 +7,10 @@ defmodule Qblog.Access do
     ]
 
   alias Ash.Query
+  alias Qblog.Access.Providers.Telegram
   alias Qblog.Access.ExternalIdentity
+  alias Qblog.Access.Source
+  alias Qblog.Accounts.Group
   alias Qblog.Accounts.User
   alias Qblog.Repo
 
@@ -62,6 +65,26 @@ defmodule Qblog.Access do
     |> upsert_pending_source_from_provider(authorize?: false)
   end
 
+  def list_claimable_telegram_sources(%User{} = user, telegram_provider \\ Telegram) do
+    with {:ok, identity} <- load_telegram_identity(user),
+         {:ok, sources} <- list_pending_telegram_sources() do
+      sources
+      |> Enum.filter(&telegram_source_claimable?(&1, identity, telegram_provider))
+    end
+  end
+
+  def claim_telegram_source_with_new_group(
+        source_id,
+        %User{} = user,
+        telegram_provider \\ Telegram
+      ) do
+    with {:ok, source} <- Ash.get(Source, source_id, authorize?: false, domain: __MODULE__),
+         {:ok, identity} <- load_telegram_identity(user),
+         :ok <- authorize_telegram_source_claim(source, identity, telegram_provider) do
+      source |> create_group_and_claim_source(user)
+    end
+  end
+
   defp create_user_and_identity(provider_user_id, telegram_user) do
     case Repo.transaction(fn ->
            with {:ok, user, user_notifications} <-
@@ -111,6 +134,105 @@ defmodule Qblog.Access do
     ExternalIdentity
     |> Query.filter(provider == ^provider and provider_user_id == ^provider_user_id)
     |> Ash.read_one(authorize?: false, domain: __MODULE__, load: [:user])
+  end
+
+  defp load_telegram_identity(%{id: user_id}) do
+    ExternalIdentity
+    |> Query.filter(provider == :telegram and user_id == ^user_id)
+    |> Ash.read_one(authorize?: false, domain: __MODULE__)
+    |> case do
+      {:ok, nil} -> {:error, :telegram_identity_not_found}
+      result -> result
+    end
+  end
+
+  defp list_pending_telegram_sources do
+    Source
+    |> Query.filter(provider == :telegram and status == :pending)
+    |> Query.sort(inserted_at: :desc)
+    |> Ash.read(authorize?: false, domain: __MODULE__)
+  end
+
+  defp telegram_source_claimable?(source, identity, telegram_provider) do
+    case telegram_provider.get_chat_member(source.provider_source_id, identity.provider_user_id) do
+      {:ok, chat_member} -> Telegram.creator?(chat_member)
+      {:error, _error} -> false
+    end
+  end
+
+  defp authorize_telegram_source_claim(source, identity, telegram_provider) do
+    case telegram_provider.get_chat_member(source.provider_source_id, identity.provider_user_id) do
+      {:ok, chat_member} ->
+        if Telegram.creator?(chat_member) do
+          :ok
+        else
+          {:error, :telegram_source_claim_requires_creator}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp create_group_and_claim_source(source, user) do
+    case Repo.transaction(fn ->
+           with {:ok, group, group_notifications} <- create_group_from_source(source, user),
+                {:ok, source, source_notifications} <- claim_source(source, group, user) do
+             {group, source, group_notifications ++ source_notifications}
+           else
+             {:error, error} -> Repo.rollback(error)
+           end
+         end) do
+      {:ok, {group, source, notifications}} ->
+        Ash.Notifier.notify(notifications)
+        {:ok, {group, source}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp create_group_from_source(source, user) do
+    Ash.create(
+      Group,
+      %{
+        description: "Created from Telegram group #{source.title}",
+        name: source.title |> group_name_from_source_title()
+      },
+      action: :create,
+      actor: user,
+      authorize?: false,
+      domain: Qblog.Accounts,
+      return_notifications?: true
+    )
+  end
+
+  defp claim_source(source, group, user) do
+    source
+    |> Ash.Changeset.for_update(
+      :update,
+      %{
+        "claimed_at" => DateTime.utc_now(),
+        "status" => :active
+      },
+      authorize?: false
+    )
+    |> Ash.Changeset.manage_relationship(:claimed_by_user, user,
+      type: :append_and_remove,
+      authorize?: false
+    )
+    |> Ash.Changeset.manage_relationship(:group, group,
+      type: :append_and_remove,
+      authorize?: false
+    )
+    |> Ash.update(domain: __MODULE__, return_notifications?: true)
+  end
+
+  defp group_name_from_source_title(title) do
+    title
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
   end
 
   defp telegram_identity_attrs(provider_user_id, telegram_user, user_id) do

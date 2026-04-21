@@ -69,6 +69,7 @@ defmodule Qblog.Access.Source do
 
     update :update do
       accept [:claimed_at, :claimed_by_user_id, :group_id, :metadata, :status, :title]
+      require_atomic? false
     end
   end
 

@@ -27,6 +27,8 @@
       darwin.apple_sdk.frameworks.CoreServices
     ];
 
+  dotenv.disableHint = true;
+
   languages.elixir = {
     enable = true;
   };

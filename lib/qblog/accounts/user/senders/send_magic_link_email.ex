@@ -31,10 +31,25 @@ defmodule Qblog.Accounts.User.Senders.SendMagicLinkEmail do
 
   defp body(params) do
     # NOTE: You may have to change this to match your magic link acceptance URL.
+    magic_link_url = magic_link_url(params[:token])
 
     """
     <p>Hello, #{params[:email]}! Click this link to sign in:</p>
-    <p><a href="#{url(~p"/magic_link/#{params[:token]}")}">#{url(~p"/magic_link/#{params[:token]}")}</a></p>
+
+    <p><a href="#{magic_link_url}">#{magic_link_url}</a></p>
+
     """
+  end
+
+  defp magic_link_url(token) do
+    case System.get_env("LAN_HOST") do
+      nil -> url(~p"/magic_link/#{token}")
+      "" -> url(~p"/magic_link/#{token}")
+      lan_host -> "http://#{lan_host}:#{endpoint_port()}/magic_link/#{token}"
+    end
+  end
+
+  defp endpoint_port do
+    QblogWeb.Endpoint.config(:http) |> Keyword.fetch!(:port)
   end
 end

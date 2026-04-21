@@ -44,3 +44,4 @@ npm-debug.log
 /Session.vim
 /qblog-notes
 /quickfix-*
+/.env

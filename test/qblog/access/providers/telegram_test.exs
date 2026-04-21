@@ -82,6 +82,51 @@ defmodule Qblog.Access.Providers.TelegramTest do
     end
   end
 
+  describe "source_attrs_from_update/1" do
+    test "extracts pending source attrs from bot chat membership updates" do
+      update = %{
+        "my_chat_member" => %{
+          "chat" => %{
+            "id" => -100_123,
+            "title" => "Hobbies",
+            "type" => "supergroup"
+          },
+          "new_chat_member" => %{
+            "status" => "member"
+          }
+        }
+      }
+
+      assert {:ok, attrs} = Telegram.source_attrs_from_update(update)
+
+      assert attrs.provider_source_id == "-100123"
+      assert attrs.title == "Hobbies"
+      assert attrs.metadata["kind"] == "telegram_chat"
+      assert attrs.metadata["chat"]["type"] == "supergroup"
+    end
+
+    test "ignores bot removal updates" do
+      update = %{
+        "my_chat_member" => %{
+          "chat" => %{
+            "id" => -100_123,
+            "title" => "Hobbies",
+            "type" => "supergroup"
+          },
+          "new_chat_member" => %{
+            "status" => "left"
+          }
+        }
+      }
+
+      assert Telegram.source_attrs_from_update(update) == :ignore
+    end
+
+    test "ignores unrelated updates" do
+      assert Telegram.source_attrs_from_update(%{"message" => %{"text" => "hello"}}) == :ignore
+    end
+  end
+
   describe "creator?/1" do
     test "returns true for Telegram creator status" do
       assert Telegram.creator?(%{"status" => "creator"})

@@ -35,6 +35,7 @@ defmodule Qblog.Access do
         action: :read,
         get_by: [:provider, :provider_source_id]
 
+      define :upsert_pending_source_from_provider, action: :upsert_pending_from_provider
       define :upsert_source, action: :upsert
     end
 
@@ -53,6 +54,12 @@ defmodule Qblog.Access do
       {:ok, identity} -> update_external_identity(identity, telegram_user)
       {:error, error} -> {:error, error}
     end
+  end
+
+  def upsert_pending_telegram_source(attrs) do
+    attrs
+    |> Map.put(:provider, :telegram)
+    |> upsert_pending_source_from_provider(authorize?: false)
   end
 
   defp create_user_and_identity(provider_user_id, telegram_user) do

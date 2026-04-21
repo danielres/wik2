@@ -29,11 +29,36 @@ defmodule Qblog.Access.Providers.Telegram do
     |> chat_member_from_response()
   end
 
+  def source_attrs_from_update(%{
+        "my_chat_member" => %{
+          "chat" => chat,
+          "new_chat_member" => %{"status" => status}
+        }
+      })
+      when status in @active_member_statuses do
+    {:ok,
+     %{
+       metadata: %{
+         "chat" => chat,
+         "kind" => "telegram_chat"
+       },
+       provider_source_id: chat["id"] |> to_string(),
+       title: chat_title(chat)
+     }}
+  end
+
+  def source_attrs_from_update(%{"my_chat_member" => _my_chat_member}), do: :ignore
+  def source_attrs_from_update(_update), do: :ignore
+
   def creator?(%{"status" => "creator"}), do: true
   def creator?(_chat_member), do: false
 
   def active_member?(%{"status" => status}), do: status in @active_member_statuses
   def active_member?(_chat_member), do: false
+
+  defp chat_title(%{"title" => title}) when is_binary(title), do: title
+  defp chat_title(%{"username" => username}) when is_binary(username), do: username
+  defp chat_title(%{"id" => chat_id}), do: chat_id |> to_string()
 
   defp bot_token do
     System.fetch_env!("TELEGRAM_BOT_TOKEN")

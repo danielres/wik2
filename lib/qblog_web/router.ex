@@ -25,6 +25,10 @@ defmodule QblogWeb.Router do
     plug :set_actor, :user
   end
 
+  pipeline :webhook do
+    plug :accepts, ["json"]
+  end
+
   if Application.compile_env(:qblog, :dev_routes) do
     import AshAdmin.Router
 
@@ -69,6 +73,12 @@ defmodule QblogWeb.Router do
       auth_routes_prefix: "/auth",
       overrides: [QblogWeb.AuthOverrides, Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI]
     )
+  end
+
+  scope "/webhooks", QblogWeb.Webhooks do
+    pipe_through :webhook
+
+    post "/telegram", TelegramController, :create
   end
 
   scope "/", QblogWeb do

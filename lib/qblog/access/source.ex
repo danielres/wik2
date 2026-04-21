@@ -54,6 +54,19 @@ defmodule Qblog.Access.Source do
       upsert_fields [:claimed_at, :claimed_by_user_id, :group_id, :metadata, :status, :title]
     end
 
+    create :upsert_pending_from_provider do
+      accept [
+        :metadata,
+        :provider,
+        :provider_source_id,
+        :title
+      ]
+
+      upsert? true
+      upsert_identity :unique_provider_source
+      upsert_fields [:metadata, :title]
+    end
+
     update :update do
       accept [:claimed_at, :claimed_by_user_id, :group_id, :metadata, :status, :title]
     end

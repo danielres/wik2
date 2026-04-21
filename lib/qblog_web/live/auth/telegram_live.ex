@@ -54,7 +54,12 @@ defmodule QblogWeb.Auth.TelegramLive do
                     "bg-base-100 px-4 py-8 rounded-box",
                     "flex flex-col items-center gap-4"
                   ]}>
-                    <span class="badge badge-neutral h-8 font-bold">Option 1</span>
+                    <span
+                      :if={@owned_groups != []}
+                      class="badge badge-neutral h-8 font-bold"
+                    >
+                      Option 1
+                    </span>
 
                     <ul class="list opacity-70 text-center">
                       <li>Create a new space.</li>

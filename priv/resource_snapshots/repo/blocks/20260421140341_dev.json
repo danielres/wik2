@@ -42,30 +42,23 @@
       "generated?": false,
       "precision": null,
       "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "pages_group_id_fkey",
-        "on_delete": null,
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "groups"
-      },
+      "references": null,
       "scale": null,
       "size": null,
-      "source": "group_id",
-      "type": "uuid"
+      "source": "type",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "%{}",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "data",
+      "type": "map"
     },
     {
       "allow_nil?": false,
@@ -86,7 +79,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "pages_author_id_fkey",
+        "name": "blocks_author_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -97,6 +90,68 @@
       "size": null,
       "source": "author_id",
       "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "blocks_owner_group_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "groups"
+      },
+      "scale": null,
+      "size": null,
+      "source": "owner_group_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "blocks_owner_user_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "users"
+      },
+      "scale": null,
+      "size": null,
+      "source": "owner_user_id",
+      "type": "uuid"
     }
   ],
   "base_filter": null,
@@ -105,14 +160,14 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "9DB9856B7D5F7B623F063DED08B8C4D9F656078BF39AE294888061DD4CB0B0EE",
+  "hash": "2D1F5BAC0EB0D904738F010C412AF6BCF63110BD337A14AA900CCE47E1C94A7F",
   "identities": [],
   "multitenancy": {
-    "attribute": "group_id",
-    "global": false,
-    "strategy": "attribute"
+    "attribute": null,
+    "global": null,
+    "strategy": null
   },
   "repo": "Elixir.Qblog.Repo",
   "schema": null,
-  "table": "pages"
+  "table": "blocks"
 }

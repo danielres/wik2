@@ -42,30 +42,6 @@
       "generated?": false,
       "precision": null,
       "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "last_verified_at",
-      "type": "utc_datetime_usec"
-    },
-    {
-      "allow_nil?": false,
-      "default": "\"active\"",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "status",
-      "type": "text"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
       "references": {
         "deferrable": false,
         "destination_attribute": "id",
@@ -79,16 +55,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "access_grants_external_identity_id_fkey",
+        "name": "pages_group_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "access_external_identities"
+        "table": "groups"
       },
       "scale": null,
       "size": null,
-      "source": "external_identity_id",
+      "source": "group_id",
       "type": "uuid"
     },
     {
@@ -110,38 +86,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "access_grants_source_id_fkey",
-        "on_delete": null,
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "access_sources"
-      },
-      "scale": null,
-      "size": null,
-      "source": "source_id",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "access_grants_user_id_fkey",
+        "name": "pages_author_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -150,7 +95,7 @@
       },
       "scale": null,
       "size": null,
-      "source": "user_id",
+      "source": "author_id",
       "type": "uuid"
     }
   ],
@@ -160,33 +105,14 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "FC950F42918A07BC6AC01C4CFB8A49093EC5B850582D988529B3FD4D200679AA",
-  "identities": [
-    {
-      "all_tenants?": false,
-      "base_filter": null,
-      "index_name": "access_grants_unique_source_user_index",
-      "keys": [
-        {
-          "type": "atom",
-          "value": "source_id"
-        },
-        {
-          "type": "atom",
-          "value": "user_id"
-        }
-      ],
-      "name": "unique_source_user",
-      "nils_distinct?": true,
-      "where": null
-    }
-  ],
+  "hash": "488773B8B18AF65389F5A6BED08A222F36CA38526CCAF75E3CF0082177F6D38F",
+  "identities": [],
   "multitenancy": {
-    "attribute": null,
-    "global": null,
-    "strategy": null
+    "attribute": "group_id",
+    "global": false,
+    "strategy": "attribute"
   },
   "repo": "Elixir.Qblog.Repo",
   "schema": null,
-  "table": "access_grants"
+  "table": "pages"
 }

@@ -45,7 +45,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "attachable_type",
+      "source": "title",
       "type": "text"
     },
     {
@@ -57,19 +57,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "attachable_id",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "order_key",
+      "source": "body",
       "type": "text"
     },
     {
@@ -91,16 +79,47 @@
           "global": null,
           "strategy": null
         },
-        "name": "block_placements_block_id_fkey",
+        "name": "posts_group_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "blocks"
+        "table": "groups"
       },
       "scale": null,
       "size": null,
-      "source": "block_id",
+      "source": "group_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "posts_author_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "users"
+      },
+      "scale": null,
+      "size": null,
+      "source": "author_id",
       "type": "uuid"
     }
   ],
@@ -110,37 +129,14 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "910146D404ACCC122207ABA08C1A0D97662FB9E68881352C282176B1CD0B7F7E",
-  "identities": [
-    {
-      "all_tenants?": false,
-      "base_filter": null,
-      "index_name": "block_placements_unique_attachable_order_key_index",
-      "keys": [
-        {
-          "type": "atom",
-          "value": "attachable_type"
-        },
-        {
-          "type": "atom",
-          "value": "attachable_id"
-        },
-        {
-          "type": "atom",
-          "value": "order_key"
-        }
-      ],
-      "name": "unique_attachable_order_key",
-      "nils_distinct?": true,
-      "where": null
-    }
-  ],
+  "hash": "98B7C6FFA45A7AA12C1267BEB72A612D4E1357C30CE077ADBF520F7983E456AC",
+  "identities": [],
   "multitenancy": {
-    "attribute": null,
-    "global": null,
-    "strategy": null
+    "attribute": "group_id",
+    "global": false,
+    "strategy": "attribute"
   },
   "repo": "Elixir.Qblog.Repo",
   "schema": null,
-  "table": "block_placements"
+  "table": "posts"
 }

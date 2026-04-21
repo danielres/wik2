@@ -45,11 +45,47 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "name",
+      "source": "attachable_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "attachable_type",
       "type": "text"
     },
     {
-      "allow_nil?": true,
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "order_key",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"full\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "width",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
       "default": "nil",
       "generated?": false,
       "precision": null,
@@ -67,16 +103,47 @@
           "global": null,
           "strategy": null
         },
-        "name": "groups_author_id_fkey",
+        "name": "block_placements_block_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "users"
+        "table": "blocks"
       },
       "scale": null,
       "size": null,
-      "source": "author_id",
+      "source": "block_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "block_placements_group_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "groups"
+      },
+      "scale": null,
+      "size": null,
+      "source": "group_id",
       "type": "uuid"
     }
   ],
@@ -86,19 +153,27 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "E382FDD497ACA22F0B80B9C3EF274BA4861DF3A22A6C69690B2B19ABC3B355DA",
+  "hash": "FF3A15A9DB1C6CA1E10B625E6577F88B3FDF30E3F71FB47E36F24395B00D20BF",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "groups_unique_name_index",
+      "index_name": "block_placements_unique_attachable_order_key_index",
       "keys": [
         {
           "type": "atom",
-          "value": "name"
+          "value": "attachable_type"
+        },
+        {
+          "type": "atom",
+          "value": "attachable_id"
+        },
+        {
+          "type": "atom",
+          "value": "order_key"
         }
       ],
-      "name": "unique_name",
+      "name": "unique_attachable_order_key",
       "nils_distinct?": true,
       "where": null
     }
@@ -110,5 +185,5 @@
   },
   "repo": "Elixir.Qblog.Repo",
   "schema": null,
-  "table": "groups"
+  "table": "block_placements"
 }

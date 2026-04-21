@@ -42,21 +42,6 @@
       "generated?": false,
       "precision": null,
       "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "nodes",
-      "type": [
-        "array",
-        "map"
-      ]
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
       "references": {
         "deferrable": false,
         "destination_attribute": "id",
@@ -70,16 +55,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "page_trees_group_id_fkey",
+        "name": "profiles_group_user_relation_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "groups"
+        "table": "group_user_relations"
       },
       "scale": null,
       "size": null,
-      "source": "group_id",
+      "source": "group_user_relation_id",
       "type": "uuid"
     }
   ],
@@ -89,29 +74,29 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "4AB510894B1208BD60A38C445E1F61CE5F1E2FFF30E8EAEB6F8759D8C210A4B3",
+  "hash": "A5F355E85EECEAF28B300B22071674CA911AE90856937EDD2B02CFCCC39C4C0E",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "page_trees_unique_group_page_tree_index",
+      "index_name": "profiles_unique_group_user_relation_profile_index",
       "keys": [
         {
           "type": "atom",
-          "value": "group_id"
+          "value": "group_user_relation_id"
         }
       ],
-      "name": "unique_group_page_tree",
+      "name": "unique_group_user_relation_profile",
       "nils_distinct?": true,
       "where": null
     }
   ],
   "multitenancy": {
-    "attribute": "group_id",
-    "global": false,
-    "strategy": "attribute"
+    "attribute": null,
+    "global": null,
+    "strategy": null
   },
   "repo": "Elixir.Qblog.Repo",
   "schema": null,
-  "table": "page_trees"
+  "table": "profiles"
 }

@@ -2,6 +2,18 @@
   "attributes": [
     {
       "allow_nil?": false,
+      "default": "fragment(\"uuid_generate_v7()\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": true,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
       "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
       "precision": null,
@@ -29,7 +41,22 @@
       "default": "nil",
       "generated?": false,
       "precision": null,
-      "primary_key?": true,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "nodes",
+      "type": [
+        "array",
+        "map"
+      ]
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
       "references": {
         "deferrable": false,
         "destination_attribute": "id",
@@ -43,7 +70,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "group_user_relations_group_id_fkey",
+        "name": "page_trees_group_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -54,37 +81,6 @@
       "size": null,
       "source": "group_id",
       "type": "uuid"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": true,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "group_user_relations_user_id_fkey",
-        "on_delete": null,
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "users"
-      },
-      "scale": null,
-      "size": null,
-      "source": "user_id",
-      "type": "uuid"
     }
   ],
   "base_filter": null,
@@ -93,33 +89,29 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "E798D0C8F3913BDA75CE58C97759E9868F9A9C3C0FB7EE268418B91C994B23CB",
+  "hash": "7D55091AAE09164FBD22E167061D288FA07BCEE0682248A4C81863E299B32BE8",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "group_user_relations_unique_group_user_relation_index",
+      "index_name": "page_trees_unique_group_page_tree_index",
       "keys": [
         {
           "type": "atom",
           "value": "group_id"
-        },
-        {
-          "type": "atom",
-          "value": "user_id"
         }
       ],
-      "name": "unique_group_user_relation",
+      "name": "unique_group_page_tree",
       "nils_distinct?": true,
       "where": null
     }
   ],
   "multitenancy": {
-    "attribute": null,
-    "global": null,
-    "strategy": null
+    "attribute": "group_id",
+    "global": false,
+    "strategy": "attribute"
   },
   "repo": "Elixir.Qblog.Repo",
   "schema": null,
-  "table": "group_user_relations"
+  "table": "page_trees"
 }

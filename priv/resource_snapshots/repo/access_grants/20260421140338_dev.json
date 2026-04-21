@@ -42,6 +42,30 @@
       "generated?": false,
       "precision": null,
       "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "last_verified_at",
+      "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"active\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "status",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
       "references": {
         "deferrable": false,
         "destination_attribute": "id",
@@ -55,16 +79,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "group_user_relations_group_id_fkey",
+        "name": "access_grants_external_identity_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "groups"
+        "table": "access_external_identities"
       },
       "scale": null,
       "size": null,
-      "source": "group_id",
+      "source": "external_identity_id",
       "type": "uuid"
     },
     {
@@ -86,7 +110,38 @@
           "global": null,
           "strategy": null
         },
-        "name": "group_user_relations_user_id_fkey",
+        "name": "access_grants_source_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "access_sources"
+      },
+      "scale": null,
+      "size": null,
+      "source": "source_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "access_grants_user_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -105,23 +160,23 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "95BBDD8DECCD4598DF1108ED78AE425512E222004C091A958397058C18FBD6B5",
+  "hash": "75BC3B67CD248AD95D617878E4D0176774757FB72C4B3A76BA0622FD384714E4",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "group_user_relations_unique_group_user_relation_index",
+      "index_name": "access_grants_unique_source_user_index",
       "keys": [
         {
           "type": "atom",
-          "value": "group_id"
+          "value": "source_id"
         },
         {
           "type": "atom",
           "value": "user_id"
         }
       ],
-      "name": "unique_group_user_relation",
+      "name": "unique_source_user",
       "nils_distinct?": true,
       "where": null
     }
@@ -133,5 +188,5 @@
   },
   "repo": "Elixir.Qblog.Repo",
   "schema": null,
-  "table": "group_user_relations"
+  "table": "access_grants"
 }

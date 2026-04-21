@@ -37,6 +37,8 @@ defmodule QblogWeb.Router do
   scope "/", QblogWeb do
     pipe_through :browser
 
+    get "/auth/telegram/callback", AuthController.Telegram, :callback
+
     auth_routes AuthController, Qblog.Accounts.User, path: "/auth"
     sign_out_route AuthController
 

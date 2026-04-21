@@ -48,7 +48,7 @@ defmodule Qblog.Access.ExternalIdentity do
 
       upsert? true
       upsert_identity :unique_provider_user
-      upsert_fields [:avatar_url, :display_name, :metadata, :user_id, :username]
+      upsert_fields [:avatar_url, :display_name, :metadata, :username]
     end
 
     update :update do

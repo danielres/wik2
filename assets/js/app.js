@@ -27,6 +27,7 @@ import topbar from "../vendor/topbar";
 
 import { CapitalizeFirstLetter } from "./hooks/CapitalizeFirstLetter";
 import { MarkdownEditor } from "./hooks/MarkdownEditor";
+import { TelegramLogin } from "./hooks/TelegramLogin";
 import { initTheme } from "./theme";
 
 const csrfToken = document
@@ -38,7 +39,7 @@ initTheme();
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
-  hooks: { ...colocatedHooks, CapitalizeFirstLetter, MarkdownEditor },
+  hooks: { ...colocatedHooks, CapitalizeFirstLetter, MarkdownEditor, TelegramLogin },
 });
 
 // Show progress bar on live navigation and form submits

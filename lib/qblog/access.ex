@@ -296,7 +296,7 @@ defmodule Qblog.Access do
     case claim_source(source, group, user) do
       {:ok, source, notifications} ->
         Ash.Notifier.notify(notifications)
-        {:ok, source}
+        {:ok, {group, source}}
 
       {:error, error} ->
         {:error, error}

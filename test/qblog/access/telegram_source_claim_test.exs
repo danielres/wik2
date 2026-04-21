@@ -79,7 +79,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       source = create_pending_source("-1001", "Wiktest Local Group 1")
       create_membership(group, user, :owner)
 
-      assert {:ok, _source} =
+      assert {:ok, {_group, _source}} =
                Access.claim_telegram_source_with_existing_group(
                  source.id,
                  group.id,
@@ -103,7 +103,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       source = create_pending_source("-1001", "Wiktest Local Group 1")
       create_membership(group, user, :owner)
 
-      assert {:ok, source} =
+      assert {:ok, {claimed_group, source}} =
                Access.claim_telegram_source_with_existing_group(
                  source.id,
                  group.id,
@@ -111,6 +111,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
                  CreatorTelegramProvider
                )
 
+      assert claimed_group.id == group.id
       assert source.status == :active
       assert source.group_id == group.id
       assert source.claimed_by_user_id == user.id

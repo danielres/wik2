@@ -141,8 +141,7 @@ defmodule QblogWeb.Auth.TelegramLive do
            group_id,
            socket.assigns.current_user
          ) do
-      {:ok, source} ->
-        group = Enum.find(socket.assigns.owned_groups, &(&1.id == source.group_id))
+      {:ok, {group, _source}} ->
         {:noreply, socket |> push_navigate(to: ~p"/#{group.name}")}
 
       {:error, _error} ->

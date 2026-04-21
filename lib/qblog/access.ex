@@ -80,9 +80,26 @@ defmodule Qblog.Access do
         telegram_provider \\ Telegram
       ) do
     with {:ok, source} <- Ash.get(Source, source_id, authorize?: false, domain: __MODULE__),
+         :ok <- authorize_pending_source(source),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_telegram_source_claim(source, identity, telegram_provider) do
       source |> create_group_and_claim_source(user)
+    end
+  end
+
+  def claim_telegram_source_with_existing_group(
+        source_id,
+        group_id,
+        %User{} = user,
+        telegram_provider \\ Telegram
+      ) do
+    with {:ok, source} <- Ash.get(Source, source_id, authorize?: false, domain: __MODULE__),
+         :ok <- authorize_pending_source(source),
+         {:ok, group} <- Ash.get(Group, group_id, authorize?: false, domain: Qblog.Accounts),
+         :ok <- authorize_owned_group(group, user),
+         {:ok, identity} <- load_telegram_identity(user),
+         :ok <- authorize_telegram_source_claim(source, identity, telegram_provider) do
+      claim_source_with_existing_group(source, group, user)
     end
   end
 
@@ -255,6 +272,31 @@ defmodule Qblog.Access do
         else
           {:error, :telegram_source_claim_requires_creator}
         end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp authorize_pending_source(%{status: :pending}), do: :ok
+  defp authorize_pending_source(_source), do: {:error, :pending_source_required}
+
+  defp authorize_owned_group(%{id: group_id}, %{id: user_id}) do
+    GroupUserRelation
+    |> Query.filter(group_id == ^group_id and user_id == ^user_id and type == :owner)
+    |> Ash.exists(authorize?: false, domain: Qblog.Accounts)
+    |> case do
+      {:ok, true} -> :ok
+      {:ok, false} -> {:error, :group_owner_required}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp claim_source_with_existing_group(source, group, user) do
+    case claim_source(source, group, user) do
+      {:ok, source, notifications} ->
+        Ash.Notifier.notify(notifications)
+        {:ok, source}
 
       {:error, error} ->
         {:error, error}

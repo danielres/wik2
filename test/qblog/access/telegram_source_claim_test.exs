@@ -5,6 +5,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
 
   alias Qblog.Access
   alias Qblog.Access.Source
+  alias Qblog.Access.Telegram
   alias Qblog.Accounts.GroupUserRelation
 
   require Ash.Query
@@ -18,26 +19,26 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
     def get_chat_member(_chat_id, "42"), do: {:ok, %{"status" => "member"}}
   end
 
-  describe "list_claimable_telegram_sources/2" do
+  describe "list_claimable_sources/2" do
     test "returns pending sources where the Telegram identity is the chat creator" do
       user = create_telegram_user()
       source = create_pending_source("-1001", "Wiktest Local Group 1")
       create_pending_source("-1002", "Wiktest Local Group 2")
 
       assert [claimable_source] =
-               Access.list_claimable_telegram_sources(user, CreatorTelegramProvider)
+               Telegram.list_claimable_sources(user, CreatorTelegramProvider)
 
       assert claimable_source.id == source.id
     end
   end
 
-  describe "claim_telegram_source_with_new_group/3" do
+  describe "claim_source_with_new_group/3" do
     test "creates a group and activates the source for Telegram chat creators" do
       user = create_telegram_user()
       source = create_pending_source("-1001", "Wiktest Local Group 1")
 
       assert {:ok, {group, source}} =
-               Access.claim_telegram_source_with_new_group(
+               Telegram.claim_source_with_new_group(
                  source.id,
                  user,
                  CreatorTelegramProvider
@@ -62,7 +63,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       source = create_pending_source("-1001", "Wiktest Local Group 1")
 
       assert {:error, :telegram_source_claim_requires_creator} =
-               Access.claim_telegram_source_with_new_group(
+               Telegram.claim_source_with_new_group(
                  source.id,
                  user,
                  MemberTelegramProvider
@@ -80,7 +81,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       create_membership(group, user, :owner)
 
       assert {:ok, {_group, _source}} =
-               Access.claim_telegram_source_with_existing_group(
+               Telegram.claim_source_with_existing_group(
                  source.id,
                  group.id,
                  user,
@@ -88,7 +89,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
                )
 
       assert {:error, :pending_source_required} =
-               Access.claim_telegram_source_with_new_group(
+               Telegram.claim_source_with_new_group(
                  source.id,
                  user,
                  CreatorTelegramProvider
@@ -96,7 +97,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
     end
   end
 
-  describe "claim_telegram_source_with_existing_group/4" do
+  describe "claim_source_with_existing_group/4" do
     test "activates the source for an existing group owned by the Telegram creator" do
       user = create_telegram_user()
       group = generate(group(author: user))
@@ -104,7 +105,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       create_membership(group, user, :owner)
 
       assert {:ok, {claimed_group, source}} =
-               Access.claim_telegram_source_with_existing_group(
+               Telegram.claim_source_with_existing_group(
                  source.id,
                  group.id,
                  user,
@@ -125,7 +126,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       create_membership(group, user, :admin)
 
       assert {:error, :group_owner_required} =
-               Access.claim_telegram_source_with_existing_group(
+               Telegram.claim_source_with_existing_group(
                  source.id,
                  group.id,
                  user,

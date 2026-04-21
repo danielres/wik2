@@ -7,6 +7,7 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
   alias Qblog.Access.ExternalIdentity
   alias Qblog.Access.Grant
   alias Qblog.Access.Source
+  alias Qblog.Access.Telegram
   alias Qblog.Accounts
   alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Scope
@@ -21,13 +22,13 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
     def get_chat_member("-1001", "42"), do: {:ok, %{"status" => "left"}}
   end
 
-  describe "refresh_telegram_grants/2" do
+  describe "refresh_grants/2" do
     test "activates grants and creates plain member relations for Telegram members" do
       user = create_telegram_user()
       group = generate(group())
       source = create_active_source(group, "-1001")
 
-      assert {:ok, [grant]} = Access.refresh_telegram_grants(user, MemberTelegramProvider)
+      assert {:ok, [grant]} = Telegram.refresh_grants(user, MemberTelegramProvider)
 
       assert grant.status == :active
       assert grant.source_id == source.id
@@ -47,7 +48,7 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
       source = create_active_source(group, "-1001")
       create_active_grant(source, user)
 
-      assert {:ok, [grant]} = Access.refresh_telegram_grants(user, LeftTelegramProvider)
+      assert {:ok, [grant]} = Telegram.refresh_grants(user, LeftTelegramProvider)
 
       assert grant.status == :inactive
 
@@ -63,7 +64,7 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
       create_active_source(group, "-1001")
       create_membership(group, user, :admin)
 
-      assert {:ok, [_grant]} = Access.refresh_telegram_grants(user, MemberTelegramProvider)
+      assert {:ok, [_grant]} = Telegram.refresh_grants(user, MemberTelegramProvider)
 
       assert {:ok, membership} =
                GroupUserRelation
@@ -78,7 +79,7 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
       group = generate(group())
       create_active_source(group, "-1001")
 
-      assert {:ok, [_grant]} = Access.refresh_telegram_grants(user, MemberTelegramProvider)
+      assert {:ok, [_grant]} = Telegram.refresh_grants(user, MemberTelegramProvider)
 
       assert Ash.can?({group, :read}, scope(user, group))
       assert {:ok, groups} = Accounts.list_groups(scope: scope(user, group))
@@ -92,7 +93,7 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
       create_membership(group, user, :admin)
       create_active_grant(source, user)
 
-      assert {:ok, [grant]} = Access.refresh_telegram_grants(user, LeftTelegramProvider)
+      assert {:ok, [grant]} = Telegram.refresh_grants(user, LeftTelegramProvider)
 
       assert grant.status == :inactive
       refute Ash.can?({group, :read}, scope(user, group))
@@ -116,7 +117,7 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
       create_membership(group, user, :owner)
       create_active_grant(source, user)
 
-      assert {:ok, [grant]} = Access.refresh_telegram_grants(user, LeftTelegramProvider)
+      assert {:ok, [grant]} = Telegram.refresh_grants(user, LeftTelegramProvider)
 
       assert grant.status == :inactive
       assert Ash.can?({group, :read}, scope(user, group))

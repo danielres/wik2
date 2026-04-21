@@ -86,6 +86,10 @@ defmodule Qblog.Accounts.Group do
       default_sort type_sort: :asc, inserted_at: :asc
     end
 
+    has_many :access_sources, Source do
+      destination_attribute :group_id
+    end
+
     many_to_many :users, User do
       through GroupUserRelation
       source_attribute_on_join_resource :group_id

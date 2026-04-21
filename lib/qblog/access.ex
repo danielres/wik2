@@ -7,7 +7,6 @@ defmodule Qblog.Access do
     ]
 
   alias Qblog.Access.Telegram
-  alias Qblog.Accounts.User
 
   admin do
     show? true
@@ -42,27 +41,27 @@ defmodule Qblog.Access do
     end
   end
 
-  def find_or_create_identity_from_telegram(telegram_user) do
-    Telegram.find_or_create_identity(telegram_user)
-  end
+  defdelegate telegram_find_or_create_identity(telegram_user),
+    to: Telegram,
+    as: :find_or_create_identity
 
-  def upsert_pending_telegram_source(attrs) do
-    Telegram.upsert_pending_source(attrs)
-  end
+  defdelegate telegram_upsert_pending_source(attrs),
+    to: Telegram,
+    as: :upsert_pending_source
 
-  def list_claimable_telegram_sources(%User{} = user) do
-    Telegram.list_claimable_sources(user)
-  end
+  defdelegate telegram_list_claimable_sources(user),
+    to: Telegram,
+    as: :list_claimable_sources
 
-  def claim_telegram_source_with_new_group(source_id, %User{} = user) do
-    Telegram.claim_source_with_new_group(source_id, user)
-  end
+  defdelegate telegram_claim_source_with_new_group(source_id, user),
+    to: Telegram,
+    as: :claim_source_with_new_group
 
-  def claim_telegram_source_with_existing_group(source_id, group_id, %User{} = user) do
-    Telegram.claim_source_with_existing_group(source_id, group_id, user)
-  end
+  defdelegate telegram_claim_source_with_existing_group(source_id, group_id, user),
+    to: Telegram,
+    as: :claim_source_with_existing_group
 
-  def refresh_telegram_grants(%User{} = user) do
-    Telegram.refresh_grants(user)
-  end
+  defdelegate telegram_refresh_grants(user),
+    to: Telegram,
+    as: :refresh_grants
 end

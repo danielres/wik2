@@ -3,10 +3,10 @@ defmodule Qblog.Access.TelegramIdentityTest do
 
   alias Qblog.Access
 
-  describe "find_or_create_identity_from_telegram/1" do
+  describe "telegram_find_or_create_identity/1" do
     test "creates a user and external identity from Telegram claims" do
       assert {:ok, identity} =
-               Access.find_or_create_identity_from_telegram(%{
+               Access.telegram_find_or_create_identity(%{
                  "family_name" => "Lovelace",
                  "given_name" => "Ada",
                  "picture" => "https://telegram.example/ada.png",
@@ -24,14 +24,14 @@ defmodule Qblog.Access.TelegramIdentityTest do
 
     test "updates the external identity and keeps the existing user" do
       assert {:ok, identity} =
-               Access.find_or_create_identity_from_telegram(%{
+               Access.telegram_find_or_create_identity(%{
                  "given_name" => "Ada",
                  "preferred_username" => "ada",
                  "sub" => 42
                })
 
       assert {:ok, updated_identity} =
-               Access.find_or_create_identity_from_telegram(%{
+               Access.telegram_find_or_create_identity(%{
                  "given_name" => "Augusta",
                  "preferred_username" => "augusta",
                  "sub" => 42

@@ -132,7 +132,7 @@ defmodule Qblog.Access.TelegramGrantRefreshTest do
     generate(user())
 
     {:ok, identity} =
-      Access.find_or_create_identity_from_telegram(%{
+      Access.telegram_find_or_create_identity(%{
         "family_name" => "Lovelace",
         "given_name" => "Ada",
         "preferred_username" => "ada",

@@ -13,8 +13,8 @@ defmodule QblogWeb.AuthController.Telegram do
     params = Map.delete(params, "return_to")
 
     with {:ok, %{user: telegram_user}} <- Telegram.verify_login(params),
-         {:ok, %{user: user}} <- Access.find_or_create_identity_from_telegram(telegram_user),
-         {:ok, _grants} <- Access.refresh_telegram_grants(user),
+         {:ok, %{user: user}} <- Access.telegram_find_or_create_identity(telegram_user),
+         {:ok, _grants} <- Access.telegram_refresh_grants(user),
          {:ok, token, _claims} <- Jwt.token_for_user(user) do
       user = Ash.Resource.set_metadata(user, %{token: token})
 

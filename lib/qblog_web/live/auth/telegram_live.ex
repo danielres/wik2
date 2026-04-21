@@ -123,7 +123,7 @@ defmodule QblogWeb.Auth.TelegramLive do
 
   @impl true
   def handle_event("claim_source_with_new_group", %{"source_id" => source_id}, socket) do
-    case Access.claim_telegram_source_with_new_group(source_id, socket.assigns.current_user) do
+    case Access.telegram_claim_source_with_new_group(source_id, socket.assigns.current_user) do
       {:ok, {group, _source}} ->
         {:noreply, socket |> push_navigate(to: ~p"/#{group.name}")}
 
@@ -141,7 +141,7 @@ defmodule QblogWeb.Auth.TelegramLive do
         %{"claim" => %{"group_id" => group_id}, "source_id" => source_id},
         socket
       ) do
-    case Access.claim_telegram_source_with_existing_group(
+    case Access.telegram_claim_source_with_existing_group(
            source_id,
            group_id,
            socket.assigns.current_user
@@ -166,7 +166,7 @@ defmodule QblogWeb.Auth.TelegramLive do
         {[], []}
       else
         {:ok, owned_groups} = Accounts.list_owned_groups(current_user)
-        {Access.list_claimable_telegram_sources(current_user), owned_groups}
+        {Access.telegram_list_claimable_sources(current_user), owned_groups}
       end
 
     socket

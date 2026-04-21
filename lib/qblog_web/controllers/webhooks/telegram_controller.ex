@@ -9,7 +9,7 @@ defmodule QblogWeb.Webhooks.TelegramController do
   def create(conn, params) do
     case Telegram.source_attrs_from_update(params) do
       {:ok, source_attrs} ->
-        source_attrs |> Access.upsert_pending_telegram_source() |> respond(conn)
+        source_attrs |> Access.telegram_upsert_pending_source() |> respond(conn)
 
       :ignore ->
         json(conn, %{ok: true})

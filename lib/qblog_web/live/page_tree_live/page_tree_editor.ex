@@ -171,11 +171,10 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   end
 
   # helpers ==================================================================
+
   defp link_target_for_node(scope, nodes, node) do
-    case TreeQueries.get_node_path(nodes, node.id) do
-      nil -> "#"
-      path -> "/#{scope.tenant.name}/wiki/#{path}"
-    end
+    path = TreeQueries.get_node_path(nodes, node.id)
+    "/#{scope.tenant.name}/wiki/#{path}"
   end
 
   # move node ================================================================

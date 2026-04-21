@@ -140,7 +140,7 @@ defmodule QblogWeb.BlogLive do
     scope = socket.assigns.current_scope
 
     socket =
-      if Ash.can?({new_post, :read}, scope: scope) do
+      if Ash.can?({new_post, :read}, scope) do
         socket
         |> assign(posts: socket.assigns.posts |> List.insert_at(0, new_post))
         |> assign(:new_post_id, new_post.id)

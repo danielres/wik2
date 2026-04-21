@@ -37,7 +37,6 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         <ActionButtons.wrapper>
           <ActionButtons.button
             :if={@editable?}
-            class="[&:not(:hover)]:bg-base-300"
             data-tip="add at top level"
             data-testid="page-tree-editor-add-root"
             icon="hero-plus-mini"

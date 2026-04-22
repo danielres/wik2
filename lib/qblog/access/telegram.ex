@@ -10,6 +10,7 @@ defmodule Qblog.Access.Telegram do
   alias Qblog.Accounts.User
   alias Qblog.Repo
 
+  require Logger
   require Ash.Query
 
   def create_bot_update(update) do
@@ -173,7 +174,8 @@ defmodule Qblog.Access.Telegram do
   end
 
   defp refresh_grant(source, identity, user, telegram_provider) do
-    status = grant_status(source, identity, telegram_provider)
+    {status, verification_reason} = verify_grant_status(source, identity, telegram_provider)
+    log_inactive_grant_verification(status, verification_reason, source, identity, user)
 
     case upsert_grant(source, identity, user, status) do
       {:ok, grant} ->
@@ -188,14 +190,33 @@ defmodule Qblog.Access.Telegram do
     end
   end
 
-  defp grant_status(source, identity, telegram_provider) do
+  defp verify_grant_status(source, identity, telegram_provider) do
     case telegram_provider.get_chat_member(source.provider_source_id, identity.provider_user_id) do
       {:ok, chat_member} ->
-        if TelegramProvider.active_member?(chat_member), do: :active, else: :inactive
+        if TelegramProvider.active_member?(chat_member) do
+          {:active, {:telegram_status, chat_member["status"]}}
+        else
+          {:inactive, {:telegram_status, chat_member["status"]}}
+        end
 
-      {:error, _error} ->
-        :inactive
+      {:error, error} ->
+        {:inactive, {:telegram_error, error}}
     end
+  end
+
+  defp log_inactive_grant_verification(:active, _reason, _source, _identity, _user), do: :ok
+
+  defp log_inactive_grant_verification(:inactive, reason, source, identity, user) do
+    Logger.warning(
+      "Telegram access grant verified as inactive " <>
+        inspect(%{
+          reason: reason,
+          provider_source_id: source.provider_source_id,
+          provider_user_id: identity.provider_user_id,
+          source_id: source.id,
+          user_id: user.id
+        })
+    )
   end
 
   defp upsert_grant(source, identity, user, status) do

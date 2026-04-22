@@ -7,6 +7,11 @@ defmodule Qblog.Access do
     ]
 
   alias Qblog.Access.Telegram
+  alias Qblog.Access.ExternalIdentity
+  alias Qblog.Access.Grant
+  alias Qblog.Accounts.User
+
+  require Ash.Query
 
   admin do
     show? true
@@ -80,4 +85,22 @@ defmodule Qblog.Access do
   defdelegate telegram_get_bot_update(id, actor),
     to: Telegram,
     as: :get_bot_update
+
+  def list_user_external_identities(%User{id: user_id}) do
+    ExternalIdentity
+    |> Ash.Query.filter(user_id == ^user_id)
+    |> Ash.Query.sort(updated_at: :desc)
+    |> Ash.read(authorize?: false, domain: __MODULE__)
+  end
+
+  def list_user_grants(%User{id: user_id}) do
+    Grant
+    |> Ash.Query.filter(user_id == ^user_id)
+    |> Ash.Query.sort(last_verified_at: :desc)
+    |> Ash.read(
+      authorize?: false,
+      domain: __MODULE__,
+      load: [:external_identity, source: [:group]]
+    )
+  end
 end

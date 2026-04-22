@@ -117,7 +117,7 @@ defmodule QblogWeb.Layouts do
           popovertarget="popover-user-dropdown"
           style="anchor-name:--anchor-user-dropdown"
         >
-          <Components.User.avatar user={@scope.actor} />
+          <Components.User.avatar tenant={@scope.tenant} user={@scope.actor} />
         </button>
 
         <div

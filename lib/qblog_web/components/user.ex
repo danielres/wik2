@@ -3,7 +3,7 @@ defmodule QblogWeb.Components.User do
 
   attr :link?, :boolean, default: false
   attr :tenant, :map, default: nil
-  attr :user, :map, required: true
+  attr :user, :map, default: nil
   attr :size, :string, default: "md"
 
   def avatar(assigns) do
@@ -21,16 +21,21 @@ defmodule QblogWeb.Components.User do
     <div class="avatar avatar-placeholder">
       <div class={[
         "bg-base-300 rounded-full text-xs",
+        "grid place-items-center",
         @size_class
       ]}>
-        <%= if @link? and @tenant != nil  do %>
+        <.icon :if={@tenant == nil} name="hero-user" class="size-1/2" />
+
+        <%= if @tenant != nil and @link? do %>
           <.link
             navigate={profile_path(@tenant, @user)}
             class="opacity-80 hover:opacity-100 transition"
           >
             {initials(@user)}
           </.link>
-        <% else %>
+        <% end %>
+
+        <%= if @tenant != nil and not @link? do %>
           {initials(@user)}
         <% end %>
       </div>

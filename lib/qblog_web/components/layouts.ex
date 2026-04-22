@@ -158,10 +158,7 @@ defmodule QblogWeb.Layouts do
             ]}
           >
             <li>
-              <.link
-                navigate={~p"/#{@scope.tenant.name}/wiki/members/#{@scope.actor |> to_string()}"}
-                class="opacity-80 hover:opacity-100 transition"
-              >
+              <.link navigate={~p"/#{@scope.tenant.name}/wiki/members/#{@scope.actor |> to_string()}"}>
                 <.icon name="hero-face-smile" /> Profile
               </.link>
             </li>
@@ -175,6 +172,20 @@ defmodule QblogWeb.Layouts do
               <div class="w-min mx-auto">
                 <QblogWeb.Layouts.theme_toggle />
               </div>
+            </li>
+          </ul>
+
+          <ul
+            :if={@scope.actor && @scope.actor.role == :superadmin}
+            class={[
+              "menu w-full",
+              "border-t-1 border-base-content/20"
+            ]}
+          >
+            <li>
+              <.link navigate={~p"/_"}>
+                <span class="badge badge-error">Superadmin</span>
+              </.link>
             </li>
           </ul>
         </div>

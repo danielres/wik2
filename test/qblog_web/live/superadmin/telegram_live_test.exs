@@ -23,7 +23,7 @@ defmodule QblogWeb.Superadmin.TelegramLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(superadmin)
-      |> live(~p"/_/telegram")
+      |> live(~p"/_")
 
     assert has_element?(view, testid("telegram-bot-update-123"))
     assert render(view) =~ "channel_post"
@@ -36,11 +36,11 @@ defmodule QblogWeb.Superadmin.TelegramLiveTest do
     assert {:error, {:redirect, %{to: "/"}}} =
              conn
              |> log_in(user)
-             |> live(~p"/_/telegram")
+             |> live(~p"/_")
   end
 
   test "anonymous users are redirected to sign in", %{conn: conn} do
-    assert {:error, {:redirect, %{to: "/sign-in"}}} = live(conn, ~p"/_/telegram")
+    assert {:error, {:redirect, %{to: "/sign-in"}}} = live(conn, ~p"/_")
   end
 
   defp log_in(conn, user) do

@@ -7,6 +7,8 @@ defmodule QblogWeb.Webhooks.TelegramController do
   require Logger
 
   def create(conn, params) do
+    :ok = store_bot_update(params)
+
     case Telegram.source_attrs_from_update(params) do
       {:ok, source_attrs} ->
         source_attrs |> Access.telegram_upsert_pending_source() |> respond(conn)
@@ -26,5 +28,16 @@ defmodule QblogWeb.Webhooks.TelegramController do
     conn
     |> put_status(:unprocessable_entity)
     |> json(%{ok: false})
+  end
+
+  defp store_bot_update(params) do
+    case Access.telegram_create_bot_update(params) do
+      {:ok, _bot_update} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error("Telegram bot update storage failed: #{inspect(error)}")
+        :ok
+    end
   end
 end

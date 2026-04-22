@@ -4,12 +4,19 @@ defmodule Qblog.Access.Telegram do
   alias Qblog.Access.ExternalIdentity
   alias Qblog.Access.Providers.Telegram, as: TelegramProvider
   alias Qblog.Access.Source
+  alias Qblog.Access.Telegram.BotUpdate
   alias Qblog.Accounts.Group
   alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Accounts.User
   alias Qblog.Repo
 
   require Ash.Query
+
+  def create_bot_update(update) do
+    update
+    |> TelegramProvider.bot_update_attrs_from_update()
+    |> Access.create_telegram_bot_update(authorize?: false)
+  end
 
   def find_or_create_identity(%{"sub" => telegram_user_id} = telegram_user) do
     provider_user_id = to_string(telegram_user_id)
@@ -25,6 +32,12 @@ defmodule Qblog.Access.Telegram do
     attrs
     |> Map.put(:provider, :telegram)
     |> Access.upsert_pending_source_from_provider(authorize?: false)
+  end
+
+  def list_bot_updates(%User{} = actor) do
+    BotUpdate
+    |> Query.sort(inserted_at: :desc, update_id: :desc)
+    |> Ash.read(actor: actor, domain: Access)
   end
 
   def list_claimable_sources(%User{} = user, telegram_provider \\ TelegramProvider) do

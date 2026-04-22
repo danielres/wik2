@@ -26,6 +26,25 @@ defmodule QblogWeb.LiveUserAuth do
     end
   end
 
+  def on_mount(:live_superadmin_required, _params, _session, socket) do
+    current_user = socket.assigns[:current_user]
+
+    cond do
+      current_user == nil ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/sign-in")}
+
+      current_user.role == :superadmin ->
+        current_scope = %Qblog.Scope{actor: current_user, tenant: nil}
+        socket = socket |> assign(current_scope: current_scope)
+
+        {:cont, socket}
+
+      true ->
+        socket = Phoenix.LiveView.put_flash(socket, :error, "Not found")
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
+    end
+  end
+
   def on_mount(:live_scope_required, params, _session, socket) do
     current_user = socket.assigns[:current_user]
 

@@ -2,6 +2,7 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
   use QblogWeb.ConnCase
 
   alias Qblog.Access.Source
+  alias Qblog.Access.Telegram.BotUpdate
 
   require Ash.Query
 
@@ -20,6 +21,13 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
     assert source.group_id == nil
     assert source.claimed_by_user_id == nil
     assert source.metadata["kind"] == "telegram_chat"
+
+    assert {:ok, bot_update} =
+             BotUpdate
+             |> Ash.Query.filter(update_id == 123)
+             |> Ash.read_one(authorize?: false)
+
+    assert bot_update.update_type == "my_chat_member"
   end
 
   test "refreshes source metadata without resetting claimed state", %{conn: conn} do
@@ -55,11 +63,22 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
   end
 
   test "ignores unrelated Telegram updates", %{conn: conn} do
-    conn = post(conn, ~p"/webhooks/telegram", %{"message" => %{"text" => "hello"}})
+    conn =
+      post(conn, ~p"/webhooks/telegram", %{
+        "message" => %{"text" => "hello"},
+        "update_id" => 124
+      })
 
     assert json_response(conn, 200) == %{"ok" => true}
 
     assert {:ok, []} = Ash.read(Source, authorize?: false)
+
+    assert {:ok, bot_update} =
+             BotUpdate
+             |> Ash.Query.filter(update_id == 124)
+             |> Ash.read_one(authorize?: false)
+
+    assert bot_update.update_type == "message"
   end
 
   defp bot_added_update(opts) do
@@ -75,7 +94,8 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
         "new_chat_member" => %{
           "status" => "member"
         }
-      }
+      },
+      "update_id" => 123
     }
   end
 end

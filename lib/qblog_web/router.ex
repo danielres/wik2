@@ -84,8 +84,16 @@ defmodule QblogWeb.Router do
   end
 
   scope "/", QblogWeb do
+    pipe_through [:browser]
+
+    ash_authentication_live_session :superadmin_routes,
+      on_mount: [{QblogWeb.LiveUserAuth, :live_superadmin_required}] do
+      scope "/_", Superadmin do
+        live "/", TelegramBotUpdatesLive
+      end
+    end
+
     ash_authentication_live_session :authenticated_routes do
-      pipe_through [:browser]
       live "/", HomeLive, :index
       live "/me", MeLive, :index
 

@@ -29,6 +29,14 @@ defmodule Qblog.Access.Providers.Telegram do
     |> chat_member_from_response()
   end
 
+  def bot_update_attrs_from_update(%{"update_id" => update_id} = update) do
+    %{
+      payload: update,
+      update_id: update_id,
+      update_type: update_type(update)
+    }
+  end
+
   def source_attrs_from_update(%{
         "my_chat_member" => %{
           "chat" => chat,
@@ -59,6 +67,14 @@ defmodule Qblog.Access.Providers.Telegram do
   defp chat_title(%{"title" => title}) when is_binary(title), do: title
   defp chat_title(%{"username" => username}) when is_binary(username), do: username
   defp chat_title(%{"id" => chat_id}), do: chat_id |> to_string()
+
+  defp update_type(update) do
+    update
+    |> Map.keys()
+    |> Enum.reject(&(&1 == "update_id"))
+    |> List.first()
+    |> Kernel.||("unknown")
+  end
 
   defp bot_token do
     System.fetch_env!("TELEGRAM_BOT_TOKEN")

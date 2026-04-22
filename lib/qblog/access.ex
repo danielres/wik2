@@ -39,7 +39,15 @@ defmodule Qblog.Access do
       define :get_grant_by_source_and_user, action: :read, get_by: [:source_id, :user_id]
       define :upsert_grant, action: :upsert
     end
+
+    resource Qblog.Access.Telegram.BotUpdate do
+      define :create_telegram_bot_update, action: :create
+    end
   end
+
+  defdelegate telegram_create_bot_update(update),
+    to: Telegram,
+    as: :create_bot_update
 
   defdelegate telegram_find_or_create_identity(telegram_user),
     to: Telegram,
@@ -64,4 +72,8 @@ defmodule Qblog.Access do
   defdelegate telegram_refresh_grants(user),
     to: Telegram,
     as: :refresh_grants
+
+  defdelegate telegram_list_bot_updates(actor),
+    to: Telegram,
+    as: :list_bot_updates
 end

@@ -3,7 +3,6 @@ defmodule QblogWeb.MeLive do
 
   alias Qblog.Access
   alias Qblog.Accounts
-  alias QblogWeb.Components
   alias Utils.Log
 
   on_mount {QblogWeb.LiveUserAuth, :live_user_required}
@@ -14,12 +13,14 @@ defmodule QblogWeb.MeLive do
     groups = scope |> list_groups()
     identities = socket.assigns.current_user |> list_user_external_identities()
     grants = socket.assigns.current_user |> list_user_grants()
+    owned_groups = socket.assigns.current_user |> list_owned_groups()
 
     socket =
       socket
       |> assign(grants: grants)
       |> assign(groups: groups)
       |> assign(identities: identities)
+      |> assign(owned_groups: owned_groups)
 
     {:ok, socket}
   end
@@ -51,6 +52,15 @@ defmodule QblogWeb.MeLive do
           <div>
             <h2 class="text-lg mb-1">Access grants</h2>
 
+            <div
+              :if={grant_bypass_messages?(@current_user, @owned_groups)}
+              class="space-y-2 mb-2"
+              data-testid="me-access-bypasses"
+            >
+              <.superadmin_bypass_message :if={@current_user.role == :superadmin} />
+              <.owner_bypass_message :if={@owned_groups != []} groups={@owned_groups} />
+            </div>
+
             <div :if={@grants == []} class="card bg-base-200 h-min">
               <div class="card-body py-4 text-sm opacity-70">
                 No access grants yet.
@@ -58,7 +68,7 @@ defmodule QblogWeb.MeLive do
             </div>
 
             <div :if={@grants != []} class="space-y-2" data-testid="me-access-grants">
-              <.grant_card :for={grant <- @grants} grant={grant} />
+              <.grant_card :for={grant <- @grants} current_user={@current_user} grant={grant} />
             </div>
           </div>
         </div>
@@ -109,10 +119,16 @@ defmodule QblogWeb.MeLive do
     """
   end
 
+  attr :current_user, :map, required: true
   attr :grant, :map, required: true
 
   def grant_card(assigns) do
-    dbg(assigns.grant.source.group.name)
+    assigns =
+      assign(
+        assigns,
+        :membership,
+        get_grant_membership(assigns.grant, assigns.current_user)
+      )
 
     ~H"""
     <.card data-testid={"access-grant-#{@grant.id}"}>
@@ -123,6 +139,10 @@ defmodule QblogWeb.MeLive do
 
         <span class={grant_status_class(@grant)}>
           {@grant.status |> Atom.to_string()}
+        </span>
+
+        <span class="ml-auto badge badge-sm bg-base-100 text-base-content/70">
+          {@membership.type |> Atom.to_string()}
         </span>
       </div>
 
@@ -138,7 +158,10 @@ defmodule QblogWeb.MeLive do
             navigate={~p"/#{@grant.source.group.name}/wiki"}
           >
             <span>{@grant.source.group.name}</span>
-            <.icon name="hero-arrow-up-right-micro" class="opacity-50 group-hover:opacity-100 transition" />
+            <.icon
+              name="hero-arrow-up-right-micro"
+              class="opacity-50 group-hover:opacity-100 transition"
+            />
           </.link>
 
           <div class="text-sm opacity-70">
@@ -155,6 +178,47 @@ defmodule QblogWeb.MeLive do
     """
   end
 
+  def superadmin_bypass_message(assigns) do
+    ~H"""
+    <.card data-testid="superadmin-access-bypass">
+      <div class="text-sm">
+        <div class="font-bold">Superadmin access</div>
+        <div class="opacity-70">
+          Superadmins can access spaces directly, so this access does not create access grants.
+        </div>
+      </div>
+    </.card>
+    """
+  end
+
+  attr :groups, :list, required: true
+
+  def owner_bypass_message(assigns) do
+    ~H"""
+    <.card data-testid="owner-access-bypass">
+      <div class="text-sm">
+        <div class="font-bold">Owner access</div>
+        <div class="opacity-70">
+          Spaces you own do not require access grants.
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-2">
+          <.link
+            :for={group <- @groups}
+            class={[
+              "badge badge-sm badge-neutral",
+              "opacity-90 hover:opacity-100 transition"
+            ]}
+            navigate={~p"/#{group.name}/wiki"}
+          >
+            {group.name}
+          </.link>
+        </div>
+      </div>
+    </.card>
+    """
+  end
+
   defp list_groups(nil), do: []
 
   defp list_groups(scope) do
@@ -163,6 +227,18 @@ defmodule QblogWeb.MeLive do
     else
       err ->
         Log.scoped_error(scope, err, "list_groups failed")
+        []
+    end
+  end
+
+  defp list_owned_groups(nil), do: []
+
+  defp list_owned_groups(user) do
+    with {:ok, groups} <- Accounts.list_owned_groups(user) do
+      groups
+    else
+      err ->
+        Log.scoped_error(nil, err, "list_owned_groups failed")
         []
     end
   end
@@ -194,6 +270,13 @@ defmodule QblogWeb.MeLive do
   defp grant_status_class(%{status: :active}), do: "badge badge-sm badge-success"
   defp grant_status_class(_grant), do: "badge badge-sm badge-neutral"
 
+  defp grant_bypass_messages?(%{role: :superadmin}, _owned_groups), do: true
+  defp grant_bypass_messages?(_user, owned_groups), do: owned_groups != []
+
+  defp get_grant_membership(%{source: %{group: %{memberships: memberships}}}, %{id: user_id}) do
+    Enum.find(memberships, &(&1.user_id == user_id))
+  end
+
   defp identity_label(%{provider: :telegram, username: username}) when is_binary(username) do
     "@#{username}"
   end
@@ -205,7 +288,4 @@ defmodule QblogWeb.MeLive do
   defp identity_label(%{provider: provider, provider_user_id: provider_user_id}) do
     "#{provider}:#{provider_user_id}"
   end
-
-  defp source_label(%{group: %{name: name}}), do: name
-  defp source_label(%{title: title}), do: title
 end

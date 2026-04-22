@@ -34,8 +34,29 @@ defmodule QblogWeb.MeLiveTest do
     assert has_element?(view, testid("me-connected-identities"))
     assert render(view) =~ "@ada"
     assert render(view) =~ group.name
+    assert render(view) =~ "member"
     refute render(view) =~ "<th>username</th>"
     refute render(view) =~ "<th>email</th>"
+  end
+
+  test "renders the membership type for access grants", %{conn: conn} do
+    user = generate(user(email: nil))
+    group = generate(group())
+
+    create_membership(group, user, :admin)
+
+    create_telegram_access(group, user,
+      display_name: "Ada Lovelace",
+      username: "ada"
+    )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/me")
+
+    assert has_element?(view, testid("me-access-grants"))
+    assert render(view) =~ "admin"
   end
 
   test "renders connected identity without requiring an access grant", %{conn: conn} do
@@ -96,12 +117,40 @@ defmodule QblogWeb.MeLiveTest do
     assert render(view) =~ "telegram:telegram-user-42"
   end
 
-  defp create_membership(group, user) do
+  test "explains that owner access bypasses access grants", %{conn: conn} do
+    user = generate(user(email: nil))
+    group = generate(group())
+
+    create_membership(group, user, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/me")
+
+    assert has_element?(view, testid("owner-access-bypass"))
+    assert render(view) =~ "Spaces you own do not require access grants."
+    assert render(view) =~ group.name
+  end
+
+  test "explains that superadmin access bypasses access grants", %{conn: conn} do
+    user = generate(user(email: nil, role: :superadmin))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/me")
+
+    assert has_element?(view, testid("superadmin-access-bypass"))
+    assert render(view) =~ "Superadmins can access spaces directly"
+  end
+
+  defp create_membership(group, user, type \\ :member) do
     Ash.create!(
       GroupUserRelation,
       %{
         group_id: group.id,
-        type: :member,
+        type: type,
         user_id: user.id
       },
       authorize?: false,

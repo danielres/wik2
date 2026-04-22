@@ -100,7 +100,7 @@ defmodule Qblog.Access do
     |> Ash.read(
       authorize?: false,
       domain: __MODULE__,
-      load: [:external_identity, source: [:group]]
+      load: [:external_identity, source: [group: [:memberships]]]
     )
   end
 end

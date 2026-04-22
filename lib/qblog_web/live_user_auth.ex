@@ -2,7 +2,7 @@ defmodule QblogWeb.LiveUserAuth do
   @moduledoc """
   Helpers for authenticating users in LiveViews.
   """
-  @dev_routes? Application.compile_env(:qblog, :dev_routes)
+  @dev_routes? Application.compile_env(:qblog, :dev_routes, false)
 
   alias Qblog.Accounts
 

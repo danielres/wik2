@@ -26,4 +26,20 @@ defmodule QblogWeb.Components.UserTest do
     assert html =~ ~s(src="https://telegram.example/avatar.png")
     refute html =~ "hero-user"
   end
+
+  test "avatar image links to the profile when link and tenant are provided" do
+    tenant = generate(group(name: "cool-stuff"))
+    user = generate(user(email: "ada@example.com"))
+
+    html =
+      render_component(&User.avatar/1, %{
+        avatar_url: "https://telegram.example/avatar.png",
+        link?: true,
+        tenant: tenant,
+        user: user
+      })
+
+    assert html =~ ~s(href="/cool-stuff/wiki/members/ada")
+    assert html =~ ~s(src="https://telegram.example/avatar.png")
+  end
 end

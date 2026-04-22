@@ -32,8 +32,8 @@ defmodule Qblog.Access.Providers.Telegram do
   def bot_update_attrs_from_update(%{"update_id" => update_id} = update) do
     %{
       payload: update,
-      update_id: update_id,
-      update_type: update_type(update)
+      summary: summary(update),
+      update_id: update_id
     }
   end
 
@@ -67,6 +67,77 @@ defmodule Qblog.Access.Providers.Telegram do
   defp chat_title(%{"title" => title}) when is_binary(title), do: title
   defp chat_title(%{"username" => username}) when is_binary(username), do: username
   defp chat_title(%{"id" => chat_id}), do: chat_id |> to_string()
+  defp chat_title(nil), do: nil
+
+  defp chat_id(%{"id" => chat_id}), do: chat_id |> to_string()
+  defp chat_id(nil), do: nil
+
+  defp chat_type(%{"type" => type}), do: type
+  defp chat_type(nil), do: nil
+
+  defp summary(%{"my_chat_member" => chat_member} = update) do
+    %{
+      actor_name: user_name(chat_member["from"]),
+      actor_username: user_username(chat_member["from"]),
+      chat_id: chat_id(chat_member["chat"]),
+      chat_title: chat_title(chat_member["chat"]),
+      chat_type: chat_type(chat_member["chat"]),
+      message_text: nil,
+      status_from: member_status(chat_member["old_chat_member"]),
+      status_to: member_status(chat_member["new_chat_member"]),
+      update_type: update_type(update)
+    }
+  end
+
+  defp summary(%{"message" => message} = update) do
+    message_summary(update, message)
+  end
+
+  defp summary(%{"channel_post" => message} = update) do
+    message_summary(update, message)
+  end
+
+  defp summary(update) do
+    %{
+      actor_name: nil,
+      actor_username: nil,
+      chat_id: nil,
+      chat_title: nil,
+      chat_type: nil,
+      message_text: nil,
+      status_from: nil,
+      status_to: nil,
+      update_type: update_type(update)
+    }
+  end
+
+  defp message_summary(update, message) do
+    %{
+      actor_name: user_name(message["from"]),
+      actor_username: user_username(message["from"]),
+      chat_id: chat_id(message["chat"]),
+      chat_title: chat_title(message["chat"]),
+      chat_type: chat_type(message["chat"]),
+      message_text: message["text"],
+      status_from: nil,
+      status_to: nil,
+      update_type: update_type(update)
+    }
+  end
+
+  defp user_name(nil), do: nil
+
+  defp user_name(user) do
+    [user["first_name"], user["last_name"]]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" ")
+  end
+
+  defp user_username(nil), do: nil
+  defp user_username(user), do: user["username"]
+
+  defp member_status(nil), do: nil
+  defp member_status(chat_member), do: chat_member["status"]
 
   defp update_type(update) do
     update

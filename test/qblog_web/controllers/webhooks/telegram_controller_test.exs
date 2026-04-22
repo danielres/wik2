@@ -2,7 +2,7 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
   use QblogWeb.ConnCase
 
   alias Qblog.Access.Source
-  alias Qblog.Access.Telegram.BotUpdate
+  alias Qblog.Access.Telegram.Bot.Update, as: BotUpdate
 
   require Ash.Query
 
@@ -27,7 +27,8 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
              |> Ash.Query.filter(update_id == 123)
              |> Ash.read_one(authorize?: false)
 
-    assert bot_update.update_type == "my_chat_member"
+    assert bot_update.summary.update_type == "my_chat_member"
+    assert bot_update.summary.chat_title == "Hobbies"
   end
 
   test "refreshes source metadata without resetting claimed state", %{conn: conn} do
@@ -78,7 +79,8 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
              |> Ash.Query.filter(update_id == 124)
              |> Ash.read_one(authorize?: false)
 
-    assert bot_update.update_type == "message"
+    assert bot_update.summary.update_type == "message"
+    assert bot_update.summary.message_text == "hello"
   end
 
   defp bot_added_update(opts) do

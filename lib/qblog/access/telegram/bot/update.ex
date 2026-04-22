@@ -1,4 +1,4 @@
-defmodule Qblog.Access.Telegram.BotUpdate do
+defmodule Qblog.Access.Telegram.Bot.Update do
   use Ash.Resource,
     otp_app: :qblog,
     domain: Qblog.Access,
@@ -6,13 +6,15 @@ defmodule Qblog.Access.Telegram.BotUpdate do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAdmin.Resource]
 
+  alias Qblog.Access.Telegram.Bot.Update.Summary
+
   postgres do
     table "access_telegram_bot_updates"
     repo Qblog.Repo
   end
 
   admin do
-    table_columns [:update_id, :update_type, :inserted_at]
+    table_columns [:update_id, :inserted_at]
   end
 
   actions do
@@ -21,7 +23,7 @@ defmodule Qblog.Access.Telegram.BotUpdate do
     create :create do
       primary? true
 
-      accept [:payload, :update_id, :update_type]
+      accept [:payload, :summary, :update_id]
     end
   end
 
@@ -40,12 +42,12 @@ defmodule Qblog.Access.Telegram.BotUpdate do
       public? true
     end
 
-    attribute :update_id, :integer do
+    attribute :summary, Summary do
       allow_nil? false
       public? true
     end
 
-    attribute :update_type, :string do
+    attribute :update_id, :integer do
       allow_nil? false
       public? true
     end

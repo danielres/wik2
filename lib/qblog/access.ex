@@ -40,7 +40,7 @@ defmodule Qblog.Access do
       define :upsert_grant, action: :upsert
     end
 
-    resource Qblog.Access.Telegram.BotUpdate do
+    resource Qblog.Access.Telegram.Bot.Update do
       define :create_telegram_bot_update, action: :create
     end
   end
@@ -76,4 +76,8 @@ defmodule Qblog.Access do
   defdelegate telegram_list_bot_updates(actor),
     to: Telegram,
     as: :list_bot_updates
+
+  defdelegate telegram_get_bot_update(id, actor),
+    to: Telegram,
+    as: :get_bot_update
 end

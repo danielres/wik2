@@ -14,7 +14,8 @@ defmodule Qblog.Access.TelegramBotUpdateTest do
     assert {:ok, bot_update} = Access.telegram_create_bot_update(update)
 
     assert bot_update.update_id == 123
-    assert bot_update.update_type == "message"
+    assert bot_update.summary.update_type == "message"
+    assert bot_update.summary.message_text == "hello"
     assert bot_update.payload == update
   end
 

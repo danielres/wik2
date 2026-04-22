@@ -4,7 +4,7 @@ defmodule Qblog.Access.Telegram do
   alias Qblog.Access.ExternalIdentity
   alias Qblog.Access.Providers.Telegram, as: TelegramProvider
   alias Qblog.Access.Source
-  alias Qblog.Access.Telegram.BotUpdate
+  alias Qblog.Access.Telegram.Bot.Update, as: BotUpdate
   alias Qblog.Accounts.Group
   alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Accounts.User
@@ -38,6 +38,10 @@ defmodule Qblog.Access.Telegram do
     BotUpdate
     |> Query.sort(inserted_at: :desc, update_id: :desc)
     |> Ash.read(actor: actor, domain: Access)
+  end
+
+  def get_bot_update(id, %User{} = actor) do
+    Ash.get(BotUpdate, id, actor: actor, domain: Access)
   end
 
   def list_claimable_sources(%User{} = user, telegram_provider \\ TelegramProvider) do

@@ -16,40 +16,55 @@ defmodule QblogWeb.Components.User do
         _ -> "size-8"
       end
 
-    assigns = assigns |> assign(size_class: size_class)
+    profile_path =
+      if assigns.tenant != nil and assigns.link? do
+        profile_path(assigns.tenant, assigns.user)
+      end
+
+    assigns =
+      assigns
+      |> assign(profile_path: profile_path)
+      |> assign(size_class: size_class)
 
     ~H"""
-    <div :if={@avatar_url} class="avatar">
+    <div class={["avatar", @avatar_url == nil && "avatar-placeholder"]}>
       <div class={[
         "rounded-full",
+        @avatar_url && "overflow-hidden",
+        @avatar_url == nil && "bg-base-300 text-xs grid place-items-center",
         @size_class
       ]}>
-        <img src={@avatar_url} />
+        <.link
+          :if={@profile_path}
+          navigate={@profile_path}
+          class={[
+            "size-full grid place-items-center",
+            "opacity-80 hover:opacity-100 transition"
+          ]}
+        >
+          <.avatar_content avatar_url={@avatar_url} tenant={@tenant} user={@user} />
+        </.link>
+
+        <.avatar_content
+          :if={@profile_path == nil}
+          avatar_url={@avatar_url}
+          tenant={@tenant}
+          user={@user}
+        />
       </div>
     </div>
+    """
+  end
 
-    <div :if={@avatar_url == nil} class="avatar avatar-placeholder">
-      <div class={[
-        "bg-base-300 rounded-full text-xs",
-        "grid place-items-center",
-        @size_class
-      ]}>
-        <.icon :if={@tenant == nil} name="hero-user" class="size-1/2" />
+  attr :avatar_url, :string, default: nil
+  attr :tenant, :map, default: nil
+  attr :user, :map, default: nil
 
-        <%= if @tenant != nil and @link? do %>
-          <.link
-            navigate={profile_path(@tenant, @user)}
-            class="opacity-80 hover:opacity-100 transition"
-          >
-            {initials(@user)}
-          </.link>
-        <% end %>
-
-        <%= if @tenant != nil and not @link? do %>
-          {initials(@user)}
-        <% end %>
-      </div>
-    </div>
+  defp avatar_content(assigns) do
+    ~H"""
+    <img :if={@avatar_url} src={@avatar_url} class="size-full object-cover" />
+    <.icon :if={@avatar_url == nil and @tenant == nil} name="hero-user" class="size-1/2" />
+    <span :if={@avatar_url == nil and @tenant != nil}>{initials(@user)}</span>
     """
   end
 

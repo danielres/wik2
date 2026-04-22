@@ -1,5 +1,5 @@
 defmodule Qblog.Scope do
-  defstruct [:actor, :tenant]
+  defstruct [:actor, :avatar_url, :tenant]
 
   defimpl Ash.Scope.ToOpts do
     def get_actor(%{actor: actor}), do: {:ok, actor}

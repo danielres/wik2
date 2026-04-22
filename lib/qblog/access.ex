@@ -103,4 +103,15 @@ defmodule Qblog.Access do
       load: [:external_identity, source: [group: [:memberships]]]
     )
   end
+
+  def get_user_group_grant(%User{id: user_id}, %{id: group_id}) do
+    Grant
+    |> Ash.Query.filter(user_id == ^user_id and source.group_id == ^group_id)
+    |> Ash.Query.sort(last_verified_at: :desc)
+    |> Ash.read_one(
+      authorize?: false,
+      domain: __MODULE__,
+      load: [:external_identity]
+    )
+  end
 end

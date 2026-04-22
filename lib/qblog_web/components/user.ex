@@ -1,10 +1,11 @@
 defmodule QblogWeb.Components.User do
   use QblogWeb, :html
 
+  attr :avatar_url, :string, default: nil
   attr :link?, :boolean, default: false
+  attr :size, :string, default: "md"
   attr :tenant, :map, default: nil
   attr :user, :map, default: nil
-  attr :size, :string, default: "md"
 
   def avatar(assigns) do
     size_class =
@@ -18,7 +19,16 @@ defmodule QblogWeb.Components.User do
     assigns = assigns |> assign(size_class: size_class)
 
     ~H"""
-    <div class="avatar avatar-placeholder">
+    <div :if={@avatar_url} class="avatar">
+      <div class={[
+        "rounded-full",
+        @size_class
+      ]}>
+        <img src={@avatar_url} />
+      </div>
+    </div>
+
+    <div :if={@avatar_url == nil} class="avatar avatar-placeholder">
       <div class={[
         "bg-base-300 rounded-full text-xs",
         "grid place-items-center",

@@ -181,11 +181,14 @@ defmodule QblogWeb.MeLive do
   def superadmin_bypass_message(assigns) do
     ~H"""
     <.card data-testid="superadmin-access-bypass">
-      <div class="text-sm">
-        <div class="font-bold">Superadmin access</div>
-        <div class="opacity-70">
-          Superadmins can access spaces directly, so this access does not create access grants.
+      <div class="">
+        <div class="flex items-center gap-1">
+          <.icon name="hero-key-micro" class="" />
+          <div class="font-bold">Superadmin</div>
         </div>
+        <span class="opacity-70">
+          As Superadmin, you have access to all spaces.
+        </span>
       </div>
     </.card>
     """
@@ -196,11 +199,14 @@ defmodule QblogWeb.MeLive do
   def owner_bypass_message(assigns) do
     ~H"""
     <.card data-testid="owner-access-bypass">
-      <div class="text-sm">
-        <div class="font-bold">Owner access</div>
-        <div class="opacity-70">
-          Spaces you own do not require access grants.
+      <div class="">
+        <div class="flex items-center gap-1">
+          <.icon name="hero-key-micro" class="" />
+          <div class="font-bold">Owner</div>
         </div>
+        <span class="opacity-70">
+          As the space owner, you always keep access to:
+        </span>
 
         <div class="flex flex-wrap gap-2 mt-2">
           <.link

@@ -4,6 +4,7 @@ defmodule QblogWeb.LiveUserAuth do
   """
   @dev_routes? Application.compile_env(:qblog, :dev_routes, false)
 
+  alias Qblog.Access
   alias Qblog.Accounts
 
   import Phoenix.Component
@@ -68,7 +69,9 @@ defmodule QblogWeb.LiveUserAuth do
 
       case group_name |> Accounts.get_group_by_name(actor: current_user) do
         {:ok, group} ->
-          current_scope = %Qblog.Scope{actor: current_user, tenant: group}
+          current_scope =
+            %Qblog.Scope{actor: current_user, tenant: group}
+            |> assign_scope_avatar_url()
 
           socket =
             socket
@@ -131,5 +134,13 @@ defmodule QblogWeb.LiveUserAuth do
 
   defp dev_demote_superadmin? do
     @dev_routes? and System.get_env("QBLOG_DEV_DEMOTE_SUPERADMIN") == "true"
+  end
+
+  defp assign_scope_avatar_url(%{actor: actor, tenant: tenant} = scope) do
+    case Access.get_user_group_grant(actor, tenant) do
+      {:ok, %{external_identity: %{avatar_url: avatar_url}}} -> %{scope | avatar_url: avatar_url}
+      {:ok, nil} -> scope
+      {:error, _error} -> scope
+    end
   end
 end

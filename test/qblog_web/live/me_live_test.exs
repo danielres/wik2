@@ -129,7 +129,7 @@ defmodule QblogWeb.MeLiveTest do
       |> live(~p"/me")
 
     assert has_element?(view, testid("owner-access-bypass"))
-    assert render(view) =~ "Spaces you own do not require access grants."
+    assert render(view) =~ "Owner access does not depend on access grant status."
     assert render(view) =~ group.name
   end
 

@@ -4,6 +4,7 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
   import Qblog.TestGenerators
 
   alias Qblog.Access
+  alias Qblog.Access.Grant
   alias Qblog.Access.Source
   alias Qblog.Access.Telegram
   alias Qblog.Accounts.GroupUserRelation
@@ -56,6 +57,8 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
                |> Ash.read_one(authorize?: false)
 
       assert membership.type == :owner
+
+      assert_owner_grant(source, user)
     end
 
     test "rejects non-creator Telegram members" do
@@ -117,6 +120,8 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       assert source.group_id == group.id
       assert source.claimed_by_user_id == user.id
       assert source.claimed_at != nil
+
+      assert_owner_grant(source, user)
     end
 
     test "rejects groups not owned by the Telegram creator" do
@@ -178,5 +183,14 @@ defmodule Qblog.Access.TelegramSourceClaimTest do
       authorize?: false,
       domain: Qblog.Accounts
     )
+  end
+
+  defp assert_owner_grant(source, user) do
+    assert {:ok, grant} =
+             Grant
+             |> Ash.Query.filter(source_id == ^source.id and user_id == ^user.id)
+             |> Ash.read_one(authorize?: false, domain: Qblog.Access)
+
+    assert grant.status == :active
   end
 end

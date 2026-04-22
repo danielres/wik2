@@ -61,7 +61,7 @@ defmodule Qblog.Access.Telegram do
          :ok <- authorize_pending_source(source),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_source_claim(source, identity, telegram_provider) do
-      source |> create_group_and_claim_source(user)
+      create_group_and_claim_source(source, identity, user)
     end
   end
 
@@ -77,7 +77,7 @@ defmodule Qblog.Access.Telegram do
          :ok <- authorize_owned_group(group, user),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_source_claim(source, identity, telegram_provider) do
-      claim_existing_group_source(source, group, user)
+      claim_existing_group_source(source, group, identity, user)
     end
   end
 
@@ -290,9 +290,16 @@ defmodule Qblog.Access.Telegram do
     end
   end
 
-  defp claim_existing_group_source(source, group, user) do
-    case claim_source(source, group, user) do
-      {:ok, source, notifications} ->
+  defp claim_existing_group_source(source, group, identity, user) do
+    case Repo.transaction(fn ->
+           with {:ok, source, source_notifications} <- claim_source(source, group, user),
+                {:ok, _grant, grant_notifications} <- create_owner_grant(source, identity, user) do
+             {source, source_notifications ++ grant_notifications}
+           else
+             {:error, error} -> Repo.rollback(error)
+           end
+         end) do
+      {:ok, {source, notifications}} ->
         Ash.Notifier.notify(notifications)
         {:ok, {group, source}}
 
@@ -301,11 +308,12 @@ defmodule Qblog.Access.Telegram do
     end
   end
 
-  defp create_group_and_claim_source(source, user) do
+  defp create_group_and_claim_source(source, identity, user) do
     case Repo.transaction(fn ->
            with {:ok, group, group_notifications} <- create_group_from_source(source, user),
-                {:ok, source, source_notifications} <- claim_source(source, group, user) do
-             {group, source, group_notifications ++ source_notifications}
+                {:ok, source, source_notifications} <- claim_source(source, group, user),
+                {:ok, _grant, grant_notifications} <- create_owner_grant(source, identity, user) do
+             {group, source, group_notifications ++ source_notifications ++ grant_notifications}
            else
              {:error, error} -> Repo.rollback(error)
            end
@@ -353,6 +361,20 @@ defmodule Qblog.Access.Telegram do
       authorize?: false
     )
     |> Ash.update(domain: Access, return_notifications?: true)
+  end
+
+  defp create_owner_grant(source, identity, user) do
+    Access.upsert_grant(
+      %{
+        external_identity_id: identity.id,
+        last_verified_at: DateTime.utc_now(),
+        source_id: source.id,
+        status: :active,
+        user_id: user.id
+      },
+      authorize?: false,
+      return_notifications?: true
+    )
   end
 
   defp group_name_from_source_title(title) do

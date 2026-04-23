@@ -11,7 +11,7 @@ defmodule QblogWeb.Auth.TelegramLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign_claimable_sources()}
+    {:ok, socket |> assign_claim_form_state()}
   end
 
   @impl true
@@ -25,7 +25,7 @@ defmodule QblogWeb.Auth.TelegramLive do
 
         <div :if={@current_user != nil} class="space-y-4">
           <.claimable_sources
-            claimable_sources={@claimable_sources}
+            claimable_sources={@context.claimable_sources}
             owned_groups={@owned_groups}
             claim_existing_group_form={@claim_existing_group_form}
             owned_group_options={@owned_group_options}
@@ -152,8 +152,7 @@ defmodule QblogWeb.Auth.TelegramLive do
       {:error, _error} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Could not claim Telegram group")
-         |> assign_claimable_sources()}
+         |> put_flash(:error, "Could not claim Telegram group")}
     end
   end
 
@@ -174,26 +173,24 @@ defmodule QblogWeb.Auth.TelegramLive do
       {:error, _error} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Could not claim Telegram group")
-         |> assign_claimable_sources()}
+         |> put_flash(:error, "Could not claim Telegram group")}
     end
   end
 
-  defp assign_claimable_sources(socket) do
+  defp assign_claim_form_state(socket) do
     current_user = socket.assigns[:current_user]
     current_scope = %Scope{actor: current_user, tenant: nil}
 
-    {claimable_sources, owned_groups} =
+    owned_groups =
       if current_user == nil do
-        {[], []}
+        []
       else
         {:ok, owned_groups} = Accounts.list_owned_groups(current_user)
-        {Access.telegram_list_claimable_sources(current_user), owned_groups}
+        owned_groups
       end
 
     socket
     |> assign(:claim_existing_group_form, to_form(%{}, as: :claim))
-    |> assign(:claimable_sources, claimable_sources)
     |> assign(:current_scope, current_scope)
     |> assign(:owned_group_options, Enum.map(owned_groups, &{&1.name, &1.id}))
     |> assign(:owned_groups, owned_groups)

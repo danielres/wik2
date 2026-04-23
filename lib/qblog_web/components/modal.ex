@@ -24,7 +24,7 @@ defmodule QblogWeb.Components.Modal do
         :if={@open?}
         class={[
           "modal-box",
-          "p-6 pr-2",
+          "p-6 pr-3",
           "bg-base-100",
           "max-h-[calc(100svh-4rem)]",
           "mx-4",
@@ -39,7 +39,7 @@ defmodule QblogWeb.Components.Modal do
           <h3 :if={@title != []} class="mb-2">{render_slot(@title)}</h3>
         </div>
 
-        <div class="h-full overflow-y-auto pr-4">
+        <div class="h-full overflow-y-auto pr-3">
           {render_slot(@inner_block)}
         </div>
 

@@ -93,6 +93,13 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         phx-target={@myself}
         testid="move-node-dialog"
       >
+        <:title>
+          <span>Move</span>
+          <span class="font-bold" data-testid="move-node-current-node">
+            "{Helpers.get_node_by_id(@page_tree.nodes, @flow_move_node.node_id).title}"
+          </span>
+        </:title>
+
         <.live_component
           module={FormMoveNode}
           id="modal_move_node"

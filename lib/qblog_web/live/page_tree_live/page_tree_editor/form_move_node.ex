@@ -38,13 +38,6 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
 
     ~H"""
     <div id={@id} data-testid="move-node-modal">
-      <h3 class="mb-2" data-testid="move-node-heading">
-        <span>Move</span>
-        <span class="font-bold" data-testid="move-node-current-node">
-          "{Helpers.get_node_by_id(@page_tree.nodes, @flow.node_id).title}"
-        </span>
-      </h3>
-
       <div class={[
         "group",
         "flex items-center justify-between gap-3",

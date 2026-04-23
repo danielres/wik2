@@ -1,5 +1,6 @@
 defmodule Qblog.Access.Providers.Telegram do
   alias Assent.Strategy.Telegram, as: AssentTelegram
+  alias Qblog.Access.Telegram.Bot.Update.Summary
 
   @active_member_statuses ~w(member administrator creator)
   @api_url "https://api.telegram.org"
@@ -32,7 +33,7 @@ defmodule Qblog.Access.Providers.Telegram do
   def bot_update_attrs_from_update(%{"update_id" => update_id} = update) do
     %{
       payload: update,
-      summary: summary(update),
+      summary: struct(Summary, summary(update)),
       update_id: update_id
     }
   end

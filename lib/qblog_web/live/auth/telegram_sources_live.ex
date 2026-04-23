@@ -1,13 +1,8 @@
-# TODO: separate telegram login and telegram group claiming into separate live views
-
-defmodule QblogWeb.Auth.TelegramLive do
+defmodule QblogWeb.Auth.TelegramSourcesLive do
   use QblogWeb, :live_view
 
   alias Qblog.Access
   alias Qblog.Accounts
-  alias Qblog.Scope
-
-  on_mount {QblogWeb.LiveUserAuth, :current_user}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,11 +14,7 @@ defmodule QblogWeb.Auth.TelegramLive do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
-        <h1 class="text-2xl font-[100]">Login with Telegram</h1>
-
-        <QblogWeb.Components.Telegram.Widgets.login :if={@current_user == nil} />
-
-        <div :if={@current_user != nil} class="space-y-4">
+        <div class="space-y-4" data-testid="telegram-sources-page">
           <.claimable_sources
             claimable_sources={@context.claimable_sources}
             owned_groups={@owned_groups}
@@ -43,7 +34,7 @@ defmodule QblogWeb.Auth.TelegramLive do
 
   def claimable_sources(assigns) do
     ~H"""
-    <div :if={@claimable_sources == []} class="opacity-70">
+    <div :if={@claimable_sources == []} class="opacity-70" data-testid="telegram-sources-empty">
       No claimable Telegram groups found.
     </div>
 
@@ -178,20 +169,10 @@ defmodule QblogWeb.Auth.TelegramLive do
   end
 
   defp assign_claim_form_state(socket) do
-    current_user = socket.assigns[:current_user]
-    current_scope = %Scope{actor: current_user, tenant: nil}
-
-    owned_groups =
-      if current_user == nil do
-        []
-      else
-        {:ok, owned_groups} = Accounts.list_owned_groups(current_user)
-        owned_groups
-      end
+    {:ok, owned_groups} = Accounts.list_owned_groups(socket.assigns.current_user)
 
     socket
     |> assign(:claim_existing_group_form, to_form(%{}, as: :claim))
-    |> assign(:current_scope, current_scope)
     |> assign(:owned_group_options, Enum.map(owned_groups, &{&1.name, &1.id}))
     |> assign(:owned_groups, owned_groups)
   end

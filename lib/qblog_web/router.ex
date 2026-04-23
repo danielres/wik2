@@ -41,22 +41,20 @@ defmodule QblogWeb.Router do
   scope "/", QblogWeb do
     pipe_through :browser
 
-    live "/auth/telegram", Auth.TelegramLive
-
     get "/auth/telegram/callback", AuthController.Telegram, :callback
+
+    ash_authentication_live_session :signed_out_routes,
+      on_mount: [{QblogWeb.LiveUserAuth, :live_no_user}] do
+      live "/sign-in", Auth.SignInLive, :index
+    end
+
+    ash_authentication_live_session :telegram_source_routes,
+      on_mount: [{QblogWeb.LiveUserAuth, :live_user_required}] do
+      live "/auth/telegram", Auth.TelegramSourcesLive, :index
+    end
 
     auth_routes AuthController, Qblog.Accounts.User, path: "/auth"
     sign_out_route AuthController
-
-    # Remove these if you'd like to use your own authentication views
-    sign_in_route register_path: "/register",
-                  reset_path: "/reset",
-                  auth_routes_prefix: "/auth",
-                  on_mount: [{QblogWeb.LiveUserAuth, :live_no_user}],
-                  overrides: [
-                    QblogWeb.AuthOverrides,
-                    Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI
-                  ]
 
     # Remove this if you do not want to use the reset password feature
     reset_route auth_routes_prefix: "/auth",

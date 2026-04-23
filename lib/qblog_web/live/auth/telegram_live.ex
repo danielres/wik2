@@ -22,102 +22,122 @@ defmodule QblogWeb.Auth.TelegramLive do
         <QblogWeb.Components.Telegram.Widgets.login :if={@current_user == nil} />
 
         <div :if={@current_user != nil} class="space-y-4">
-          <div :if={@claimable_sources == []} class="opacity-70">
-            No claimable Telegram groups found.
-          </div>
+          <.claimable_sources
+            claimable_sources={@claimable_sources}
+            owned_groups={@owned_groups}
+            claim_existing_group_form={@claim_existing_group_form}
+            owned_group_options={@owned_group_options}
+          />
+        </div>
+      </Layouts.container>
+    </Layouts.app>
+    """
+  end
 
-          <div :if={@claimable_sources != []} class="">
-            <div class="space-y-2">
-              <div
-                :for={source <- @claimable_sources}
-                class={[
-                  "card bg-base-200 shadow"
-                ]}
-              >
-                <div class="card-body space-y-6">
-                  <div class="grid justify-center gap-4">
-                    <h2 class="text-lg font-bold text-center">
-                      Telegram group detected
-                    </h2>
+  attr :claimable_sources, :list, required: true
+  attr :owned_groups, :list, required: true
+  attr :claim_existing_group_form, :map, required: true
+  attr :owned_group_options, :list, required: true
 
-                    <div class="bg-base-300 p-4 border border-base-100 rounded-box space-y-4 max-w-sm mx-auto">
-                      <div class="space-y-2 flex flex-col items-center">
-                        <div class="font-bold">{source.title}</div>
-                        <div class="badge badge-xs badge-neutral bg-base-100">
-                          id: {source.provider_source_id}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+  def claimable_sources(assigns) do
+    ~H"""
+    <div :if={@claimable_sources == []} class="opacity-70">
+      No claimable Telegram groups found.
+    </div>
 
-                  <div class={[
-                    "bg-base-100 px-4 py-8 rounded-box",
-                    "flex flex-col items-center gap-4"
-                  ]}>
-                    <span
-                      :if={@owned_groups != []}
-                      class="badge badge-neutral h-8 font-bold"
-                    >
-                      Option 1
-                    </span>
+    <div :if={@claimable_sources != []} class="">
+      <div class="space-y-8">
+        <div
+          :for={source <- @claimable_sources}
+          class={[
+            "card bg-base-200 shadow border-2 border-accent/50"
+          ]}
+        >
+          <div class="card-body space-y-1">
+            <div class="grid justify-center gap-4">
+              <h2 class={[
+                "text-lg font-bold text-center",
+                "flex items-center gap-2 justify-center"
+              ]}>
+                <.icon name="hero-check-circle-mini" class="w-6 h-6 text-accent" />
+                <span>Telegram group detected</span>
+              </h2>
 
-                    <ul class="list opacity-70 text-center">
-                      <li>Create a new space.</li>
-                      <li><.icon name="hero-plus-micro" /></li>
-                      <li>
-                        Allow members to access the new space.
-                      </li>
-                    </ul>
-
-                    <button
-                      class="btn btn-accent btn-sm"
-                      phx-click="claim_source_with_new_group"
-                      phx-value-source_id={source.id}
-                    >
-                      Create new space
-                    </button>
-                  </div>
-
-                  <div
-                    :if={@owned_groups != []}
-                    class={[
-                      "bg-base-100 px-4 py-8 rounded-box",
-                      "flex flex-col items-center gap-4"
-                    ]}
-                  >
-                    <span class="badge badge-neutral h-8 font-bold">Option 2</span>
-                    <.form
-                      for={@claim_existing_group_form}
-                      id={"claim-source-#{source.id}-existing-group-form"}
-                      class="contents"
-                      phx-submit="claim_source_with_existing_group"
-                    >
-                      <p class="opacity-70">
-                        Allow members to access:
-                      </p>
-
-                      <input name="source_id" type="hidden" value={source.id} />
-
-                      <.input
-                        field={@claim_existing_group_form[:group_id]}
-                        id={"claim-source-#{source.id}-group-id"}
-                        options={@owned_group_options}
-                        type="select"
-                        class="select select-sm bg-base-200"
-                      />
-
-                      <button class="btn btn-accent btn-sm" type="submit">
-                        Allow access
-                      </button>
-                    </.form>
+              <div class="bg-base-300 p-4 border border-base-100 rounded-box space-y-4 max-w-md mx-auto">
+                <div class="space-y-2 flex flex-col items-center">
+                  <div class="font-bold">{source.title}</div>
+                  <div class="badge badge-xs badge-neutral bg-base-100">
+                    id: {source.provider_source_id}
                   </div>
                 </div>
               </div>
             </div>
+
+            <div class={[
+              "bg-base-100 px-2 py-4 rounded-box",
+              "flex flex-col items-center gap-4"
+            ]}>
+              <span
+                :if={@owned_groups != []}
+                class="badge badge-neutral h-8 font-bold"
+              >
+                Option 1
+              </span>
+
+              <ul class="list opacity-70 text-center">
+                <li>Create a new space.</li>
+                <li><.icon name="hero-plus-micro" /></li>
+                <li>
+                  Allow members to access the new space.
+                </li>
+              </ul>
+
+              <button
+                class="btn btn-accent btn-sm"
+                phx-click="claim_source_with_new_group"
+                phx-value-source_id={source.id}
+              >
+                Create new space
+              </button>
+            </div>
+
+            <div
+              :if={@owned_groups != []}
+              class={[
+                "bg-base-100 px-4 py-8 rounded-box",
+                "flex flex-col items-center gap-4"
+              ]}
+            >
+              <span class="badge badge-neutral h-8 font-bold">Option 2</span>
+              <.form
+                for={@claim_existing_group_form}
+                id={"claim-source-#{source.id}-existing-group-form"}
+                class="contents"
+                phx-submit="claim_source_with_existing_group"
+              >
+                <p class="opacity-70">
+                  Allow members to access:
+                </p>
+
+                <input name="source_id" type="hidden" value={source.id} />
+
+                <.input
+                  field={@claim_existing_group_form[:group_id]}
+                  id={"claim-source-#{source.id}-group-id"}
+                  options={@owned_group_options}
+                  type="select"
+                  class="select select-sm bg-base-200"
+                />
+
+                <button class="btn btn-accent btn-sm" type="submit">
+                  Allow access
+                </button>
+              </.form>
+            </div>
           </div>
         </div>
-      </Layouts.container>
-    </Layouts.app>
+      </div>
+    </div>
     """
   end
 

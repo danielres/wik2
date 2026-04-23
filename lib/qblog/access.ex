@@ -117,15 +117,30 @@ defmodule Qblog.Access do
     )
   end
 
-  def get_user_group_grant(%User{id: user_id}, %{id: group_id}) do
+  def get_user_group_avatar_url(%User{id: user_id}, %{id: group_id}) do
     Grant
     |> Ash.Query.filter(user_id == ^user_id and source.group_id == ^group_id)
     |> Ash.Query.sort(last_verified_at: :desc)
-    |> Ash.read_one(
+    |> Ash.read(
       authorize?: false,
       domain: __MODULE__,
       load: [:external_identity]
     )
+    |> case do
+      {:ok, grants} ->
+        grants
+        |> Enum.find_value(fn
+          %{external_identity: %{avatar_url: avatar_url}} when is_binary(avatar_url) ->
+            avatar_url
+
+          _grant ->
+            nil
+        end)
+        |> then(&{:ok, &1})
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def list_group_grants_for_users(group_id, user_ids) do

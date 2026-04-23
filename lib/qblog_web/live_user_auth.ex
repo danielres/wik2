@@ -175,8 +175,8 @@ defmodule QblogWeb.LiveUserAuth do
   end
 
   defp assign_scope_avatar_url(%{actor: actor, tenant: tenant} = scope) do
-    case Access.get_user_group_grant(actor, tenant) do
-      {:ok, %{external_identity: %{avatar_url: avatar_url}}} -> %{scope | avatar_url: avatar_url}
+    case Access.get_user_group_avatar_url(actor, tenant) do
+      {:ok, avatar_url} when is_binary(avatar_url) -> %{scope | avatar_url: avatar_url}
       {:ok, nil} -> scope
       {:error, _error} -> scope
     end

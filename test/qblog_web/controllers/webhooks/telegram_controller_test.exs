@@ -1,8 +1,10 @@
 defmodule QblogWeb.Webhooks.TelegramControllerTest do
   use QblogWeb.ConnCase
 
+  alias Qblog.Access.ExternalIdentity
   alias Qblog.Access.Source
   alias Qblog.Access.Telegram.Bot.Update, as: BotUpdate
+  alias QblogWeb.Context
 
   require Ash.Query
 
@@ -29,6 +31,38 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
 
     assert bot_update.summary.update_type == "my_chat_member"
     assert bot_update.summary.chat_title == "Hobbies"
+  end
+
+  test "broadcasts claimable source changes to the matching Telegram user", %{conn: conn} do
+    user = Qblog.TestGenerators.generate(Qblog.TestGenerators.user())
+
+    Ash.create!(
+      ExternalIdentity,
+      %{
+        display_name: "Daniel",
+        provider: :telegram,
+        provider_user_id: "458778600",
+        user_id: user.id
+      },
+      authorize?: false,
+      domain: Qblog.Access
+    )
+
+    :ok = Context.subscribe(user)
+
+    conn =
+      post(conn, ~p"/webhooks/telegram", bot_added_update(from_id: 458_778_600, title: "Hobbies"))
+
+    assert json_response(conn, 200) == %{"ok" => true}
+    assert_receive {Context, :claimable_sources_changed}
+  end
+
+  test "does not broadcast when the Telegram user has no identity", %{conn: conn} do
+    conn =
+      post(conn, ~p"/webhooks/telegram", bot_added_update(from_id: 458_778_600, title: "Hobbies"))
+
+    assert json_response(conn, 200) == %{"ok" => true}
+    refute_receive {Context, :claimable_sources_changed}
   end
 
   test "refreshes source metadata without resetting claimed state", %{conn: conn} do
@@ -92,6 +126,9 @@ defmodule QblogWeb.Webhooks.TelegramControllerTest do
           "id" => -100_123,
           "title" => title,
           "type" => "supergroup"
+        },
+        "from" => %{
+          "id" => Keyword.get(opts, :from_id, 458_778_600)
         },
         "new_chat_member" => %{
           "status" => "member"

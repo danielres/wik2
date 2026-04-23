@@ -38,7 +38,7 @@ defmodule QblogWeb.Superadmin.TelegramBotUpdatesLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
         <div class="space-y-6">
           <div class="space-y-1">

@@ -28,7 +28,7 @@ defmodule QblogWeb.MeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
         <h1 class="text-2xl font-[100] flex justify-between items-center">
           Your account

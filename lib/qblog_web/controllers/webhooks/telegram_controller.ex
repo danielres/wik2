@@ -3,6 +3,7 @@ defmodule QblogWeb.Webhooks.TelegramController do
 
   alias Qblog.Access
   alias Qblog.Access.Providers.Telegram
+  alias QblogWeb.Context
 
   require Logger
 
@@ -11,7 +12,10 @@ defmodule QblogWeb.Webhooks.TelegramController do
 
     case Telegram.source_attrs_from_update(params) do
       {:ok, source_attrs} ->
-        source_attrs |> Access.telegram_upsert_pending_source() |> respond(conn)
+        source_attrs
+        |> Access.telegram_upsert_pending_source()
+        |> broadcast_claimable_sources_changed(params)
+        |> respond(conn)
 
       :ignore ->
         json(conn, %{ok: true})
@@ -40,4 +44,22 @@ defmodule QblogWeb.Webhooks.TelegramController do
         :ok
     end
   end
+
+  defp broadcast_claimable_sources_changed({:ok, _source} = result, params) do
+    with {:ok, telegram_user_id} <- telegram_actor_id(params),
+         {:ok, user_id} <- Access.get_telegram_user_id_by_provider_user_id(telegram_user_id),
+         user_id when not is_nil(user_id) <- user_id do
+      :ok = Context.broadcast_claimable_sources_changed(user_id)
+    end
+
+    result
+  end
+
+  defp broadcast_claimable_sources_changed(result, _params), do: result
+
+  defp telegram_actor_id(%{"my_chat_member" => %{"from" => %{"id" => telegram_user_id}}}) do
+    {:ok, to_string(telegram_user_id)}
+  end
+
+  defp telegram_actor_id(_params), do: :ignore
 end

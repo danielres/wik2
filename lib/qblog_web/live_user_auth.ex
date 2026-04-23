@@ -6,8 +6,10 @@ defmodule QblogWeb.LiveUserAuth do
 
   alias Qblog.Access
   alias Qblog.Accounts
+  alias QblogWeb.Context
 
   import Phoenix.Component
+  import Phoenix.LiveView, only: [attach_hook: 4]
   use QblogWeb, :verified_routes
 
   # This is used for nested liveviews to fetch the current user.
@@ -18,6 +20,8 @@ defmodule QblogWeb.LiveUserAuth do
       socket
       |> AshAuthentication.Phoenix.LiveSession.assign_new_resources(session)
       |> assign_current_user_for_dev()
+      |> assign_context()
+      |> attach_context_hook()
 
     {:cont, socket}
   end
@@ -31,6 +35,8 @@ defmodule QblogWeb.LiveUserAuth do
         socket
         |> assign(:current_user, current_user)
         |> assign(current_scope: current_scope)
+        |> assign_context()
+        |> attach_context_hook()
 
       {:cont, socket}
     else
@@ -52,6 +58,8 @@ defmodule QblogWeb.LiveUserAuth do
           socket
           |> assign(:current_user, current_user)
           |> assign(current_scope: current_scope)
+          |> assign_context()
+          |> attach_context_hook()
 
         {:cont, socket}
 
@@ -77,6 +85,8 @@ defmodule QblogWeb.LiveUserAuth do
             socket
             |> assign(:current_user, current_user)
             |> assign(current_scope: current_scope)
+            |> assign_context()
+            |> attach_context_hook()
 
           {:cont, socket}
 
@@ -93,7 +103,12 @@ defmodule QblogWeb.LiveUserAuth do
     if socket.assigns[:current_user] do
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
     else
-      {:cont, assign(socket, :current_user, nil)}
+      socket =
+        socket
+        |> assign(:current_user, nil)
+        |> assign_context()
+
+      {:cont, socket}
     end
   end
 
@@ -120,6 +135,29 @@ defmodule QblogWeb.LiveUserAuth do
   defp assign_current_user_for_dev(socket) do
     current_user = socket.assigns[:current_user] |> current_user_for_dev()
     assign(socket, :current_user, current_user)
+  end
+
+  defp assign_context(socket) do
+    assign(socket, :context, Context.build(socket.assigns[:current_user]))
+  end
+
+  defp attach_context_hook(socket) do
+    current_user = socket.assigns[:current_user]
+
+    if Phoenix.LiveView.connected?(socket) do
+      :ok = Context.subscribe(current_user)
+    end
+
+    attach_hook(socket, :context, :handle_info, fn
+      {Context, :claimable_sources_changed}, socket ->
+        socket =
+          assign(socket, :context, Context.build(socket.assigns[:current_user]))
+
+        {:halt, socket}
+
+      _message, socket ->
+        {:cont, socket}
+    end)
   end
 
   defp current_user_for_dev(%{role: :superadmin} = user) do

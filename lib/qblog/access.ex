@@ -50,6 +50,7 @@ defmodule Qblog.Access do
     end
   end
 
+  # TODO: access Telegram directly in call sites, instead of relying on defdelegate.
   defdelegate telegram_create_bot_update(update),
     to: Telegram,
     as: :create_bot_update
@@ -91,6 +92,18 @@ defmodule Qblog.Access do
     |> Ash.Query.filter(user_id == ^user_id)
     |> Ash.Query.sort(updated_at: :desc)
     |> Ash.read(authorize?: false, domain: __MODULE__)
+  end
+
+  def get_telegram_user_id_by_provider_user_id(provider_user_id) do
+    ExternalIdentity
+    |> Ash.Query.filter(provider == :telegram and provider_user_id == ^provider_user_id)
+    |> Ash.Query.select([:user_id])
+    |> Ash.read_one(authorize?: false, domain: __MODULE__)
+    |> case do
+      {:ok, %{user_id: user_id}} -> {:ok, user_id}
+      {:ok, nil} -> {:ok, nil}
+      {:error, error} -> {:error, error}
+    end
   end
 
   def list_user_grants(%User{id: user_id}) do

@@ -1,3 +1,5 @@
+# TODO: separate telegram login and telegram group claiming into separate live views
+
 defmodule QblogWeb.Auth.TelegramLive do
   use QblogWeb, :live_view
 
@@ -15,7 +17,7 @@ defmodule QblogWeb.Auth.TelegramLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
         <h1 class="text-2xl font-[100]">Login with Telegram</h1>
 

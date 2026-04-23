@@ -29,7 +29,7 @@ defmodule QblogWeb.Layouts do
   """
 
   attr :scope, :map,
-    default: %{tenant: nil, user: nil},
+    default: %{actor: nil, avatar_url: nil, tenant: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
   attr :presences, :list, default: []
@@ -83,11 +83,8 @@ defmodule QblogWeb.Layouts do
   end
 
   attr :flash, :map, required: true, doc: "the map of flash messages"
-
-  attr :scope, :map,
-    default: %{tenant: nil, user: nil},
-    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
-
+  attr :context, :map, default: %{claimable_sources: []}
+  attr :scope, :map, default: %{actor: nil, avatar_url: nil, tenant: nil}
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -113,7 +110,10 @@ defmodule QblogWeb.Layouts do
 
       <div>
         <button
-          class="opacity-80 hover:opacity-100 transition cursor-pointer"
+          class={[
+            "opacity-80 hover:opacity-100 transition cursor-pointer",
+            "relative"
+          ]}
           popovertarget="popover-user-dropdown"
           style="anchor-name:--anchor-user-dropdown"
         >
@@ -122,6 +122,15 @@ defmodule QblogWeb.Layouts do
             tenant={@scope.tenant}
             user={@scope.actor}
           />
+
+          <div
+            :if={@context.claimable_sources != []}
+            class={[
+              "status status-accent animate-ping",
+              "absolute top-0 left-0"
+            ]}
+          >
+          </div>
         </button>
 
         <div
@@ -138,6 +147,24 @@ defmodule QblogWeb.Layouts do
           id="popover-user-dropdown"
           style="position-anchor:--anchor-user-dropdown"
         >
+          <ul
+            :if={@context.claimable_sources != []}
+            class={[
+              "menu w-full",
+              "border-b-1 border-base-content/20"
+            ]}
+          >
+            <li>
+              <.link
+                class="btn btn-sm btn-soft btn-accent border"
+                navigate={~p"/auth/telegram"}
+              >
+                <span class="font-bold">New sources</span>
+                <.icon name="hero-chevron-right-micro" />
+              </.link>
+            </li>
+          </ul>
+
           <ul class={[
             "menu w-full"
           ]}>

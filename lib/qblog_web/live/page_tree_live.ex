@@ -24,7 +24,7 @@ defmodule QblogWeb.PageTreeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.group presences={@presences} scope={@current_scope} view="tree">
         <div class="flex items-center gap-4 mb-4">
           <h1 class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">

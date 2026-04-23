@@ -129,7 +129,7 @@ defmodule QblogWeb.MeLiveTest do
       |> live(~p"/me")
 
     assert has_element?(view, testid("owner-access-bypass"))
-    assert render(view) =~ "Owner access does not depend on access grant status."
+    assert render(view) =~ "As the space owner, you always keep access to:"
     assert render(view) =~ group.name
   end
 
@@ -142,7 +142,7 @@ defmodule QblogWeb.MeLiveTest do
       |> live(~p"/me")
 
     assert has_element?(view, testid("superadmin-access-bypass"))
-    assert render(view) =~ "Superadmins can access spaces directly"
+    assert render(view) =~ "As Superadmin, you have access to all spaces."
   end
 
   defp create_membership(group, user, type \\ :member) do

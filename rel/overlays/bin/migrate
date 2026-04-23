@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+cd -P -- "$(dirname -- "$0")"
+
+if [ -n "${MIGRATION_DATABASE_URL:-}" ]; then
+  export DATABASE_URL="$MIGRATION_DATABASE_URL"
+fi
+
+exec ./qblog eval Qblog.Release.migrate

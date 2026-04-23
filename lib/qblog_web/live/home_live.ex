@@ -23,7 +23,7 @@ defmodule QblogWeb.HomeLive do
       <Layouts.container>
         <h1 class="text-2xl font-[100]">Your groups</h1>
 
-        <div class="flex gap-4">
+        <div class="grid sm:grid-cols-2 gap-4">
           <div class="flex-1">
             <Components.Group.list groups={@groups} />
           </div>

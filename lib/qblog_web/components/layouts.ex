@@ -99,7 +99,8 @@ defmodule QblogWeb.Layouts do
             :if={@scope.tenant}
             class={[
               "font-bold tracking-wide",
-              "opacity-25 hover:opacity-100 transition"
+              "opacity-25 hover:opacity-100 transition",
+              "leading-none"
             ]}
             navigate={~p"/#{@scope.tenant.name}"}
           >

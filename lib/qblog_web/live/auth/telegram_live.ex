@@ -65,10 +65,10 @@ defmodule QblogWeb.Auth.TelegramLive do
                 <span>Telegram group detected</span>
               </h2>
 
-              <div class="bg-base-300 p-4 border border-base-100 rounded-box space-y-4 max-w-md mx-auto">
+              <div class="bg-accent/70 p-4 border border-base-100 rounded-box space-y-4 max-w-md mx-auto">
                 <div class="space-y-2 flex flex-col items-center">
                   <div class="font-bold">{source.title}</div>
-                  <div class="badge badge-xs badge-neutral bg-base-100">
+                  <div class="badge badge-xs bg-base-300 opacity-40">
                     id: {source.provider_source_id}
                   </div>
                 </div>

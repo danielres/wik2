@@ -24,33 +24,51 @@ defmodule QblogWeb.Components.Modal do
         :if={@open?}
         class={[
           "modal-box",
+          "p-6 pr-2",
           "bg-base-100",
-          "max-h-[calc(100dvh-4rem)]",
-          "mx-4"
+          "max-h-[calc(100svh-4rem)]",
+          "mx-4",
+          "overflow-hidden",
+          "grid grid-rows-[auto_1fr]"
         ]}
         phx-click-away={@cancel}
         phx-mounted={JS.focus_first(to: "form")}
         phx-target={assigns[:"phx-target"]}
       >
-        <button
-          phx-click={@cancel}
+        <div>
+          <h3 :if={@title != []} class="mb-2">{render_slot(@title)}</h3>
+        </div>
+
+        <div class="h-full overflow-y-auto pr-4">
+          {render_slot(@inner_block)}
+        </div>
+
+        <.button_close
+          :if={@cancel}
+          cancel={@cancel}
+          cancel_testid={@cancel_testid}
           phx-target={assigns[:"phx-target"]}
-          data-testid={@cancel_testid}
-          class={[
-            "absolute right-2 top-2",
-            "size-4 text-xs",
-            "cursor-pointer",
-            "opacity-50 hover:opacity-100 transition"
-          ]}
-        >
-          ✕
-        </button>
-
-        <h3 :if={@title != []} class="mb-2">{render_slot(@title)}</h3>
-
-        {render_slot(@inner_block)}
+        />
       </div>
     </dialog>
+    """
+  end
+
+  def button_close(assigns) do
+    ~H"""
+    <button
+      phx-click={@cancel}
+      phx-target={assigns[:"phx-target"]}
+      data-testid={@cancel_testid}
+      class={[
+        "absolute right-2 top-2",
+        "size-4 text-xs",
+        "cursor-pointer",
+        "opacity-50 hover:opacity-100 transition"
+      ]}
+    >
+      ✕
+    </button>
     """
   end
 end

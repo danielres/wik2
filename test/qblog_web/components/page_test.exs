@@ -25,10 +25,11 @@ defmodule QblogWeb.Components.PageTest do
            |> Enum.any?()
   end
 
-  test "breadcrumbs can omit the current page" do
+  test "breadcrumbs can omit the current page and keep a trailing separator" do
     html =
       render_component(&Page.breadcrumbs/1, %{
         include_current?: false,
+        trailing_separator?: true,
         node: %{id: 3},
         page_tree: page_tree_fixture(),
         scope: %Scope{actor: %{id: "user-1"}, tenant: %{name: "cool-stuff"}}
@@ -37,6 +38,7 @@ defmodule QblogWeb.Components.PageTest do
     assert html =~ ~s(href="/cool-stuff/wiki/recipes")
     assert html =~ ~s(href="/cool-stuff/wiki/recipes/cakes")
     refute html =~ ~s(href="/cool-stuff/wiki/recipes/cakes/cheesecake")
+    assert html =~ ">"
   end
 
   defp page_tree_fixture do

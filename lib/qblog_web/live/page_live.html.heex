@@ -77,6 +77,15 @@
         />
 
         <header class="space-y-1 mb-12 mx-2">
+          <QblogWeb.Components.Page.breadcrumbs
+            class="mb-2 text-sm opacity-60"
+            include_current?={false}
+            node={@node}
+            page_tree={@page_tree}
+            scope={@current_scope}
+            trailing_separator?
+          />
+
           <h1 class="text-2xl font-bold opacity-90 pr-12">{@node.title}</h1>
           <div class="text-sm opacity-60">page author: {@page.author |> to_string()}</div>
           <div class="text-sm opacity-60">

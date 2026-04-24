@@ -21,7 +21,7 @@ defmodule Qblog.Wiki.PageTree.TreeOps.CreateNodeAtPath do
                 new_node(
                   nodes_acc,
                   slug,
-                  node_title(slug, leaf?, leaf_attrs),
+                  node_title(slug, index, leaf?, leaf_attrs),
                   parent_id,
                   node_page_id(leaf?, leaf_attrs)
                 )
@@ -43,13 +43,16 @@ defmodule Qblog.Wiki.PageTree.TreeOps.CreateNodeAtPath do
     do: if(Enum.all?(path, &(&1 != "")), do: :ok, else: {:error, :invalid_path})
 
   defp validate_leaf_attrs(attrs) do
-    allowed_keys = MapSet.new([:page_id, :title])
+    allowed_keys = MapSet.new([:page_id, :title, :titles])
 
     cond do
       not Map.has_key?(attrs, :title) ->
         {:error, :invalid_attrs}
 
       not Enum.all?(Map.keys(attrs), &MapSet.member?(allowed_keys, &1)) ->
+        {:error, :invalid_attrs}
+
+      Map.has_key?(attrs, :titles) and not valid_titles?(attrs.titles) ->
         {:error, :invalid_attrs}
 
       true ->
@@ -61,11 +64,23 @@ defmodule Qblog.Wiki.PageTree.TreeOps.CreateNodeAtPath do
     Enum.find(nodes, &(&1.slug == slug and &1.parent_id == parent_id))
   end
 
-  defp node_title(slug, false, _leaf_attrs), do: slug_to_title(slug)
-  defp node_title(_slug, true, leaf_attrs), do: leaf_attrs.title
+  defp node_title(slug, index, leaf?, leaf_attrs) do
+    case explicit_title(leaf_attrs, index) do
+      title when is_binary(title) -> title
+      nil when leaf? -> leaf_attrs.title
+      nil -> slug_to_title(slug)
+    end
+  end
 
   defp node_page_id(false, _leaf_attrs), do: nil
   defp node_page_id(true, leaf_attrs), do: Map.get(leaf_attrs, :page_id)
+
+  defp explicit_title(leaf_attrs, index) do
+    case Map.get(leaf_attrs, :titles) do
+      titles when is_list(titles) -> Enum.at(titles, index)
+      nil -> nil
+    end
+  end
 
   defp new_node(nodes, slug, title, parent_id, page_id) do
     %{
@@ -90,5 +105,9 @@ defmodule Qblog.Wiki.PageTree.TreeOps.CreateNodeAtPath do
     slug
     |> String.split("-")
     |> Enum.map_join(" ", &String.capitalize/1)
+  end
+
+  defp valid_titles?(titles) do
+    is_list(titles) and Enum.all?(titles, &(is_binary(&1) and String.trim(&1) != ""))
   end
 end

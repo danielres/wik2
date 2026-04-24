@@ -22,7 +22,7 @@ defmodule Qblog.Wiki.PageTree do
   code_interface do
     define :create
     define :add_child, args: [:parent_id, :slug, :title]
-    define :create_node_at_path, args: [:path, :title, :page_id]
+    define :create_node_at_path, args: [:path, :title, :page_id, :titles]
     define :link_page, args: [:node_id, :page_id]
     define :move_node, args: [:node_id, :new_parent_id]
     define :ensure, action: :ensure, args: []
@@ -77,6 +77,10 @@ defmodule Qblog.Wiki.PageTree do
 
       argument :page_id, :uuid do
         allow_nil? false
+      end
+
+      argument :titles, {:array, :string} do
+        allow_nil? true
       end
 
       change Qblog.Wiki.PageTree.Changes.CreateNodeAtPath

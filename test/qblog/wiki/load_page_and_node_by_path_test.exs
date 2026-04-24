@@ -116,6 +116,31 @@ defmodule Qblog.Wiki.LoadPageAndNodeByPathTest do
     assert loaded_page.id == page.id
   end
 
+  test "ensure_page_and_node_at_path uses title_path titles for missing nodes" do
+    actor = generate(user())
+    group = generate(group())
+    add_membership(group, actor, :owner)
+    scope = scope(actor, group)
+
+    assert {:ok, node, _page} =
+             Wiki.ensure_page_and_node_at_path(
+               "soups/vegetable-soup",
+               scope: scope,
+               load: [:author],
+               title_path: "Soups/Vegetable soup"
+             )
+
+    assert node.slug == "vegetable-soup"
+    assert node.title == "Vegetable soup"
+
+    page_tree = Wiki.load_page_tree(scope)
+
+    assert {:ok, soups_node} =
+             Qblog.Wiki.PageTree.TreeQueries.get_node_by_path(page_tree.nodes, "soups")
+
+    assert soups_node.title == "Soups"
+  end
+
   defp add_membership(group, user, type) do
     Ash.create!(
       GroupUserRelation,

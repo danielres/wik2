@@ -11,10 +11,10 @@ defmodule Qblog.Blocks.Types.Markdown do
   def block_to_form_params(block, %{}, page_tree) do
     %{"text" => text} = block.data
 
-    wikilink_map = page_tree.nodes |> Wikilinks.nodes_to_id_map() |> Jason.encode!()
+    wikilink_map = page_tree.nodes |> Wikilinks.title_paths_to_node_id_map() |> Jason.encode!()
 
     %{
-      "text" => Wikilinks.nodes_to_paths(text, page_tree),
+      "text" => Wikilinks.nodes_to_title_paths(text, page_tree),
       "wikilink_map" => wikilink_map
     }
   end
@@ -68,7 +68,7 @@ defmodule Qblog.Blocks.Types.Markdown do
     |> Enum.join("\n")
     |> String.trim()
     |> String.replace(~r/\n{3,}/, "\n\n")
-    |> Wikilinks.paths_to_nodes(wikilink_map)
+    |> Wikilinks.title_paths_to_nodes(wikilink_map)
   end
 
   defp canonicalize_text(_text, _wikilink_map_json), do: ""

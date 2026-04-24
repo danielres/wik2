@@ -33,9 +33,9 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
   def form_fields(assigns) do
     nodes = assigns.page_tree.nodes
 
-    node_id_by_path = Wikilinks.nodes_to_id_map(nodes)
-    wikilink_map = node_id_by_path |> Jason.encode!()
-    wikilink_paths = node_id_by_path |> Map.keys() |> Jason.encode!()
+    node_id_by_title_path = Wikilinks.title_paths_to_node_id_map(nodes)
+    wikilink_map = node_id_by_title_path |> Jason.encode!()
+    wikilink_paths = node_id_by_title_path |> Map.keys() |> Jason.encode!()
 
     assigns =
       assigns
@@ -72,12 +72,13 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
 
   defp markdown_to_html(markdown, scope, page_tree) do
     markdown
-    |> Wikilinks.nodes_to_paths(page_tree)
-    |> render_visible_wikilinks(scope)
+    |> Wikilinks.nodes_to_title_paths(page_tree)
+    |> render_visible_wikilinks(scope, page_tree)
     |> Earmark.as_html!(escape: true, compact_output: true)
     |> HtmlSanitizeEx.markdown_html()
     |> open_external_links_in_new_tab()
     |> patch_internal_wiki_links(scope)
+    |> mark_missing_wikilinks()
   end
 
   defp open_external_links_in_new_tab(html) do
@@ -95,22 +96,35 @@ defmodule QblogWeb.Components.Block.Types.Markdown do
 
   defp patch_internal_wiki_links(html, _scope), do: html
 
-  defp render_visible_wikilinks(markdown, %{tenant: %{name: group_name}})
+  defp render_visible_wikilinks(markdown, %{tenant: %{name: group_name}}, %{nodes: nodes})
        when is_binary(group_name) do
-    Wikilinks.replace_visible(markdown, fn wikilink, path ->
-      path = String.trim(path)
+    title_path_to_slug_path = Wikilinks.title_paths_to_slug_path_map(nodes)
 
-      if safe_visible_wikilink_path?(path) do
-        "[#{path}](/#{group_name}/wiki/#{path})"
-      else
-        wikilink
+    Wikilinks.replace_visible(markdown, fn wikilink, path ->
+      title_path = path |> String.trim()
+
+      cond do
+        title_path == "" ->
+          wikilink
+
+        slug_path = Map.get(title_path_to_slug_path, title_path) ->
+          "[#{title_path}](/#{group_name}/wiki/#{slug_path})"
+
+        slug_path = Wikilinks.slug_path_from_title_path(title_path) ->
+          query = URI.encode_query(%{"title_path" => title_path})
+          "[#{title_path}](/#{group_name}/wiki/#{slug_path}?#{query})"
+
+        true ->
+          wikilink
       end
     end)
   end
 
-  defp render_visible_wikilinks(markdown, _scope), do: markdown
+  defp render_visible_wikilinks(markdown, _scope, _page_tree), do: markdown
 
-  defp safe_visible_wikilink_path?(path) do
-    Regex.match?(~r/^[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/, path)
+  defp mark_missing_wikilinks(html) do
+    Regex.replace(~r/<a ([^>]*href="[^"]*\?title_path=[^"]*"[^>]*)>/, html, fn _match, attrs ->
+      ~s(<a #{attrs} data-wikilink-status="missing">)
+    end)
   end
 end

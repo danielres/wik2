@@ -50,10 +50,11 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_params(params, url, socket) do
     path = params["path"] |> Enum.join("/")
+    title_path = params["title_path"]
 
     socket =
       socket
-      |> PageState.load_path(path)
+      |> PageState.load_path(path, title_path: title_path)
       |> Presence.track_in_liveview(url)
       |> Locks.assign_locks()
 

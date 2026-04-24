@@ -1,4 +1,5 @@
 defmodule Qblog.Blocks.Types do
+  alias Qblog.Blocks.Types.Backlinks
   alias Qblog.Blocks.Types.ChildPages
   alias Qblog.Blocks.Types.GoogleCalendar
   alias Qblog.Blocks.Types.GoogleMaps
@@ -10,6 +11,7 @@ defmodule Qblog.Blocks.Types do
   alias Qblog.Blocks.Types.YouTube
 
   @modules [
+    Backlinks,
     ChildPages,
     GoogleCalendar,
     GoogleMaps,

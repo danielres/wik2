@@ -24,6 +24,8 @@ defmodule QblogWeb.Auth.SignInLiveTest do
 
     assert has_element?(view, testid("sign-in-page"))
     assert has_element?(view, "#telegram-login")
+    refute has_element?(view, testid("dev-sign-in"))
+    refute has_element?(view, testid("dev-sign-in-superadmin"))
     refute has_element?(view, testid("telegram-sources-page"))
     refute has_element?(view, testid("telegram-sources-empty"))
   end

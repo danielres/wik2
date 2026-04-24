@@ -43,6 +43,10 @@ defmodule QblogWeb.Router do
 
     get "/auth/telegram/callback", AuthController.Telegram, :callback
 
+    if Application.compile_env(:qblog, :dev_routes) do
+      post "/auth/dev/sign-in", AuthController.Dev, :create
+    end
+
     ash_authentication_live_session :signed_out_routes,
       on_mount: [{QblogWeb.LiveUserAuth, :live_no_user}] do
       live "/sign-in", Auth.SignInLive, :index

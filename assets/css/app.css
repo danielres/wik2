@@ -138,3 +138,7 @@
 *::selection {
   background-color: color-mix(in oklch, var(--color-accent) 60%, transparent);
 }
+
+.small-caps {
+  font-variant-caps: small-caps;
+}

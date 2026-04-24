@@ -2,6 +2,7 @@ defmodule QblogWeb.Components.Block.Types.Backlinks do
   use QblogWeb, :html
 
   alias Qblog.Wiki.Backlinks
+  alias QblogWeb.Components.Page
 
   attr :block, :map, required: true
   attr :node, :map, default: nil
@@ -40,15 +41,16 @@ defmodule QblogWeb.Components.Block.Types.Backlinks do
         No backlinks yet
       </div>
 
-      <ul :if={!@missing_context? and @backlinks != []} class="space-y-0" data-testid="backlinks-list">
+      <ul
+        :if={!@missing_context? and @backlinks != []}
+        class="space-y-0"
+        data-testid="backlinks-list"
+      >
         <li :for={backlink <- @backlinks}>
-          <.link
-            class="opacity-70 hover:opacity-100 transition-opacity"
-            navigate={build_page_path(@scope, backlink.path)}
-          >
-            <.icon name="hero-arrow-uturn-left-micro" class={["opacity-30", "-scale-x-100"]} />
-            {backlink.title}
-          </.link>
+          <div class="flex gap-3 items-center">
+            <span class="opacity-50">·</span>
+            <Page.breadcrumbs node={backlink} page_tree={@page_tree} scope={@scope} />
+          </div>
         </li>
       </ul>
     </div>
@@ -75,8 +77,4 @@ defmodule QblogWeb.Components.Block.Types.Backlinks do
   end
 
   defp load_backlinks(_scope, _node, _page_tree), do: :missing_context
-
-  defp build_page_path(%{tenant: tenant}, path) do
-    "/" <> tenant.name <> "/wiki" <> "/" <> path
-  end
 end

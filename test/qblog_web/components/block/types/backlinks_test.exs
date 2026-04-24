@@ -10,13 +10,15 @@ defmodule QblogWeb.Components.Block.Types.BacklinksTest do
   alias Qblog.Wiki.Page
   alias QblogWeb.Components.Block.Types.Backlinks
 
-  test "render shows clickable backlink pages" do
+  test "render shows clickable breadcrumb pages" do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :owner)
     scope = %Scope{actor: actor, tenant: group}
 
     {:ok, target_page} = Page.create(scope: scope)
+    {:ok, recipes_page} = Page.create(scope: scope)
+    {:ok, cakes_page} = Page.create(scope: scope)
     {:ok, source_page} = Page.create(scope: scope)
 
     page_tree =
@@ -25,7 +27,9 @@ defmodule QblogWeb.Components.Block.Types.BacklinksTest do
           group: group,
           nodes: [
             %{id: 1, page_id: target_page.id, parent_id: nil, slug: "target", title: "Target"},
-            %{id: 2, page_id: source_page.id, parent_id: nil, slug: "source", title: "Source"}
+            %{id: 2, page_id: recipes_page.id, parent_id: nil, slug: "recipes", title: "Recipes"},
+            %{id: 3, page_id: cakes_page.id, parent_id: 2, slug: "cakes", title: "Cakes"},
+            %{id: 4, page_id: source_page.id, parent_id: 3, slug: "cheesecake", title: "Cheesecake"}
           ]
         )
       )
@@ -49,7 +53,19 @@ defmodule QblogWeb.Components.Block.Types.BacklinksTest do
 
     assert document
            |> LazyHTML.query(
-             ~s([data-testid="backlinks-list"] a[href="/#{group.name}/wiki/source"])
+             ~s([data-testid="backlinks-list"] a[href="/#{group.name}/wiki/recipes"])
+           )
+           |> Enum.any?()
+
+    assert document
+           |> LazyHTML.query(
+             ~s([data-testid="backlinks-list"] a[href="/#{group.name}/wiki/recipes/cakes"])
+           )
+           |> Enum.any?()
+
+    assert document
+           |> LazyHTML.query(
+             ~s([data-testid="backlinks-list"] a[href="/#{group.name}/wiki/recipes/cakes/cheesecake"])
            )
            |> Enum.any?()
   end

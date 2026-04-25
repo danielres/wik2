@@ -4,7 +4,7 @@ defmodule Qblog.Blocks.Types.Backlinks do
   def label, do: "Backlinks"
   def type, do: :backlinks
   def supports_title?, do: true
-  def default_data, do: %{"title" => ""}
+  def default_data, do: %{"title" => "Backlinks"}
 
   def block_to_form_params(%{data: %{"title" => title}}, _params, _page_tree) do
     %{"title" => title}

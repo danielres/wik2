@@ -4,7 +4,7 @@ defmodule Qblog.Blocks.Types.Members do
   def label, do: "Members"
   def type, do: :members
   def supports_title?, do: true
-  def default_data, do: %{"title" => ""}
+  def default_data, do: %{"title" => "Members"}
 
   def block_to_form_params(%{data: %{"title" => title}}, _params, _page_tree) do
     %{"title" => title}

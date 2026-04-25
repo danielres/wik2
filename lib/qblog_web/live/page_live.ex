@@ -1,9 +1,9 @@
-# TODO: break this up, too much going on in this file.
-
 defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
   use QblogWeb.Presence.Handlers
 
+  alias QblogWeb.Components
+  alias QblogWeb.PageLive
   alias QblogWeb.PageLive.BlockActions
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.Locks

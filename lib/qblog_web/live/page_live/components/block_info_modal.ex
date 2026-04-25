@@ -1,4 +1,4 @@
-defmodule QblogWeb.PageLive.BlockInfoModal do
+defmodule QblogWeb.PageLive.Components.BlockInfoModal do
   use QblogWeb, :html
 
   alias QblogWeb.Components

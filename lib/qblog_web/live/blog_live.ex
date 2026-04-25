@@ -28,7 +28,7 @@ defmodule QblogWeb.BlogLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.group presences={@presences} scope={@current_scope} view="blog">
         <h1 class="text-2xl font-[100]">Blog Posts</h1>
         <div class="grid sm:grid-cols-2 gap-4">

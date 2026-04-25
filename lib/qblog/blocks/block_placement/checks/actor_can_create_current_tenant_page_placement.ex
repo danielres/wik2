@@ -2,7 +2,7 @@ defmodule Qblog.Blocks.BlockPlacement.Checks.ActorCanCreateCurrentTenantPagePlac
   use Ash.Policy.SimpleCheck
 
   alias Qblog.Accounts
-  alias Qblog.Accounts.GroupUserRelation
+  alias Qblog.Accounts.Group.Access
   alias Qblog.Blocks.Block
   alias Qblog.Wiki.Page
 
@@ -45,12 +45,6 @@ defmodule Qblog.Blocks.BlockPlacement.Checks.ActorCanCreateCurrentTenantPagePlac
   defp actor_can_place_block?(_block, _actor_id, _group_id), do: false
 
   defp actor_manages_group?(actor_id, group_id) do
-    query =
-      GroupUserRelation
-      |> Ash.Query.filter(
-        user_id == ^actor_id and group_id == ^group_id and type in [:owner, :admin]
-      )
-
-    Ash.exists(query, authorize?: false)
+    Access.actor_can_manage_group?(actor_id, group_id)
   end
 end

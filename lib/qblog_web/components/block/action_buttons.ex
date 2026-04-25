@@ -69,7 +69,7 @@ defmodule QblogWeb.Components.Block.ActionButtons do
       class={[
         "btn btn-ghost btn-xs btn-square",
         "join-item",
-        @variant_class,
+        @variant_class
       ]}
       type="button"
     >

@@ -2,6 +2,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   use QblogWeb, :html
 
   alias Qblog.Blocks.Types.ChildPages
+  alias Qblog.Blocks.Types.Backlinks
   alias Qblog.Blocks.Types.Embed
   alias Qblog.Blocks.Types.Markdown
   alias Qblog.Blocks.Types.Members
@@ -105,6 +106,12 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
               label={Pages.label()}
               phx-click="add_block"
               phx-value-type="pages"
+            />
+
+            <.button_special_block
+              label={Backlinks.label()}
+              phx-click="add_block"
+              phx-value-type="backlinks"
             />
           </div>
 

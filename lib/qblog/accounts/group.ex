@@ -1,4 +1,5 @@
 defmodule Qblog.Accounts.Group do
+  alias Qblog.Access.Source
   alias Qblog.Accounts.Group.Changes
   alias Qblog.Accounts.Group.Checks
   alias Qblog.Accounts.User
@@ -40,8 +41,17 @@ defmodule Qblog.Accounts.Group do
 
   policies do
     policy action_type(:read) do
-      # authorize_if relates_to_actor_via(:owner)
-      authorize_if relates_to_actor_via(:users)
+      authorize_if expr(exists(memberships, user_id == ^actor(:id) and type == :owner))
+
+      authorize_if expr(
+                     exists(memberships, user_id == ^actor(:id) and type in [:admin, :member]) and
+                       exists(
+                         access_sources,
+                         status == :active and
+                           exists(grants, user_id == ^actor(:id) and status == :active)
+                       )
+                   )
+
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 
@@ -50,8 +60,19 @@ defmodule Qblog.Accounts.Group do
       authorize_if Checks.ActorHasAnyGroupMembership
     end
 
+    # TODO: consider only allowing updates by owner
     policy action_type(:update) do
-      authorize_if expr(exists(memberships, user_id == ^actor(:id) and type in [:owner, :admin]))
+      authorize_if expr(exists(memberships, user_id == ^actor(:id) and type == :owner))
+
+      authorize_if expr(
+                     exists(memberships, user_id == ^actor(:id) and type == :admin) and
+                       exists(
+                         access_sources,
+                         status == :active and
+                           exists(grants, user_id == ^actor(:id) and status == :active)
+                       )
+                   )
+
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 
@@ -84,6 +105,10 @@ defmodule Qblog.Accounts.Group do
     has_many :memberships, GroupUserRelation do
       destination_attribute :group_id
       default_sort type_sort: :asc, inserted_at: :asc
+    end
+
+    has_many :access_sources, Source do
+      destination_attribute :group_id
     end
 
     many_to_many :users, User do

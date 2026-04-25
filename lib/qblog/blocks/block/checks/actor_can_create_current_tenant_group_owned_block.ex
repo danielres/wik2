@@ -2,7 +2,7 @@ defmodule Qblog.Blocks.Block.Checks.ActorCanCreateCurrentTenantGroupOwnedBlock d
   use Ash.Policy.SimpleCheck
 
   alias Qblog.Accounts
-  alias Qblog.Accounts.GroupUserRelation
+  alias Qblog.Accounts.Group.Access
 
   require Ash.Query
 
@@ -18,13 +18,7 @@ defmodule Qblog.Blocks.Block.Checks.ActorCanCreateCurrentTenantGroupOwnedBlock d
     owner_group_id = Ash.Subject.get_argument_or_attribute(subject, :owner_group_id)
 
     if owner_group_id == group_id do
-      query =
-        GroupUserRelation
-        |> Ash.Query.filter(
-          user_id == ^actor.id and group_id == ^group_id and type in [:owner, :admin]
-        )
-
-      Ash.exists(query, authorize?: false)
+      Access.actor_can_manage_group?(actor.id, group_id)
     else
       {:ok, false}
     end

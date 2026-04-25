@@ -6,6 +6,8 @@ defmodule Qblog.Accounts.GroupUserRelation do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAdmin.Resource]
 
+  alias Qblog.Accounts.Group
+
   postgres do
     table "group_user_relations"
     repo Qblog.Repo
@@ -44,7 +46,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
   policies do
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :superadmin)
-      authorize_if relates_to_actor_via([:group, :users])
+      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
     end
 
     policy action(:transfer_ownership) do

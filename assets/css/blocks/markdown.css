@@ -46,6 +46,13 @@
     @apply transition;
   }
 
+  a[data-wikilink-status="missing"] {
+    @apply text-error/80;
+    @apply decoration-error/20;
+    @apply hover:text-error;
+    @apply hover:decoration-error;
+  }
+
   a[href^="http"] {
     @apply inline-flex items-center;
     &::after {

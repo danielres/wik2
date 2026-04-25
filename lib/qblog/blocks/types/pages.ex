@@ -4,7 +4,7 @@ defmodule Qblog.Blocks.Types.Pages do
   def label, do: "Pages"
   def type, do: :pages
   def supports_title?, do: true
-  def default_data, do: %{"depth" => 1, "source_node" => "root", "title" => ""}
+  def default_data, do: %{"depth" => 3, "source_node" => "root", "title" => "Subtree"}
 
   def block_to_form_params(
         %{data: %{"depth" => depth, "source_node" => source_node, "title" => title}},

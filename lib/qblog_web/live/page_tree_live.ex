@@ -24,15 +24,18 @@ defmodule QblogWeb.PageTreeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.group presences={@presences} scope={@current_scope} view="tree">
         <div class="flex items-center gap-4 mb-4">
           <h1 class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
             <div>
-              <span class="font-[400] opacity-70 flex items-center gap-2">
+              <span class="font-[400] opacity-70 flex items-center flex-wrap gap-2">
                 <.link
                   navigate={~p"/#{@current_scope.tenant.name}"}
-                  class="opacity-50 hover:opacity-100 transition-opacity"
+                  class={[
+                    "opacity-50 hover:opacity-100 transition-opacity",
+                    "leading-none"
+                  ]}
                 >
                   {@current_scope.tenant.name |> String.capitalize()}
                 </.link>

@@ -42,7 +42,7 @@ defmodule Qblog.Accounts.User.Senders.SendMagicLinkEmail do
   end
 
   defp magic_link_url(token) do
-    case System.get_env("LAN_HOST") do
+    case System.get_env("DEV_HOST") do
       nil -> url(~p"/magic_link/#{token}")
       "" -> url(~p"/magic_link/#{token}")
       lan_host -> "http://#{lan_host}:#{endpoint_port()}/magic_link/#{token}"

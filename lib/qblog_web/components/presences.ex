@@ -17,6 +17,7 @@ defmodule QblogWeb.Components.Presences do
       >
         <Components.User.avatar
           link?
+          avatar_url={presence.avatar_url}
           tenant={@tenant}
           size="sm"
           user={presence.user}

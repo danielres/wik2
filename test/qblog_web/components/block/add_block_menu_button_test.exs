@@ -13,6 +13,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
     {:ok, source_page} = Page.create(authorize?: false, scope: scope)
     {:ok, child_page} = Page.create(authorize?: false, scope: scope)
@@ -28,11 +29,9 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     )
 
     html =
-      render_component(&AddBlockMenuButton.render/1, %{
-        class: "btn",
+      render_component(&AddBlockMenuButton.modal_special_blocks/1, %{
         id: "special-blocks",
         event_cancel: "add_block_modal_cancel",
-        event_open: "add_block_modal_open",
         event_position_select: "add_block_position_select",
         open?: true,
         position: "bottom",
@@ -40,7 +39,6 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
       })
 
     assert html =~ ~s(data-testid="special-blocks")
-    assert html =~ ~s(phx-click="add_block_modal_open")
     assert html =~ "Embed"
     assert html =~ "Linked copy"
     assert html =~ ~s(phx-value-type="linked_copy")
@@ -63,6 +61,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     actor = generate(user())
     group = generate(group())
     add_membership(group, actor, :member)
+    grant_active_telegram_access(group, actor)
     scope = scope(actor, group)
     {:ok, leaf_page} = Page.create(authorize?: false, scope: scope)
 
@@ -76,11 +75,9 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
     )
 
     html =
-      render_component(&AddBlockMenuButton.render/1, %{
-        class: "btn",
+      render_component(&AddBlockMenuButton.modal_special_blocks/1, %{
         id: "special-blocks",
         event_cancel: "add_block_modal_cancel",
-        event_open: "add_block_modal_open",
         event_position_select: "add_block_position_select",
         open?: true,
         position: "bottom",
@@ -88,7 +85,6 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButtonTest do
       })
 
     assert html =~ ~s(data-testid="special-blocks")
-    assert html =~ ~s(phx-click="add_block_modal_open")
     assert html =~ "Embed"
     assert html =~ "Linked copy"
     assert html =~ ~s(phx-value-type="linked_copy")

@@ -36,12 +36,15 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
     document = LazyHTML.from_fragment(html)
 
     assert document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/recipes"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups"]))
            |> Enum.any?()
 
     assert document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/recipes/soup"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups/vegetable-soup"]))
            |> Enum.any?()
+
+    assert html =~ ">Soups<"
+    assert html =~ ">Soups/Vegetable Soup<"
   end
 
   test "render patches canonical wikilinks through the current LiveView" do
@@ -59,7 +62,7 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
 
     assert document
            |> LazyHTML.query(
-             ~s(a[href="/#{scope.tenant.name}/wiki/recipes"][data-phx-link="patch"][data-phx-link-state="push"])
+             ~s(a[href="/#{scope.tenant.name}/wiki/soups"][data-phx-link="patch"][data-phx-link-state="push"])
            )
            |> Enum.any?()
   end
@@ -94,12 +97,33 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
     document = LazyHTML.from_fragment(html)
 
     assert document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/recipes"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups"]))
            |> Enum.any?()
 
     refute document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/recipes"][target="_blank"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups"][target="_blank"]))
            |> Enum.any?()
+  end
+
+  test "render unresolved wikilinks as missing-page links using title labels and slug hrefs" do
+    scope = %Scope{tenant: %{name: "cool-stuff"}}
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[Soups/Vegetable Soup]]"}},
+        page_tree: %PageTree{nodes: []},
+        scope: scope
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(
+             ~s(a[href="/#{scope.tenant.name}/wiki/soups/vegetable-soup?title_path=Soups%2FVegetable+Soup"][data-wikilink-status="missing"])
+           )
+           |> Enum.any?()
+
+    assert html =~ ">Soups/Vegetable Soup<"
   end
 
   test "render sanitizes unsafe html" do
@@ -119,7 +143,7 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
   end
 
   test "form_fields keeps the markdown source editable" do
-    wikilink_map = Jason.encode!(%{"recipes" => 1, "recipes/soup" => 2})
+    wikilink_map = Jason.encode!(%{"Soups" => 1, "Soups/Vegetable Soup" => 2})
 
     html =
       render_component(&Markdown.form_fields/1, %{
@@ -133,8 +157,8 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
     assert html =~ ~s(name="block[wikilink_map]")
     assert html =~ ~s(data-wikilink-paths=)
     assert html =~ "## Title"
-    assert html =~ "&quot;recipes&quot;:1"
-    assert html =~ "&quot;recipes/soup&quot;:2"
+    assert html =~ "&quot;Soups&quot;:1"
+    assert html =~ "&quot;Soups/Vegetable Soup&quot;:2"
   end
 
   defp page_tree_fixture do
@@ -144,15 +168,15 @@ defmodule QblogWeb.Components.Block.Types.MarkdownTest do
           id: 1,
           page_id: "11111111-1111-1111-1111-111111111111",
           parent_id: nil,
-          slug: "recipes",
-          title: "Recipes"
+          slug: "soups",
+          title: "Soups"
         },
         %Node{
           id: 2,
           page_id: "22222222-2222-2222-2222-222222222222",
           parent_id: 1,
-          slug: "soup",
-          title: "Soup"
+          slug: "vegetable-soup",
+          title: "Vegetable Soup"
         }
       ]
     }

@@ -19,11 +19,11 @@ defmodule QblogWeb.HomeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
         <h1 class="text-2xl font-[100]">Your groups</h1>
 
-        <div class="flex gap-4">
+        <div class="grid sm:grid-cols-2 gap-4">
           <div class="flex-1">
             <Components.Group.list groups={@groups} />
           </div>

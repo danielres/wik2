@@ -75,13 +75,12 @@ defmodule QblogWeb.Components.Block.Types.Pages do
       <li :for={node <- @nodes}>
         <.link
           class={[
-            "opacity-70 hover:opacity-100 transition-opacity",
-            "PAGES_TREE_LINK"
+            "opacity-70 hover:opacity-100 transition-opacity"
           ]}
           data-depth={@depth}
           navigate={build_page_path(@scope, node.path)}
         >
-          <.icon_chevron :if={@depth > 1} /> {node.title}
+          <.icon_branch :if={@depth > 1} /> {node.title}
         </.link>
 
         <div :if={node.children != []} class="pl-4">
@@ -92,7 +91,7 @@ defmodule QblogWeb.Components.Block.Types.Pages do
     """
   end
 
-  defp icon_chevron(assigns) do
+  defp icon_branch(assigns) do
     ~H"""
     <.icon name="hero-chevron-right-mini" class={["rotate-135", "opacity-30"]} />
     """

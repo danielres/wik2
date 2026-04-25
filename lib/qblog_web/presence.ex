@@ -9,6 +9,7 @@ defmodule QblogWeb.Presence do
 
   require Ash.Query
 
+  alias Qblog.Access
   alias Qblog.Accounts.User
 
   @impl true
@@ -17,8 +18,9 @@ defmodule QblogWeb.Presence do
   end
 
   @impl true
-  def fetch(_topic, presences) do
+  def fetch(topic, presences) do
     user_ids = Map.keys(presences)
+    group_id = group_id_from_topic(topic)
 
     users =
       User
@@ -26,8 +28,16 @@ defmodule QblogWeb.Presence do
       |> Ash.read!(authorize?: false)
       |> Map.new(&{&1.id, &1})
 
+    avatar_urls = list_avatar_urls(group_id, user_ids)
+
     for {user_id, %{metas: [meta | metas]}} <- presences, into: %{} do
-      {user_id, %{id: user_id, metas: [meta | metas], user: Map.get(users, user_id)}}
+      {user_id,
+       %{
+         avatar_url: Map.get(avatar_urls, user_id),
+         id: user_id,
+         metas: [meta | metas],
+         user: Map.get(users, user_id)
+       }}
     end
   end
 
@@ -168,6 +178,20 @@ defmodule QblogWeb.Presence do
     )
   end
 
+  defp list_avatar_urls(nil, _user_ids), do: %{}
+
+  defp list_avatar_urls(_group_id, []), do: %{}
+
+  defp list_avatar_urls(group_id, user_ids) do
+    with {:ok, grants} <- Access.list_group_grants_for_users(group_id, user_ids) do
+      grants
+      |> Enum.reject(&is_nil(&1.external_identity.avatar_url))
+      |> Map.new(&{&1.user_id, &1.external_identity.avatar_url})
+    else
+      {:error, _error} -> %{}
+    end
+  end
+
   defp build_presence_meta(path, group_id, opts) do
     %{
       editing_block_id: Keyword.get(opts, :editing_block_id),
@@ -180,6 +204,12 @@ defmodule QblogWeb.Presence do
   defp build_group_topic(group_id), do: "group:#{group_id}:users"
 
   defp build_proxy_topic(topic), do: "proxy:#{topic}"
+
+  defp group_id_from_topic("group:" <> rest) do
+    rest |> String.replace_suffix(":users", "")
+  end
+
+  defp group_id_from_topic(_topic), do: nil
 
   defp presence_sort_key(%{user: user}) when not is_nil(user), do: to_string(user)
   defp presence_sort_key(%{id: id}), do: id

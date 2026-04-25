@@ -31,6 +31,18 @@ defmodule Qblog.Accounts do
     resource Qblog.Accounts.GroupUserRelation
   end
 
+  require Ash.Query
+
+  alias Qblog.Accounts.Group
+  alias Qblog.Accounts.User
+
+  def list_owned_groups(%User{id: user_id}) do
+    Group
+    |> Ash.Query.filter(exists(memberships, user_id == ^user_id and type == :owner))
+    |> Ash.Query.sort(name: :asc)
+    |> Ash.read(authorize?: false, domain: __MODULE__)
+  end
+
   def group_name_to_id(group_name) do
     case get_group_by_name(group_name, authorize?: false) do
       {:ok, %{id: id}} -> id

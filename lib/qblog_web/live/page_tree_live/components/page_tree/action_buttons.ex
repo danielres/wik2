@@ -20,14 +20,14 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
   attr :"data-tip", :string, required: true
   attr :icon, :string, required: true
   attr :class, :string, default: ""
-  attr :variant, :string, default: "primary"
+  attr :variant, :string, default: "accent"
   attr :rest, :global
 
   def button(assigns) do
     variant_class =
       case assigns.variant do
-        "error" -> "btn-neutral hover:btn-error tooltip-error"
-        _ -> "btn-neutral hover:btn-primary tooltip-primary"
+        "error" -> "hover:btn-error tooltip-error"
+        _ -> "hover:btn-accent tooltip-accent"
       end
 
     assigns = assigns |> assign(variant_class: variant_class)
@@ -41,7 +41,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree.ActionButtons do
         @class
       ]}
       data-tip={assigns[:"data-tip"]}
-      style="--tt-delay: 800ms"
+      style="--tt-delay: 400ms"
       {@rest}
     >
       <CoreComponents.icon name={@icon} />

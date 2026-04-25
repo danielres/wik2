@@ -4,7 +4,7 @@ defmodule Qblog.Accounts.Group.Checks.ActorCanManageCurrentTenantGroup do
   require Ash.Query
 
   alias Qblog.Accounts
-  alias Qblog.Accounts.GroupUserRelation
+  alias Qblog.Accounts.Group.Access
 
   @impl true
   def describe(_opts), do: "actor can manage the current tenant group"
@@ -16,12 +16,6 @@ defmodule Qblog.Accounts.Group.Checks.ActorCanManageCurrentTenantGroup do
     {:ok, tenant} = Ash.Scope.ToOpts.get_tenant(context)
     group_id = Accounts.tenant_to_group_id(tenant)
 
-    query =
-      GroupUserRelation
-      |> Ash.Query.filter(
-        user_id == ^actor.id and group_id == ^group_id and type in [:owner, :admin]
-      )
-
-    Ash.exists(query, authorize?: false)
+    Access.actor_can_manage_group?(actor.id, group_id)
   end
 end

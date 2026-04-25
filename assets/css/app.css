@@ -138,3 +138,27 @@
 *::selection {
   background-color: color-mix(in oklch, var(--color-accent) 60%, transparent);
 }
+
+.small-caps {
+  font-variant-caps: small-caps;
+}
+
+.breadcrumbs {
+  > menu,
+  > ul,
+  > ol {
+    > li {
+      > * {
+        &:hover {
+          text-decoration-line: none;
+        }
+      }
+      & + *:before {
+        margin-right: calc(0.175rem * 3);
+        margin-left: calc(0.175rem * 2);
+        border-top: 2.5px solid;
+        border-right: 2.5px solid;
+      }
+    }
+  }
+}

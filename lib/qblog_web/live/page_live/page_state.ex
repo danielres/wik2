@@ -10,30 +10,6 @@ defmodule QblogWeb.PageLive.PageState do
 
   @page_load [:author, block_placements: [block: :author]]
 
-  def ensure_by_path(scope, path) do
-    %{node: node, page: page, page_tree: page_tree} = scope |> load_by_path(path)
-
-    if page == nil do
-      case path
-           |> Wiki.ensure_page_and_node_at_path(
-             scope: scope,
-             load: @page_load
-           ) do
-        {:ok, node, page} ->
-          %{node: node, page: page, page_tree: Wiki.load_page_tree(scope)}
-
-        {:error, %Ash.Error.Forbidden{}} ->
-          %{node: node, page: page, page_tree: page_tree}
-
-        {:error, error} ->
-          Utils.Log.scoped_error(scope, error, "PageState.ensure_by_path failed")
-          %{node: node, page: page, page_tree: page_tree}
-      end
-    else
-      %{node: node, page: page, page_tree: page_tree}
-    end
-  end
-
   def load_by_path(scope, path) do
     page_tree = scope |> Wiki.load_page_tree()
     node_result = TreeQueries.get_node_by_path(page_tree.nodes, path)
@@ -47,9 +23,9 @@ defmodule QblogWeb.PageLive.PageState do
     %{node: node, page: page, page_tree: page_tree}
   end
 
-  def load_path(socket, path) do
+  def load_path(socket, path, opts \\ []) do
     scope = socket.assigns.current_scope
-    %{node: node, page: page, page_tree: page_tree} = scope |> ensure_by_path(path)
+    %{node: node, page: page, page_tree: page_tree} = scope |> ensure_by_path(path, opts)
     can_manage_page? = page != nil and Ash.can?({page, :manage_page}, scope)
 
     socket
@@ -69,6 +45,32 @@ defmodule QblogWeb.PageLive.PageState do
       page_tree: page_tree,
       path: path
     )
+  end
+
+  def ensure_by_path(scope, path, opts \\ []) do
+    %{node: node, page: page, page_tree: page_tree} = scope |> load_by_path(path)
+    title_path = Keyword.get(opts, :title_path)
+
+    if page == nil do
+      case path
+           |> Wiki.ensure_page_and_node_at_path(
+             scope: scope,
+             load: @page_load,
+             title_path: title_path
+           ) do
+        {:ok, node, page} ->
+          %{node: node, page: page, page_tree: Wiki.load_page_tree(scope)}
+
+        {:error, %Ash.Error.Forbidden{}} ->
+          %{node: node, page: page, page_tree: page_tree}
+
+        {:error, error} ->
+          Utils.Log.scoped_error(scope, error, "PageState.ensure_by_path failed")
+          %{node: node, page: page, page_tree: page_tree}
+      end
+    else
+      %{node: node, page: page, page_tree: page_tree}
+    end
   end
 
   def find_block(page, block_id) do

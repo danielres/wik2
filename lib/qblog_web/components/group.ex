@@ -21,7 +21,7 @@ defmodule QblogWeb.Components.Group do
             <.input field={@form[:name]} label="Name" />
             <.input field={@form[:description]} label="Description" type="textarea" />
 
-            <.button type="submit" class="btn btn-primary mt-3">
+            <.button type="submit" class="btn btn-accent btn-soft mt-3">
               {@action_type |> String.capitalize()} group
             </.button>
           </div>

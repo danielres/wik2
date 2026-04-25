@@ -107,6 +107,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
     group = generate(group())
     member = generate(user())
     add_membership(group, member, :member)
+    grant_active_telegram_access(group, member)
     generate(page_tree(group: group, nodes: base_nodes()))
     {:ok, view, _html} = mount_editor(conn, group.name, member.id, editable?: false)
 

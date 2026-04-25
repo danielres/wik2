@@ -46,6 +46,7 @@ defmodule Qblog.Wiki do
   def ensure_page_and_node_at_path(path, opts) do
     scope = Keyword.fetch!(opts, :scope)
     load = Keyword.get(opts, :load, [])
+    title_path = Keyword.get(opts, :title_path)
     {node, page} = path |> load_page_and_node_by_path(scope: scope, load: load)
 
     case {node, page} do
@@ -56,7 +57,8 @@ defmodule Qblog.Wiki do
         path
         |> create_page_and_node_at_path(path_to_default_page_title(path),
           scope: scope,
-          load: load
+          load: load,
+          title_path: title_path
         )
 
       {node, nil} ->
@@ -76,12 +78,20 @@ defmodule Qblog.Wiki do
   defp create_page_and_node_at_path(path, title, opts) do
     scope = Keyword.fetch!(opts, :scope)
     load = Keyword.get(opts, :load, [])
+    title_segments = opts |> Keyword.get(:title_path) |> parse_title_path()
 
     case Repo.transaction(fn ->
            with {:ok, page} <- Page.create(scope: scope),
                 {:ok, page_tree} <- PageTree.ensure(scope: scope),
                 {:ok, _page_tree} <-
-                  PageTree.create_node_at_path(page_tree, path, title, page.id, scope: scope) do
+                  PageTree.create_node_at_path(
+                    page_tree,
+                    path,
+                    title,
+                    page.id,
+                    title_segments,
+                    scope: scope
+                  ) do
              page
            else
              {:error, error} -> Repo.rollback(error)
@@ -135,5 +145,16 @@ defmodule Qblog.Wiki do
       slug ->
         slug |> String.split("-") |> Enum.join(" ") |> String.capitalize()
     end
+  end
+
+  defp parse_title_path(nil), do: nil
+
+  defp parse_title_path(title_path) when is_binary(title_path) do
+    title_path
+    |> String.split("/", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> then(fn segments ->
+      if segments == [] or Enum.any?(segments, &(&1 == "")), do: nil, else: segments
+    end)
   end
 end

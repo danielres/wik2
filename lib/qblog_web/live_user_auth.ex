@@ -2,23 +2,41 @@ defmodule QblogWeb.LiveUserAuth do
   @moduledoc """
   Helpers for authenticating users in LiveViews.
   """
+  @dev_routes? Application.compile_env(:qblog, :dev_routes, false)
+
+  alias Qblog.Access
   alias Qblog.Accounts
+  alias QblogWeb.Context
 
   import Phoenix.Component
+  import Phoenix.LiveView, only: [attach_hook: 4]
   use QblogWeb, :verified_routes
 
   # This is used for nested liveviews to fetch the current user.
   # To use, place the following at the top of that liveview:
   # on_mount {QblogWeb.LiveUserAuth, :current_user}
   def on_mount(:current_user, _params, session, socket) do
-    {:cont, AshAuthentication.Phoenix.LiveSession.assign_new_resources(socket, session)}
+    socket =
+      socket
+      |> AshAuthentication.Phoenix.LiveSession.assign_new_resources(session)
+      |> assign_current_user_for_dev()
+      |> assign_context()
+      |> attach_context_hook()
+
+    {:cont, socket}
   end
 
   def on_mount(:live_user_required, _params, _session, socket) do
     if socket.assigns[:current_user] do
-      current_user = socket.assigns.current_user
+      current_user = socket.assigns.current_user |> current_user_for_dev()
       current_scope = %Qblog.Scope{actor: current_user, tenant: nil}
-      socket = socket |> assign(current_scope: current_scope)
+
+      socket =
+        socket
+        |> assign(:current_user, current_user)
+        |> assign(current_scope: current_scope)
+        |> assign_context()
+        |> attach_context_hook()
 
       {:cont, socket}
     else
@@ -26,16 +44,50 @@ defmodule QblogWeb.LiveUserAuth do
     end
   end
 
+  def on_mount(:live_superadmin_required, _params, _session, socket) do
+    current_user = socket.assigns[:current_user] |> current_user_for_dev()
+
+    cond do
+      current_user == nil ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/sign-in")}
+
+      current_user.role == :superadmin ->
+        current_scope = %Qblog.Scope{actor: current_user, tenant: nil}
+
+        socket =
+          socket
+          |> assign(:current_user, current_user)
+          |> assign(current_scope: current_scope)
+          |> assign_context()
+          |> attach_context_hook()
+
+        {:cont, socket}
+
+      true ->
+        socket = Phoenix.LiveView.put_flash(socket, :error, "Not found")
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
+    end
+  end
+
   def on_mount(:live_scope_required, params, _session, socket) do
-    current_user = socket.assigns[:current_user]
+    current_user = socket.assigns[:current_user] |> current_user_for_dev()
 
     if current_user do
       group_name = params["group_name"]
 
       case group_name |> Accounts.get_group_by_name(actor: current_user) do
         {:ok, group} ->
-          current_scope = %Qblog.Scope{actor: current_user, tenant: group}
-          socket = socket |> assign(current_scope: current_scope)
+          current_scope =
+            %Qblog.Scope{actor: current_user, tenant: group}
+            |> assign_scope_avatar_url()
+
+          socket =
+            socket
+            |> assign(:current_user, current_user)
+            |> assign(current_scope: current_scope)
+            |> assign_context()
+            |> attach_context_hook()
+
           {:cont, socket}
 
         _ ->
@@ -51,7 +103,12 @@ defmodule QblogWeb.LiveUserAuth do
     if socket.assigns[:current_user] do
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
     else
-      {:cont, assign(socket, :current_user, nil)}
+      socket =
+        socket
+        |> assign(:current_user, nil)
+        |> assign_context()
+
+      {:cont, socket}
     end
   end
 
@@ -73,5 +130,55 @@ defmodule QblogWeb.LiveUserAuth do
       end
 
     {:cont, socket}
+  end
+
+  defp assign_current_user_for_dev(socket) do
+    current_user = socket.assigns[:current_user] |> current_user_for_dev()
+    assign(socket, :current_user, current_user)
+  end
+
+  defp assign_context(socket) do
+    assign(socket, :context, Context.build(socket.assigns[:current_user]))
+  end
+
+  defp attach_context_hook(socket) do
+    current_user = socket.assigns[:current_user]
+
+    if Phoenix.LiveView.connected?(socket) do
+      :ok = Context.subscribe(current_user)
+    end
+
+    attach_hook(socket, :context, :handle_info, fn
+      {Context, :claimable_sources_changed}, socket ->
+        socket =
+          assign(socket, :context, Context.build(socket.assigns[:current_user]))
+
+        {:halt, socket}
+
+      _message, socket ->
+        {:cont, socket}
+    end)
+  end
+
+  defp current_user_for_dev(%{role: :superadmin} = user) do
+    if dev_demote_superadmin?() do
+      %{user | role: :user}
+    else
+      user
+    end
+  end
+
+  defp current_user_for_dev(user), do: user
+
+  defp dev_demote_superadmin? do
+    @dev_routes? and System.get_env("QBLOG_DEV_DEMOTE_SUPERADMIN") == "true"
+  end
+
+  defp assign_scope_avatar_url(%{actor: actor, tenant: tenant} = scope) do
+    case Access.get_user_group_avatar_url(actor, tenant) do
+      {:ok, avatar_url} when is_binary(avatar_url) -> %{scope | avatar_url: avatar_url}
+      {:ok, nil} -> scope
+      {:error, _error} -> scope
+    end
   end
 end

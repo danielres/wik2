@@ -29,7 +29,23 @@ defmodule Qblog.Accounts.Profile do
   policies do
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :superadmin)
-      authorize_if relates_to_actor_via([:group_user_relation, :group, :users])
+
+      # TODO: is there a way to simplify?
+      authorize_if expr(
+                     exists(
+                       group_user_relation.group.memberships,
+                       user_id == ^actor(:id) and type == :owner
+                     ) or
+                       (exists(
+                          group_user_relation.group.memberships,
+                          user_id == ^actor(:id) and type in [:admin, :member]
+                        ) and
+                          exists(
+                            group_user_relation.group.access_sources,
+                            status == :active and
+                              exists(grants, user_id == ^actor(:id) and status == :active)
+                          ))
+                   )
     end
 
     policy action_type(:create) do

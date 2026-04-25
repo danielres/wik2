@@ -43,6 +43,7 @@ defmodule Qblog.Wiki.PageTreePolicyTest do
       member_group = generate(group())
       other_group = generate(group())
       add_membership(member_group, admin, :admin)
+      grant_active_telegram_access(member_group, admin)
       other_page_tree = generate(page_tree(group: other_group, nodes: base_nodes()))
 
       refute Ash.can?({other_page_tree, :read}, scope(admin, member_group))
@@ -106,6 +107,8 @@ defmodule Qblog.Wiki.PageTreePolicyTest do
     add_membership(group, owner, :owner)
     add_membership(group, admin, :admin)
     add_membership(group, member, :member)
+    grant_active_telegram_access(group, admin)
+    grant_active_telegram_access(group, member)
 
     %{
       admin: admin,

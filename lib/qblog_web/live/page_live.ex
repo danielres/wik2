@@ -1,9 +1,9 @@
-# TODO: break this up, too much going on in this file.
-
 defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
   use QblogWeb.Presence.Handlers
 
+  alias QblogWeb.Components
+  alias QblogWeb.PageLive
   alias QblogWeb.PageLive.BlockActions
   alias QblogWeb.PageLive.BlockEdit
   alias QblogWeb.PageLive.Locks
@@ -50,10 +50,11 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_params(params, url, socket) do
     path = params["path"] |> Enum.join("/")
+    title_path = params["title_path"]
 
     socket =
       socket
-      |> PageState.load_path(path)
+      |> PageState.load_path(path, title_path: title_path)
       |> Presence.track_in_liveview(url)
       |> Locks.assign_locks()
 

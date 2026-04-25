@@ -58,6 +58,16 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
     get_node_path_segments(nodes, node_id) |> Enum.join("/")
   end
 
+  def get_node_title_path_segments(nodes, node_id) do
+    get_node_ancestors(nodes, node_id)
+    |> Enum.reverse()
+    |> Enum.map(& &1.title)
+  end
+
+  def get_node_title_path(nodes, node_id) do
+    get_node_title_path_segments(nodes, node_id) |> Enum.join("/")
+  end
+
   def get_child_nodes(nodes, node_id) do
     Enum.filter(nodes, &(&1.parent_id == node_id))
   end

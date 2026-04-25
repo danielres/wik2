@@ -53,6 +53,12 @@ defmodule Qblog.Accounts.User do
   actions do
     defaults [:read]
 
+    create :create_from_external_identity
+
+    create :create_dev_user do
+      accept [:email, :role]
+    end
+
     read :get_by_subject do
       description "Get a user by the subject claim in a JWT"
       argument :subject, :string, allow_nil?: false
@@ -128,7 +134,7 @@ defmodule Qblog.Accounts.User do
     end
 
     attribute :email, :ci_string do
-      allow_nil? false
+      allow_nil? true
       public? true
     end
   end

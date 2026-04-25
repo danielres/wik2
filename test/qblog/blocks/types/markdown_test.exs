@@ -75,14 +75,14 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
   describe "update_block/3" do
     test "normalizes the submitted markdown text", %{scope: scope} do
       {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
-      wikilink_map = Jason.encode!(%{"recipes" => 1, "recipes/soup" => 2})
+      wikilink_map = Jason.encode!(%{"Soups" => 1, "Soups/Vegetable Soup" => 2})
 
       assert {:ok, updated_block} =
                Blocks.update_block(
                  block,
                  %{
                    "text" =>
-                     "\r\n\r\n## Title  \r\n\r\n[[recipes]]\r\n\r\n[[recipes/soup]]  \r\n\r\n",
+                     "\r\n\r\n## Title  \r\n\r\n[[Soups]]\r\n\r\n[[Soups/Vegetable Soup]]  \r\n\r\n",
                    "wikilink_map" => wikilink_map
                  },
                  scope: scope
@@ -96,12 +96,12 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
     test "uses the submitted wikilink map when canonicalizing a stale editor", %{scope: scope} do
       {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
 
-      stale_map = Jason.encode!(%{"recipes/cake" => 1})
+      stale_map = Jason.encode!(%{"Soups/Vegetable Soup" => 1})
 
       assert {:ok, updated_block} =
                Blocks.update_block(
                  block,
-                 %{"text" => "[[recipes/cake]]", "wikilink_map" => stale_map},
+                 %{"text" => "[[Soups/Vegetable Soup]]", "wikilink_map" => stale_map},
                  scope: scope
                )
 
@@ -114,7 +114,7 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
       assert_raise MatchError, fn ->
         Blocks.update_block(
           block,
-          %{"text" => "[[recipes]]", "wikilink_map" => "not-json"},
+          %{"text" => "[[Soups]]", "wikilink_map" => "not-json"},
           scope: scope
         )
       end
@@ -123,7 +123,7 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
     test "keeps canonical wikilinks visible when building form params", %{scope: _scope} do
       block = %Block{data: %{"text" => "[[node:1]] and [[node:2]]"}, type: :markdown}
 
-      assert %{"text" => "[[recipes]] and [[recipes/soup]]"} =
+      assert %{"text" => "[[Soups]] and [[Soups/Vegetable Soup]]"} =
                Blocks.block_to_form_params(block, %{}, page_tree_fixture())
     end
   end
@@ -135,8 +135,20 @@ defmodule Qblog.Blocks.Types.MarkdownTest do
   defp page_tree_fixture do
     %PageTree{
       nodes: [
-        %Node{id: 1, parent_id: nil, slug: "recipes", title: "Recipes"},
-        %Node{id: 2, parent_id: 1, slug: "soup", title: "Soup"}
+        %Node{
+          id: 1,
+          page_id: "11111111-1111-1111-1111-111111111111",
+          parent_id: nil,
+          slug: "soups",
+          title: "Soups"
+        },
+        %Node{
+          id: 2,
+          page_id: "22222222-2222-2222-2222-222222222222",
+          parent_id: 1,
+          slug: "vegetable-soup",
+          title: "Vegetable Soup"
+        }
       ]
     }
   end

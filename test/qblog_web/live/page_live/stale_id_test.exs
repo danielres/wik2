@@ -14,8 +14,6 @@ defmodule QblogWeb.PageLive.StaleIdTest do
 
     assert {:error, :not_found} = PageState.get_block(page, "missing-block")
     assert {:error, :not_found} = PageState.get_placement(page, "missing-placement")
-    assert nil == PageState.find_block(page, "missing-block")
-    assert nil == PageState.find_placement(page, "missing-placement")
   end
 
   test "block actions keep the socket stable when block ids are stale" do

@@ -80,13 +80,6 @@ defmodule QblogWeb.PageLive.PageState do
     end
   end
 
-  def find_block(page, block_id) do
-    case get_block(page, block_id) do
-      {:ok, block} -> block
-      {:error, :not_found} -> nil
-    end
-  end
-
   def get_placement(page, placement_id) do
     case find_placement(page, placement_id) do
       nil -> {:error, :not_found}
@@ -94,7 +87,7 @@ defmodule QblogWeb.PageLive.PageState do
     end
   end
 
-  def find_placement(page, placement_id) do
+  defp find_placement(page, placement_id) do
     page.block_placements
     |> Enum.find(&(&1.id == placement_id))
   end

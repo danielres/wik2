@@ -15,6 +15,32 @@ defmodule Qblog.Wiki.PageTree do
           nodes: [Node.t()]
         }
 
+  defdelegate get_node(nodes, node_id), to: TreeQueries
+  defdelegate get_node_ancestors(nodes, node_id), to: TreeQueries
+  defdelegate get_node_by_path(nodes, path), to: TreeQueries
+  defdelegate get_node_path(nodes, node_id), to: TreeQueries
+  defdelegate get_child_nodes(nodes, node_id), to: TreeQueries
+  defdelegate get_child_nodes_with_pages(nodes, node_id), to: TreeQueries
+  defdelegate get_nodes_with_child_pages(nodes), to: TreeQueries
+  defdelegate get_valid_parent_nodes(nodes, node_id), to: TreeQueries
+  defdelegate get_node_tree(nodes, source_node_id, max_depth), to: TreeQueries
+  defdelegate get_root_descendant_tree(nodes, max_depth), to: TreeQueries
+  defdelegate get_root_nodes(nodes), to: TreeQueries
+  defdelegate build_tree(nodes), to: TreeQueries
+
+  def destroy_node(page_tree, node_id, opts \\ []) do
+    # Temporary wrapper until ash fixes the following bug: 
+    # "scope lost on Ash.update for a record #2662"
+    # https://github.com/ash-project/ash/issues/2662
+    {destroy_page?, opts} = Keyword.pop(opts, :destroy_page?, false)
+    {scope, opts} = Keyword.pop!(opts, :scope)
+    opts = scope |> Ash.Scope.to_opts(opts)
+    opts = Keyword.put(opts, :action, :destroy_node)
+
+    page_tree
+    |> Ash.update(%{node_id: node_id, destroy_page?: destroy_page?}, opts)
+  end
+
   postgres do
     table "page_trees"
     repo Qblog.Repo
@@ -182,32 +208,6 @@ defmodule Qblog.Wiki.PageTree do
       allow_nil? false
     end
   end
-
-  def destroy_node(page_tree, node_id, opts \\ []) do
-    # Temporary wrapper until ash fixes the following bug: 
-    # "scope lost on Ash.update for a record #2662"
-    # https://github.com/ash-project/ash/issues/2662
-    {destroy_page?, opts} = Keyword.pop(opts, :destroy_page?, false)
-    {scope, opts} = Keyword.pop!(opts, :scope)
-    opts = scope |> Ash.Scope.to_opts(opts)
-    opts = Keyword.put(opts, :action, :destroy_node)
-
-    page_tree
-    |> Ash.update(%{node_id: node_id, destroy_page?: destroy_page?}, opts)
-  end
-
-  defdelegate get_node(nodes, node_id), to: TreeQueries
-  defdelegate get_node_ancestors(nodes, node_id), to: TreeQueries
-  defdelegate get_node_by_path(nodes, path), to: TreeQueries
-  defdelegate get_node_path(nodes, node_id), to: TreeQueries
-  defdelegate get_child_nodes(nodes, node_id), to: TreeQueries
-  defdelegate get_child_nodes_with_pages(nodes, node_id), to: TreeQueries
-  defdelegate get_nodes_with_child_pages(nodes), to: TreeQueries
-  defdelegate get_valid_parent_nodes(nodes, node_id), to: TreeQueries
-  defdelegate get_node_tree(nodes, source_node_id, max_depth), to: TreeQueries
-  defdelegate get_root_descendant_tree(nodes, max_depth), to: TreeQueries
-  defdelegate get_root_nodes(nodes), to: TreeQueries
-  defdelegate build_tree(nodes), to: TreeQueries
 
   identities do
     identity :unique_group_page_tree, [:group_id]

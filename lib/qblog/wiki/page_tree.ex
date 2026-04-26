@@ -206,7 +206,7 @@ defmodule Qblog.Wiki.PageTree do
   defdelegate get_valid_parent_nodes(nodes, node_id), to: TreeQueries
   defdelegate get_node_tree(nodes, source_node_id, max_depth), to: TreeQueries
   defdelegate get_root_descendant_tree(nodes, max_depth), to: TreeQueries
-  defdelegate root_nodes(nodes), to: TreeQueries
+  defdelegate get_root_nodes(nodes), to: TreeQueries
   defdelegate build_tree(nodes), to: TreeQueries
 
   identities do

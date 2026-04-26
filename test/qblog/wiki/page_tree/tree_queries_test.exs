@@ -109,7 +109,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueriesTest do
     assert {:error, :not_found} == TreeQueries.get_node_by_path(nodes, "")
   end
 
-  test "root_nodes returns all nodes with nil parent_id" do
+  test "get_root_nodes returns all nodes with nil parent_id" do
     nodes = [
       %{id: 1, page_id: nil, parent_id: nil},
       %{id: 2, page_id: nil, parent_id: 1},
@@ -119,7 +119,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueriesTest do
     assert [
              %{id: 1, page_id: nil, parent_id: nil},
              %{id: 3, page_id: nil, parent_id: nil}
-           ] = TreeQueries.root_nodes(nodes)
+           ] = TreeQueries.get_root_nodes(nodes)
   end
 
   test "child_nodes returns all direct children of a node" do

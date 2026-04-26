@@ -30,7 +30,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
     Enum.find(nodes, &(&1.slug == slug and &1.parent_id == parent_id))
   end
 
-  def root_nodes(nodes) do
+  def get_root_nodes(nodes) do
     Enum.filter(nodes, &is_nil(&1.parent_id))
   end
 
@@ -117,7 +117,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
 
   def build_tree(nodes) do
     nodes
-    |> root_nodes()
+    |> get_root_nodes()
     |> Enum.map(&build_subtree(nodes, &1, :infinity))
   end
 
@@ -130,7 +130,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
 
   def get_root_descendant_tree(nodes, max_depth) when is_integer(max_depth) do
     nodes
-    |> root_nodes()
+    |> get_root_nodes()
     |> Enum.map(&build_subtree(nodes, &1, max_depth))
   end
 

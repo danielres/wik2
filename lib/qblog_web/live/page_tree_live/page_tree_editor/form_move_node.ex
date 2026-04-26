@@ -94,7 +94,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
     else
       root_slugs =
         nodes
-        |> PageTree.root_nodes()
+        |> PageTree.get_root_nodes()
         |> Enum.reject(&(&1.id == node.id))
         |> Enum.map(& &1.slug)
 

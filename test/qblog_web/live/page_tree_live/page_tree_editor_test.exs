@@ -89,6 +89,29 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditorTest do
            )
   end
 
+  test "move button stays visible when top level is the only valid destination", %{conn: conn} do
+    group = generate(group())
+    superadmin = generate(user(role: :superadmin))
+
+    generate(
+      page_tree(
+        group: group,
+        nodes: [
+          %{id: 1, page_id: nil, parent_id: nil, slug: "home", title: "Home"},
+          %{id: 2, page_id: nil, parent_id: 1, slug: "docs", title: "Docs"}
+        ]
+      )
+    )
+
+    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
+
+    assert has_element?(view, testid("page-tree-editor-node-2-move"))
+
+    render_click(element(view, testid("page-tree-editor-node-2-move")))
+
+    assert has_element?(view, testid("move-node-to-top"))
+  end
+
   test "remove node deletes a leaf node from the rendered tree and persisted state", %{conn: conn} do
     group = generate(group())
     superadmin = generate(user(role: :superadmin))

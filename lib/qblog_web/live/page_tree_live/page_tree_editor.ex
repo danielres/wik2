@@ -137,7 +137,11 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
 
   defp action_buttons(assigns) do
     candidates = PageTree.get_valid_parent_nodes(assigns.nodes_flat, assigns.node.id)
-    assigns = assigns |> assign(has_candidates?: candidates != [])
+
+    has_candidates? =
+      candidates != [] or valid_top_level_parent?(assigns.nodes_flat, assigns.node.id)
+
+    assigns = assigns |> assign(has_candidates?: has_candidates?)
 
     ~H"""
     <ActionButtons.wrapper>
@@ -187,6 +191,22 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
     case PageTree.get_node(nodes, node_id) do
       nil -> "Unknown"
       node -> node.title
+    end
+  end
+
+  defp valid_top_level_parent?(nodes, node_id) do
+    node = PageTree.get_node(nodes, node_id)
+
+    if node == nil do
+      false
+    else
+      root_slugs =
+        nodes
+        |> PageTree.get_root_nodes()
+        |> Enum.reject(&(&1.id == node.id))
+        |> Enum.map(& &1.slug)
+
+      node.parent_id != nil and node.slug not in root_slugs
     end
   end
 

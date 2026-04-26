@@ -77,7 +77,6 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def handle_event("toggle_edit_mode", _params, socket) do
-    # TODO: add Ash.can? check to only allow users with edit permissions to toggle edit mode
     socket = socket |> assign(editing?: !socket.assigns.editing?)
     socket = if socket.assigns.editing?, do: socket, else: socket |> BlockEdit.clear()
     {:noreply, socket}

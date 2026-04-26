@@ -148,15 +148,23 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("show_block_info", %{"placement_id" => placement_id}, socket) do
     scope = socket.assigns.current_scope
-    placement = socket.assigns.page |> PageState.find_placement(placement_id)
 
-    case load_block_info_placement(placement, scope) do
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
       {:ok, placement} ->
-        {:noreply, socket |> assign(block_info_placement: placement)}
+        case load_block_info_placement(placement, scope) do
+          {:ok, placement} ->
+            {:noreply, socket |> assign(block_info_placement: placement)}
 
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "load_block_info_placement failed")
-        {:noreply, socket |> assign(block_info_placement: nil)}
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "load_block_info_placement failed")
+            {:noreply, socket |> assign(block_info_placement: nil)}
+        end
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> Phoenix.LiveView.put_flash(:error, "That block is no longer available")
+         |> assign(block_info_placement: nil)}
     end
   end
 

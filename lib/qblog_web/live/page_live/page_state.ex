@@ -73,10 +73,25 @@ defmodule QblogWeb.PageLive.PageState do
     end
   end
 
+  def get_block(page, block_id) do
+    case find_placement_by_block_id(page, block_id) do
+      nil -> {:error, :not_found}
+      placement -> {:ok, placement.block}
+    end
+  end
+
   def find_block(page, block_id) do
-    page
-    |> find_placement_by_block_id(block_id)
-    |> then(& &1.block)
+    case get_block(page, block_id) do
+      {:ok, block} -> block
+      {:error, :not_found} -> nil
+    end
+  end
+
+  def get_placement(page, placement_id) do
+    case find_placement(page, placement_id) do
+      nil -> {:error, :not_found}
+      placement -> {:ok, placement}
+    end
   end
 
   def find_placement(page, placement_id) do

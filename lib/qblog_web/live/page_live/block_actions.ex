@@ -61,67 +61,89 @@ defmodule QblogWeb.PageLive.BlockActions do
 
   def destroy(socket, placement_id) do
     scope = socket.assigns.current_scope
-    placement = socket.assigns.page |> PageState.find_placement(placement_id)
 
-    case placement |> Blocks.destroy_placed_block(scope: scope) do
-      :ok ->
-        if socket.assigns.editing_block_id == placement.block.id do
-          socket |> BlockEdit.clear()
-        else
-          socket
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
+      {:ok, placement} ->
+        case placement |> Blocks.destroy_placed_block(scope: scope) do
+          :ok ->
+            if socket.assigns.editing_block_id == placement.block.id do
+              socket |> BlockEdit.clear()
+            else
+              socket
+            end
+
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "destroy_placed_block failed")
+            socket |> Phoenix.LiveView.put_flash(:error, "Could not remove block")
         end
 
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "destroy_placed_block failed")
-        socket |> Phoenix.LiveView.put_flash(:error, "Could not remove block")
+      {:error, :not_found} ->
+        socket |> stale_block_flash()
     end
   end
 
   def move_down(socket, placement_id) do
     scope = socket.assigns.current_scope
-    placement = socket.assigns.page |> PageState.find_placement(placement_id)
 
-    case placement |> Blocks.move_placed_block_down(scope: scope) do
-      {:ok, _placement} ->
-        socket
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
+      {:ok, placement} ->
+        case placement |> Blocks.move_placed_block_down(scope: scope) do
+          {:ok, _placement} ->
+            socket
 
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "move_placed_block_down failed")
-        socket |> Phoenix.LiveView.put_flash(:error, "Could not move block")
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "move_placed_block_down failed")
+            socket |> Phoenix.LiveView.put_flash(:error, "Could not move block")
+        end
+
+      {:error, :not_found} ->
+        socket |> stale_block_flash()
     end
   end
 
   def move_up(socket, placement_id) do
     scope = socket.assigns.current_scope
-    placement = socket.assigns.page |> PageState.find_placement(placement_id)
 
-    case placement |> Blocks.move_placed_block_up(scope: scope) do
-      {:ok, _placement} ->
-        socket
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
+      {:ok, placement} ->
+        case placement |> Blocks.move_placed_block_up(scope: scope) do
+          {:ok, _placement} ->
+            socket
 
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "move_placed_block_up failed")
-        socket |> Phoenix.LiveView.put_flash(:error, "Could not move block")
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "move_placed_block_up failed")
+            socket |> Phoenix.LiveView.put_flash(:error, "Could not move block")
+        end
+
+      {:error, :not_found} ->
+        socket |> stale_block_flash()
     end
   end
 
   def save_edit(socket, block_id, params) do
     scope = socket.assigns.current_scope
-    block = socket.assigns.page |> PageState.find_block(block_id)
 
-    case block
-         |> Blocks.update_block(params, scope: scope) do
-      {:ok, _block} ->
+    case socket.assigns.page |> PageState.get_block(block_id) do
+      {:ok, block} ->
+        case block
+             |> Blocks.update_block(params, scope: scope) do
+          {:ok, _block} ->
+            socket
+            |> BlockEdit.clear()
+            |> assign(:editing?, false)
+
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "save block failed")
+
+            socket
+            |> Phoenix.LiveView.put_flash(:error, "Could not save block")
+            |> BlockEdit.continue(block_id, block, params)
+        end
+
+      {:error, :not_found} ->
         socket
         |> BlockEdit.clear()
-        |> assign(:editing?, false)
-
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "save block failed")
-
-        socket
-        |> Phoenix.LiveView.put_flash(:error, "Could not save block")
-        |> BlockEdit.continue(block_id, block, params)
+        |> stale_block_flash()
     end
   end
 
@@ -130,8 +152,13 @@ defmodule QblogWeb.PageLive.BlockActions do
 
     case Map.get(locks, block_id) do
       nil ->
-        socket
-        |> BlockEdit.start(socket.assigns.page |> PageState.find_block(block_id))
+        case socket.assigns.page |> PageState.get_block(block_id) do
+          {:ok, block} ->
+            socket |> BlockEdit.start(block)
+
+          {:error, :not_found} ->
+            socket |> stale_block_flash()
+        end
 
       %{user: user} ->
         socket |> Phoenix.LiveView.put_flash(:error, "#{user} is already editing this block")
@@ -140,15 +167,20 @@ defmodule QblogWeb.PageLive.BlockActions do
 
   def toggle_width(socket, placement_id) do
     scope = socket.assigns.current_scope
-    placement = socket.assigns.page |> PageState.find_placement(placement_id)
 
-    case placement |> Blocks.toggle_placed_block_width(scope: scope) do
-      {:ok, _placement} ->
-        socket
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
+      {:ok, placement} ->
+        case placement |> Blocks.toggle_placed_block_width(scope: scope) do
+          {:ok, _placement} ->
+            socket
 
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "toggle_placed_block_width failed")
-        socket |> Phoenix.LiveView.put_flash(:error, "Could not update block width")
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "toggle_placed_block_width failed")
+            socket |> Phoenix.LiveView.put_flash(:error, "Could not update block width")
+        end
+
+      {:error, :not_found} ->
+        socket |> stale_block_flash()
     end
   end
 
@@ -189,5 +221,9 @@ defmodule QblogWeb.PageLive.BlockActions do
   defp find_type(type_param) do
     Blocks.types_available()
     |> Enum.find_value(&if("#{&1.type}" == type_param, do: &1.type))
+  end
+
+  defp stale_block_flash(socket) do
+    socket |> Phoenix.LiveView.put_flash(:error, "That block is no longer available")
   end
 end

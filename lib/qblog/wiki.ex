@@ -30,7 +30,7 @@ defmodule Qblog.Wiki do
         page_tree
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "PageTree.ensure failed")
+        Log.scoped_error(scope, err, "PageTree.ensure failed; falling back to empty page tree")
         %PageTree{nodes: []}
     end
   end

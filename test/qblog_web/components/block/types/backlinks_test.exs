@@ -29,7 +29,13 @@ defmodule QblogWeb.Components.Block.Types.BacklinksTest do
             %{id: 1, page_id: target_page.id, parent_id: nil, slug: "target", title: "Target"},
             %{id: 2, page_id: recipes_page.id, parent_id: nil, slug: "recipes", title: "Recipes"},
             %{id: 3, page_id: cakes_page.id, parent_id: 2, slug: "cakes", title: "Cakes"},
-            %{id: 4, page_id: source_page.id, parent_id: 3, slug: "cheesecake", title: "Cheesecake"}
+            %{
+              id: 4,
+              page_id: source_page.id,
+              parent_id: 3,
+              slug: "cheesecake",
+              title: "Cheesecake"
+            }
           ]
         )
       )

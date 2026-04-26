@@ -2,11 +2,9 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   use QblogWeb, :live_component
 
   alias Qblog.Wiki.PageTree
-  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.Components.Modal
   alias QblogWeb.PageTreeLive.Components
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
-  alias QblogWeb.PageTreeLive.Helpers
   alias QblogWeb.PageTreeLive.PageTreeEditor.FlowAddChild
   alias QblogWeb.PageTreeLive.PageTreeEditor.FlowMoveNode
   alias QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild
@@ -96,7 +94,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
         <:title>
           <span>Move</span>
           <span class="font-bold" data-testid="move-node-current-node">
-            "{Helpers.get_node_by_id(@page_tree.nodes, @flow_move_node.node_id).title}"
+            "{current_move_node_title(@page_tree.nodes, @flow_move_node.node_id)}"
           </span>
         </:title>
 
@@ -138,8 +136,8 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   attr :destroy_node_target, :any, required: true
 
   defp action_buttons(assigns) do
-    candidates = assigns.nodes_flat |> Helpers.parent_options(assigns.node.id)
-    assigns = assigns |> assign(has_candidates?: candidates |> Enum.count() > 0)
+    candidates = PageTree.get_valid_parent_nodes(assigns.nodes_flat, assigns.node.id)
+    assigns = assigns |> assign(has_candidates?: candidates != [])
 
     ~H"""
     <ActionButtons.wrapper>
@@ -179,8 +177,17 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor do
   # helpers ==================================================================
 
   defp link_target_for_node(scope, nodes, node) do
-    path = TreeQueries.get_node_path(nodes, node.id)
+    path = PageTree.get_node_path(nodes, node.id)
     "/#{scope.tenant.name}/wiki/#{path}"
+  end
+
+  defp current_move_node_title(_nodes, nil), do: "Top"
+
+  defp current_move_node_title(nodes, node_id) do
+    case PageTree.get_node(nodes, node_id) do
+      nil -> "Unknown"
+      node -> node.title
+    end
   end
 
   # move node ================================================================

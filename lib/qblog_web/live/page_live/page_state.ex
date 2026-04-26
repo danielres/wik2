@@ -4,15 +4,15 @@ defmodule QblogWeb.PageLive.PageState do
   import Phoenix.Component, only: [assign: 2]
 
   alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree
   alias Qblog.Wiki.PageTree.Node
-  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageLive.BlockEdit
 
   @page_load [:author, block_placements: [block: :author]]
 
   def load_by_path(scope, path) do
     page_tree = scope |> Wiki.load_page_tree()
-    node_result = TreeQueries.get_node_by_path(page_tree.nodes, path)
+    node_result = PageTree.get_node_by_path(page_tree.nodes, path)
 
     {node, page} =
       case node_result do

@@ -4,7 +4,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
   use QblogWeb, :live_component
   use Phoenix.Component
 
-  alias QblogWeb.PageTreeLive.Helpers
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.PageTreeEditor
   alias QblogWeb.PageTreeLive.PageTreeEditor.FlowAddChild
   alias Utils.Log
@@ -28,7 +28,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
       <h3 class="mb-2" data-testid="add-child-heading">
         <span>Add child under</span>
         <span class="font-bold" data-testid="add-child-parent-slug">
-          "{Helpers.get_node_by_id(@page_tree.nodes, @flow.parent_id).slug}"
+          "{parent_slug(@page_tree.nodes, @flow.parent_id)}"
         </span>
       </h3>
 
@@ -161,4 +161,13 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormAddChild do
 
   defp data_auto_slug_testid(""), do: "add-child-auto-slug-empty"
   defp data_auto_slug_testid(auto_slug), do: "add-child-auto-slug-#{auto_slug}"
+
+  defp parent_slug(_nodes, nil), do: "top"
+
+  defp parent_slug(nodes, parent_id) do
+    case PageTree.get_node(nodes, parent_id) do
+      nil -> "unknown"
+      node -> node.slug
+    end
+  end
 end

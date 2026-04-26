@@ -1,9 +1,9 @@
 defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
   use QblogWeb, :live_component
 
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.PageTreeLive.Components
   alias QblogWeb.PageTreeLive.Components.PageTree.ActionButtons
-  alias QblogWeb.PageTreeLive.Helpers
   alias QblogWeb.PageTreeLive.PageTreeEditor
   alias QblogWeb.PageTreeLive.PageTreeEditor.FlowMoveNode
   alias Utils.Log
@@ -26,7 +26,7 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
   def render(assigns) do
     candidates =
       if assigns.flow.node_id != nil do
-        assigns.page_tree.nodes |> Helpers.parent_options(assigns.flow.node_id)
+        PageTree.get_valid_parent_nodes(assigns.page_tree.nodes, assigns.flow.node_id)
       else
         []
       end
@@ -34,7 +34,9 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
     assigns =
       assigns
       |> assign(candidates: candidates)
-      |> assign(can_move_to_top?: Enum.any?(candidates, &is_nil(&1.id)))
+      |> assign(
+        can_move_to_top?: top_level_candidate?(assigns.page_tree.nodes, assigns.flow.node_id)
+      )
 
     ~H"""
     <div id={@id} data-testid="move-node-modal">
@@ -80,6 +82,24 @@ defmodule QblogWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
       </Components.PageTree.render>
     </div>
     """
+  end
+
+  defp top_level_candidate?(_nodes, nil), do: false
+
+  defp top_level_candidate?(nodes, node_id) do
+    node = PageTree.get_node(nodes, node_id)
+
+    if node == nil do
+      false
+    else
+      root_slugs =
+        nodes
+        |> PageTree.root_nodes()
+        |> Enum.reject(&(&1.id == node.id))
+        |> Enum.map(& &1.slug)
+
+      node.parent_id != nil and node.slug not in root_slugs
+    end
   end
 
   @impl true

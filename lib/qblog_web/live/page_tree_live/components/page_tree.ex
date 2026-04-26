@@ -2,8 +2,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
   use QblogWeb, :live_view
   use Phoenix.Component
 
-  alias Qblog.Wiki.PageTree.TreeQueries
-  alias QblogWeb.PageTreeLive.Helpers
+  alias Qblog.Wiki.PageTree
 
   def render(assigns) do
     ~H"""
@@ -31,7 +30,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
       |> assign_new(:nodes_tree, fn ->
         assigns.nodes_flat
         |> Enum.sort_by(&(&1.title |> String.downcase()), :asc)
-        |> TreeQueries.build_tree()
+        |> PageTree.build_tree()
       end)
 
     ~H"""
@@ -63,7 +62,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
 
   defp page_tree_node(assigns) do
     ~H"""
-    <.node_wrapper depth={@depth} has_children?={Helpers.has_children?(@node)}>
+    <.node_wrapper depth={@depth} has_children?={has_children?(@node)}>
       <div class={[
         "group",
         "flex items-center justify-between gap-3"
@@ -84,7 +83,7 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
       </div>
 
       <.page_tree_nodes
-        :if={Helpers.has_children?(@node)}
+        :if={has_children?(@node)}
         nodes_flat={@nodes_flat}
         nodes_tree={@node.children}
         depth={@depth}
@@ -99,6 +98,8 @@ defmodule QblogWeb.PageTreeLive.Components.PageTree do
     </.node_wrapper>
     """
   end
+
+  defp has_children?(node), do: node.children != []
 
   defp icon_chevron(assigns) do
     ~H"""

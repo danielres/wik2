@@ -65,6 +65,17 @@ defmodule Qblog.Wiki.PageTree.TreeQueriesTest do
     assert "docs/faq/install" == TreeQueries.get_node_path(nodes, 3)
   end
 
+  test "get_descendant_ids returns all nested descendants" do
+    nodes = [
+      %{id: 1, page_id: nil, parent_id: nil, slug: "home"},
+      %{id: 2, page_id: nil, parent_id: 1, slug: "about"},
+      %{id: 3, page_id: nil, parent_id: 2, slug: "faq"},
+      %{id: 4, page_id: nil, parent_id: 1, slug: "docs"}
+    ]
+
+    assert [2, 4, 3] == TreeQueries.get_descendant_ids(nodes, 1)
+  end
+
   test "get_node_by_path finds a node from a list of slugs" do
     nodes = [
       %{id: 1, page_id: nil, parent_id: nil, slug: "docs"},
@@ -151,4 +162,42 @@ defmodule Qblog.Wiki.PageTree.TreeQueriesTest do
 
     assert false == TreeQueries.leaf?(nodes, 1)
   end
+
+  test "get_valid_parent_nodes rejects the current node, its parent, descendants, and parents with a matching child slug" do
+    nodes = [
+      %{id: 1, parent_id: nil, slug: "home", title: "Home"},
+      %{id: 2, parent_id: 1, slug: "about", title: "About"},
+      %{id: 3, parent_id: nil, slug: "docs", title: "Docs"},
+      %{id: 4, parent_id: 3, slug: "about", title: "About"},
+      %{id: 5, parent_id: nil, slug: "blog", title: "Blog"},
+      %{id: 6, parent_id: 2, slug: "faq", title: "Faq"}
+    ]
+
+    assert [4, 5] == node_ids(TreeQueries.get_valid_parent_nodes(nodes, 2))
+  end
+
+  test "get_valid_parent_nodes keeps parents whose direct children use a different slug" do
+    nodes = [
+      %{id: 1, parent_id: nil, slug: "home", title: "Home"},
+      %{id: 2, parent_id: 1, slug: "about", title: "About"},
+      %{id: 3, parent_id: nil, slug: "docs", title: "Docs"},
+      %{id: 4, parent_id: 3, slug: "faq", title: "Faq"},
+      %{id: 5, parent_id: nil, slug: "blog", title: "Blog"}
+    ]
+
+    assert [3, 4, 5] == node_ids(TreeQueries.get_valid_parent_nodes(nodes, 2))
+  end
+
+  test "get_valid_parent_nodes rejects top level when a root node already uses the same slug" do
+    nodes = [
+      %{id: 1, parent_id: nil, slug: "home", title: "Home"},
+      %{id: 2, parent_id: 1, slug: "about", title: "About"},
+      %{id: 3, parent_id: nil, slug: "about", title: "About"},
+      %{id: 4, parent_id: nil, slug: "blog", title: "Blog"}
+    ]
+
+    assert [3, 4] == node_ids(TreeQueries.get_valid_parent_nodes(nodes, 2))
+  end
+
+  defp node_ids(nodes), do: Enum.map(nodes, & &1.id)
 end

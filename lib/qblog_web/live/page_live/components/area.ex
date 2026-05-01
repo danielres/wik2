@@ -9,7 +9,7 @@ defmodule QblogWeb.PageLive.Components.Area do
   attr :area, :atom, required: true
   attr :class, :any, default: ""
   attr :editing?, :boolean, required: true
-  attr :editing_block_id, :integer, required: true
+  attr :editing_block_id, :string, required: true
   attr :form_edit_block, :any, required: true
   attr :locks, :map, required: true
   attr :node, :map, required: true
@@ -27,7 +27,7 @@ defmodule QblogWeb.PageLive.Components.Area do
       <div
         :for={placement <- @page.block_placements}
         :if={resolve_area(placement.area) == @area}
-        :key={placement.block.id}
+        :key={placement.id}
         class={[
           "w-full",
           "pb-4 last:pb-0"

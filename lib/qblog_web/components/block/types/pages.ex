@@ -16,10 +16,8 @@ defmodule QblogWeb.Components.Block.Types.Pages do
 
     ~H"""
     <div class={[
-      "border-1 border-base-300/60 rounded-box",
-      "bg-white/80 dark:bg-base-300/20",
-      "px-4 py-2",
-      "[&>*]:space-y-4"
+      "[&>*>*]:mb-0",
+      "[&>*>*]:has-[ul]:mb-2"
     ]}>
       <div
         :if={@source_node_missing?}
@@ -71,7 +69,7 @@ defmodule QblogWeb.Components.Block.Types.Pages do
 
   defp tree_nodes(assigns) do
     ~H"""
-    <ul class="space-y-0" data-depth={@depth}>
+    <ul data-depth={@depth}>
       <li :for={node <- @nodes}>
         <.link
           class={[

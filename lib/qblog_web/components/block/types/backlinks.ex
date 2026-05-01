@@ -24,11 +24,7 @@ defmodule QblogWeb.Components.Block.Types.Backlinks do
       end
 
     ~H"""
-    <div class={[
-      "border-1 border-base-300/60 rounded-box",
-      "bg-white/80 dark:bg-base-300/20",
-      "px-4 py-2"
-    ]}>
+    <div>
       <div :if={@missing_context?} class="text-sm opacity-60" data-testid="backlinks-missing-context">
         Backlinks block needs a page context.
       </div>

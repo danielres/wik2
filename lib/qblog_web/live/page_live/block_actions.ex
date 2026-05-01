@@ -165,18 +165,18 @@ defmodule QblogWeb.PageLive.BlockActions do
     end
   end
 
-  def toggle_width(socket, placement_id) do
+  def toggle_aside(socket, placement_id) do
     scope = socket.assigns.current_scope
 
     case socket.assigns.page |> PageState.get_placement(placement_id) do
       {:ok, placement} ->
-        case placement |> Blocks.toggle_placed_block_width(scope: scope) do
+        case placement |> Blocks.toggle_placed_block_aside(scope: scope) do
           {:ok, _placement} ->
             socket
 
           {:error, error} ->
-            Utils.Log.scoped_error(scope, error, "toggle_placed_block_width failed")
-            socket |> Phoenix.LiveView.put_flash(:error, "Could not update block width")
+            Utils.Log.scoped_error(scope, error, "toggle_placed_block_aside failed")
+            socket |> Phoenix.LiveView.put_flash(:error, "Could not update block layout")
         end
 
       {:error, :not_found} ->

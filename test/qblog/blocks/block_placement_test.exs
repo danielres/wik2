@@ -32,8 +32,7 @@ defmodule Qblog.Blocks.BlockPlacementTest do
                    attachable_id: page.id,
                    attachable_type: "page",
                    block_id: block2.id,
-                   order_key: placement1.order_key,
-                   width: "full"
+                   order_key: placement1.order_key
                  },
                  action: :create,
                  scope: scope

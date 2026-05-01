@@ -43,7 +43,7 @@ defmodule QblogWeb.PageLive.StaleIdTest do
           &BlockActions.destroy/2,
           &BlockActions.move_up/2,
           &BlockActions.move_down/2,
-          &BlockActions.toggle_width/2
+          &BlockActions.toggle_aside/2
         ] do
       result_socket = action.(socket, "stale-placement")
       assert flash(result_socket, :error) == "That block is no longer available"

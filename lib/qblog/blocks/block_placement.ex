@@ -20,12 +20,12 @@ defmodule Qblog.Blocks.BlockPlacement do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:attachable_id, :attachable_type, :block_id, :order_key, :width]
+      accept [:area, :attachable_id, :attachable_type, :block_id, :order_key]
       change Changes.SetGroupFromAttachable
     end
 
     update :update_order, do: accept([:order_key])
-    update :update_width, do: accept([:width])
+    update :update_area, do: accept([:area])
   end
 
   policies do
@@ -49,7 +49,7 @@ defmodule Qblog.Blocks.BlockPlacement do
       authorize_if Group.Checks.ActorCanManageResourceGroup
     end
 
-    policy action(:update_width) do
+    policy action(:update_area) do
       authorize_if Group.Checks.ActorCanManageResourceGroup
     end
   end
@@ -59,7 +59,7 @@ defmodule Qblog.Blocks.BlockPlacement do
     prefix "block_placement"
     publish :create, [:attachable_type, :attachable_id]
     publish :update_order, [:attachable_type, :attachable_id]
-    publish :update_width, [:attachable_type, :attachable_id]
+    publish :update_area, [:attachable_type, :attachable_id]
     publish :destroy, [:attachable_type, :attachable_id]
   end
 
@@ -82,11 +82,9 @@ defmodule Qblog.Blocks.BlockPlacement do
       allow_nil? false
     end
 
-    attribute :width, :string do
+    attribute :area, :atom do
       public? true
-      allow_nil? false
-      constraints match: ~r/^(full|half)$/
-      default "full"
+      constraints one_of: [:aside]
     end
   end
 

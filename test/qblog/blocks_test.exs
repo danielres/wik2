@@ -83,7 +83,7 @@ defmodule Qblog.BlocksTest do
       assert block.owner_group_id == nil
       assert placement.block_id == block.id
       assert placement.group_id == group.id
-      assert placement.width == "full"
+      assert placement.area == nil
     end
   end
 
@@ -115,7 +115,7 @@ defmodule Qblog.BlocksTest do
       assert block.owner_user_id == nil
       assert placement.block_id == block.id
       assert placement.group_id == group.id
-      assert placement.width == "full"
+      assert placement.area == nil
     end
 
     test "can place the new block before existing placements" do
@@ -263,8 +263,8 @@ defmodule Qblog.BlocksTest do
     end
   end
 
-  describe "toggle_placed_block_width/2" do
-    test "toggles a placement between full and half width" do
+  describe "toggle_placed_block_aside/2" do
+    test "toggles a placement between main and aside" do
       actor = generate(user())
       group = generate(group(author: actor))
       add_membership(group, actor, :owner)
@@ -276,17 +276,17 @@ defmodule Qblog.BlocksTest do
 
       {:ok, placement} = Blocks.place_block_on_page(block, page, scope: scope)
 
-      assert placement.width == "full"
+      assert placement.area == nil
 
-      assert {:ok, half_width_placement} =
-               Blocks.toggle_placed_block_width(placement, scope: scope)
+      assert {:ok, aside_placement} =
+               Blocks.toggle_placed_block_aside(placement, scope: scope)
 
-      assert half_width_placement.width == "half"
+      assert aside_placement.area == :aside
 
-      assert {:ok, full_width_placement} =
-               Blocks.toggle_placed_block_width(half_width_placement, scope: scope)
+      assert {:ok, main_placement} =
+               Blocks.toggle_placed_block_aside(aside_placement, scope: scope)
 
-      assert full_width_placement.width == "full"
+      assert main_placement.area == nil
     end
   end
 

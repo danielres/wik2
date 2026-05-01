@@ -35,13 +35,13 @@ defmodule QblogWeb.Components.Block.ActionButtons do
 
         <.action_button
           icon={
-            if @placement.width == "half",
-              do: "hero-arrows-pointing-out",
-              else: "hero-arrows-pointing-in"
+            if @placement.area == :aside,
+              do: "hero-chevron-left-mini",
+              else: "hero-chevron-right-mini"
           }
-          phx-click="toggle_block_width"
+          phx-click="toggle_block_aside"
           phx-value-placement_id={@placement.id}
-          title={if @placement.width == "half", do: "Set full width", else: "Set half width"}
+          title={if @placement.area == :aside, do: "Move to main column", else: "Move to aside"}
         />
       </div>
     </div>

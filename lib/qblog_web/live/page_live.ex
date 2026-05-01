@@ -39,6 +39,8 @@ defmodule QblogWeb.PageLive do
     {:ok, socket}
   end
 
+  defp has_area?(page, area), do: Enum.any?(page.block_placements, &(&1.area == area))
+
   # Presence ===================================================================
 
   def handle_presence_change(socket) do
@@ -188,8 +190,8 @@ defmodule QblogWeb.PageLive do
   end
 
   @impl true
-  def handle_event("toggle_block_width", %{"placement_id" => placement_id}, socket) do
-    {:noreply, socket |> BlockActions.toggle_width(placement_id)}
+  def handle_event("toggle_block_aside", %{"placement_id" => placement_id}, socket) do
+    {:noreply, socket |> BlockActions.toggle_aside(placement_id)}
   end
 
   defp load_block_info_placement(nil, _scope), do: {:error, :not_found}

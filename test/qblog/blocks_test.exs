@@ -239,6 +239,36 @@ defmodule Qblog.BlocksTest do
       assert {:ok, moved_placement} = Blocks.move_placed_block_down(placement1, scope: scope)
       assert moved_placement.order_key > placement2.order_key
     end
+
+    test "moves a placement only within its current area" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block1} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "First"}, type: :text}, scope: scope)
+
+      {:ok, block2} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "Second"}, type: :text}, scope: scope)
+
+      {:ok, block3} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "Third"}, type: :text}, scope: scope)
+
+      {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
+      {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
+      {:ok, placement3} = Blocks.place_block_on_page(block3, page, scope: scope)
+
+      assert {:ok, placement2} = Blocks.toggle_placed_block_aside(placement2, scope: scope)
+      assert placement2.area == :aside
+
+      assert {:ok, moved_placement1} = Blocks.move_placed_block_down(placement1, scope: scope)
+      assert moved_placement1.order_key > placement3.order_key
+
+      assert {:ok, moved_placement2} = Blocks.move_placed_block_down(placement2, scope: scope)
+      assert moved_placement2.order_key == placement2.order_key
+    end
   end
 
   describe "move_placed_block_up/2" do
@@ -260,6 +290,36 @@ defmodule Qblog.BlocksTest do
 
       assert {:ok, moved_placement} = Blocks.move_placed_block_up(placement2, scope: scope)
       assert moved_placement.order_key < placement1.order_key
+    end
+
+    test "moves a placement up only within its current area" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+      add_membership(group, actor, :owner)
+      scope = scope(actor, group)
+      {:ok, page} = Page.create(scope: scope)
+
+      {:ok, block1} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "First"}, type: :text}, scope: scope)
+
+      {:ok, block2} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "Second"}, type: :text}, scope: scope)
+
+      {:ok, block3} =
+        Blocks.create_user_owned_block(%{data: %{"text" => "Third"}, type: :text}, scope: scope)
+
+      {:ok, placement1} = Blocks.place_block_on_page(block1, page, scope: scope)
+      {:ok, placement2} = Blocks.place_block_on_page(block2, page, scope: scope)
+      {:ok, placement3} = Blocks.place_block_on_page(block3, page, scope: scope)
+
+      assert {:ok, placement2} = Blocks.toggle_placed_block_aside(placement2, scope: scope)
+      assert {:ok, placement3} = Blocks.toggle_placed_block_aside(placement3, scope: scope)
+      assert placement2.area == :aside
+      assert placement3.area == :aside
+
+      assert {:ok, moved_placement3} = Blocks.move_placed_block_up(placement3, scope: scope)
+      assert moved_placement3.order_key < placement2.order_key
+      assert moved_placement3.order_key > placement1.order_key
     end
   end
 

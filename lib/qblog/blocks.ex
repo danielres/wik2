@@ -178,7 +178,7 @@ defmodule Qblog.Blocks do
   def move_placed_block_down(placement, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
-    case get_next_placement(placement, scope) do
+    case get_next_placement_in_area(placement, scope) do
       nil ->
         {:ok, placement}
 
@@ -199,7 +199,7 @@ defmodule Qblog.Blocks do
   def move_placed_block_up(placement, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
-    case get_prev_placement(placement, scope) do
+    case get_prev_placement_in_area(placement, scope) do
       nil ->
         {:ok, placement}
 
@@ -314,6 +314,20 @@ defmodule Qblog.Blocks do
     |> List.first()
   end
 
+  defp get_next_placement_in_area(placement, scope) do
+    BlockPlacement
+    |> Ash.Query.filter(
+      attachable_id == ^placement.attachable_id and
+        attachable_type == ^placement.attachable_type and
+        order_key > ^placement.order_key
+    )
+    |> filter_placements_by_area(placement.area)
+    |> Query.sort(order_key: :asc)
+    |> Query.limit(1)
+    |> Ash.read!(scope: scope)
+    |> List.first()
+  end
+
   defp get_prev_placement(placement, scope) do
     BlockPlacement
     |> Ash.Query.filter(
@@ -326,6 +340,23 @@ defmodule Qblog.Blocks do
     |> Ash.read!(scope: scope)
     |> List.first()
   end
+
+  defp get_prev_placement_in_area(placement, scope) do
+    BlockPlacement
+    |> Ash.Query.filter(
+      attachable_id == ^placement.attachable_id and
+        attachable_type == ^placement.attachable_type and
+        order_key < ^placement.order_key
+    )
+    |> filter_placements_by_area(placement.area)
+    |> Query.sort(order_key: :desc)
+    |> Query.limit(1)
+    |> Ash.read!(scope: scope)
+    |> List.first()
+  end
+
+  defp filter_placements_by_area(query, nil), do: Ash.Query.filter(query, is_nil(area))
+  defp filter_placements_by_area(query, area), do: Ash.Query.filter(query, area == ^area)
 
   defp update_placed_block_order_key(placement, {:ok, order_key}, scope) do
     placement

@@ -170,6 +170,16 @@
           placement={@block_info_placement}
           scope={@current_scope}
         />
+
+        <PageLive.Components.BlockHistoryModal.render
+          :if={@block_history_placement}
+          page_tree={@page_tree}
+          placement={@block_history_placement}
+          scope={@current_scope}
+          selected_text={@block_history_selected_text}
+          selected_version_id={@block_history_selected_version_id}
+          versions={@block_history_versions}
+        />
       </section>
     <% end %>
   </Layouts.group>

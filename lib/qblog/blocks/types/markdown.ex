@@ -27,18 +27,22 @@ defmodule Qblog.Blocks.Types.Markdown do
     params
   end
 
-  def update_block(block, params, opts) do
+  def canonical_text_from_params(params) do
     text =
       case params do
         %{"text" => text} when is_binary(text) -> text
         _ -> nil
       end
 
+    text |> canonicalize_text(params["wikilink_map"])
+  end
+
+  def update_block(block, params, opts) do
     block
     |> Ash.update(
       %{
         data: %{
-          "text" => text |> canonicalize_text(params["wikilink_map"])
+          "text" => params |> canonical_text_from_params()
         }
       },
       opts |> Keyword.put(:action, :update)

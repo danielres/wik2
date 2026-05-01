@@ -2,6 +2,7 @@ defmodule QblogWeb.PageLive do
   use QblogWeb, :live_view
   use QblogWeb.Presence.Handlers
 
+  alias Qblog.Blocks
   alias QblogWeb.Components
   alias QblogWeb.PageLive
   alias QblogWeb.PageLive.BlockActions
@@ -21,6 +22,10 @@ defmodule QblogWeb.PageLive do
       |> assign(
         add_block_modal_open?: false,
         add_block_position: "bottom",
+        block_history_placement: nil,
+        block_history_selected_text: nil,
+        block_history_selected_version_id: nil,
+        block_history_versions: [],
         block_info_placement: nil,
         can_manage_page?: false,
         editing?: false,
@@ -172,6 +177,113 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("hide_block_info", _params, socket) do
     {:noreply, socket |> assign(block_info_placement: nil)}
+  end
+
+  @impl true
+  def handle_event("show_block_history", %{"placement_id" => placement_id}, socket) do
+    scope = socket.assigns.current_scope
+
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
+      {:ok, placement} ->
+        case Blocks.list_markdown_versions(placement.block, scope: scope) do
+          {:ok, [selected_version | _] = versions} ->
+            case Blocks.markdown_version_text(selected_version, scope: scope) do
+              {:ok, selected_text} ->
+                {:noreply,
+                 socket
+                 |> assign(
+                   block_history_placement: placement,
+                   block_history_selected_text: selected_text,
+                   block_history_selected_version_id: selected_version.id,
+                   block_history_versions: versions
+                 )}
+
+              {:error, error} ->
+                Utils.Log.scoped_error(scope, error, "markdown_version_text failed")
+                {:noreply, socket}
+            end
+
+          {:ok, []} ->
+            {:noreply, socket}
+
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "list_markdown_versions failed")
+            {:noreply, socket}
+        end
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket |> Phoenix.LiveView.put_flash(:error, "That block is no longer available")}
+    end
+  end
+
+  @impl true
+  def handle_event("hide_block_history", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(
+       block_history_placement: nil,
+       block_history_selected_text: nil,
+       block_history_selected_version_id: nil,
+       block_history_versions: []
+     )}
+  end
+
+  @impl true
+  def handle_event("select_block_history_version", %{"version_id" => version_id}, socket) do
+    scope = socket.assigns.current_scope
+
+    case Enum.find(socket.assigns.block_history_versions, &(&1.id == version_id)) do
+      nil ->
+        {:noreply, socket}
+
+      version ->
+        case Blocks.markdown_version_text(version, scope: scope) do
+          {:ok, selected_text} ->
+            {:noreply,
+             socket
+             |> assign(
+               block_history_selected_text: selected_text,
+               block_history_selected_version_id: version.id
+             )}
+
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "markdown_version_text failed")
+            {:noreply, socket}
+        end
+    end
+  end
+
+  @impl true
+  def handle_event("navigate_block_history", %{"direction" => direction}, socket) do
+    versions = socket.assigns.block_history_versions
+    current_id = socket.assigns.block_history_selected_version_id
+    current_index = Enum.find_index(versions, &(&1.id == current_id)) || 0
+
+    target_index =
+      case direction do
+        "first" -> max(length(versions) - 1, 0)
+        "prev" -> min(current_index + 1, length(versions) - 1)
+        "next" -> max(current_index - 1, 0)
+        "last" -> 0
+      end
+
+    version = Enum.at(versions, target_index)
+    scope = socket.assigns.current_scope
+
+    case Blocks.markdown_version_text(version, scope: scope) do
+      {:ok, selected_text} ->
+        {:noreply,
+         socket
+         |> assign(
+           block_history_selected_text: selected_text,
+           block_history_selected_version_id: version.id
+         )}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "markdown_version_text failed")
+        {:noreply, socket}
+    end
   end
 
   @impl true

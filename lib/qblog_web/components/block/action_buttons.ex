@@ -22,6 +22,13 @@ defmodule QblogWeb.Components.Block.ActionButtons do
           phx-value-placement_id={@placement.id}
         />
         <.action_button
+          :if={@placement.block.type == :markdown}
+          icon="hero-clock-mini"
+          phx-click="show_block_history"
+          phx-value-placement_id={@placement.id}
+          title="Show markdown history"
+        />
+        <.action_button
           icon="hero-chevron-up-mini"
           phx-click="move_block_up"
           phx-value-placement_id={@placement.id}

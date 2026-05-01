@@ -3,8 +3,10 @@ defmodule Qblog.Blocks.Types.ChildPages do
 
   def label, do: "Child pages"
   def type, do: :child_pages
+  def supports_history?, do: false
   def supports_title?, do: true
   def default_data, do: %{"source" => "current_page", "title" => ""}
+  def create_initial_version(_block, _opts), do: :ok
 
   def block_to_form_params(%{data: %{"title" => title} = block_data}, _params, _page_tree) do
     source = block_data["source"]
@@ -30,6 +32,8 @@ defmodule Qblog.Blocks.Types.ChildPages do
       opts |> Keyword.put(:action, :update)
     )
   end
+
+  def version_to_text(_block, _version, _opts), do: {:error, :unsupported}
 
   # TODO: simplify?
   def validate_data(data) do

@@ -7,6 +7,8 @@ defmodule QblogWeb.Components.Time do
   attr :datetime, :string, required: true
   attr :ago?, :boolean, default: false
   attr :direction, :string, default: "bottom"
+  attr :bg_class, :string, default: "bg-base-300"
+  attr :tooltip_variant_class, :string, default: ""
 
   def relative_and_precise(assigns) do
     direction_class =
@@ -23,11 +25,13 @@ defmodule QblogWeb.Components.Time do
     ~H"""
     <span>
       <span class={[
-        "badge badge-sm px-2 bg-base-300",
+        "badge badge-sm px-2",
+        @bg_class,
         "opacity-60 hover:opacity-100 transition-opacity",
         "whitespace-nowrap",
         "tooltip tooltip-delayed tooltip-xs",
         @direction_class,
+        @tooltip_variant_class,
         "cursor-default"
       ]}>
         {Utils.Time.relative(@datetime)}

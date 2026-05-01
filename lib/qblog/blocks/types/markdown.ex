@@ -1,12 +1,20 @@
 defmodule Qblog.Blocks.Types.Markdown do
   @behaviour Qblog.Blocks.Types.Behaviour
 
+  alias Qblog.Blocks.Versioning
   alias Qblog.Wiki.PageTree.Wikilinks
 
   def label, do: "Markdown"
   def type, do: :markdown
+  def supports_history?, do: true
   def supports_title?, do: false
   def default_data, do: %{"text" => ""}
+
+  def create_initial_version(block, opts) do
+    block
+    |> block_to_canonical_text()
+    |> then(&Versioning.create_initial_text_version(block, &1, opts))
+  end
 
   def block_to_form_params(block, %{}, page_tree) do
     %{"text" => text} = block.data
@@ -28,22 +36,25 @@ defmodule Qblog.Blocks.Types.Markdown do
   end
 
   def update_block(block, params, opts) do
-    text =
-      case params do
-        %{"text" => text} when is_binary(text) -> text
-        _ -> nil
-      end
+    current_text = block |> block_to_canonical_text()
+    updated_text = params |> params_to_canonical_text()
 
-    block
-    |> Ash.update(
-      %{
-        data: %{
-          "text" => text |> canonicalize_text(params["wikilink_map"])
-        }
-      },
-      opts |> Keyword.put(:action, :update)
-    )
+    if updated_text == current_text do
+      {:ok, block}
+    else
+      updated_data = block.data |> Map.put("text", updated_text)
+
+      Versioning.update_block_with_text_version(
+        block,
+        current_text,
+        updated_text,
+        updated_data,
+        opts
+      )
+    end
   end
+
+  def version_to_text(block, version, opts), do: Versioning.version_to_text(block, version, opts)
 
   def validate_data(data) do
     case data do
@@ -56,6 +67,18 @@ defmodule Qblog.Blocks.Types.Markdown do
       _data ->
         {:error, field: :data, message: "markdown blocks must store text"}
     end
+  end
+
+  defp block_to_canonical_text(block), do: block.data["text"] || ""
+
+  defp params_to_canonical_text(params) do
+    text =
+      case params do
+        %{"text" => text} when is_binary(text) -> text
+        _ -> nil
+      end
+
+    text |> canonicalize_text(params["wikilink_map"])
   end
 
   defp canonicalize_text(text, wikilink_map_json) when is_binary(text) do

@@ -170,6 +170,15 @@
           placement={@block_info_placement}
           scope={@current_scope}
         />
+
+        <.live_component
+          :if={@block_history_placement}
+          module={PageLive.Components.BlockHistory}
+          id={"block-history-#{@block_history_placement.id}"}
+          page_tree={@page_tree}
+          placement={@block_history_placement}
+          scope={@current_scope}
+        />
       </section>
     <% end %>
   </Layouts.group>

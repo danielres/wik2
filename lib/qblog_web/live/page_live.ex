@@ -21,6 +21,7 @@ defmodule QblogWeb.PageLive do
       |> assign(
         add_block_modal_open?: false,
         add_block_position: "bottom",
+        block_history_placement: nil,
         block_info_placement: nil,
         can_manage_page?: false,
         editing?: false,
@@ -172,6 +173,23 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("hide_block_info", _params, socket) do
     {:noreply, socket |> assign(block_info_placement: nil)}
+  end
+
+  @impl true
+  def handle_event("show_block_history", %{"placement_id" => placement_id}, socket) do
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
+      {:ok, placement} ->
+        {:noreply, assign(socket, block_history_placement: placement)}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket |> Phoenix.LiveView.put_flash(:error, "That block is no longer available")}
+    end
+  end
+
+  @impl true
+  def handle_event("hide_block_history", _params, socket) do
+    {:noreply, assign(socket, block_history_placement: nil)}
   end
 
   @impl true

@@ -6,6 +6,7 @@ defmodule QblogWeb.Components.Modal do
   attr :"phx-target", :any, required: false
   attr :cancel, :string, required: false
   attr :cancel_testid, :string, default: nil
+  attr :full_height?, :boolean, default: false
   attr :open?, :boolean, default: true
   attr :testid, :string, default: nil
   slot :inner_block, required: true
@@ -26,7 +27,8 @@ defmodule QblogWeb.Components.Modal do
           "modal-box",
           "p-6 pr-3",
           "bg-base-100",
-          "max-h-[calc(100svh-4rem)]",
+          !@full_height? and "max-h-[calc(100svh-4rem)]",
+          @full_height? and "h-[calc(100svh-4rem)]",
           "mx-4",
           "overflow-hidden",
           "grid grid-rows-[auto_1fr]"

@@ -2,7 +2,6 @@ defmodule QblogWeb.Components.Page do
   use QblogWeb, :html
 
   alias Qblog.Wiki.PageTree
-  alias Qblog.Wiki.PageTree.TreeQueries
 
   attr :include_current?, :boolean, default: true
   attr :node, :map, required: true
@@ -49,7 +48,7 @@ defmodule QblogWeb.Components.Page do
       if include_current?, do: items, else: Enum.drop(items, -1)
     end)
     |> Enum.map(fn prefix ->
-      case TreeQueries.get_node_by_path(nodes, prefix) do
+      case PageTree.get_node_by_path(nodes, prefix) do
         {:ok, node} ->
           %{
             node_id: node.id,
@@ -71,10 +70,10 @@ defmodule QblogWeb.Components.Page do
   defp breadcrumb_path(%PageTree{}, %{path: path}) when is_binary(path), do: path
 
   defp breadcrumb_path(%PageTree{nodes: nodes}, %{id: id}),
-    do: TreeQueries.get_node_path(nodes, id)
+    do: PageTree.get_node_path(nodes, id)
 
   defp breadcrumb_path(%PageTree{nodes: nodes}, %{node_id: node_id}),
-    do: TreeQueries.get_node_path(nodes, node_id)
+    do: PageTree.get_node_path(nodes, node_id)
 
   defp path_prefixes(path) do
     path

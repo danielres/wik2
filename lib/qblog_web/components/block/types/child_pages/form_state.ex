@@ -1,6 +1,6 @@
 defmodule QblogWeb.Components.Block.Types.ChildPages.FormState do
   alias Qblog.Wiki
-  alias Qblog.Wiki.PageTree.TreeQueries
+  alias Qblog.Wiki.PageTree
 
   def build(scope, current_node, selected_source_page) do
     tree_nodes = scope |> Wiki.load_page_tree() |> Map.get(:nodes, [])
@@ -15,8 +15,8 @@ defmodule QblogWeb.Components.Block.Types.ChildPages.FormState do
   defp build_source_page_options(tree_nodes, current_node, selected_source_page) do
     source_page_options =
       tree_nodes
-      |> TreeQueries.get_nodes_with_child_pages()
-      |> Enum.sort_by(&TreeQueries.get_node_path(tree_nodes, &1.id))
+      |> PageTree.get_nodes_with_child_pages()
+      |> Enum.sort_by(&PageTree.get_node_path(tree_nodes, &1.id))
       |> Enum.map(fn node ->
         {source_page_label(tree_nodes, node), "#{node.id}"}
       end)
@@ -32,7 +32,7 @@ defmodule QblogWeb.Components.Block.Types.ChildPages.FormState do
 
   defp source_page_label(tree_nodes, node) do
     tree_nodes
-    |> TreeQueries.get_node_ancestors(node.id)
+    |> PageTree.get_node_ancestors(node.id)
     |> Enum.reverse()
     |> Enum.map_join(" / ", & &1.title)
   end

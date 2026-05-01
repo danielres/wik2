@@ -2,7 +2,7 @@ defmodule QblogWeb.Components.Block.Info do
   use QblogWeb, :html
 
   alias Qblog.Wiki
-  alias Qblog.Wiki.PageTree.TreeQueries
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.Components
 
   attr :placement, :map, required: true
@@ -85,7 +85,7 @@ defmodule QblogWeb.Components.Block.Info do
         %{
           id: placement.id,
           kind: :linked,
-          path: TreeQueries.get_node_path(tree_nodes, node.id),
+          path: PageTree.get_node_path(tree_nodes, node.id),
           title: node.title
         }
 

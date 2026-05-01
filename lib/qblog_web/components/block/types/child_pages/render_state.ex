@@ -1,6 +1,6 @@
 defmodule QblogWeb.Components.Block.Types.ChildPages.RenderState do
   alias Qblog.Wiki
-  alias Qblog.Wiki.PageTree.TreeQueries
+  alias Qblog.Wiki.PageTree
 
   def build(scope, current_node, current_path, block_data) do
     tree_nodes = scope |> Wiki.load_page_tree() |> Map.get(:nodes, [])
@@ -16,7 +16,7 @@ defmodule QblogWeb.Components.Block.Types.ChildPages.RenderState do
         %{
           child_nodes:
             tree_nodes
-            |> TreeQueries.get_child_nodes_with_pages(source_node.id)
+            |> PageTree.get_child_nodes_with_pages(source_node.id)
             |> Enum.map(&display_node(&1, tree_nodes)),
           source_node_missing?: false,
           source_page: source_page
@@ -28,7 +28,7 @@ defmodule QblogWeb.Components.Block.Types.ChildPages.RenderState do
          "source" => "node",
          "node_id" => node_id
        }) do
-    case TreeQueries.get_node(tree_nodes, node_id) do
+    case PageTree.get_node(tree_nodes, node_id) do
       nil -> :missing_source_node
       source_node -> {:source, source_node, display_node(source_node, tree_nodes)}
     end
@@ -48,7 +48,7 @@ defmodule QblogWeb.Components.Block.Types.ChildPages.RenderState do
   defp display_node(node, tree_nodes) do
     %{
       node_id: node.id,
-      path: TreeQueries.get_node_path(tree_nodes, node.id),
+      path: PageTree.get_node_path(tree_nodes, node.id),
       title: node.title
     }
   end

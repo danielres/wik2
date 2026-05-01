@@ -154,8 +154,7 @@ defmodule Qblog.Blocks.BlockPolicyTest do
         attachable_id: page.id,
         attachable_type: "page",
         block_id: block.id,
-        order_key: "a0",
-        width: "full"
+        order_key: "a0"
       },
       action: :create,
       authorize?: false,

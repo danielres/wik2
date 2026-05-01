@@ -8,7 +8,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
   alias Qblog.Blocks.Types.Members
   alias Qblog.Blocks.Types.Pages
   alias Qblog.Wiki
-  alias Qblog.Wiki.PageTree.TreeQueries
+  alias Qblog.Wiki.PageTree
   alias QblogWeb.Components.Modal
 
   attr :class, :any, default: ""
@@ -164,7 +164,7 @@ defmodule QblogWeb.Components.Block.AddBlockMenuButton do
     scope
     |> Wiki.load_page_tree()
     |> Map.get(:nodes, [])
-    |> TreeQueries.get_nodes_with_child_pages()
+    |> PageTree.get_nodes_with_child_pages()
     |> Enum.any?()
   end
 end

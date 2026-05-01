@@ -20,6 +20,7 @@ defmodule QblogWeb.Components.PageTest do
 
     assert document |> LazyHTML.query(~s(a[href="/cool-stuff/wiki/recipes"])) |> Enum.any?()
     assert document |> LazyHTML.query(~s(a[href="/cool-stuff/wiki/recipes/cakes"])) |> Enum.any?()
+
     assert document
            |> LazyHTML.query(~s(a[href="/cool-stuff/wiki/recipes/cakes/cheesecake"]))
            |> Enum.any?()

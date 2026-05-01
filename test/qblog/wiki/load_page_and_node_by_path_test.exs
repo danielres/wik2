@@ -136,7 +136,7 @@ defmodule Qblog.Wiki.LoadPageAndNodeByPathTest do
     page_tree = Wiki.load_page_tree(scope)
 
     assert {:ok, soups_node} =
-             Qblog.Wiki.PageTree.TreeQueries.get_node_by_path(page_tree.nodes, "soups")
+             Qblog.Wiki.PageTree.get_node_by_path(page_tree.nodes, "soups")
 
     assert soups_node.title == "Soups"
   end

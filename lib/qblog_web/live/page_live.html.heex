@@ -102,52 +102,39 @@
         </header>
 
         <div class={[
-          "grid gap-y-12 gap-x-8 sm:grid-cols-2"
+          "grid grid-cols-1 gap-4",
+          has_area?(@page, :aside) && "lg:grid-cols-[minmax(0,1fr)_18rem]"
         ]}>
-          <div
-            :for={placement <- @page.block_placements}
-            class={[
-              "col-span-1",
-              placement.width == "full" && "sm:col-span-2"
-            ]}
-            id={"block-#{placement.block.id}"}
-          >
-            <div class="card-body py-0.5 px-0 ">
-              <%= if @editing_block_id == placement.block.id do %>
-                <Components.Block.form
-                  placement={placement}
-                  form={@form_edit_block}
-                  node={@node}
-                  page_tree={@page_tree}
-                  path={@path}
-                  scope={@current_scope}
-                  actions?={false}
-                />
-              <% else %>
-                <Components.Block.render
-                  editing?={@editing?}
-                  lock={@locks[placement.block.id]}
-                  placement={placement}
-                  node={@node}
-                  page_tree={@page_tree}
-                  path={@path}
-                  scope={@current_scope}
-                />
-              <% end %>
-            </div>
-          </div>
+          <PageLive.Components.Area.render
+            area={:main}
+            editing?={@editing?}
+            editing_block_id={@editing_block_id}
+            form_edit_block={@form_edit_block}
+            locks={@locks}
+            node={@node}
+            page={@page}
+            page_tree={@page_tree}
+            path={@path}
+            scope={@current_scope}
+          />
 
-          <div
-            :if={Enum.empty?(@page.block_placements)}
+          <PageLive.Components.Area.render
+            :if={has_area?(@page, :aside)}
+            area={:aside}
             class={[
-              "sm:col-span-2",
-              "p-8",
-              "rounded bg-base-300/30",
-              "text-center"
+              "sm:border-l pl-4",
+              if(@editing?, do: "border-transparent", else: "border-base-content/10")
             ]}
-          >
-            No blocks yet
-          </div>
+            editing?={@editing?}
+            editing_block_id={@editing_block_id}
+            form_edit_block={@form_edit_block}
+            locks={@locks}
+            node={@node}
+            page={@page}
+            page_tree={@page_tree}
+            path={@path}
+            scope={@current_scope}
+          />
         </div>
 
         <.form

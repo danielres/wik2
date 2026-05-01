@@ -4,15 +4,15 @@ defmodule QblogWeb.PageLive.PageState do
   import Phoenix.Component, only: [assign: 2]
 
   alias Qblog.Wiki
+  alias Qblog.Wiki.PageTree
   alias Qblog.Wiki.PageTree.Node
-  alias Qblog.Wiki.PageTree.TreeQueries
   alias QblogWeb.PageLive.BlockEdit
 
   @page_load [:author, block_placements: [block: :author]]
 
   def load_by_path(scope, path) do
     page_tree = scope |> Wiki.load_page_tree()
-    node_result = TreeQueries.get_node_by_path(page_tree.nodes, path)
+    node_result = PageTree.get_node_by_path(page_tree.nodes, path)
 
     {node, page} =
       case node_result do
@@ -73,13 +73,25 @@ defmodule QblogWeb.PageLive.PageState do
     end
   end
 
-  def find_block(page, block_id) do
-    page
-    |> find_placement_by_block_id(block_id)
-    |> then(& &1.block)
+  def get_block(nil, _block_id), do: {:error, :not_found}
+
+  def get_block(page, block_id) do
+    case find_placement_by_block_id(page, block_id) do
+      nil -> {:error, :not_found}
+      placement -> {:ok, placement.block}
+    end
   end
 
-  def find_placement(page, placement_id) do
+  def get_placement(nil, _placement_id), do: {:error, :not_found}
+
+  def get_placement(page, placement_id) do
+    case find_placement(page, placement_id) do
+      nil -> {:error, :not_found}
+      placement -> {:ok, placement}
+    end
+  end
+
+  defp find_placement(page, placement_id) do
     page.block_placements
     |> Enum.find(&(&1.id == placement_id))
   end

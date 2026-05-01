@@ -1,6 +1,6 @@
 defmodule QblogWeb.Components.Block.Types.Pages.RenderState do
   alias Qblog.Wiki
-  alias Qblog.Wiki.PageTree.TreeQueries
+  alias Qblog.Wiki.PageTree
 
   def build(scope, %{"depth" => depth, "source_node" => source_node}) do
     tree_nodes = scope |> Wiki.load_page_tree() |> Map.get(:nodes, [])
@@ -18,13 +18,13 @@ defmodule QblogWeb.Components.Block.Types.Pages.RenderState do
   end
 
   defp source_tree(tree_nodes, "root", depth) do
-    TreeQueries.get_root_descendant_tree(tree_nodes, depth)
+    PageTree.get_root_descendant_tree(tree_nodes, depth)
   end
 
   defp source_tree(tree_nodes, source_node_id, depth) when is_integer(source_node_id) do
-    case TreeQueries.get_node(tree_nodes, source_node_id) do
+    case PageTree.get_node(tree_nodes, source_node_id) do
       nil -> :missing_source_node
-      _source_node -> TreeQueries.get_node_tree(tree_nodes, source_node_id, depth)
+      _source_node -> PageTree.get_node_tree(tree_nodes, source_node_id, depth)
     end
   end
 
@@ -32,7 +32,7 @@ defmodule QblogWeb.Components.Block.Types.Pages.RenderState do
     %{
       children: Enum.map(node.children, &display_node(&1, tree_nodes)),
       node_id: node.id,
-      path: TreeQueries.get_node_path(tree_nodes, node.id),
+      path: PageTree.get_node_path(tree_nodes, node.id),
       title: node.title
     }
   end

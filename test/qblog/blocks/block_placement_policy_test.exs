@@ -15,7 +15,7 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
 
       assert Ash.can?({placement, :read}, scope(owner, group))
       assert Ash.can?({placement, :update_order}, scope(owner, group))
-      assert Ash.can?({placement, :update_width}, scope(owner, group))
+      assert Ash.can?({placement, :update_area}, scope(owner, group))
       assert Ash.can?({placement, :destroy}, scope(owner, group))
     end
 
@@ -36,13 +36,13 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
                   attachable_type: "page",
                   block_id: block.id,
                   order_key: "z1",
-                  width: "full"
+                  area: nil
                 }},
                scope(admin, group)
              )
 
       assert Ash.can?({placement, :update_order}, scope(admin, group))
-      assert Ash.can?({placement, :update_width}, scope(admin, group))
+      assert Ash.can?({placement, :update_area}, scope(admin, group))
       assert Ash.can?({placement, :destroy}, scope(admin, group))
     end
 
@@ -51,7 +51,7 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
 
       assert Ash.can?({placement, :read}, scope(member, group))
       refute Ash.can?({placement, :update_order}, scope(member, group))
-      refute Ash.can?({placement, :update_width}, scope(member, group))
+      refute Ash.can?({placement, :update_area}, scope(member, group))
       refute Ash.can?({placement, :destroy}, scope(member, group))
     end
 
@@ -66,7 +66,7 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
                   attachable_type: "page",
                   block_id: block.id,
                   order_key: "z2",
-                  width: "full"
+                  area: nil
                 }},
                scope(member, group)
              )
@@ -83,7 +83,7 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
                   attachable_type: "page",
                   block_id: block.id,
                   order_key: "z3",
-                  width: "full"
+                  area: nil
                 }},
                scope(admin, group)
              )
@@ -94,7 +94,7 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
 
       refute Ash.can?({placement, :read}, scope(outsider, group))
       refute Ash.can?({placement, :update_order}, scope(outsider, group))
-      refute Ash.can?({placement, :update_width}, scope(outsider, group))
+      refute Ash.can?({placement, :update_area}, scope(outsider, group))
       refute Ash.can?({placement, :destroy}, scope(outsider, group))
     end
   end
@@ -189,7 +189,7 @@ defmodule Qblog.Blocks.BlockPlacementPolicyTest do
         attachable_type: "page",
         block_id: block.id,
         order_key: "a0",
-        width: "full"
+        area: nil
       },
       action: :create,
       authorize?: false,

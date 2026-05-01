@@ -39,6 +39,8 @@ defmodule QblogWeb.PageLive do
     {:ok, socket}
   end
 
+  defp has_area?(page, area), do: Enum.any?(page.block_placements, &(&1.area == area))
+
   # Presence ===================================================================
 
   def handle_presence_change(socket) do
@@ -77,7 +79,6 @@ defmodule QblogWeb.PageLive do
 
   @impl true
   def handle_event("toggle_edit_mode", _params, socket) do
-    # TODO: add Ash.can? check to only allow users with edit permissions to toggle edit mode
     socket = socket |> assign(editing?: !socket.assigns.editing?)
     socket = if socket.assigns.editing?, do: socket, else: socket |> BlockEdit.clear()
     {:noreply, socket}
@@ -148,15 +149,23 @@ defmodule QblogWeb.PageLive do
   @impl true
   def handle_event("show_block_info", %{"placement_id" => placement_id}, socket) do
     scope = socket.assigns.current_scope
-    placement = socket.assigns.page |> PageState.find_placement(placement_id)
 
-    case load_block_info_placement(placement, scope) do
+    case socket.assigns.page |> PageState.get_placement(placement_id) do
       {:ok, placement} ->
-        {:noreply, socket |> assign(block_info_placement: placement)}
+        case load_block_info_placement(placement, scope) do
+          {:ok, placement} ->
+            {:noreply, socket |> assign(block_info_placement: placement)}
 
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "load_block_info_placement failed")
-        {:noreply, socket |> assign(block_info_placement: nil)}
+          {:error, error} ->
+            Utils.Log.scoped_error(scope, error, "load_block_info_placement failed")
+            {:noreply, socket |> assign(block_info_placement: nil)}
+        end
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> Phoenix.LiveView.put_flash(:error, "That block is no longer available")
+         |> assign(block_info_placement: nil)}
     end
   end
 
@@ -181,8 +190,8 @@ defmodule QblogWeb.PageLive do
   end
 
   @impl true
-  def handle_event("toggle_block_width", %{"placement_id" => placement_id}, socket) do
-    {:noreply, socket |> BlockActions.toggle_width(placement_id)}
+  def handle_event("toggle_block_aside", %{"placement_id" => placement_id}, socket) do
+    {:noreply, socket |> BlockActions.toggle_aside(placement_id)}
   end
 
   defp load_block_info_placement(nil, _scope), do: {:error, :not_found}

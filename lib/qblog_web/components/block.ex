@@ -77,8 +77,7 @@ defmodule QblogWeb.Components.Block do
             "w-full",
             "absolute bottom-0 z-10",
             "opacity-50 hover:opacity-100 transition-opacity",
-            "text-accent",
-            "mb-1"
+            "text-accent"
           ]}
         >
           <Components.Block.ActionButtons.render placement={@placement} />
@@ -100,9 +99,7 @@ defmodule QblogWeb.Components.Block do
         <h2
           :if={@block_title != ""}
           class={[
-            "text-xl font-bold mb-3",
-            "opacity-60 transition",
-            "group-hover:opacity-90"
+            "text-xl font-bold mb-3"
           ]}
         >
           {@block_title}

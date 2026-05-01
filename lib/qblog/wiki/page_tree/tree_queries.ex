@@ -30,7 +30,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
     Enum.find(nodes, &(&1.slug == slug and &1.parent_id == parent_id))
   end
 
-  def root_nodes(nodes) do
+  def get_root_nodes(nodes) do
     Enum.filter(nodes, &is_nil(&1.parent_id))
   end
 
@@ -56,6 +56,15 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
 
   def get_node_path(nodes, node_id) do
     get_node_path_segments(nodes, node_id) |> Enum.join("/")
+  end
+
+  def get_descendant_ids(nodes, root_id) do
+    children =
+      nodes
+      |> Enum.filter(&(&1.parent_id == root_id))
+      |> Enum.map(& &1.id)
+
+    children ++ Enum.flat_map(children, &get_descendant_ids(nodes, &1))
   end
 
   def get_node_title_path_segments(nodes, node_id) do
@@ -92,9 +101,23 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
     not Enum.any?(nodes, &(&1.parent_id == node_id))
   end
 
+  def get_valid_parent_nodes(nodes, node_id) do
+    node = get_node(nodes, node_id)
+    slug = node.slug
+    parent_id = node.parent_id
+
+    forbidden_ids =
+      [node_id, parent_id] ++
+        get_descendant_ids(nodes, node_id) ++
+        parent_ids_with_child_slug(nodes, slug)
+
+    nodes
+    |> Enum.reject(&(&1.id in forbidden_ids))
+  end
+
   def build_tree(nodes) do
     nodes
-    |> root_nodes()
+    |> get_root_nodes()
     |> Enum.map(&build_subtree(nodes, &1, :infinity))
   end
 
@@ -107,7 +130,7 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
 
   def get_root_descendant_tree(nodes, max_depth) when is_integer(max_depth) do
     nodes
-    |> root_nodes()
+    |> get_root_nodes()
     |> Enum.map(&build_subtree(nodes, &1, max_depth))
   end
 
@@ -132,5 +155,11 @@ defmodule Qblog.Wiki.PageTree.TreeQueries do
           |> Enum.map(&build_subtree(nodes, &1, child_depth))
         end
     }
+  end
+
+  defp parent_ids_with_child_slug(nodes, slug) do
+    nodes
+    |> Enum.filter(&(&1.slug == slug))
+    |> Enum.map(& &1.parent_id)
   end
 end

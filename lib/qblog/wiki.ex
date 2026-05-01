@@ -10,7 +10,6 @@ defmodule Qblog.Wiki do
   alias Qblog.Wiki.Page
   alias Qblog.Wiki.PageTree
   alias Qblog.Wiki.PageTree.Node
-  alias Qblog.Wiki.PageTree.TreeQueries
   alias Utils.Log
 
   require Ash.Query
@@ -30,7 +29,7 @@ defmodule Qblog.Wiki do
         page_tree
 
       {:error, err} ->
-        Log.scoped_error(scope, err, "PageTree.ensure failed")
+        Log.scoped_error(scope, err, "PageTree.ensure failed; falling back to empty page tree")
         %PageTree{nodes: []}
     end
   end
@@ -69,7 +68,7 @@ defmodule Qblog.Wiki do
   def load_node_by_path(scope, path) do
     page_tree = scope |> load_page_tree()
 
-    case TreeQueries.get_node_by_path(page_tree.nodes, path) do
+    case PageTree.get_node_by_path(page_tree.nodes, path) do
       {:ok, node} -> node
       {:error, _error} -> nil
     end

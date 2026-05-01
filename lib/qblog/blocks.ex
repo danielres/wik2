@@ -220,17 +220,17 @@ defmodule Qblog.Blocks do
     end
   end
 
-  def toggle_placed_block_width(placement, opts) do
-    width =
-      case placement.width do
-        "half" -> "full"
-        _ -> "half"
+  def toggle_placed_block_aside(placement, opts) do
+    area =
+      case placement.area do
+        :aside -> nil
+        _ -> :aside
       end
 
     placement
     |> Ash.update(
-      %{width: width},
-      action: :update_width,
+      %{area: area},
+      action: :update_area,
       scope: Keyword.fetch!(opts, :scope)
     )
   end

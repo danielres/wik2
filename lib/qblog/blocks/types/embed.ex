@@ -15,6 +15,8 @@ defmodule Qblog.Blocks.Types.Embed do
 
   def label, do: "Embed"
 
+  def create_initial_version(_block, _opts), do: :ok
+
   def default_data, do: %{"title" => "", "url" => ""}
 
   # TODO: remove default_type?
@@ -35,6 +37,8 @@ defmodule Qblog.Blocks.Types.Embed do
       )
     end
   end
+
+  def version_to_text(_block, _version, _opts), do: {:error, :unsupported}
 
   def validate_title(%{"title" => title}) when is_binary(title), do: :ok
 

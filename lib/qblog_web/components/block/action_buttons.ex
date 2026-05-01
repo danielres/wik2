@@ -1,6 +1,8 @@
 defmodule QblogWeb.Components.Block.ActionButtons do
   use QblogWeb, :html
 
+  alias Qblog.Blocks.Types
+
   attr :placement, :map, required: true
 
   # TODO: set title attributes for buttons
@@ -20,6 +22,13 @@ defmodule QblogWeb.Components.Block.ActionButtons do
           icon="hero-information-circle-micro"
           phx-click="show_block_info"
           phx-value-placement_id={@placement.id}
+        />
+        <.action_button
+          :if={Types.supports_history?(@placement.block.type)}
+          icon="hero-clock-mini"
+          phx-click="show_block_history"
+          phx-value-placement_id={@placement.id}
+          title="Show history"
         />
         <.action_button
           icon="hero-chevron-up-mini"

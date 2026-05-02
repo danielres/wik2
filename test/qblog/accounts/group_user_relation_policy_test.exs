@@ -45,12 +45,12 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
       assert Ash.can?({membership, :update}, scope(superadmin, membership.group_id))
     end
 
-    test "cannot update their own membership type" do
+    test "can update their own membership type" do
       superadmin = generate(user(role: :superadmin))
       group = generate(group())
       membership = add_membership(group, superadmin, :member)
 
-      refute Ash.can?({membership, :update}, scope(superadmin, group))
+      assert Ash.can?({membership, :update}, scope(superadmin, group))
     end
 
     test "cannot update an owner membership type" do

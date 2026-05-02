@@ -35,7 +35,7 @@ defmodule Qblog.Blocks do
   def count_versions(block, opts) do
     block
     |> version_query()
-    |> Ash.count(authorize?: false, scope: Keyword.fetch!(opts, :scope))
+    |> Ash.count(scope: Keyword.fetch!(opts, :scope))
   end
 
   def load_version_latest(block, opts) do
@@ -43,7 +43,7 @@ defmodule Qblog.Blocks do
     |> version_query()
     |> Query.sort(revision: :desc)
     |> Query.limit(1)
-    |> Ash.read_one(authorize?: false, load: [:author], scope: Keyword.fetch!(opts, :scope))
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
   end
 
   def load_version_oldest(block, opts) do
@@ -51,7 +51,7 @@ defmodule Qblog.Blocks do
     |> version_query()
     |> Query.sort(revision: :asc)
     |> Query.limit(1)
-    |> Ash.read_one(authorize?: false, load: [:author], scope: Keyword.fetch!(opts, :scope))
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
   end
 
   def load_version_prev(block, version, opts) do
@@ -60,7 +60,7 @@ defmodule Qblog.Blocks do
     |> Query.filter(revision < ^version.revision)
     |> Query.sort(revision: :desc)
     |> Query.limit(1)
-    |> Ash.read_one(authorize?: false, load: [:author], scope: Keyword.fetch!(opts, :scope))
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
   end
 
   def load_version_next(block, version, opts) do
@@ -69,7 +69,7 @@ defmodule Qblog.Blocks do
     |> Query.filter(revision > ^version.revision)
     |> Query.sort(revision: :asc)
     |> Query.limit(1)
-    |> Ash.read_one(authorize?: false, load: [:author], scope: Keyword.fetch!(opts, :scope))
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
   end
 
   def create_group_owned_block_on_page(%{} = group, %Page{} = page, block_attrs, opts) do

@@ -38,9 +38,9 @@ defmodule QblogWeb.Components.Modal do
         phx-mounted={JS.focus_first(to: "form")}
         phx-target={assigns[:"phx-target"]}
       >
-        <div :if={@title != []} class="mb-2">
+        <h3 :if={@title != []} class="mb-2">
           {render_slot(@title)}
-        </div>
+        </h3>
 
         <div class="h-full overflow-y-auto pr-3">
           {render_slot(@inner_block)}

@@ -59,6 +59,35 @@ defmodule QblogWeb.MeLiveTest do
     assert render(view) =~ "admin"
   end
 
+  test "refreshes membership type in realtime after a membership update", %{conn: conn} do
+    owner = generate(user())
+    user = generate(user(email: nil))
+    group = generate(group())
+
+    add_membership(group, owner, :owner)
+    membership = add_membership(group, user, :member)
+    grant = create_telegram_access(group, user, display_name: "Ada Lovelace", username: "ada")
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/me")
+
+    assert has_element?(view, testid("access-grant-membership-#{grant.id}"), "member")
+
+    Ash.update!(
+      membership,
+      %{type: :admin},
+      action: :update,
+      scope: scope(owner, group),
+      domain: Qblog.Accounts
+    )
+
+    _ = :sys.get_state(view.pid)
+
+    assert has_element?(view, testid("access-grant-membership-#{grant.id}"), "admin")
+  end
+
   test "renders connected identity without requiring an access grant", %{conn: conn} do
     user = generate(user(email: nil))
 
@@ -146,6 +175,10 @@ defmodule QblogWeb.MeLiveTest do
   end
 
   defp create_membership(group, user, type \\ :member) do
+    add_membership(group, user, type)
+  end
+
+  defp add_membership(group, user, type) do
     Ash.create!(
       GroupUserRelation,
       %{
@@ -207,6 +240,10 @@ defmodule QblogWeb.MeLiveTest do
       authorize?: false,
       domain: Qblog.Access
     )
+  end
+
+  defp scope(actor, group) do
+    %Qblog.Scope{actor: actor, tenant: group}
   end
 
   defp log_in(conn, user) do

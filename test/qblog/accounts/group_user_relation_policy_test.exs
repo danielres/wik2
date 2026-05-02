@@ -59,6 +59,34 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       refute Ash.can?({membership, :update}, scope(superadmin, membership.group_id))
     end
+
+    test "publishes group and user topics when a membership type is updated" do
+      superadmin = generate(user(role: :superadmin))
+      membership = membership_fixture(:member)
+
+      :ok =
+        QblogWeb.Endpoint.subscribe(GroupUserRelation.group_pub_sub_topic(membership.group_id))
+
+      :ok = QblogWeb.Endpoint.subscribe(GroupUserRelation.user_pub_sub_topic(membership.user_id))
+
+      Ash.update!(
+        membership,
+        %{type: :admin},
+        action: :update,
+        scope: scope(superadmin, membership.group_id),
+        domain: Qblog.Accounts
+      )
+
+      assert_receive %{topic: topic, payload: %{data: updated_membership}}, 1000
+      assert topic == GroupUserRelation.group_pub_sub_topic(membership.group_id)
+      assert updated_membership.id == membership.id
+      assert updated_membership.type == :admin
+
+      assert_receive %{topic: topic, payload: %{data: updated_membership}}, 1000
+      assert topic == GroupUserRelation.user_pub_sub_topic(membership.user_id)
+      assert updated_membership.id == membership.id
+      assert updated_membership.type == :admin
+    end
   end
 
   describe "owner member" do

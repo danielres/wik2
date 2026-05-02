@@ -10,10 +10,15 @@ defmodule QblogWeb.MeLive do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
+    current_user = socket.assigns.current_user
     groups = scope |> list_groups()
-    identities = socket.assigns.current_user |> list_user_external_identities()
-    grants = socket.assigns.current_user |> list_user_grants()
-    owned_groups = socket.assigns.current_user |> list_owned_groups()
+    identities = current_user |> list_user_external_identities()
+    grants = current_user |> list_user_grants()
+    owned_groups = current_user |> list_owned_groups()
+
+    if connected?(socket) do
+      :ok = QblogWeb.Context.subscribe_to_membership_changed(current_user)
+    end
 
     socket =
       socket
@@ -23,6 +28,19 @@ defmodule QblogWeb.MeLive do
       |> assign(owned_groups: owned_groups)
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_info({QblogWeb.Context, :membership_changed}, socket) do
+    scope = socket.assigns.current_scope
+    current_user = socket.assigns.current_user
+
+    {:noreply,
+     socket
+     |> assign(grants: list_user_grants(current_user))
+     |> assign(groups: list_groups(scope))
+     |> assign(identities: list_user_external_identities(current_user))
+     |> assign(owned_groups: list_owned_groups(current_user))}
   end
 
   @impl true
@@ -141,7 +159,10 @@ defmodule QblogWeb.MeLive do
           {@grant.status |> Atom.to_string()}
         </span>
 
-        <span class="ml-auto badge badge-sm bg-base-100 text-base-content/70">
+        <span
+          class="ml-auto badge badge-sm bg-base-100 text-base-content/70"
+          data-testid={"access-grant-membership-#{@grant.id}"}
+        >
           {@membership.type |> Atom.to_string()}
         </span>
       </div>

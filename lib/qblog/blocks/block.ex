@@ -162,5 +162,10 @@ defmodule Qblog.Blocks.Block do
       destination_attribute :block_id
       default_sort order_key: :asc
     end
+
+    has_many :versions, Qblog.Blocks.BlockVersion do
+      destination_attribute :block_id
+      default_sort revision: :desc
+    end
   end
 end

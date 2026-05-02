@@ -29,6 +29,10 @@ defmodule Qblog.Blocks.Types do
     type |> type_to_module() |> then(& &1.supports_title?())
   end
 
+  def supports_history?(type) do
+    type |> type_to_module() |> then(& &1.supports_history?())
+  end
+
   def available do
     @modules
     |> Enum.map(fn module ->
@@ -46,6 +50,14 @@ defmodule Qblog.Blocks.Types do
 
   def update_block(block, params, opts) do
     block.type |> type_to_module() |> then(& &1.update_block(block, params, opts))
+  end
+
+  def create_initial_version(block, opts) do
+    block.type |> type_to_module() |> then(& &1.create_initial_version(block, opts))
+  end
+
+  def version_to_text(block, version, opts) do
+    block.type |> type_to_module() |> then(& &1.version_to_text(block, version, opts))
   end
 
   def validate_data(type, data) do

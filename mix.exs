@@ -41,6 +41,7 @@ defmodule Qblog.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:hunt_szymanski_diff, "~> 0.1.0"},
       {:cinder, "~> 0.12"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:earmark, "~> 1.4"},

@@ -5,11 +5,14 @@ defmodule Qblog.Blocks.Types.GoogleCalendar do
 
   def label, do: "Google Calendar"
   def type, do: :google_calendar
+  def supports_history?, do: false
   def supports_title?, do: true
 
+  defdelegate create_initial_version(block, opts), to: Embed
   defdelegate default_data(), to: Embed
   defdelegate block_to_form_params(block, params, page_tree), to: Embed
   defdelegate update_block(block, params, opts), to: Embed
+  defdelegate version_to_text(block, version, opts), to: Embed
 
   # TODO: simplify?
   def validate_data(data) do

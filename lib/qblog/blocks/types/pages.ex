@@ -3,8 +3,10 @@ defmodule Qblog.Blocks.Types.Pages do
 
   def label, do: "Pages"
   def type, do: :pages
+  def supports_history?, do: false
   def supports_title?, do: true
   def default_data, do: %{"depth" => 3, "source_node" => "root", "title" => "Subtree"}
+  def create_initial_version(_block, _opts), do: :ok
 
   def block_to_form_params(
         %{data: %{"depth" => depth, "source_node" => source_node, "title" => title}},
@@ -27,6 +29,8 @@ defmodule Qblog.Blocks.Types.Pages do
       opts |> Keyword.put(:action, :update)
     )
   end
+
+  def version_to_text(_block, _version, _opts), do: {:error, :unsupported}
 
   def validate_data(%{"depth" => depth, "source_node" => source_node, "title" => title})
       when is_integer(depth) and depth >= 1 and is_binary(title) do

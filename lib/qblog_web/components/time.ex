@@ -4,9 +4,11 @@ defmodule QblogWeb.Components.Time do
   """
   use QblogWeb, :html
 
-  attr :datetime, :string, required: true
+  attr :datetime, :any, required: true
   attr :ago?, :boolean, default: false
   attr :direction, :string, default: "bottom"
+  attr :bg_class, :string, default: "bg-base-300"
+  attr :tooltip_variant_class, :string, default: ""
 
   def relative_and_precise(assigns) do
     direction_class =
@@ -22,14 +24,19 @@ defmodule QblogWeb.Components.Time do
 
     ~H"""
     <span>
-      <span class={[
-        "badge badge-sm px-2 bg-base-300",
-        "opacity-60 hover:opacity-100 transition-opacity",
-        "whitespace-nowrap",
-        "tooltip tooltip-delayed tooltip-xs",
-        @direction_class,
-        "cursor-default"
-      ]}>
+      <span
+        class={[
+          "badge badge-sm px-2",
+          @bg_class,
+          "opacity-60 hover:opacity-100 transition-opacity",
+          "whitespace-nowrap",
+          "tooltip tooltip-delayed tooltip-xs",
+          @direction_class,
+          @tooltip_variant_class,
+          "cursor-default"
+        ]}
+        style="--tt-off: calc(100% + 0.1rem);"
+      >
         {Utils.Time.relative(@datetime)}
 
         <div class="tooltip-content text-xs">

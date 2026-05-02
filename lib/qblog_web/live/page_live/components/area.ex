@@ -47,6 +47,7 @@ defmodule QblogWeb.PageLive.Components.Area do
             />
           <% else %>
             <Components.Block.render
+              editing_block_id={@editing_block_id}
               editing?={@editing?}
               lock={@locks[placement.block.id]}
               placement={placement}

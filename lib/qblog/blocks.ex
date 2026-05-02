@@ -23,12 +23,54 @@ defmodule Qblog.Blocks do
   resources do
     resource Qblog.Blocks.Block
     resource Qblog.Blocks.BlockPlacement
+    resource Qblog.Blocks.BlockVersion
   end
 
   defdelegate block_to_form_params(block, params, page_tree), to: Types
   defdelegate default_data(type), to: Types
   defdelegate types_available(), to: Types, as: :available
-  defdelegate update_block(block, params, opts), to: Types
+
+  def version_to_text(block, version, opts), do: Types.version_to_text(block, version, opts)
+
+  def count_versions(block, opts) do
+    block
+    |> version_query()
+    |> Ash.count(scope: Keyword.fetch!(opts, :scope))
+  end
+
+  def load_version_latest(block, opts) do
+    block
+    |> version_query()
+    |> Query.sort(revision: :desc)
+    |> Query.limit(1)
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
+  end
+
+  def load_version_oldest(block, opts) do
+    block
+    |> version_query()
+    |> Query.sort(revision: :asc)
+    |> Query.limit(1)
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
+  end
+
+  def load_version_prev(block, version, opts) do
+    block
+    |> version_query()
+    |> Query.filter(revision < ^version.revision)
+    |> Query.sort(revision: :desc)
+    |> Query.limit(1)
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
+  end
+
+  def load_version_next(block, version, opts) do
+    block
+    |> version_query()
+    |> Query.filter(revision > ^version.revision)
+    |> Query.sort(revision: :asc)
+    |> Query.limit(1)
+    |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
+  end
 
   def create_group_owned_block_on_page(%{} = group, %Page{} = page, block_attrs, opts) do
     position = Keyword.get(opts, :position, :bottom)
@@ -40,11 +82,57 @@ defmodule Qblog.Blocks do
 
     case Repo.transaction(fn ->
            with {:ok, block, block_notifications} <-
-                  create_group_owned_block(group, block_attrs, transaction_opts),
+                  create_group_owned_block_in_transaction(
+                    group,
+                    group.id,
+                    block_attrs,
+                    transaction_opts
+                  ),
                 {:ok, _placement, placement_notifications} <-
                   place_block_on_page(block, page, position, transaction_opts) do
              {block, block_notifications ++ placement_notifications}
            else
+             {:error, error} -> Repo.rollback(error)
+           end
+         end) do
+      {:ok, {block, notifications}} ->
+        Ash.Notifier.notify(notifications)
+        {:ok, block}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def create_group_owned_block(%{id: group_id} = group, block_attrs, opts) do
+    transaction_opts = opts |> Keyword.put(:return_notifications?, true)
+
+    case Repo.transaction(fn ->
+           case create_group_owned_block_in_transaction(
+                  group,
+                  group_id,
+                  block_attrs,
+                  transaction_opts
+                ) do
+             {:ok, block, notifications} -> {block, notifications}
+             {:error, error} -> Repo.rollback(error)
+           end
+         end) do
+      {:ok, {block, notifications}} ->
+        Ash.Notifier.notify(notifications)
+        {:ok, block}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def create_user_owned_block(block_attrs, opts) do
+    transaction_opts = opts |> Keyword.put(:return_notifications?, true)
+
+    case Repo.transaction(fn ->
+           case create_user_owned_block_in_transaction(block_attrs, transaction_opts) do
+             {:ok, block, notifications} -> {block, notifications}
              {:error, error} -> Repo.rollback(error)
            end
          end) do
@@ -67,7 +155,7 @@ defmodule Qblog.Blocks do
 
     case Repo.transaction(fn ->
            with {:ok, block, block_notifications} <-
-                  create_user_owned_block(block_attrs, transaction_opts),
+                  create_user_owned_block_in_transaction(block_attrs, transaction_opts),
                 {:ok, _placement, placement_notifications} <-
                   place_block_on_page(block, page, position, transaction_opts) do
              {block, block_notifications ++ placement_notifications}
@@ -235,30 +323,66 @@ defmodule Qblog.Blocks do
     )
   end
 
+  def update_block(block, params, opts), do: Types.update_block(block, params, opts)
+
   # Internal  ==================================================================
 
-  def create_group_owned_block(%{id: group_id}, block_attrs, opts) do
-    _scope = Keyword.fetch!(opts, :scope)
-    ash_opts = opts |> Keyword.put(:action, :create)
-    default_data = block_attrs.type |> default_data()
-
-    block_attrs
-    |> Map.put_new(:data, default_data)
-    |> Map.delete(:owner_user_id)
-    |> Map.put(:owner_group_id, group_id)
-    |> then(&Ash.create(Block, &1, ash_opts))
-  end
-
-  def create_user_owned_block(block_attrs, opts) do
+  defp create_group_owned_block_in_transaction(_group, group_id, block_attrs, opts) do
     scope = Keyword.fetch!(opts, :scope)
     ash_opts = opts |> Keyword.put(:action, :create)
     default_data = block_attrs.type |> default_data()
 
-    block_attrs
-    |> Map.put_new(:data, default_data)
-    |> Map.delete(:owner_group_id)
-    |> Map.put(:owner_user_id, scope.actor.id)
-    |> then(&Ash.create(Block, &1, ash_opts))
+    attrs =
+      block_attrs
+      |> Map.put_new(:data, default_data)
+      |> Map.delete(:owner_user_id)
+      |> Map.put(:owner_group_id, group_id)
+
+    case Ash.create(Block, attrs, ash_opts) do
+      {:ok, block, notifications} ->
+        case create_initial_version(block, scope) do
+          :ok -> {:ok, block, notifications}
+          {:error, error} -> {:error, error}
+        end
+
+      {:ok, block} ->
+        case create_initial_version(block, scope) do
+          :ok -> {:ok, block, []}
+          {:error, error} -> {:error, error}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp create_user_owned_block_in_transaction(block_attrs, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+    ash_opts = opts |> Keyword.put(:action, :create)
+    default_data = block_attrs.type |> default_data()
+
+    attrs =
+      block_attrs
+      |> Map.put_new(:data, default_data)
+      |> Map.delete(:owner_group_id)
+      |> Map.put(:owner_user_id, scope.actor.id)
+
+    case Ash.create(Block, attrs, ash_opts) do
+      {:ok, block, notifications} ->
+        case create_initial_version(block, scope) do
+          :ok -> {:ok, block, notifications}
+          {:error, error} -> {:error, error}
+        end
+
+      {:ok, block} ->
+        case create_initial_version(block, scope) do
+          :ok -> {:ok, block, []}
+          {:error, error} -> {:error, error}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp get_placement_order_key(:top, scope, attachable_attrs) do
@@ -357,6 +481,15 @@ defmodule Qblog.Blocks do
 
   defp filter_placements_by_area(query, nil), do: Ash.Query.filter(query, is_nil(area))
   defp filter_placements_by_area(query, area), do: Ash.Query.filter(query, area == ^area)
+
+  defp create_initial_version(block, scope) do
+    Types.create_initial_version(block, scope: scope)
+  end
+
+  defp version_query(block) do
+    Qblog.Blocks.BlockVersion
+    |> Query.filter(block_id == ^block.id)
+  end
 
   defp update_placed_block_order_key(placement, {:ok, order_key}, scope) do
     placement

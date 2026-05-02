@@ -46,7 +46,16 @@ defmodule QblogWeb.Layouts do
       <menu class={[]}>
         <ul class="menu menu-horizontal gap-1">
           <.menu_item tenant={@scope.tenant} view={@view} target="wiki/home">Wiki</.menu_item>
-          <.menu_item tenant={@scope.tenant} view={@view} target="blog">Blog</.menu_item>
+          <.menu_item
+            :if={@scope.actor.role == :superadmin}
+            tenant={@scope.tenant}
+            view={@view}
+            target="blog"
+          >
+            <span>
+              [Blog]
+            </span>
+          </.menu_item>
         </ul>
       </menu>
 

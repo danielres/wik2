@@ -3,9 +3,11 @@ defmodule QblogWeb.GroupLive do
   use QblogWeb.Presence.Handlers
 
   alias AshPhoenix.Form
+  alias Qblog.Accounts.GroupUserRelation
   alias Qblog.Blocks
   alias QblogWeb.Components
   alias QblogWeb.Components.Modal
+  alias QblogWeb.GroupLive.MembershipTypeSelector
   alias QblogWeb.GroupLive.NewOwnerSelector
   alias QblogWeb.GroupLive.OrphanBlocks
 
@@ -15,16 +17,21 @@ defmodule QblogWeb.GroupLive do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
-    group = socket.assigns.current_scope.tenant
-    group = Ash.load!(group, [memberships: [:user]], scope: scope)
+    group = socket.assigns.current_scope.tenant |> load_group(scope)
     orphan_blocks = Blocks.list_orphan_group_owned_blocks(group, scope: scope)
+
+    if connected?(socket) do
+      :ok = QblogWeb.Endpoint.subscribe(GroupUserRelation.group_pub_sub_topic(group.id))
+    end
 
     socket =
       socket
       |> assign(form: nil)
-      |> assign(orphan_block_selected: nil)
-      |> assign(transfer_ownership_form: nil)
       |> assign(group: group)
+      |> assign(orphan_block_selected: nil)
+      |> assign(selected_membership: nil)
+      |> assign(membership_type_form: nil)
+      |> assign(transfer_ownership_form: nil)
       |> assign_orphan_blocks(orphan_blocks)
 
     {:ok, socket}
@@ -112,6 +119,21 @@ defmodule QblogWeb.GroupLive do
 
           <Components.Tabs.tab_content active?={@live_action == :members}>
             <Modal.render
+              cancel="membership_type_change_cancel"
+              cancel_testid="membership-type-change-cancel"
+              open?={@membership_type_form != nil}
+              testid="membership-type-change-dialog"
+            >
+              <MembershipTypeSelector.render
+                :if={@membership_type_form != nil and @selected_membership != nil}
+                event_submit="membership_type_change_submit"
+                form={@membership_type_form}
+                membership={@selected_membership}
+                type_options={GroupUserRelation.updatable_types()}
+              />
+            </Modal.render>
+
+            <Modal.render
               cancel="transfer_ownership_cancel"
               cancel_testid="transfer-ownership-cancel"
               open?={@transfer_ownership_form != nil}
@@ -124,6 +146,7 @@ defmodule QblogWeb.GroupLive do
             </Modal.render>
 
             <Components.Block.Types.Members.render
+              event_membership_type_change_start="membership_type_change_start"
               event_transfer_ownership_start="transfer_ownership_start"
               scope={@current_scope}
               block={%{id: "members-block"}}
@@ -167,6 +190,58 @@ defmodule QblogWeb.GroupLive do
   end
 
   @impl true
+  def handle_info(%{topic: topic}, socket) do
+    group = socket.assigns.group
+
+    if topic == GroupUserRelation.group_pub_sub_topic(group.id) do
+      {:noreply, refresh_group_memberships(socket)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("membership_type_change_start", params, socket) do
+    group = socket.assigns.group
+    scope = socket.assigns.current_scope
+    membership_id = params["membership_id"]
+
+    case Enum.find(group.memberships, &(&1.id == membership_id and &1.type != :owner)) do
+      nil ->
+        {:noreply, socket}
+
+      membership ->
+        form = membership |> Form.for_update(:update_membership_type, scope: scope) |> to_form()
+
+        {:noreply,
+         socket
+         |> assign(membership_type_form: form)
+         |> assign(selected_membership: membership)}
+    end
+  end
+
+  def handle_event("membership_type_change_cancel", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(membership_type_form: nil)
+     |> assign(selected_membership: nil)}
+  end
+
+  def handle_event("membership_type_change_submit", %{"form" => params}, socket) do
+    form = socket.assigns.membership_type_form
+
+    case Form.submit(form, params: params) do
+      {:ok, _membership} ->
+        {:noreply,
+         socket
+         |> assign(membership_type_form: nil)
+         |> assign(selected_membership: nil)}
+
+      {:error, form} ->
+        {:noreply, socket |> assign(membership_type_form: form)}
+    end
+  end
+
   def handle_event("transfer_ownership_start", params, socket) do
     group = socket.assigns.group
     scope = socket.assigns.current_scope
@@ -193,16 +268,11 @@ defmodule QblogWeb.GroupLive do
         %{"target_membership_id" => target_membership_id},
         socket
       ) do
-    scope = socket.assigns.current_scope
     form = socket.assigns.transfer_ownership_form
 
     case Form.submit(form, params: %{target_membership_id: target_membership_id}) do
       {:ok, _membership} ->
-        group = socket.assigns.group |> Ash.load!([memberships: [:user]], scope: scope)
-
-        {:noreply,
-         socket
-         |> assign(group: group, transfer_ownership_form: nil)}
+        {:noreply, socket |> assign(transfer_ownership_form: nil)}
 
       {:error, form} ->
         {:noreply, socket |> assign(transfer_ownership_form: form)}
@@ -289,6 +359,46 @@ defmodule QblogWeb.GroupLive do
         {:noreply,
          socket
          |> assign(form: form)}
+    end
+  end
+
+  defp load_group(group, scope) do
+    Ash.load!(group, [memberships: [:user]], scope: scope)
+  end
+
+  defp refresh_group_memberships(socket) do
+    scope = socket.assigns.current_scope
+    group = socket.assigns.group |> load_group(scope)
+
+    socket
+    |> assign(group: group)
+    |> assign_membership_type_form(group.memberships)
+  end
+
+  defp assign_membership_type_form(socket, memberships) do
+    case socket.assigns.selected_membership do
+      nil ->
+        socket
+
+      membership ->
+        membership = Enum.find(memberships, &(&1.id == membership.id and &1.type != :owner))
+
+        case membership do
+          nil ->
+            socket
+            |> assign(selected_membership: nil)
+            |> assign(membership_type_form: nil)
+
+          membership ->
+            socket
+            |> assign(selected_membership: membership)
+            |> assign(
+              membership_type_form:
+                membership
+                |> Form.for_update(:update_membership_type, scope: socket.assigns.current_scope)
+                |> to_form()
+            )
+        end
     end
   end
 end

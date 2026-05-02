@@ -10,19 +10,18 @@ defmodule QblogWeb.MeLive do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
+    current_user = socket.assigns.current_user
     groups = scope |> list_groups()
-    identities = socket.assigns.current_user |> list_user_external_identities()
-    grants = socket.assigns.current_user |> list_user_grants()
-    owned_groups = socket.assigns.current_user |> list_owned_groups()
+    identities = current_user |> list_user_external_identities()
+    grants = current_user |> list_user_grants()
+    owned_groups = current_user |> list_owned_groups()
 
-    socket =
-      socket
-      |> assign(grants: grants)
-      |> assign(groups: groups)
-      |> assign(identities: identities)
-      |> assign(owned_groups: owned_groups)
-
-    {:ok, socket}
+    {:ok,
+     socket
+     |> assign(grants: grants)
+     |> assign(groups: groups)
+     |> assign(identities: identities)
+     |> assign(owned_groups: owned_groups)}
   end
 
   @impl true
@@ -141,7 +140,10 @@ defmodule QblogWeb.MeLive do
           {@grant.status |> Atom.to_string()}
         </span>
 
-        <span class="ml-auto badge badge-sm bg-base-100 text-base-content/70">
+        <span
+          class="ml-auto badge badge-sm bg-base-100 text-base-content/70"
+          data-testid={"access-grant-membership-#{@grant.id}"}
+        >
           {@membership.type |> Atom.to_string()}
         </span>
       </div>

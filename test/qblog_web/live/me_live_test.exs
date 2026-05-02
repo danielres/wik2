@@ -146,6 +146,10 @@ defmodule QblogWeb.MeLiveTest do
   end
 
   defp create_membership(group, user, type \\ :member) do
+    add_membership(group, user, type)
+  end
+
+  defp add_membership(group, user, type) do
     Ash.create!(
       GroupUserRelation,
       %{

@@ -37,6 +37,62 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       refute Ash.can?({membership, :transfer_ownership}, scope(superadmin, membership.group_id))
     end
+
+    test "can update a non-owner membership type" do
+      superadmin = generate(user(role: :superadmin))
+      membership = membership_fixture(:member)
+
+      assert Ash.can?(
+               {membership, :update_membership_type},
+               scope(superadmin, membership.group_id)
+             )
+    end
+
+    test "can update their own membership type" do
+      superadmin = generate(user(role: :superadmin))
+      group = generate(group())
+      membership = add_membership(group, superadmin, :member)
+
+      assert Ash.can?({membership, :update_membership_type}, scope(superadmin, group))
+    end
+
+    test "cannot update an owner membership type" do
+      superadmin = generate(user(role: :superadmin))
+      membership = membership_fixture(:owner)
+
+      refute Ash.can?(
+               {membership, :update_membership_type},
+               scope(superadmin, membership.group_id)
+             )
+    end
+
+    test "publishes group and user topics when a membership type is updated" do
+      superadmin = generate(user(role: :superadmin))
+      membership = membership_fixture(:member)
+
+      :ok =
+        QblogWeb.Endpoint.subscribe(GroupUserRelation.group_pub_sub_topic(membership.group_id))
+
+      :ok = QblogWeb.Endpoint.subscribe(GroupUserRelation.user_pub_sub_topic(membership.user_id))
+
+      Ash.update!(
+        membership,
+        %{type: :admin},
+        action: :update_membership_type,
+        scope: scope(superadmin, membership.group_id),
+        domain: Qblog.Accounts
+      )
+
+      assert_receive %{topic: topic, payload: %{data: updated_membership}}, 1000
+      assert topic == GroupUserRelation.group_pub_sub_topic(membership.group_id)
+      assert updated_membership.id == membership.id
+      assert updated_membership.type == :admin
+
+      assert_receive %{topic: topic, payload: %{data: updated_membership}}, 1000
+      assert topic == GroupUserRelation.user_pub_sub_topic(membership.user_id)
+      assert updated_membership.id == membership.id
+      assert updated_membership.type == :admin
+    end
   end
 
   describe "owner member" do
@@ -63,6 +119,24 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
       refute Ash.can?(
                {member_membership, :transfer_ownership},
                scope(owner, member_membership.group_id)
+             )
+    end
+
+    test "can update a non-owner membership type in their group" do
+      %{owner: owner, member_membership: member_membership} = transfer_fixture()
+
+      assert Ash.can?(
+               {member_membership, :update_membership_type},
+               scope(owner, member_membership.group_id)
+             )
+    end
+
+    test "cannot update their owner membership type" do
+      %{owner: owner, owner_membership: owner_membership} = transfer_fixture()
+
+      refute Ash.can?(
+               {owner_membership, :update_membership_type},
+               scope(owner, owner_membership.group_id)
              )
     end
   end
@@ -118,6 +192,25 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       refute Ash.can?({admin_membership, :transfer_ownership}, scope(admin, group))
     end
+
+    test "cannot update another membership type in the group" do
+      admin = generate(user())
+      group = generate(group())
+      add_membership(group, generate(user()), :owner)
+      member_membership = add_membership(group, generate(user()), :member)
+      add_membership(group, admin, :admin)
+
+      refute Ash.can?({member_membership, :update_membership_type}, scope(admin, group))
+    end
+
+    test "cannot update their own membership type" do
+      admin = generate(user())
+      group = generate(group())
+      add_membership(group, generate(user()), :owner)
+      admin_membership = add_membership(group, admin, :admin)
+
+      refute Ash.can?({admin_membership, :update_membership_type}, scope(admin, group))
+    end
   end
 
   describe "plain member" do
@@ -170,6 +263,25 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
 
       refute Ash.can?({member_membership, :transfer_ownership}, scope(member, group))
     end
+
+    test "cannot update another membership type in the group" do
+      member = generate(user())
+      group = generate(group())
+      add_membership(group, generate(user()), :owner)
+      other_membership = add_membership(group, generate(user()), :member)
+      add_membership(group, member, :member)
+
+      refute Ash.can?({other_membership, :update_membership_type}, scope(member, group))
+    end
+
+    test "cannot update their own membership type" do
+      member = generate(user())
+      group = generate(group())
+      add_membership(group, generate(user()), :owner)
+      member_membership = add_membership(group, member, :member)
+
+      refute Ash.can?({member_membership, :update_membership_type}, scope(member, group))
+    end
   end
 
   describe "outsider" do
@@ -189,9 +301,61 @@ defmodule Qblog.Accounts.GroupUserRelationPolicyTest do
                scope(outsider, owner_membership.group_id)
              )
     end
+
+    test "cannot update another group's membership type" do
+      outsider = generate(user())
+      membership = membership_fixture(:member)
+
+      refute Ash.can?({membership, :update_membership_type}, scope(outsider, membership.group_id))
+    end
+  end
+
+  describe "update_membership_type action" do
+    test "owner can update a member membership to admin" do
+      %{group: group, owner: owner, member_membership: member_membership} = transfer_fixture()
+
+      assert {:ok, updated_membership} =
+               Ash.update(
+                 member_membership,
+                 %{type: :admin},
+                 action: :update_membership_type,
+                 scope: scope(owner, group)
+               )
+
+      assert updated_membership.type == :admin
+    end
+
+    test "cannot update an owner membership type" do
+      %{group: group, owner: owner, owner_membership: owner_membership} = transfer_fixture()
+
+      assert {:error, _error} =
+               Ash.update(
+                 owner_membership,
+                 %{type: :admin},
+                 action: :update_membership_type,
+                 scope: scope(owner, group)
+               )
+    end
   end
 
   describe "transfer_ownership action" do
+    test "forbids promoting a membership to owner through update_membership_type" do
+      %{
+        group: group,
+        owner: owner,
+        member_membership: member_membership
+      } =
+        transfer_fixture()
+
+      assert {:error, _error} =
+               Ash.update(
+                 member_membership,
+                 %{type: :owner},
+                 action: :update_membership_type,
+                 scope: scope(owner, group)
+               )
+    end
+
     test "demotes the current owner to admin and promotes the target membership to owner" do
       %{
         group: group,

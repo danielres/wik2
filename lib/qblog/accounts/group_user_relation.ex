@@ -4,7 +4,8 @@ defmodule Qblog.Accounts.GroupUserRelation do
     domain: Qblog.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource],
+    notifiers: [Ash.Notifier.PubSub]
 
   alias Qblog.Accounts.Group
 
@@ -14,7 +15,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
   end
 
   admin do
-    table_columns [:group, :user, :inserted_at]
+    table_columns [:group, :user, :type, :inserted_at]
 
     format_fields inserted_at: {Calendar, :strftime, ["%Y-%m-%d %H:%M"]}
   end
@@ -27,9 +28,16 @@ defmodule Qblog.Accounts.GroupUserRelation do
       accept [:group_id, :user_id, :type]
     end
 
-    update :update do
+    update :set_type do
       accept [:type]
       public? false
+    end
+
+    update :update_membership_type do
+      accept [:type]
+      public? false
+
+      validate attribute_does_not_equal(:type, :owner)
     end
 
     update :transfer_ownership do
@@ -49,20 +57,34 @@ defmodule Qblog.Accounts.GroupUserRelation do
       authorize_if Group.Checks.ActorIsMemberOfResourceGroup
     end
 
+    policy action(:update_membership_type) do
+      authorize_if expr(type != :owner and ^actor(:role) == :superadmin)
+
+      authorize_if expr(
+                     type != :owner and user_id != ^actor(:id) and
+                       exists(group.memberships, user_id == ^actor(:id) and type == :owner)
+                   )
+    end
+
     policy action(:transfer_ownership) do
-      forbid_unless expr(type == :owner)
-      authorize_if actor_attribute_equals(:role, :superadmin)
-      authorize_if expr(user_id == ^actor(:id))
+      authorize_if expr(type == :owner and ^actor(:role) == :superadmin)
+      authorize_if expr(type == :owner and user_id == ^actor(:id))
     end
 
     policy action_type(:create) do
-      # TODO: allow group owners to invite users to their groups
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 
     policy action_type(:destroy) do
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
+  end
+
+  pub_sub do
+    module QblogWeb.Endpoint
+    prefix "group_user_relation"
+    publish :update_membership_type, ["group", :group_id]
+    publish :update_membership_type, ["user", :user_id]
   end
 
   attributes do
@@ -106,4 +128,14 @@ defmodule Qblog.Accounts.GroupUserRelation do
   identities do
     identity :unique_group_user_relation, [:group_id, :user_id]
   end
+
+  def updatable_types do
+    __MODULE__
+    |> Ash.Resource.Info.attribute(:type)
+    |> then(& &1.constraints[:one_of])
+    |> Enum.reject(&(&1 == :owner))
+  end
+
+  def group_pub_sub_topic(group_id), do: "group_user_relation:group:#{group_id}"
+  def user_pub_sub_topic(user_id), do: "group_user_relation:user:#{user_id}"
 end

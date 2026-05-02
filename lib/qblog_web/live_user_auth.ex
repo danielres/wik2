@@ -6,6 +6,7 @@ defmodule QblogWeb.LiveUserAuth do
 
   alias Qblog.Access
   alias Qblog.Accounts
+  alias Qblog.Accounts.GroupUserRelation
   alias QblogWeb.Context
 
   import Phoenix.Component
@@ -143,9 +144,11 @@ defmodule QblogWeb.LiveUserAuth do
 
   defp attach_context_hook(socket) do
     current_user = socket.assigns[:current_user]
+    user_pub_sub_topic = current_user && GroupUserRelation.user_pub_sub_topic(current_user.id)
 
     if Phoenix.LiveView.connected?(socket) do
       :ok = Context.subscribe(current_user)
+      :ok = subscribe_to_membership_updates(current_user)
     end
 
     attach_hook(socket, :context, :handle_info, fn
@@ -155,9 +158,27 @@ defmodule QblogWeb.LiveUserAuth do
 
         {:halt, socket}
 
+      %{topic: topic}, socket when topic == user_pub_sub_topic ->
+        socket =
+          socket
+          |> assign_context()
+          |> refresh_current_scope()
+          |> Phoenix.LiveView.put_flash(
+            :info,
+            "Your membership type changed. Some permissions may update on your next action."
+          )
+
+        {:halt, socket}
+
       _message, socket ->
         {:cont, socket}
     end)
+  end
+
+  defp subscribe_to_membership_updates(nil), do: :ok
+
+  defp subscribe_to_membership_updates(%{id: user_id}) do
+    QblogWeb.Endpoint.subscribe(GroupUserRelation.user_pub_sub_topic(user_id))
   end
 
   defp current_user_for_dev(%{role: :superadmin} = user) do
@@ -179,6 +200,25 @@ defmodule QblogWeb.LiveUserAuth do
       {:ok, avatar_url} when is_binary(avatar_url) -> %{scope | avatar_url: avatar_url}
       {:ok, nil} -> scope
       {:error, _error} -> scope
+    end
+  end
+
+  defp refresh_current_scope(%{assigns: %{current_scope: %{tenant: nil}}} = socket), do: socket
+  defp refresh_current_scope(%{assigns: %{current_scope: nil}} = socket), do: socket
+
+  defp refresh_current_scope(%{assigns: %{current_scope: %{tenant: tenant}}} = socket) do
+    current_user = socket.assigns.current_user
+
+    case Accounts.get_group_by_name(tenant.name, actor: current_user) do
+      {:ok, group} ->
+        current_scope =
+          %Qblog.Scope{actor: current_user, tenant: group}
+          |> assign_scope_avatar_url()
+
+        assign(socket, :current_scope, current_scope)
+
+      _ ->
+        socket
     end
   end
 end

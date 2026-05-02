@@ -7,9 +7,10 @@ defmodule QblogWeb.Components.Block.Types.Members do
   require Ash.Query
 
   attr :block, :map, required: true
-  attr :scope, :map, default: nil
+  attr :event_membership_type_change_start, :string, default: nil
   attr :event_transfer_ownership_start, :string, default: nil
   attr :actions?, :boolean, default: false
+  attr :scope, :map, default: nil
 
   def render(assigns) do
     assigns =
@@ -62,7 +63,19 @@ defmodule QblogWeb.Components.Block.Types.Members do
 
           <button
             :if={@actions? and Ash.can?({membership, :transfer_ownership}, @scope)}
-            phx-click={assigns[:event_transfer_ownership_start]}
+            phx-click={@event_transfer_ownership_start}
+            phx-value-membership_id={membership.id}
+            class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+          >
+            <.icon name="hero-cog-micro" class="" />
+          </button>
+
+          <button
+            :if={
+              @actions? and membership.type != :owner and
+                Ash.can?({membership, :update_membership_type}, @scope)
+            }
+            phx-click={@event_membership_type_change_start}
             phx-value-membership_id={membership.id}
             class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
           >

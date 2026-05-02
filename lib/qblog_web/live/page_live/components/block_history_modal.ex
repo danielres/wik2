@@ -45,7 +45,7 @@ defmodule QblogWeb.PageLive.Components.BlockHistoryModal do
                 tooltip_direction="right"
                 tooltip?
               />
-              <span data-testid="block-history-author-name" class="truncate hidden">
+              <span data-testid="block-history-author-name" class="truncate sr-only">
                 {@selected_version.author |> to_string()}
               </span>
             </div>

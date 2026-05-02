@@ -49,6 +49,14 @@ defmodule Qblog.Accounts.GroupUserRelation do
       authorize_if Group.Checks.ActorIsMemberOfResourceGroup
     end
 
+    policy action(:update) do
+      authorize_if actor_attribute_equals(:role, :superadmin)
+      forbid_unless expr(type != :owner)
+      forbid_unless expr(user_id != ^actor(:id))
+      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if expr(exists(group.memberships, user_id == ^actor(:id) and type == :owner))
+    end
+
     policy action(:transfer_ownership) do
       forbid_unless expr(type == :owner)
       authorize_if actor_attribute_equals(:role, :superadmin)
@@ -105,5 +113,12 @@ defmodule Qblog.Accounts.GroupUserRelation do
 
   identities do
     identity :unique_group_user_relation, [:group_id, :user_id]
+  end
+
+  def updatable_types do
+    __MODULE__
+    |> Ash.Resource.Info.attribute(:type)
+    |> then(& &1.constraints[:one_of])
+    |> Enum.reject(&(&1 == :owner))
   end
 end

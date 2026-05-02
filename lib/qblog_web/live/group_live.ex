@@ -2,10 +2,12 @@ defmodule QblogWeb.GroupLive do
   use QblogWeb, :live_view
   use QblogWeb.Presence.Handlers
 
+  alias Qblog.Accounts.GroupUserRelation
   alias AshPhoenix.Form
   alias Qblog.Blocks
   alias QblogWeb.Components
   alias QblogWeb.Components.Modal
+  alias QblogWeb.GroupLive.MembershipTypeSelector
   alias QblogWeb.GroupLive.NewOwnerSelector
   alias QblogWeb.GroupLive.OrphanBlocks
 
@@ -23,6 +25,8 @@ defmodule QblogWeb.GroupLive do
       socket
       |> assign(form: nil)
       |> assign(orphan_block_selected: nil)
+      |> assign(membership_type_form: nil)
+      |> assign(membership_type_membership: nil)
       |> assign(transfer_ownership_form: nil)
       |> assign(group: group)
       |> assign_orphan_blocks(orphan_blocks)
@@ -112,6 +116,21 @@ defmodule QblogWeb.GroupLive do
 
           <Components.Tabs.tab_content active?={@live_action == :members}>
             <Modal.render
+              cancel="membership_type_change_cancel"
+              cancel_testid="membership-type-change-cancel"
+              open?={@membership_type_form != nil}
+              testid="membership-type-change-dialog"
+            >
+              <MembershipTypeSelector.render
+                :if={@membership_type_form != nil and @membership_type_membership != nil}
+                event_submit="membership_type_change_submit"
+                form={@membership_type_form}
+                membership={@membership_type_membership}
+                type_options={GroupUserRelation.updatable_types()}
+              />
+            </Modal.render>
+
+            <Modal.render
               cancel="transfer_ownership_cancel"
               cancel_testid="transfer-ownership-cancel"
               open?={@transfer_ownership_form != nil}
@@ -124,6 +143,7 @@ defmodule QblogWeb.GroupLive do
             </Modal.render>
 
             <Components.Block.Types.Members.render
+              event_membership_type_change_start="membership_type_change_start"
               event_transfer_ownership_start="transfer_ownership_start"
               scope={@current_scope}
               block={%{id: "members-block"}}
@@ -167,6 +187,51 @@ defmodule QblogWeb.GroupLive do
   end
 
   @impl true
+  def handle_event("membership_type_change_start", params, socket) do
+    group = socket.assigns.group
+    scope = socket.assigns.current_scope
+    membership_id = params["membership_id"]
+
+    case Enum.find(group.memberships, &(&1.id == membership_id and &1.type != :owner)) do
+      nil ->
+        {:noreply, socket}
+
+      membership ->
+        form = membership |> Form.for_update(:update, scope: scope) |> to_form()
+
+        {:noreply,
+         socket
+         |> assign(membership_type_form: form)
+         |> assign(membership_type_membership: membership)}
+    end
+  end
+
+  def handle_event("membership_type_change_cancel", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(membership_type_form: nil)
+     |> assign(membership_type_membership: nil)}
+  end
+
+  def handle_event("membership_type_change_submit", %{"form" => params}, socket) do
+    scope = socket.assigns.current_scope
+    form = socket.assigns.membership_type_form
+
+    case Form.submit(form, params: params) do
+      {:ok, _membership} ->
+        group = socket.assigns.group |> Ash.load!([memberships: [:user]], scope: scope)
+
+        {:noreply,
+         socket
+         |> assign(group: group)
+         |> assign(membership_type_form: nil)
+         |> assign(membership_type_membership: nil)}
+
+      {:error, form} ->
+        {:noreply, socket |> assign(membership_type_form: form)}
+    end
+  end
+
   def handle_event("transfer_ownership_start", params, socket) do
     group = socket.assigns.group
     scope = socket.assigns.current_scope

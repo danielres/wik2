@@ -5,6 +5,9 @@ defmodule QblogWeb.GroupLive.NewOwnerSelector do
   attr :memberships, :list, required: true
 
   def render(assigns) do
+    non_owners = assigns.memberships |> Enum.filter(&(&1.type != :owner))
+    assigns = assigns |> assign(non_owners: non_owners)
+
     ~H"""
     <div class="alert bg-error/50 text-error-content mb-4">
       <.icon name="hero-exclamation-circle-micro self-start" class="size-6 opacity-50" />
@@ -20,7 +23,11 @@ defmodule QblogWeb.GroupLive.NewOwnerSelector do
     <h3 class="text-xl mb-2">Select new owner</h3>
 
     <ul class="space-y-0.5">
-      <li :for={membership <- @memberships |> Enum.filter(&(&1.type != :owner))}>
+      <li :if={@non_owners == []} class="text-sm opacity-70 italic">
+        No other members in the group to transfer ownership to.
+      </li>
+
+      <li :for={membership <- @non_owners}>
         <button
           class={[
             "w-full",

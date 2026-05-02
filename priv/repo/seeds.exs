@@ -15,6 +15,10 @@ alias Qblog.Accounts
 alias Qblog.Accounts.Group
 alias Qblog.Accounts.GroupUserRelation
 alias Qblog.Accounts.User
+alias Qblog.Access
+alias Qblog.Access.ExternalIdentity
+alias Qblog.Access.Grant
+alias Qblog.Access.Source
 
 require Ash.Query
 
@@ -89,5 +93,76 @@ case GroupUserRelation
       },
       authorize?: false,
       domain: Accounts
+    )
+end
+
+source =
+  case Source
+       |> Query.filter(
+         provider == :telegram and provider_source_id == "seed-group-two-members-chat"
+       )
+       |> Ash.read_one(authorize?: false, domain: Access) do
+    {:ok, %Source{} = source} ->
+      source
+
+    {:ok, nil} ->
+      Ash.create!(
+        Source,
+        %{
+          claimed_at: DateTime.utc_now(),
+          claimed_by_user_id: owner.id,
+          group_id: group.id,
+          metadata: %{"kind" => "telegram_chat"},
+          provider: :telegram,
+          provider_source_id: "seed-group-two-members-chat",
+          status: :active,
+          title: "Seed Group Two Members"
+        },
+        authorize?: false,
+        domain: Access
+      )
+  end
+
+identity =
+  case ExternalIdentity
+       |> Query.filter(provider == :telegram and provider_user_id == "seed-member-telegram")
+       |> Ash.read_one(authorize?: false, domain: Access) do
+    {:ok, %ExternalIdentity{} = identity} ->
+      identity
+
+    {:ok, nil} ->
+      Ash.create!(
+        ExternalIdentity,
+        %{
+          display_name: "Seed Member",
+          metadata: %{},
+          provider: :telegram,
+          provider_user_id: "seed-member-telegram",
+          user_id: member.id,
+          username: "seed_member"
+        },
+        authorize?: false,
+        domain: Access
+      )
+  end
+
+case Grant
+     |> Query.filter(source_id == ^source.id and user_id == ^member.id)
+     |> Ash.read_one(authorize?: false, domain: Access) do
+  {:ok, %Grant{}} ->
+    :ok
+
+  {:ok, nil} ->
+    Ash.create!(
+      Grant,
+      %{
+        external_identity_id: identity.id,
+        last_verified_at: DateTime.utc_now(),
+        source_id: source.id,
+        status: :active,
+        user_id: member.id
+      },
+      authorize?: false,
+      domain: Access
     )
 end

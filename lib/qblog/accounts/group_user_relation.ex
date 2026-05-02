@@ -14,7 +14,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
   end
 
   admin do
-    table_columns [:group, :user, :inserted_at]
+    table_columns [:group, :user, :type, :inserted_at]
 
     format_fields inserted_at: {Calendar, :strftime, ["%Y-%m-%d %H:%M"]}
   end

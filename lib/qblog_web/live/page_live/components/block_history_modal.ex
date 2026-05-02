@@ -38,7 +38,13 @@ defmodule QblogWeb.PageLive.Components.BlockHistoryModal do
                 "flex items-center gap-2"
               ]}
             >
-              <User.avatar tenant={@scope.tenant} user={@selected_version.author} size="md" />
+              <User.avatar
+                tenant={@scope.tenant}
+                user={@selected_version.author}
+                size="md"
+                tooltip_direction="right"
+                tooltip?
+              />
               <span data-testid="block-history-author-name" class="truncate hidden">
                 {@selected_version.author |> to_string()}
               </span>

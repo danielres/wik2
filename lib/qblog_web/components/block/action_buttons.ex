@@ -18,17 +18,17 @@ defmodule QblogWeb.Components.Block.ActionButtons do
 
       <div>
         <.action_button
-          data-testid={"block-#{@placement.id}-info"}
-          icon="hero-information-circle-micro"
-          phx-click="show_block_info"
-          phx-value-placement_id={@placement.id}
-        />
-        <.action_button
           :if={Types.supports_history?(@placement.block.type)}
           icon="hero-clock-mini"
           phx-click="show_block_history"
           phx-value-placement_id={@placement.id}
           title="Show history"
+        />
+        <.action_button
+          data-testid={"block-#{@placement.id}-info"}
+          icon="hero-information-circle-micro"
+          phx-click="show_block_info"
+          phx-value-placement_id={@placement.id}
         />
         <.action_button
           icon="hero-chevron-up-mini"

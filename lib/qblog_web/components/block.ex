@@ -31,6 +31,7 @@ defmodule QblogWeb.Components.Block do
   attr :lock, :map, default: nil
   attr :placement, :map, required: true
   attr :editing?, :boolean, default: false
+  attr :editing_block_id, :string, default: nil
   attr :node, :map, default: nil
   attr :page_tree, :map, default: nil
   attr :path, :string, default: nil
@@ -46,7 +47,6 @@ defmodule QblogWeb.Components.Block do
     ~H"""
     <div class={[
       "relative",
-      "[&:has(>.ACTION-BUTTONS:hover)_.BLOCK]:ring-accent/70",
       "@container/block",
       @lock && "ring-2 ring-warning/80 rounded p-1"
     ]}>
@@ -71,7 +71,7 @@ defmodule QblogWeb.Components.Block do
 
       <div class="relative">
         <div
-          :if={@editing? and is_nil(@lock)}
+          :if={@editing_block_id == nil and @editing? and is_nil(@lock)}
           class={[
             "ACTION-BUTTONS",
             "w-full",
@@ -88,8 +88,8 @@ defmodule QblogWeb.Components.Block do
         class={[
           "BLOCK",
           "p-2",
-          @editing? and "ring-2 p-2 hover:ring-accent/70 cursor-pointer",
-          @editing? and "[&>*]:pointer-events-none",
+          @editing? and @editing_block_id == nil and "ring-2 p-2 hover:ring-accent/70 cursor-pointer",
+          @editing? and @editing_block_id != nil and "pointer-events-none opacity-50",
           "rounded ring-accent/20 transition",
           "group"
         ]}
@@ -145,7 +145,8 @@ defmodule QblogWeb.Components.Block do
         phx-value-block_id={@block.id}
         class={[
           "rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-accent",
-          @block.type != :markdown && "bg-base-200 p-4"
+          "bg-accent/5",
+          @block.type != :markdown && "p-4"
         ]}
       >
         <.input
@@ -166,12 +167,12 @@ defmodule QblogWeb.Components.Block do
         />
 
         <div class={[
-          !@actions? && "hidden",
+          !@actions? && "xhidden",
           "flex justify-between gap-2",
           @block.type == :markdown && "px-4 pb-4"
         ]}>
           <.button
-            class="btn btn-soft btn-sm"
+            class="btn hover:bg-error/50 btn-sm"
             phx-click="edit_block_cancel"
             phx-value-block_id={@block.id}
             type="button"
@@ -179,7 +180,7 @@ defmodule QblogWeb.Components.Block do
             Cancel
           </.button>
 
-          <.button class="btn btn-primary btn-sm" type="submit">Save</.button>
+          <.button class="btn btn-accent btn-sm" type="submit">Save</.button>
         </div>
       </Phoenix.Component.form>
     </div>

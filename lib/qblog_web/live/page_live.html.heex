@@ -13,55 +13,44 @@
           class="sticky top-4 z-20 h-0 flex justify-end"
         >
           <div>
-            <div class="bg-accent/30 backdrop-blur rounded-full p-1 flex items-center gap-2">
-              <%= if @editing_block_id do %>
-                <button
-                  type="button"
+            <div
+              :if={@editing_block_id == nil}
+              class="flex items-center gap-2"
+            >
+              <%= if @editing? do %>
+                <QblogWeb.Components.Block.AddBlockMenuButton.render
                   class={[
-                    "btn btn-sm btn-accent btn-circle opacity-40 hover:opacity-100 transition-opacity"
+                    "btn btn-sm btn-circle",
+                    "bg-accent/70 hover:bg-accent",
+                    "transition-opacity",
+                    "backdrop-blur"
                   ]}
-                  phx-click="edit_block_cancel"
-                  phx-value-block_id={@editing_block_id}
-                >
-                  <.icon name="hero-x-mark-micro" class="size-5" />
-                </button>
+                  event_open="add_block_modal_open"
+                />
 
                 <button
-                  type="submit"
-                  form={"edit-block-form-#{@editing_block_id}"}
                   class={[
-                    "btn btn-sm btn-accent btn-circle"
+                    "btn btn-sm btn-circle",
+                    "bg-accent/70 hover:bg-accent",
+                    "transition-opacity",
+                    "backdrop-blur"
                   ]}
+                  phx-click="toggle_edit_mode"
                 >
                   <.icon name="hero-check-micro" class="size-5" />
                 </button>
               <% else %>
-                <%= if @editing? do %>
-                  <button
-                    class={[
-                      "btn btn-sm btn-accent btn-circle opacity-40 hover:opacity-100 transition-opacity"
-                    ]}
-                    phx-click="toggle_edit_mode"
-                  >
-                    <.icon name="hero-x-mark-micro" class="size-5" />
-                  </button>
-
-                  <QblogWeb.Components.Block.AddBlockMenuButton.render
-                    class={[
-                      "btn btn-sm btn-accent btn-circle"
-                    ]}
-                    event_open="add_block_modal_open"
-                  />
-                <% else %>
-                  <button
-                    class={[
-                      "btn btn-sm btn-accent text-base-content bg-transparent hover:bg-accent btn-circle transition-opacity"
-                    ]}
-                    phx-click="toggle_edit_mode"
-                  >
-                    <.icon name="hero-pencil-square-micro" class="size-5" />
-                  </button>
-                <% end %>
+                <button
+                  class={[
+                    "btn btn-sm btn-circle",
+                    "bg-accent/70 hover:bg-accent",
+                    "transition-opacity",
+                    "backdrop-blur"
+                  ]}
+                  phx-click="toggle_edit_mode"
+                >
+                  <.icon name="hero-pencil-square-micro" class="size-5" />
+                </button>
               <% end %>
             </div>
           </div>

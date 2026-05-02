@@ -4,7 +4,7 @@ defmodule QblogWeb.Components.Time do
   """
   use QblogWeb, :html
 
-  attr :datetime, :string, required: true
+  attr :datetime, :any, required: true
   attr :ago?, :boolean, default: false
   attr :direction, :string, default: "bottom"
   attr :bg_class, :string, default: "bg-base-300"

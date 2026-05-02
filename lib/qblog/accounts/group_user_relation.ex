@@ -4,7 +4,8 @@ defmodule Qblog.Accounts.GroupUserRelation do
     domain: Qblog.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource],
+    notifiers: [Ash.Notifier.PubSub]
 
   alias Qblog.Accounts.Group
 
@@ -64,13 +65,19 @@ defmodule Qblog.Accounts.GroupUserRelation do
     end
 
     policy action_type(:create) do
-      # TODO: allow group owners to invite users to their groups
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
 
     policy action_type(:destroy) do
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
+  end
+
+  pub_sub do
+    module QblogWeb.Endpoint
+    prefix "group_user_relation"
+    publish :update, ["group", :group_id]
+    publish :update, ["user", :user_id]
   end
 
   attributes do
@@ -121,4 +128,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
     |> then(& &1.constraints[:one_of])
     |> Enum.reject(&(&1 == :owner))
   end
+
+  def group_pub_sub_topic(group_id), do: "group_user_relation:group:#{group_id}"
+  def user_pub_sub_topic(user_id), do: "group_user_relation:user:#{user_id}"
 end

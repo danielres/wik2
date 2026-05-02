@@ -159,8 +159,6 @@ defmodule QblogWeb.LiveUserAuth do
         {:halt, socket}
 
       %{topic: topic}, socket when topic == user_pub_sub_topic ->
-        current_user = socket.assigns[:current_user]
-
         socket =
           socket
           |> assign_context()
@@ -169,8 +167,6 @@ defmodule QblogWeb.LiveUserAuth do
             :info,
             "Your membership type changed. Some permissions may update on your next action."
           )
-
-        :ok = Context.broadcast_membership_changed(current_user.id)
 
         {:halt, socket}
 

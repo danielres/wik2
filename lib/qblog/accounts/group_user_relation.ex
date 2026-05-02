@@ -28,9 +28,16 @@ defmodule Qblog.Accounts.GroupUserRelation do
       accept [:group_id, :user_id, :type]
     end
 
-    update :update do
+    update :set_type do
       accept [:type]
       public? false
+    end
+
+    update :update_membership_type do
+      accept [:type]
+      public? false
+
+      validate attribute_does_not_equal(:type, :owner)
     end
 
     update :transfer_ownership do
@@ -50,7 +57,7 @@ defmodule Qblog.Accounts.GroupUserRelation do
       authorize_if Group.Checks.ActorIsMemberOfResourceGroup
     end
 
-    policy action(:update) do
+    policy action(:update_membership_type) do
       authorize_if expr(type != :owner and ^actor(:role) == :superadmin)
 
       authorize_if expr(
@@ -76,8 +83,8 @@ defmodule Qblog.Accounts.GroupUserRelation do
   pub_sub do
     module QblogWeb.Endpoint
     prefix "group_user_relation"
-    publish :update, ["group", :group_id]
-    publish :update, ["user", :user_id]
+    publish :update_membership_type, ["group", :group_id]
+    publish :update_membership_type, ["user", :user_id]
   end
 
   attributes do

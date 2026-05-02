@@ -71,7 +71,10 @@ defmodule QblogWeb.Components.Block.Types.Members do
           </button>
 
           <button
-            :if={@actions? and membership.type != :owner and Ash.can?({membership, :update}, @scope)}
+            :if={
+              @actions? and membership.type != :owner and
+                Ash.can?({membership, :update_membership_type}, @scope)
+            }
             phx-click={@event_membership_type_change_start}
             phx-value-membership_id={membership.id}
             class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"

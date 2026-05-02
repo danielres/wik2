@@ -53,10 +53,10 @@ defmodule Qblog.Accounts.GroupUserRelation.Changes.TransferOwnership do
   end
 
   defp make_admin(membership) do
-    membership |> Ash.update(%{type: :admin}, action: :update, authorize?: false)
+    membership |> Ash.update(%{type: :admin}, action: :set_type, authorize?: false)
   end
 
   defp make_owner(target_membership) do
-    target_membership |> Ash.update(%{type: :owner}, action: :update, authorize?: false)
+    target_membership |> Ash.update(%{type: :owner}, action: :set_type, authorize?: false)
   end
 end

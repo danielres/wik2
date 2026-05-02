@@ -211,7 +211,7 @@ defmodule QblogWeb.GroupLive do
         {:noreply, socket}
 
       membership ->
-        form = membership |> Form.for_update(:update, scope: scope) |> to_form()
+        form = membership |> Form.for_update(:update_membership_type, scope: scope) |> to_form()
 
         {:noreply,
          socket
@@ -368,7 +368,7 @@ defmodule QblogWeb.GroupLive do
 
   defp refresh_group_memberships(socket) do
     scope = socket.assigns.current_scope
-    group = socket.assigns.current_scope.tenant |> load_group(scope)
+    group = socket.assigns.group |> load_group(scope)
 
     socket
     |> assign(group: group)
@@ -395,7 +395,7 @@ defmodule QblogWeb.GroupLive do
             |> assign(
               membership_type_form:
                 membership
-                |> Form.for_update(:update, scope: socket.assigns.current_scope)
+                |> Form.for_update(:update_membership_type, scope: socket.assigns.current_scope)
                 |> to_form()
             )
         end

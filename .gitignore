@@ -45,3 +45,4 @@ npm-debug.log
 /qblog-notes
 /quickfix-*
 /.env
+/.elixir_ls

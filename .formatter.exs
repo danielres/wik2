@@ -1,5 +1,6 @@
 [
   import_deps: [
+    :error_tracker,
     :cinder,
     :ash_postgres,
     :ash_admin,

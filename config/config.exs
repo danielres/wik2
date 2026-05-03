@@ -7,6 +7,7 @@
 # General application configuration
 import Config
 
+config :error_tracker, repo: Wik.Repo, otp_app: :wik, enabled: true
 config :cinder, default_theme: "daisy_ui"
 
 config :ash,

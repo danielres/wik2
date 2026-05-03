@@ -38,6 +38,32 @@ defmodule WikWeb.Router do
     end
   end
 
+  # Enable LiveDashboard and Swoosh mailbox preview in development
+  if Application.compile_env(:wik, :dev_routes) do
+    # If you want to use the LiveDashboard in production, you should put
+    # it behind authentication and allow only admins to access it.
+    # If your application does not have an admins-only section yet,
+    # you can use Plug.BasicAuth to set up some basic authentication
+    # as long as you are also using SSL (which you should anyway).
+    import Phoenix.LiveDashboard.Router
+
+    scope "/dev" do
+      pipe_through :browser
+
+      live_dashboard "/dashboard", metrics: WikWeb.Telemetry
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
+
+  if Application.compile_env(:wik, :dev_routes) do
+    use ErrorTracker.Web, :router
+
+    scope "/dev" do
+      pipe_through :browser
+
+      error_tracker_dashboard "/errors"
+    end
+  end
   scope "/", WikWeb do
     pipe_through :browser
 
@@ -131,20 +157,4 @@ defmodule WikWeb.Router do
   #   pipe_through :api
   # end
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
-  if Application.compile_env(:wik, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
-    import Phoenix.LiveDashboard.Router
-
-    scope "/dev" do
-      pipe_through :browser
-
-      live_dashboard "/dashboard", metrics: WikWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-  end
 end

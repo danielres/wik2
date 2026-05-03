@@ -10,8 +10,7 @@ defmodule Wik.Application do
     children = [
       WikWeb.Telemetry,
       Wik.Repo,
-      {Ecto.Migrator,
-       repos: Application.fetch_env!(:wik, :ecto_repos), skip: skip_migrations?()},
+      {Ecto.Migrator, repos: Application.fetch_env!(:wik, :ecto_repos), skip: skip_migrations?()},
       {DNSCluster, query: Application.get_env(:wik, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Wik.PubSub},
       WikWeb.Presence,

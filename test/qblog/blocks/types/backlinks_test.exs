@@ -14,7 +14,7 @@ defmodule Qblog.Blocks.Types.BacklinksTest do
 
       assert {:ok, block} = Blocks.create_user_owned_block(%{type: :backlinks}, scope: scope)
 
-      assert block.data == %{"title" => ""}
+      assert block.data == %{"title" => "Backlinks"}
     end
   end
 

@@ -18,7 +18,7 @@ defmodule Qblog.Blocks.Types.PagesTest do
                  scope: scope
                )
 
-      assert block.data == %{"depth" => 1, "source_node" => "root", "title" => ""}
+      assert block.data == %{"depth" => 3, "source_node" => "root", "title" => "Subtree"}
     end
   end
 

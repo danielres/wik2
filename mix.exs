@@ -94,9 +94,11 @@ defmodule Qblog.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ash.setup", "assets.setup", "assets.build", "run priv/repo/seeds.exs"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      setup: ["deps.get", "ash.setup", "assets.setup", "assets.build"],
+      "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "dev.setup": ["setup", "run priv/repo/seeds.exs"],
+      "dev.reset": ["ecto.reset", "run priv/repo/seeds.exs"],
       test: ["ash.setup --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind qblog", "esbuild qblog"],
@@ -106,7 +108,7 @@ defmodule Qblog.MixProject do
         "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"],
-      "ash.setup": ["ash.setup", "run priv/repo/seeds.exs"]
+      "ash.setup": ["ash.setup"]
     ]
   end
 end

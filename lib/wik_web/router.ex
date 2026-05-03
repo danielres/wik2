@@ -14,10 +14,12 @@ defmodule WikWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :load_from_session
+    plug WikWeb.Plugs.SetErrorTrackerContext
   end
 
   pipeline :group_tenant do
     plug WikWeb.Plugs.SetTenantFromGroup
+    plug WikWeb.Plugs.SetErrorTrackerContext
   end
 
   pipeline :api do

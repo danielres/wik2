@@ -12,15 +12,15 @@ import Config
 # If you use `mix release`, you need to explicitly enable the server
 # by passing the PHX_SERVER=true when you start it:
 #
-#     PHX_SERVER=true bin/qblog start
+#     PHX_SERVER=true bin/wik start
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :qblog, QblogWeb.Endpoint, server: true
+  config :wik, WikWeb.Endpoint, server: true
 end
 
-config :qblog, QblogWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+config :wik, WikWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
   database_url =
@@ -34,7 +34,7 @@ if config_env() == :prod do
       do: [:inet6],
       else: []
 
-  config :qblog, Qblog.Repo,
+  config :wik, Wik.Repo,
     url: database_url,
     ssl: true,
     socket_options: maybe_ipv6,
@@ -54,9 +54,9 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
 
-  config :qblog, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+  config :wik, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :qblog, QblogWeb.Endpoint,
+  config :wik, WikWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -67,7 +67,7 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  config :qblog,
+  config :wik,
     token_signing_secret:
       System.get_env("TOKEN_SIGNING_SECRET") ||
         raise("Missing environment variable `TOKEN_SIGNING_SECRET`!")
@@ -77,7 +77,7 @@ if config_env() == :prod do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  #     config :qblog, QblogWeb.Endpoint,
+  #     config :wik, WikWeb.Endpoint,
   #       https: [
   #         ...,
   #         port: 443,
@@ -99,7 +99,7 @@ if config_env() == :prod do
   # We also recommend setting `force_ssl` in your config/prod.exs,
   # ensuring no data is ever sent via http, always redirecting to https:
   #
-  #     config :qblog, QblogWeb.Endpoint,
+  #     config :wik, WikWeb.Endpoint,
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
@@ -109,7 +109,7 @@ if config_env() == :prod do
   # In production you need to configure the mailer to use a different adapter.
   # Here is an example configuration for Mailgun:
   #
-  #     config :qblog, Qblog.Mailer,
+  #     config :wik, Wik.Mailer,
   #       adapter: Swoosh.Adapters.Mailgun,
   #       api_key: System.get_env("MAILGUN_API_KEY"),
   #       domain: System.get_env("MAILGUN_DOMAIN")

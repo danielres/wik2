@@ -1,12 +1,12 @@
-defmodule Qblog.TestGenerators do
+defmodule Wik.TestGenerators do
   use Ash.Generator
 
-  alias Qblog.Access.ExternalIdentity
-  alias Qblog.Access.Grant
-  alias Qblog.Access.Source
-  alias Qblog.Accounts.Group
-  alias Qblog.Accounts.User
-  alias Qblog.Wiki.PageTree
+  alias Wik.Access.ExternalIdentity
+  alias Wik.Access.Grant
+  alias Wik.Access.Source
+  alias Wik.Accounts.Group
+  alias Wik.Accounts.User
+  alias Wik.Wiki.PageTree
 
   def user(opts \\ []) do
     seed_generator(
@@ -65,7 +65,7 @@ defmodule Qblog.TestGenerators do
           title: "Telegram Group"
         },
         authorize?: false,
-        domain: Qblog.Access
+        domain: Wik.Access
       )
 
     identity =
@@ -78,7 +78,7 @@ defmodule Qblog.TestGenerators do
           user_id: user.id
         },
         authorize?: false,
-        domain: Qblog.Access
+        domain: Wik.Access
       )
 
     grant =
@@ -92,7 +92,7 @@ defmodule Qblog.TestGenerators do
           user_id: user.id
         },
         authorize?: false,
-        domain: Qblog.Access
+        domain: Wik.Access
       )
 
     %{grant: grant, identity: identity, source: source}

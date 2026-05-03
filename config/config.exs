@@ -54,27 +54,27 @@ config :spark,
     ]
   ]
 
-config :qblog,
-  ecto_repos: [Qblog.Repo],
+config :wik,
+  ecto_repos: [Wik.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
-    Qblog.Access,
-    Qblog.Accounts,
-    Qblog.Blocks,
-    Qblog.Blog,
-    Qblog.Wiki
+    Wik.Access,
+    Wik.Accounts,
+    Wik.Blocks,
+    Wik.Blog,
+    Wik.Wiki
   ],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true]
 
 # Configure the endpoint
-config :qblog, QblogWeb.Endpoint,
+config :wik, WikWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: QblogWeb.ErrorHTML, json: QblogWeb.ErrorJSON],
-    layout: [html: {QblogWeb.Layouts, :root}]
+    formats: [html: WikWeb.ErrorHTML, json: WikWeb.ErrorJSON],
+    layout: [html: {WikWeb.Layouts, :root}]
   ],
-  pubsub_server: Qblog.PubSub,
+  pubsub_server: Wik.PubSub,
   live_view: [signing_salt: "uU+TCCbC"]
 
 # Configure the mailer
@@ -84,12 +84,12 @@ config :qblog, QblogWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :qblog, Qblog.Mailer, adapter: Swoosh.Adapters.Local
+config :wik, Wik.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",
-  qblog: [
+  wik: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
@@ -99,7 +99,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "4.1.12",
-  qblog: [
+  wik: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/css/app.css

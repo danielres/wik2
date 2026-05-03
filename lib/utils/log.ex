@@ -30,7 +30,7 @@ defmodule Utils.Log do
   end
 
   defp error_logging_enabled? do
-    Application.get_env(:qblog, __MODULE__, [])
+    Application.get_env(:wik, __MODULE__, [])
     |> Keyword.get(:error_logging_enabled?, true)
   end
 end

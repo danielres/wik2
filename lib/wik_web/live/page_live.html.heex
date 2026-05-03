@@ -1,0 +1,174 @@
+<Layouts.app context={@context} flash={@flash} scope={@current_scope}>
+  <Layouts.group presences={@presences} scope={@current_scope} view="wiki">
+    <%= if assigns[:not_found_path] do %>
+      <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
+        <div>Ooops...</div>
+        <div class="font-bold">"{@not_found_path}"</div>
+        <div>Could not be found</div>
+      </div>
+    <% else %>
+      <section class="relative">
+        <div
+          :if={@can_manage_page?}
+          class="sticky top-4 z-20 h-0 flex justify-end"
+        >
+          <div>
+            <div
+              :if={@editing_block_id == nil}
+              class="flex items-center gap-2"
+            >
+              <%= if @editing? do %>
+                <WikWeb.Components.Block.AddBlockMenuButton.render
+                  class={[
+                    "btn btn-sm btn-circle",
+                    "bg-accent/70 hover:bg-accent",
+                    "transition-opacity",
+                    "backdrop-blur"
+                  ]}
+                  event_open="add_block_modal_open"
+                />
+
+                <button
+                  class={[
+                    "btn btn-sm btn-circle",
+                    "bg-accent/70 hover:bg-accent",
+                    "transition-opacity",
+                    "backdrop-blur"
+                  ]}
+                  phx-click="toggle_edit_mode"
+                >
+                  <.icon name="hero-check-micro" class="size-5" />
+                </button>
+              <% else %>
+                <button
+                  class={[
+                    "btn btn-sm btn-circle",
+                    "bg-accent/70 hover:bg-accent",
+                    "transition-opacity",
+                    "backdrop-blur"
+                  ]}
+                  phx-click="toggle_edit_mode"
+                >
+                  <.icon name="hero-pencil-square-micro" class="size-5" />
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <Components.Block.AddBlockMenuButton.modal_special_blocks
+          scope={@current_scope}
+          event_cancel="add_block_modal_cancel"
+          event_position_select="add_block_position_select"
+          id="add-block-dialog"
+          open?={@add_block_modal_open?}
+          position={@add_block_position}
+        />
+
+        <header class="space-y-1 mb-12 mx-2">
+          <Components.Page.breadcrumbs
+            class="mb-2 text-sm opacity-60"
+            include_current?={false}
+            node={@node}
+            page_tree={@page_tree}
+            scope={@current_scope}
+            trailing_separator?
+          />
+
+          <PageLive.Components.Details.render
+            scope={@current_scope}
+            node={@node}
+            page={@page}
+            open?={false}
+          >
+            <h1 class={[
+              "text-2xl font-bold",
+              " opacity-90 hover:opacity-100 transition-opacity"
+            ]}>
+              {@node.title}
+            </h1>
+          </PageLive.Components.Details.render>
+        </header>
+
+        <div class={[
+          "grid grid-cols-1 gap-4",
+          has_area?(@page, :aside) && "lg:grid-cols-[minmax(0,1fr)_18rem]"
+        ]}>
+          <PageLive.Components.Area.render
+            area={:main}
+            editing?={@editing?}
+            editing_block_id={@editing_block_id}
+            form_edit_block={@form_edit_block}
+            locks={@locks}
+            node={@node}
+            page={@page}
+            page_tree={@page_tree}
+            path={@path}
+            scope={@current_scope}
+          />
+
+          <PageLive.Components.Area.render
+            :if={has_area?(@page, :aside)}
+            area={:aside}
+            class={[
+              "sm:border-l pl-4",
+              if(@editing?, do: "border-transparent", else: "border-base-content/10")
+            ]}
+            editing?={@editing?}
+            editing_block_id={@editing_block_id}
+            form_edit_block={@form_edit_block}
+            locks={@locks}
+            node={@node}
+            page={@page}
+            page_tree={@page_tree}
+            path={@path}
+            scope={@current_scope}
+          />
+        </div>
+
+        <.form
+          :if={@linked_copy_form}
+          for={@linked_copy_form}
+          id="linked-copy-form"
+          phx-submit="linked_copy_submit"
+          class="bg-base-200 rounded-box p-4 space-y-3"
+        >
+          <.input field={@linked_copy_form[:block_id]} label="Block ID" phx-mounted={JS.focus()} />
+          <input
+            name={@linked_copy_form[:position].name}
+            type="hidden"
+            value={@linked_copy_form[:position].value}
+          />
+
+          <div :if={@linked_copy_error} class="text-error text-sm">{@linked_copy_error}</div>
+
+          <div class="flex justify-end gap-2">
+            <.button
+              class="btn btn-ghost btn-sm"
+              phx-click="linked_copy_cancel"
+              type="button"
+            >
+              Cancel
+            </.button>
+            <.button class="btn btn-primary btn-sm" type="submit">Link block</.button>
+          </div>
+        </.form>
+
+        <PageLive.Components.BlockInfoModal.render
+          :if={@block_info_placement}
+          placement={@block_info_placement}
+          scope={@current_scope}
+        />
+
+        <.live_component
+          :if={@block_history_placement}
+          module={PageLive.Components.BlockHistory}
+          id={"block-history-#{@block_history_placement.id}"}
+          page_tree={@page_tree}
+          placement={@block_history_placement}
+          scope={@current_scope}
+        />
+      </section>
+    <% end %>
+  </Layouts.group>
+</Layouts.app>

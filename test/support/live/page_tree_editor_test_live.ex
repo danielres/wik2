@@ -1,14 +1,14 @@
-defmodule QblogWeb.PageTreeEditorTestLive do
-  use QblogWeb, :live_view
+defmodule WikWeb.PageTreeEditorTestLive do
+  use WikWeb, :live_view
 
-  alias Qblog.Accounts
-  alias Qblog.Accounts.User
-  alias Qblog.Wiki.PageTree
-  alias QblogWeb.PageTreeLive.PageTreeEditor
+  alias Wik.Accounts
+  alias Wik.Accounts.User
+  alias Wik.Wiki.PageTree
+  alias WikWeb.PageTreeLive.PageTreeEditor
 
   @impl true
   def mount(_params, %{"actor_id" => actor_id, "tenant" => tenant_name} = session, socket) do
-    {:ok, actor} = Ash.get(User, actor_id, authorize?: false, domain: Qblog.Accounts)
+    {:ok, actor} = Ash.get(User, actor_id, authorize?: false, domain: Wik.Accounts)
     {:ok, tenant} = Accounts.get_group_by_name(tenant_name, authorize?: false)
     current_scope = %{actor: actor, tenant: tenant}
     {:ok, page_tree} = PageTree.ensure(scope: current_scope)

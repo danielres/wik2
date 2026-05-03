@@ -120,7 +120,7 @@
     "global": null,
     "strategy": null
   },
-  "repo": "Elixir.Qblog.Repo",
+  "repo": "Elixir.Wik.Repo",
   "schema": null,
   "table": "groups"
 }

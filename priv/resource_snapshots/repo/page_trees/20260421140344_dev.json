@@ -111,7 +111,7 @@
     "global": false,
     "strategy": "attribute"
   },
-  "repo": "Elixir.Qblog.Repo",
+  "repo": "Elixir.Wik.Repo",
   "schema": null,
   "table": "page_trees"
 }

@@ -1,0 +1,25 @@
+defmodule WikWeb.Components.Block.Types.Text do
+  use WikWeb, :html
+
+  attr :block, :map, required: true
+
+  def render(assigns) do
+    ~H"""
+    <div class="whitespace-pre-line py-1">{@block.data["text"] || "Empty block"}</div>
+    """
+  end
+
+  attr :block, :map, required: true
+  attr :form, :any, required: true
+
+  def form_fields(assigns) do
+    ~H"""
+    <.input
+      field={@form[:text]}
+      id={"edit-block-text-#{@block.id}"}
+      phx-mounted={JS.focus()}
+      type="textarea"
+    />
+    """
+  end
+end

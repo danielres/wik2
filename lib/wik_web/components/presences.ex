@@ -1,0 +1,29 @@
+defmodule WikWeb.Components.Presences do
+  @moduledoc """
+  Renders the list of online users for the current group.
+  """
+  alias WikWeb.Components
+  use WikWeb, :html
+
+  attr :presences, :list, default: []
+  attr :tenant, :map, required: true
+
+  def avatars(assigns) do
+    ~H"""
+    <ul class="avatar-group -space-x-0">
+      <li
+        :for={presence <- @presences}
+        id={"online-user-#{presence.id}"}
+      >
+        <Components.User.avatar
+          link?
+          avatar_url={presence.avatar_url}
+          tenant={@tenant}
+          size="sm"
+          user={presence.user}
+        />
+      </li>
+    </ul>
+    """
+  end
+end

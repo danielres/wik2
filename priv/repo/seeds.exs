@@ -5,20 +5,20 @@
 # Inside the script, you can read and write to any of your
 # repositories directly:
 #
-#     Qblog.Repo.insert!(%Qblog.SomeSchema{})
+#     Wik.Repo.insert!(%Wik.SomeSchema{})
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
 alias Ash.Query
-alias Qblog.Accounts
-alias Qblog.Accounts.Group
-alias Qblog.Accounts.GroupUserRelation
-alias Qblog.Accounts.User
-alias Qblog.Access
-alias Qblog.Access.ExternalIdentity
-alias Qblog.Access.Grant
-alias Qblog.Access.Source
+alias Wik.Accounts
+alias Wik.Accounts.Group
+alias Wik.Accounts.GroupUserRelation
+alias Wik.Accounts.User
+alias Wik.Access
+alias Wik.Access.ExternalIdentity
+alias Wik.Access.Grant
+alias Wik.Access.Source
 
 require Ash.Query
 

@@ -100,8 +100,6 @@ Right now, that includes:
 
 This repo is intended to be run in dev with [devenv](https://devenv.sh).
 
-Note: `Qblog` is just the internal name for Wik v2. (You may see that name in code, configs, and commit history.)
-
 ### Primary Flow
 
 ```bash
@@ -126,8 +124,8 @@ Then open:
 
 It also provisions local Postgres databases for:
 
-- `qblog_dev`
-- `qblog_test`
+- `wik_dev`
+- `wik_test`
 
 After that, `mix setup` handles the app bootstrap:
 
@@ -140,7 +138,7 @@ After that, `mix setup` handles the app bootstrap:
 
 When running through `devenv`, local Postgres is configured on port `5432` and the development app config still defaults to:
 
-- database: `qblog_dev`
+- database: `wik_dev`
 - username: `postgres`
 - password: `postgres`
 - port: `5432`
@@ -160,7 +158,7 @@ In development, the sign-in page includes a **Local dev** section that lets you:
 - sign in as a superadmin
 - sign in as any existing local user
 
-The superadmin shortcut uses `Qblog.DevAuth` and creates the local dev superadmin on demand if needed.
+The superadmin shortcut uses `Wik.DevAuth` and creates the local dev superadmin on demand if needed.
 
 ### Seeded Demo Data
 

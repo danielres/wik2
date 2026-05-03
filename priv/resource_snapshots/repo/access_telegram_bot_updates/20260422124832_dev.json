@@ -86,7 +86,7 @@
     "global": null,
     "strategy": null
   },
-  "repo": "Elixir.Qblog.Repo",
+  "repo": "Elixir.Wik.Repo",
   "schema": null,
   "table": "access_telegram_bot_updates"
 }

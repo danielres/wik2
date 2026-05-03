@@ -1,4 +1,4 @@
-defmodule Qblog.Repo.Migrations.Initialize do
+defmodule Wik.Repo.Migrations.Initialize do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 

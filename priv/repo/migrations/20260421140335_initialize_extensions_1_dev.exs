@@ -1,4 +1,4 @@
-defmodule Qblog.Repo.Migrations.InitializeExtensions1 do
+defmodule Wik.Repo.Migrations.InitializeExtensions1 do
   @moduledoc """
   Installs any extensions that are mentioned in the repo's `installed_extensions/0` callback
 

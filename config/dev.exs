@@ -17,13 +17,13 @@ repo_connection_opts =
       [hostname: "localhost"]
   end
 
-config :qblog,
-       Qblog.Repo,
+config :wik,
+       Wik.Repo,
        [
          username: System.get_env("PGUSER", "postgres"),
          password: System.get_env("PGPASSWORD", "postgres"),
          port: String.to_integer(System.get_env("PGPORT", "5432")),
-         database: System.get_env("PGDATABASE", "qblog_dev"),
+         database: System.get_env("PGDATABASE", "wik_dev"),
          stacktrace: true,
          show_sensitive_data_on_connection_error: true,
          pool_size: 10
@@ -35,7 +35,7 @@ config :qblog,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :qblog, QblogWeb.Endpoint,
+config :wik, WikWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {0, 0, 0, 0}],
@@ -44,8 +44,8 @@ config :qblog, QblogWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "Igpc6QwlrqfP0Pxh47/fUHDzLzcfhsCDO2fi8kw5sG7VEz2IWJKMn//Ljafm8Tdw",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:qblog, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:qblog, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:wik, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:wik, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -72,7 +72,7 @@ config :qblog, QblogWeb.Endpoint,
 # different ports.
 
 # Reload browser tabs when matching files change.
-config :qblog, QblogWeb.Endpoint,
+config :wik, WikWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [
@@ -81,13 +81,13 @@ config :qblog, QblogWeb.Endpoint,
       # Gettext translations
       ~r"priv/gettext/.*\.po$",
       # Router, Controllers, LiveViews and LiveComponents
-      ~r"lib/qblog_web/router\.ex$",
-      ~r"lib/qblog_web/(controllers|live|components)/.*\.(ex|heex)$"
+      ~r"lib/wik_web/router\.ex$",
+      ~r"lib/wik_web/(controllers|live|components)/.*\.(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :qblog, dev_routes: true, token_signing_secret: "JidvxOIhZTrHJSJrUfEVCEFZrqiSIQvb"
+config :wik, dev_routes: true, token_signing_secret: "JidvxOIhZTrHJSJrUfEVCEFZrqiSIQvb"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

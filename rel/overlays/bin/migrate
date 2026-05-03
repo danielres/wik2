@@ -7,4 +7,4 @@ if [ -n "${MIGRATION_DATABASE_URL:-}" ]; then
   export DATABASE_URL="$MIGRATION_DATABASE_URL"
 fi
 
-exec ./qblog eval Qblog.Release.migrate
+exec ./wik eval Wik.Release.migrate

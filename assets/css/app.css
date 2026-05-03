@@ -6,7 +6,7 @@
 @source "../../deps/ash_authentication_phoenix";
 @source "../css";
 @source "../js";
-@source "../../lib/qblog_web";
+@source "../../lib/wik_web";
 
 @import "./blocks/markdown.css";
 

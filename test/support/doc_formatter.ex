@@ -1,4 +1,4 @@
-defmodule Qblog.Test.DocFormatter do
+defmodule Wik.Test.DocFormatter do
   use GenServer
 
   import ExUnit.Formatter,

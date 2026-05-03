@@ -44,8 +44,8 @@
     enable = true;
     port = 5432;
     initialDatabases = [
-      { name = "qblog_dev"; }
-      { name = "qblog_test"; }
+      { name = "wik_dev"; }
+      { name = "wik_test"; }
     ];
     initialScript = ''
       CREATE ROLE postgres SUPERUSER LOGIN;  

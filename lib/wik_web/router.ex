@@ -4,6 +4,7 @@ defmodule WikWeb.Router do
   use AshAuthentication.Phoenix.Router
 
   import AshAuthentication.Plug.Helpers
+  import WikWeb.ErrorTrackerRouter
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -55,15 +56,6 @@ defmodule WikWeb.Router do
     end
   end
 
-  if Application.compile_env(:wik, :dev_routes) do
-    use ErrorTracker.Web, :router
-
-    scope "/dev" do
-      pipe_through :browser
-
-      error_tracker_dashboard "/errors"
-    end
-  end
   scope "/", WikWeb do
     pipe_through :browser
 
@@ -114,6 +106,8 @@ defmodule WikWeb.Router do
   scope "/", WikWeb do
     pipe_through [:browser]
 
+    superadmin_error_tracker_dashboard("/errors")
+
     ash_authentication_live_session :superadmin_routes,
       on_mount: [{WikWeb.LiveUserAuth, :live_superadmin_required}] do
       scope "/_", Superadmin do
@@ -156,5 +150,4 @@ defmodule WikWeb.Router do
   # scope "/api", WikWeb do
   #   pipe_through :api
   # end
-
 end

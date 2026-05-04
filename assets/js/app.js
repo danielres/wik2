@@ -36,10 +36,17 @@ const csrfToken = document
 
 initTheme();
 
+const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: { _csrf_token: csrfToken },
-  hooks: { ...colocatedHooks, CapitalizeFirstLetter, MarkdownEditor, TelegramLogin },
+  params: { _csrf_token: csrfToken, time_zone: timeZone },
+  hooks: {
+    ...colocatedHooks,
+    CapitalizeFirstLetter,
+    MarkdownEditor,
+    TelegramLogin,
+  },
 });
 
 // Show progress bar on live navigation and form submits

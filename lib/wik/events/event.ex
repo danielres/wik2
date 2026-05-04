@@ -1,0 +1,186 @@
+defmodule Wik.Events.Event do
+  alias Wik.Accounts.Group
+  alias Wik.Events.Event.Validations.Timing
+
+  use Ash.Resource,
+    otp_app: :wik,
+    domain: Wik.Events,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshPhoenix]
+
+  postgres do
+    table "events"
+    repo Wik.Repo
+  end
+
+  code_interface do
+    define :cancel, action: :cancel
+    define :create, action: :create
+    define :get_by_id, action: :read, get_by: [:id]
+  end
+
+  actions do
+    defaults [:read]
+
+    create :create do
+      accept [
+        :all_day,
+        :description,
+        :ends_at,
+        :location_name,
+        :location_text,
+        :provenance_policy,
+        :relay_policy,
+        :starts_at,
+        :title
+      ]
+
+      change relate_actor(:author, allow_nil?: false)
+    end
+
+    update :update do
+      accept [
+        :all_day,
+        :description,
+        :ends_at,
+        :location_name,
+        :location_text,
+        :provenance_policy,
+        :relay_policy,
+        :starts_at,
+        :title
+      ]
+
+      require_atomic? false
+    end
+
+    update :cancel do
+      accept []
+      require_atomic? false
+      change set_attribute(:status, :cancelled)
+    end
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :superadmin) do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+
+      authorize_if expr(
+                     exists(
+                       publications,
+                       exists(group.memberships, user_id == ^actor(:id) and type == :owner) or
+                         (exists(
+                            group.memberships,
+                            user_id == ^actor(:id) and type in [:admin, :member]
+                          ) and
+                            exists(
+                              group.access_sources,
+                              status == :active and
+                                exists(grants, user_id == ^actor(:id) and status == :active)
+                            ))
+                     )
+                   )
+    end
+
+    policy action_type(:create) do
+      authorize_if Group.Checks.ActorCanManageCurrentTenantGroup
+    end
+
+    policy action_type(:update) do
+      authorize_if Group.Checks.ActorCanManageResourceGroup
+    end
+  end
+
+  validations do
+    validate Timing
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :group_id
+    parse_attribute {Wik.Accounts, :group_name_to_id, []}
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+    timestamps()
+
+    attribute :all_day, :boolean do
+      public? true
+      allow_nil? false
+      default false
+    end
+
+    attribute :description, :string do
+      public? true
+      allow_nil? false
+    end
+
+    attribute :ends_at, :utc_datetime do
+      public? true
+      allow_nil? true
+    end
+
+    attribute :location_name, :string do
+      public? true
+      allow_nil? false
+    end
+
+    attribute :location_text, :string do
+      public? true
+      allow_nil? true
+    end
+
+    attribute :provenance_policy, :atom do
+      constraints one_of: [:visible, :hidden]
+      public? true
+      allow_nil? false
+      default :visible
+    end
+
+    attribute :relay_policy, :atom do
+      constraints one_of: [:internal_only, :admins_only_groups, :members_to_groups]
+      public? true
+      allow_nil? false
+      default :internal_only
+    end
+
+    attribute :starts_at, :utc_datetime do
+      public? true
+      allow_nil? false
+    end
+
+    attribute :status, :atom do
+      constraints one_of: [:draft, :published, :cancelled]
+      public? true
+      allow_nil? false
+      default :published
+    end
+
+    attribute :title, :string do
+      public? true
+      allow_nil? false
+    end
+  end
+
+  relationships do
+    belongs_to :author, Wik.Accounts.User do
+      destination_attribute :id
+      allow_nil? false
+    end
+
+    belongs_to :group, Wik.Accounts.Group do
+      destination_attribute :id
+      allow_nil? false
+    end
+
+    has_many :publications, Wik.Events.EventPublication do
+      destination_attribute :event_id
+    end
+  end
+end

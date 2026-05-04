@@ -25,6 +25,8 @@ defmodule WikWeb.Superadmin.TelegramLiveTest do
       |> log_in(superadmin)
       |> live(~p"/_")
 
+    render_async(view)
+
     assert has_element?(view, testid("telegram-bot-update-123"))
     assert render(view) =~ "channel_post"
     assert render(view) =~ "Hobbies"

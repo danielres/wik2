@@ -33,6 +33,18 @@ defmodule WikWeb.MeLive do
           Your account
         </h1>
 
+        <div class={[
+          "badge badge-lg bg-base-300 text-base-content",
+          "flex ml-auto"
+        ]}>
+          <span class="tooltip">
+            <span class="text-sm">Timezone: {@time_zone}</span>
+            <div class="tooltip-content max-w-[10rem] text-xs">
+              Auto-detected from your browser settings.
+            </div>
+          </span>
+        </div>
+
         <div class="grid gap-4 md:grid-cols-[1fr_1.2fr]">
           <div>
             <h2 class="text-lg mb-1">Connected identities</h2>

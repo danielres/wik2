@@ -11,7 +11,7 @@ defmodule WikWeb.LiveUserAuth do
   alias WikWeb.ErrorTrackerContext
 
   import Phoenix.Component
-  import Phoenix.LiveView, only: [attach_hook: 4]
+  import Phoenix.LiveView, only: [attach_hook: 4, get_connect_params: 1]
   use WikWeb, :verified_routes
 
   # This is used for nested liveviews to fetch the current user.
@@ -22,6 +22,7 @@ defmodule WikWeb.LiveUserAuth do
       socket
       |> AshAuthentication.Phoenix.LiveSession.assign_new_resources(session)
       |> assign_current_user_for_dev()
+      |> assign_time_zone()
       |> assign_context()
       |> ErrorTrackerContext.set()
       |> attach_context_hook()
@@ -38,6 +39,7 @@ defmodule WikWeb.LiveUserAuth do
         socket
         |> assign(:current_user, current_user)
         |> assign(current_scope: current_scope)
+        |> assign_time_zone()
         |> assign_context()
         |> ErrorTrackerContext.set()
         |> attach_context_hook()
@@ -62,6 +64,7 @@ defmodule WikWeb.LiveUserAuth do
           socket
           |> assign(:current_user, current_user)
           |> assign(current_scope: current_scope)
+          |> assign_time_zone()
           |> assign_context()
           |> ErrorTrackerContext.set()
           |> attach_context_hook()
@@ -90,6 +93,7 @@ defmodule WikWeb.LiveUserAuth do
             socket
             |> assign(:current_user, current_user)
             |> assign(current_scope: current_scope)
+            |> assign_time_zone()
             |> assign_context()
             |> ErrorTrackerContext.set()
             |> attach_context_hook()
@@ -146,6 +150,16 @@ defmodule WikWeb.LiveUserAuth do
 
   defp assign_context(socket) do
     assign(socket, :context, Context.build(socket.assigns[:current_user]))
+  end
+
+  defp assign_time_zone(socket) do
+    time_zone =
+      case get_connect_params(socket) do
+        %{"time_zone" => time_zone} when is_binary(time_zone) and time_zone != "" -> time_zone
+        _ -> "Etc/UTC"
+      end
+
+    assign_new(socket, :time_zone, fn -> time_zone end)
   end
 
   defp attach_context_hook(socket) do

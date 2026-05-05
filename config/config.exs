@@ -9,6 +9,7 @@ import Config
 
 config :error_tracker, repo: Wik.Repo, otp_app: :wik, enabled: true
 config :cinder, default_theme: "daisy_ui"
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,

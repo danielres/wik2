@@ -39,7 +39,7 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
   def render(assigns) do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
-      <Layouts.container>
+      <Layouts.superadmin scope={@current_scope}>
         <div class="space-y-6">
           <div class="space-y-1">
             <h1 class="text-2xl font-[100]">Telegram bot updates</h1>
@@ -131,7 +131,7 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
             ]}><code>{format_payload(@selected_bot_update.payload)}</code></pre>
           </Modal.render>
         </div>
-      </Layouts.container>
+      </Layouts.superadmin>
     </Layouts.app>
     """
   end

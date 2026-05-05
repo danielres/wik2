@@ -32,6 +32,33 @@ defmodule WikWeb.Layouts do
     default: %{actor: nil, avatar_url: nil, tenant: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :view, :string, default: nil, doc: "the current view for active menu state"
+  slot :inner_block, required: true
+
+  def superadmin(assigns) do
+    ~H"""
+    <div class={[
+      "flex flex-wrap items-center justify-between gap-4",
+      "px-2 sm:px-4 lg:px-8",
+      "mb-8"
+    ]}>
+      <menu class={[]}>
+        <ul class="menu menu-horizontal gap-1">
+          <.menu_item tenant={@scope.tenant} view="bot" target="_">Bot</.menu_item>
+        </ul>
+      </menu>
+    </div>
+
+    <.container>
+      {render_slot(@inner_block)}
+    </.container>
+    """
+  end
+
+  attr :scope, :map,
+    default: %{actor: nil, avatar_url: nil, tenant: nil},
+    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+
   attr :presences, :list, default: []
   attr :view, :string, default: nil, doc: "the current view for active menu state"
   slot :inner_block, required: true

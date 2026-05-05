@@ -127,6 +127,14 @@
   --color-base-300: oklch(85% var(--c) var(--h));
 }
 
+.textarea,
+.input {
+  &:focus,
+  &:focus-within {
+    outline: 0px;
+  }
+}
+
 .btn,
 .menu {
   @apply font-bold transition;

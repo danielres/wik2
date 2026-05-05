@@ -1,6 +1,10 @@
 defmodule Wik.Events.Event do
   alias Wik.Accounts.Group
+  alias Wik.Events.Event.Changes.CreateOriginPublication
+  alias Wik.Events.Event.Changes.SetGroupFromCurrentTenant
+  alias Wik.Events.Event.Changes.SetScheduleFromLocalFields
   alias Wik.Events.Event.Validations.Timing
+  alias Wik.Events.Event.Validations.Tz
 
   use Ash.Resource,
     otp_app: :wik,
@@ -17,7 +21,6 @@ defmodule Wik.Events.Event do
   code_interface do
     define :cancel, action: :cancel
     define :create, action: :create
-    define :get_by_id, action: :read, get_by: [:id]
   end
 
   actions do
@@ -27,31 +30,64 @@ defmodule Wik.Events.Event do
       accept [
         :all_day,
         :description,
-        :ends_at,
-        :location_name,
-        :location_text,
+        :location,
         :provenance_policy,
         :relay_policy,
-        :starts_at,
+        :tz,
         :title
       ]
 
+      argument :starts_on, :date do
+        allow_nil? true
+      end
+
+      argument :starts_at_time, :time do
+        allow_nil? true
+      end
+
+      argument :ends_on, :date do
+        allow_nil? true
+      end
+
+      argument :ends_at_time, :time do
+        allow_nil? true
+      end
+
       change relate_actor(:author, allow_nil?: false)
+      change SetGroupFromCurrentTenant
+      change SetScheduleFromLocalFields
+      change CreateOriginPublication
     end
 
     update :update do
       accept [
         :all_day,
         :description,
-        :ends_at,
-        :location_name,
-        :location_text,
+        :location,
         :provenance_policy,
         :relay_policy,
-        :starts_at,
+        :status,
+        :tz,
         :title
       ]
 
+      argument :starts_on, :date do
+        allow_nil? true
+      end
+
+      argument :starts_at_time, :time do
+        allow_nil? true
+      end
+
+      argument :ends_on, :date do
+        allow_nil? true
+      end
+
+      argument :ends_at_time, :time do
+        allow_nil? true
+      end
+
+      change SetScheduleFromLocalFields
       require_atomic? false
     end
 
@@ -98,12 +134,7 @@ defmodule Wik.Events.Event do
 
   validations do
     validate Timing
-  end
-
-  multitenancy do
-    strategy :attribute
-    attribute :group_id
-    parse_attribute {Wik.Accounts, :group_name_to_id, []}
+    validate Tz
   end
 
   attributes do
@@ -126,14 +157,9 @@ defmodule Wik.Events.Event do
       allow_nil? true
     end
 
-    attribute :location_name, :string do
+    attribute :location, :string do
       public? true
       allow_nil? false
-    end
-
-    attribute :location_text, :string do
-      public? true
-      allow_nil? true
     end
 
     attribute :provenance_policy, :atom do
@@ -151,6 +177,11 @@ defmodule Wik.Events.Event do
     end
 
     attribute :starts_at, :utc_datetime do
+      public? true
+      allow_nil? false
+    end
+
+    attribute :tz, :string do
       public? true
       allow_nil? false
     end

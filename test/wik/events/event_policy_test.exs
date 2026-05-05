@@ -110,18 +110,17 @@ defmodule Wik.Events.EventPolicyTest do
   end
 
   defp event_attrs(overrides \\ []) do
-    starts_at = ~U[2026-05-10 18:00:00Z]
-    ends_at = ~U[2026-05-10 20:00:00Z]
-
     %{
       all_day: false,
       description: "An event description",
-      ends_at: ends_at,
-      location_name: "Community Hall",
-      location_text: "123 Example Street",
+      ends_at_time: "20:00",
+      ends_on: "2026-05-10",
+      location: "Community Hall, 123 Example Street",
       provenance_policy: :visible,
       relay_policy: :internal_only,
-      starts_at: starts_at,
+      starts_at_time: "18:00",
+      starts_on: "2026-05-10",
+      tz: "Etc/UTC",
       title: "Shared Dinner"
     }
     |> Map.merge(Enum.into(overrides, %{}))

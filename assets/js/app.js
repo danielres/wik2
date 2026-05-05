@@ -40,7 +40,7 @@ const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: { _csrf_token: csrfToken, time_zone: timeZone },
+  params: { _csrf_token: csrfToken, tz: timeZone },
   hooks: {
     ...colocatedHooks,
     CapitalizeFirstLetter,

@@ -38,7 +38,7 @@ defmodule WikWeb.MeLive do
           "flex ml-auto"
         ]}>
           <span class="tooltip">
-            <span class="text-sm">Timezone: {@time_zone}</span>
+            <span class="text-sm">Timezone: {@tz}</span>
             <div class="tooltip-content max-w-[10rem] text-xs">
               Auto-detected from your browser settings.
             </div>

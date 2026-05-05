@@ -22,7 +22,7 @@ defmodule WikWeb.LiveUserAuth do
       socket
       |> AshAuthentication.Phoenix.LiveSession.assign_new_resources(session)
       |> assign_current_user_for_dev()
-      |> assign_time_zone()
+      |> assign_tz()
       |> assign_context()
       |> ErrorTrackerContext.set()
       |> attach_context_hook()
@@ -39,7 +39,7 @@ defmodule WikWeb.LiveUserAuth do
         socket
         |> assign(:current_user, current_user)
         |> assign(current_scope: current_scope)
-        |> assign_time_zone()
+        |> assign_tz()
         |> assign_context()
         |> ErrorTrackerContext.set()
         |> attach_context_hook()
@@ -64,7 +64,7 @@ defmodule WikWeb.LiveUserAuth do
           socket
           |> assign(:current_user, current_user)
           |> assign(current_scope: current_scope)
-          |> assign_time_zone()
+          |> assign_tz()
           |> assign_context()
           |> ErrorTrackerContext.set()
           |> attach_context_hook()
@@ -93,7 +93,7 @@ defmodule WikWeb.LiveUserAuth do
             socket
             |> assign(:current_user, current_user)
             |> assign(current_scope: current_scope)
-            |> assign_time_zone()
+            |> assign_tz()
             |> assign_context()
             |> ErrorTrackerContext.set()
             |> attach_context_hook()
@@ -152,14 +152,15 @@ defmodule WikWeb.LiveUserAuth do
     assign(socket, :context, Context.build(socket.assigns[:current_user]))
   end
 
-  defp assign_time_zone(socket) do
-    time_zone =
+  defp assign_tz(socket) do
+    tz =
       case get_connect_params(socket) do
-        %{"time_zone" => time_zone} when is_binary(time_zone) and time_zone != "" -> time_zone
+        %{"tz" => tz} when is_binary(tz) and tz != "" -> tz
         _ -> "Etc/UTC"
       end
 
-    assign_new(socket, :time_zone, fn -> time_zone end)
+    socket
+    |> assign_new(:tz, fn -> tz end)
   end
 
   defp attach_context_hook(socket) do

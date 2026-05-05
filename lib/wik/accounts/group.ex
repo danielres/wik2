@@ -2,6 +2,7 @@ defmodule Wik.Accounts.Group do
   alias Wik.Access.Source
   alias Wik.Accounts.Group.Changes
   alias Wik.Accounts.Group.Checks
+  alias Wik.Events.EventPublication
   alias Wik.Accounts.User
   alias Wik.Accounts.GroupUserRelation
 
@@ -109,6 +110,11 @@ defmodule Wik.Accounts.Group do
 
     has_many :access_sources, Source do
       destination_attribute :group_id
+    end
+
+    has_many :event_publications, EventPublication do
+      source_attribute :id
+      destination_attribute :target_group_id
     end
 
     many_to_many :users, User do

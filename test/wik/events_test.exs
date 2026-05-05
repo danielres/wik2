@@ -3,6 +3,7 @@ defmodule Wik.EventsTest do
 
   import Wik.TestGenerators
 
+  alias Ash.Query
   alias Wik.Accounts.GroupUserRelation
   alias Wik.Events
   alias Wik.Events.EventPublication
@@ -52,12 +53,13 @@ defmodule Wik.EventsTest do
       attrs =
         event_attrs(
           all_day: true,
-          ends_at: ~U[2026-05-10 20:00:00Z]
+          ends_on: "2026-05-15",
+          starts_on: "2026-05-15"
         )
 
       assert {:ok, event} = Events.create_event(attrs, scope: scope(owner, group))
       assert event.all_day
-      assert event.ends_at == ~U[2026-05-10 20:00:00Z]
+      assert event.ends_at == ~U[2026-05-15 23:59:59Z]
     end
   end
 
@@ -174,6 +176,92 @@ defmodule Wik.EventsTest do
     end
   end
 
+  describe "group event publications timeline load" do
+    test "returns only upcoming publications visible in the current group ordered by start time" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+
+      add_membership(group, actor, :owner)
+
+      {:ok, later_event} =
+        Events.create_event(
+          event_attrs(
+            title: "Later",
+            starts_on: "2026-05-20",
+            starts_at_time: "18:00",
+            ends_on: "2026-05-20",
+            ends_at_time: "20:00"
+          ),
+          scope: scope(actor, group)
+        )
+
+      {:ok, earlier_event} =
+        Events.create_event(
+          event_attrs(
+            title: "Earlier",
+            starts_on: "2026-05-10",
+            starts_at_time: "18:00",
+            ends_on: "2026-05-10",
+            ends_at_time: "20:00"
+          ),
+          scope: scope(actor, group)
+        )
+
+      {:ok, group} =
+        Ash.load(group, [event_publications: timeline_query()], scope: scope(actor, group))
+
+      assert Enum.map(group.event_publications, & &1.event_id) == [
+               earlier_event.id,
+               later_event.id
+             ]
+    end
+
+    test "includes relayed events in the target group's timeline" do
+      actor = generate(user())
+      origin_group = generate(group(author: actor))
+      target_group = generate(group(author: actor))
+
+      add_membership(origin_group, actor, :owner)
+      add_membership(target_group, actor, :owner)
+
+      {:ok, event} =
+        Events.create_event(
+          event_attrs(relay_policy: :admins_only_groups),
+          scope: scope(actor, origin_group)
+        )
+
+      {:ok, _publication} =
+        Events.relay_event_to_group(event, target_group, scope: scope(actor, origin_group))
+
+      {:ok, target_group} =
+        Ash.load(
+          target_group,
+          [event_publications: timeline_query()],
+          scope: scope(actor, target_group)
+        )
+
+      assert Enum.any?(
+               target_group.event_publications,
+               &(&1.event_id == event.id and &1.publication_type == :relay)
+             )
+    end
+
+    test "keeps cancelled events visible in the group timeline" do
+      actor = generate(user())
+      group = generate(group(author: actor))
+
+      add_membership(group, actor, :owner)
+
+      {:ok, event} = Events.create_event(event_attrs(), scope: scope(actor, group))
+      assert {:ok, _cancelled} = Wik.Events.Event.cancel(event, scope: scope(actor, group))
+
+      {:ok, group} =
+        Ash.load(group, [event_publications: timeline_query()], scope: scope(actor, group))
+
+      assert [%{event: %{status: :cancelled}}] = group.event_publications
+    end
+  end
+
   defp add_membership(group, user, type) do
     {:ok, membership} =
       Ash.create(
@@ -186,19 +274,20 @@ defmodule Wik.EventsTest do
     membership
   end
 
-  defp event_attrs(overrides \\ []) do
-    starts_at = ~U[2026-05-10 18:00:00Z]
-    ends_at = ~U[2026-05-10 20:00:00Z]
+  defp event_attrs, do: event_attrs([])
 
+  defp event_attrs(overrides) do
     %{
       all_day: false,
       description: "An event description",
-      ends_at: ends_at,
-      location_name: "Community Hall",
-      location_text: "123 Example Street",
+      ends_at_time: "20:00",
+      ends_on: "2026-05-10",
+      location: "Community Hall, 123 Example Street",
       provenance_policy: :visible,
       relay_policy: :internal_only,
-      starts_at: starts_at,
+      starts_at_time: "18:00",
+      starts_on: "2026-05-10",
+      tz: "Etc/UTC",
       title: "Shared Dinner"
     }
     |> Map.merge(Enum.into(overrides, %{}))
@@ -206,5 +295,11 @@ defmodule Wik.EventsTest do
 
   defp scope(actor, tenant) do
     %Scope{actor: actor, tenant: tenant}
+  end
+
+  defp timeline_query do
+    EventPublication
+    |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
+    |> Query.load([:published_by, event: [:author, :group]])
   end
 end

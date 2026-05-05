@@ -38,7 +38,7 @@ defmodule WikWeb.Components.Modal do
         phx-mounted={JS.focus_first(to: "form")}
         phx-target={assigns[:"phx-target"]}
       >
-        <h3 :if={@title != []} class="mb-2">
+        <h3 class="mb-2">
           {render_slot(@title)}
         </h3>
 

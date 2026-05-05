@@ -51,6 +51,146 @@ defmodule WikWeb.EventsLiveTest do
     assert render(view) =~ "Community Hall, 123 Example Street"
   end
 
+  test "relay button appears only when there is an eligible target group", %{conn: conn} do
+    owner = generate(user())
+    target_owner = generate(user())
+    origin_group = generate(group(author: owner))
+    target_group = generate(group(author: target_owner))
+
+    add_membership(origin_group, owner, :owner)
+    add_membership(target_group, owner, :owner)
+
+    {:ok, event} =
+      Events.create_event(
+        event_attrs(relay_policy: :admins_only_groups),
+        scope: scope(owner, origin_group)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
+      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{origin_group.name}/events?#{%{event: publication.id}}")
+
+    assert has_element?(view, testid("event-detail-relay-#{publication.id}"))
+
+    {:ok, internal_event} =
+      Events.create_event(
+        event_attrs(
+          relay_policy: :internal_only,
+          starts_on: "2026-05-11",
+          ends_on: "2026-05-11",
+          title: "Internal event"
+        ),
+        scope: scope(owner, origin_group)
+      )
+
+    {:ok, internal_publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^internal_event.id and target_group_id == ^origin_group.id)
+      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+
+    {:ok, internal_view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{origin_group.name}/events?#{%{event: internal_publication.id}}")
+
+    refute has_element?(internal_view, testid("event-detail-relay-#{internal_publication.id}"))
+  end
+
+  test "relay mode replaces details and successful relay returns to details", %{conn: conn} do
+    owner = generate(user())
+    target_owner = generate(user())
+    origin_group = generate(group(author: owner))
+    target_group = generate(group(author: target_owner))
+
+    add_membership(origin_group, owner, :owner)
+    add_membership(target_group, owner, :owner)
+
+    {:ok, event} =
+      Events.create_event(
+        event_attrs(relay_policy: :admins_only_groups),
+        scope: scope(owner, origin_group)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
+      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{origin_group.name}/events?#{%{event: publication.id}}")
+
+    render_click(element(view, testid("event-detail-relay-#{publication.id}")))
+
+    assert has_element?(view, testid("event-relay-form"))
+    refute has_element?(view, testid("event-detail"))
+
+    render_submit(
+      form(view, testid("event-relay-form"),
+        relay: %{
+          "relay_note" => "Worth sharing",
+          "target_group_id" => target_group.id
+        }
+      )
+    )
+
+    refute has_element?(view, testid("event-relay-form"))
+    assert has_element?(view, testid("event-detail"))
+    assert render(view) =~ "Event relayed"
+
+    assert {:ok, relay_publication} =
+             Wik.Events.EventPublication
+             |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^target_group.id)
+             |> Ash.read_first(
+               authorize?: false,
+               domain: Wik.Events,
+               scope: scope(owner, target_group)
+             )
+
+    assert relay_publication.relay_note == "Worth sharing"
+  end
+
+  test "relay mode can be cancelled back to details", %{conn: conn} do
+    owner = generate(user())
+    target_owner = generate(user())
+    origin_group = generate(group(author: owner))
+    target_group = generate(group(author: target_owner))
+
+    add_membership(origin_group, owner, :owner)
+    add_membership(target_group, owner, :owner)
+
+    {:ok, event} =
+      Events.create_event(
+        event_attrs(relay_policy: :admins_only_groups),
+        scope: scope(owner, origin_group)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
+      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{origin_group.name}/events?#{%{event: publication.id}}")
+
+    render_click(element(view, testid("event-detail-relay-#{publication.id}")))
+    assert has_element?(view, testid("event-relay-form"))
+
+    render_click(element(view, testid("event-relay-cancel")))
+
+    refute has_element?(view, testid("event-relay-form"))
+    assert has_element?(view, testid("event-detail"))
+  end
+
   test "owner can create an event from the modal", %{conn: conn} do
     owner = generate(user())
     group = generate(group(author: owner))

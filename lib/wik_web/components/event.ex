@@ -6,6 +6,7 @@ defmodule WikWeb.Components.Event do
   alias WikWeb.EventsLive.EventForm
 
   attr :form, Phoenix.HTML.Form, required: true
+  attr :target, :any, default: nil
 
   def event_form(assigns) do
     ~H"""
@@ -15,6 +16,7 @@ defmodule WikWeb.Components.Event do
       data-testid="event-form"
       phx-change="event_form_validate"
       phx-submit="event_form_submit"
+      phx-target={@target}
     >
       <div class="space-y-3">
         <.input field={@form[:title]} label="Title" />
@@ -101,6 +103,7 @@ defmodule WikWeb.Components.Event do
             class="btn btn-ghost btn-sm"
             data-testid="event-form-dismiss"
             phx-click="event_form_cancel"
+            phx-target={@target}
           >
             Close
           </button>
@@ -154,8 +157,9 @@ defmodule WikWeb.Components.Event do
   end
 
   attr :can_edit?, :boolean, required: true
-  attr :current_scope, :map, required: true
+  attr :can_relay?, :boolean, required: true
   attr :publication, :map, required: true
+  attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
   def event_details(assigns) do
@@ -177,20 +181,39 @@ defmodule WikWeb.Components.Event do
               />
             </div>
 
-            <button
-              :if={@can_edit?}
-              class={[
-                "btn btn-sm btn-circle",
-                "bg-accent/70 hover:bg-accent",
-                "transition-opacity",
-                "backdrop-blur"
-              ]}
-              data-testid={"event-detail-edit-#{@publication.id}"}
-              phx-click="event_detail_edit_start"
-              phx-value-publication_id={@publication.id}
-            >
-              <.icon name="hero-pencil-square-micro" class="size-4" />
-            </button>
+            <div class="flex items-start gap-2">
+              <button
+                :if={@can_relay?}
+                class={[
+                  "btn btn-sm",
+                  "bg-base-300/80 hover:bg-base-300",
+                  "transition-colors",
+                  "backdrop-blur"
+                ]}
+                data-testid={"event-detail-relay-#{@publication.id}"}
+                phx-click="event_detail_relay_start"
+                phx-value-publication_id={@publication.id}
+                phx-target={@target}
+              >
+                Relay
+              </button>
+
+              <button
+                :if={@can_edit?}
+                class={[
+                  "btn btn-sm btn-circle",
+                  "bg-accent/70 hover:bg-accent",
+                  "transition-opacity",
+                  "backdrop-blur"
+                ]}
+                data-testid={"event-detail-edit-#{@publication.id}"}
+                phx-click="event_detail_edit_start"
+                phx-value-publication_id={@publication.id}
+                phx-target={@target}
+              >
+                <.icon name="hero-pencil-square-micro" class="size-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -239,6 +262,103 @@ defmodule WikWeb.Components.Event do
         >
           {@publication.relay_note}
         </p>
+      </div>
+    </div>
+    """
+  end
+
+  attr :publication, :map, required: true
+  attr :relay_error, :string, default: nil
+  attr :relay_form, Phoenix.HTML.Form, required: true
+  attr :relay_target_groups, :list, required: true
+  attr :target, :any, default: nil
+
+  def relay_form(assigns) do
+    ~H"""
+    <div class="space-y-5" data-testid="event-relay">
+      <div class="space-y-1">
+        <div class="text-xs uppercase tracking-wide opacity-50">
+          Relay event
+        </div>
+
+        <h2 class="text-base font-medium leading-tight">
+          {@publication.event.title}
+        </h2>
+      </div>
+
+      <p
+        :if={@relay_error not in [nil, ""]}
+        class="text-sm text-error"
+        data-testid="event-relay-error"
+      >
+        {@relay_error}
+      </p>
+
+      <div
+        :if={@relay_target_groups == [] and @relay_error in [nil, ""]}
+        class="text-sm opacity-70"
+        data-testid="event-relay-empty"
+      >
+        No groups available to relay to.
+      </div>
+
+      <.form
+        :if={@relay_target_groups != []}
+        for={@relay_form}
+        id="event-relay-form"
+        data-testid="event-relay-form"
+        phx-submit="event_relay_submit"
+        phx-target={@target}
+      >
+        <div class="space-y-4">
+          <.input
+            field={@relay_form[:target_group_id]}
+            id="event-relay-target-group-id"
+            label="Target group"
+            options={Enum.map(@relay_target_groups, &{&1.name, &1.id})}
+            prompt="Select a group"
+            type="select"
+          />
+
+          <.input
+            field={@relay_form[:relay_note]}
+            id="event-relay-note"
+            label="Relay note"
+            type="textarea"
+          />
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              data-testid="event-relay-cancel"
+              phx-click="event_relay_cancel"
+              phx-target={@target}
+            >
+              Back
+            </button>
+
+            <button
+              type="submit"
+              class="btn btn-accent btn-sm"
+              data-testid="event-relay-submit"
+            >
+              Relay
+            </button>
+          </div>
+        </div>
+      </.form>
+
+      <div :if={@relay_target_groups == []} class="flex justify-end pt-2">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          data-testid="event-relay-cancel"
+          phx-click="event_relay_cancel"
+          phx-target={@target}
+        >
+          Back
+        </button>
       </div>
     </div>
     """

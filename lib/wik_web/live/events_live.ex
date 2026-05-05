@@ -6,6 +6,7 @@ defmodule WikWeb.EventsLive do
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
   alias WikWeb.Components
+  alias WikWeb.EventsLive.EventDetailsComponent
   alias WikWeb.EventsLive.EventForm
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
@@ -65,9 +66,10 @@ defmodule WikWeb.EventsLive do
             </div>
           </:title>
 
-          <Components.Event.event_details
-            :if={@event_form == nil and @selected_publication != nil}
-            can_edit?={Ash.can?({@selected_publication.event, :update}, @current_scope)}
+          <.live_component
+            :if={@selected_publication != nil}
+            module={EventDetailsComponent}
+            id={"event-details-#{@selected_publication.id}"}
             current_scope={@current_scope}
             publication={@selected_publication}
             user_tz={@tz}
@@ -92,11 +94,17 @@ defmodule WikWeb.EventsLive do
         Enum.find(event_publications, &(&1.id == params["event"]))
 
     socket =
-      socket
-      |> assign(:selected_publication, publication)
-      |> then(fn socket ->
-        if is_nil(publication), do: assign(socket, :event_form, nil), else: socket
-      end)
+      case publication do
+        nil ->
+          socket
+          |> assign(:event_form, nil)
+          |> assign(:selected_publication, nil)
+
+        publication ->
+          socket
+          |> assign(:event_form, nil)
+          |> assign(:selected_publication, publication)
+      end
 
     {:noreply, socket}
   end
@@ -110,27 +118,6 @@ defmodule WikWeb.EventsLive do
       socket
       |> assign(:selected_publication, nil)
       |> assign(:event_form, EventForm.new(current_scope, tz))
-
-    {:noreply, socket}
-  end
-
-  def handle_event("event_detail_edit_start", %{"publication_id" => publication_id}, socket) do
-    event_publications = socket.assigns.event_publications
-    current_scope = socket.assigns.current_scope
-
-    socket =
-      case Enum.find(event_publications, &(&1.id == publication_id)) do
-        nil ->
-          socket
-
-        publication ->
-          socket
-          |> assign(:selected_publication, publication)
-          |> assign(
-            :event_form,
-            EventForm.edit(publication.event, current_scope)
-          )
-      end
 
     {:noreply, socket}
   end
@@ -171,10 +158,30 @@ defmodule WikWeb.EventsLive do
   def handle_event("event_modal_close", _params, socket) do
     current_scope = socket.assigns.current_scope
 
-    {:noreply,
-     socket
-     |> assign(:event_form, nil)
-     |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")}
+    socket =
+      socket
+      |> assign(:event_form, nil)
+      |> assign(:selected_publication, nil)
+      |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:event_details_saved, socket) do
+    current_scope = socket.assigns.current_scope
+
+    socket =
+      socket
+      |> assign(:selected_publication, nil)
+      |> refresh_timeline()
+      |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+
+    {:noreply, socket}
+  end
+
+  def handle_info(:event_relay_completed, socket) do
+    {:noreply, put_flash(socket, :info, "Event relayed")}
   end
 
   defp refresh_timeline(socket) do

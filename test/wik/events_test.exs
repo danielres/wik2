@@ -176,6 +176,87 @@ defmodule Wik.EventsTest do
     end
   end
 
+  describe "list_relay_target_groups/2" do
+    test "excludes the origin group and groups where the event is already published" do
+      actor = generate(user())
+      origin_group = generate(group(author: actor))
+      first_target_group = generate(group(author: actor))
+      second_target_group = generate(group(author: actor))
+
+      add_membership(origin_group, actor, :owner)
+      add_membership(first_target_group, actor, :owner)
+      add_membership(second_target_group, actor, :owner)
+
+      {:ok, event} =
+        Events.create_event(
+          event_attrs(relay_policy: :admins_only_groups),
+          scope: scope(actor, origin_group)
+        )
+
+      assert {:ok, _publication} =
+               Events.relay_event_to_group(event, first_target_group,
+                 scope: scope(actor, origin_group)
+               )
+
+      assert {:ok, [group]} = Events.list_relay_target_groups(event, scope(actor, origin_group))
+      assert group.id == second_target_group.id
+    end
+
+    test "returns no targets for internal-only events" do
+      actor = generate(user())
+      origin_group = generate(group(author: actor))
+      target_group = generate(group(author: actor))
+
+      add_membership(origin_group, actor, :owner)
+      add_membership(target_group, actor, :owner)
+
+      {:ok, event} =
+        Events.create_event(
+          event_attrs(relay_policy: :internal_only),
+          scope: scope(actor, origin_group)
+        )
+
+      assert {:ok, []} = Events.list_relay_target_groups(event, scope(actor, origin_group))
+    end
+
+    test "allows members to see target groups only when the policy allows members" do
+      owner = generate(user())
+      member = generate(user())
+      origin_group = generate(group(author: owner))
+      target_group = generate(group(author: member))
+
+      add_membership(origin_group, owner, :owner)
+      add_membership(origin_group, member, :member)
+      add_membership(target_group, member, :owner)
+      grant_active_telegram_access(origin_group, member)
+
+      {:ok, admin_only_event} =
+        Events.create_event(
+          event_attrs(relay_policy: :admins_only_groups),
+          scope: scope(owner, origin_group)
+        )
+
+      {:ok, members_event} =
+        Events.create_event(
+          event_attrs(
+            relay_policy: :members_to_groups,
+            starts_on: "2026-05-11",
+            ends_on: "2026-05-11",
+            title: "Members event"
+          ),
+          scope: scope(owner, origin_group)
+        )
+
+      assert {:ok, []} =
+               Events.list_relay_target_groups(admin_only_event, scope(member, origin_group))
+
+      assert {:ok, [group]} =
+               Events.list_relay_target_groups(members_event, scope(member, origin_group))
+
+      assert group.id == target_group.id
+    end
+  end
+
   describe "group event publications timeline load" do
     test "returns only upcoming publications visible in the current group ordered by start time" do
       actor = generate(user())

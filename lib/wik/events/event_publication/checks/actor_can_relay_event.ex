@@ -22,7 +22,7 @@ defmodule Wik.Events.EventPublication.Checks.ActorCanRelayEvent do
          {:ok, event_id} <- present(event_id),
          {:ok, %Event{} = event} <- load_event(subject, event_id),
          {:ok, true} <- Access.actor_can_access_group?(actor.id, target_group_id) do
-      actor_can_relay_event?(actor.id, event, target_group_id)
+      relay_allowed_by_event_policy?(actor.id, event, target_group_id)
     else
       {:ok, false} -> {:ok, false}
       {:ok, nil} -> {:ok, false}
@@ -33,21 +33,21 @@ defmodule Wik.Events.EventPublication.Checks.ActorCanRelayEvent do
 
   def match?(_actor, _context, _opts), do: {:ok, false}
 
-  defp actor_can_relay_event?(_actor_id, %{status: status}, _target_group_id)
-       when status != :published do
+  def relay_allowed_by_event_policy?(_actor_id, %{status: status}, _target_group_id)
+      when status != :published do
     {:ok, false}
   end
 
-  defp actor_can_relay_event?(_actor_id, %{group_id: group_id}, target_group_id)
-       when group_id == target_group_id do
+  def relay_allowed_by_event_policy?(_actor_id, %{group_id: group_id}, target_group_id)
+      when group_id == target_group_id do
     {:ok, false}
   end
 
-  defp actor_can_relay_event?(
-         actor_id,
-         %{group_id: group_id, relay_policy: relay_policy},
-         _target_group_id
-       ) do
+  def relay_allowed_by_event_policy?(
+        actor_id,
+        %{group_id: group_id, relay_policy: relay_policy},
+        _target_group_id
+      ) do
     case relay_policy do
       :internal_only ->
         {:ok, false}

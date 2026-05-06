@@ -41,6 +41,7 @@ defmodule Wik.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ical, "~> 2.0"},
       {:error_tracker, "~> 0.9"},
       {:hunt_szymanski_diff, "~> 0.1.0"},
       {:cinder, "~> 0.12"},

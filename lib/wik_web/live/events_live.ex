@@ -168,7 +168,7 @@ defmodule WikWeb.EventsLive do
   end
 
   @impl true
-  def handle_info(:event_details_saved, socket) do
+  def handle_info({:event_details, :saved}, socket) do
     current_scope = socket.assigns.current_scope
 
     socket =
@@ -180,7 +180,7 @@ defmodule WikWeb.EventsLive do
     {:noreply, socket}
   end
 
-  def handle_info(:event_relay_completed, socket) do
+  def handle_info({:event_details, :relay_completed}, socket) do
     {:noreply, put_flash(socket, :info, "Event relayed")}
   end
 

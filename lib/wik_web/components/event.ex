@@ -165,55 +165,52 @@ defmodule WikWeb.Components.Event do
   def event_details(assigns) do
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
+      <div class="float-right flex flex-col items-start gap-1">
+        <button
+          :if={@can_edit?}
+          class={[
+            "btn btn-sm btn-circle",
+            "bg-accent/70 hover:bg-accent",
+            "transition-opacity",
+            "backdrop-blur"
+          ]}
+          data-testid={"event-detail-edit-#{@publication.id}"}
+          phx-click="event_detail_edit_start"
+          phx-value-publication_id={@publication.id}
+          phx-target={@target}
+        >
+          <.icon name="hero-pencil-square-micro" class="size-4" />
+        </button>
+        <button
+          :if={@can_relay?}
+          class={[
+            "btn btn-sm btn-circle",
+            "bg-accent/70 hover:bg-accent",
+            "transition-opacity",
+            "backdrop-blur"
+          ]}
+          data-testid={"event-detail-relay-#{@publication.id}"}
+          phx-click="event_detail_relay_start"
+          phx-value-publication_id={@publication.id}
+          phx-target={@target}
+        >
+          <.icon name="hero-share-micro" class="size-4" />
+        </button>
+      </div>
+
       <div class="">
-        <div class="">
-          <div class="flex justify-between gap-2 mb-4">
-            <.event_header event={@publication.event} />
-            <.event_status event={@publication.event} />
-          </div>
+        <div class="flex justify-between gap-2 mb-4">
+          <.event_header event={@publication.event} />
+          <.event_status event={@publication.event} />
+        </div>
 
-          <div class="grid grid-cols-[1fr_auto] gap-4">
-            <div>
-              <.schedule
-                class="text-sm opacity-70"
-                event={@publication.event}
-                user_tz={@user_tz}
-              />
-            </div>
-
-            <div class="flex items-start gap-2">
-              <button
-                :if={@can_relay?}
-                class={[
-                  "btn btn-sm",
-                  "bg-base-300/80 hover:bg-base-300",
-                  "transition-colors",
-                  "backdrop-blur"
-                ]}
-                data-testid={"event-detail-relay-#{@publication.id}"}
-                phx-click="event_detail_relay_start"
-                phx-value-publication_id={@publication.id}
-                phx-target={@target}
-              >
-                Relay
-              </button>
-
-              <button
-                :if={@can_edit?}
-                class={[
-                  "btn btn-sm btn-circle",
-                  "bg-accent/70 hover:bg-accent",
-                  "transition-opacity",
-                  "backdrop-blur"
-                ]}
-                data-testid={"event-detail-edit-#{@publication.id}"}
-                phx-click="event_detail_edit_start"
-                phx-value-publication_id={@publication.id}
-                phx-target={@target}
-              >
-                <.icon name="hero-pencil-square-micro" class="size-4" />
-              </button>
-            </div>
+        <div class="grid grid-cols-[1fr_auto] gap-4">
+          <div>
+            <.schedule
+              class="text-sm opacity-70"
+              event={@publication.event}
+              user_tz={@user_tz}
+            />
           </div>
         </div>
       </div>

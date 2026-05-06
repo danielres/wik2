@@ -54,6 +54,13 @@ defmodule Wik.Events do
     EventPublication.relay_to_group(attrs, scope: relay_scope)
   end
 
+  def can_relay_event_to_any_group?(%Event{} = event, scope) do
+    case list_relay_target_groups(event, scope) do
+      {:ok, relay_target_groups} -> {:ok, relay_target_groups != []}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   def list_relay_target_groups(%Event{} = event, scope) do
     published_group_ids = published_group_ids(event)
 

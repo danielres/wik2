@@ -257,6 +257,64 @@ defmodule Wik.EventsTest do
     end
   end
 
+  describe "can_relay_event_to_any_group?/2" do
+    test "returns false for internal-only events" do
+      actor = generate(user())
+      origin_group = generate(group(author: actor))
+      target_group = generate(group(author: actor))
+
+      add_membership(origin_group, actor, :owner)
+      add_membership(target_group, actor, :owner)
+
+      {:ok, event} =
+        Events.create_event(
+          event_attrs(relay_policy: :internal_only),
+          scope: scope(actor, origin_group)
+        )
+
+      assert {:ok, false} =
+               Events.can_relay_event_to_any_group?(event, scope(actor, origin_group))
+    end
+
+    test "returns false when no eligible targets remain" do
+      actor = generate(user())
+      origin_group = generate(group(author: actor))
+      target_group = generate(group(author: actor))
+
+      add_membership(origin_group, actor, :owner)
+      add_membership(target_group, actor, :owner)
+
+      {:ok, event} =
+        Events.create_event(
+          event_attrs(relay_policy: :admins_only_groups),
+          scope: scope(actor, origin_group)
+        )
+
+      assert {:ok, _publication} =
+               Events.relay_event_to_group(event, target_group, scope: scope(actor, origin_group))
+
+      assert {:ok, false} =
+               Events.can_relay_event_to_any_group?(event, scope(actor, origin_group))
+    end
+
+    test "returns true when at least one eligible target exists" do
+      actor = generate(user())
+      origin_group = generate(group(author: actor))
+      target_group = generate(group(author: actor))
+
+      add_membership(origin_group, actor, :owner)
+      add_membership(target_group, actor, :owner)
+
+      {:ok, event} =
+        Events.create_event(
+          event_attrs(relay_policy: :admins_only_groups),
+          scope: scope(actor, origin_group)
+        )
+
+      assert {:ok, true} = Events.can_relay_event_to_any_group?(event, scope(actor, origin_group))
+    end
+  end
+
   describe "group event publications timeline load" do
     test "returns only upcoming publications visible in the current group ordered by start time" do
       actor = generate(user())

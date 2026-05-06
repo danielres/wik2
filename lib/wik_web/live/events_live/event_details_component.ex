@@ -1,7 +1,6 @@
 defmodule WikWeb.EventsLive.EventDetailsComponent do
   use WikWeb, :live_component
 
-  alias Wik.Accounts.Group.Access
   alias Wik.Events
   alias WikWeb.Components
   alias WikWeb.EventsLive.EventForm
@@ -18,6 +17,7 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
       socket
       |> assign(assigns)
       |> maybe_reset_state(publication_changed?)
+      |> maybe_load_relay_eligibility(publication_changed?)
 
     {:ok, socket}
   end
@@ -29,7 +29,7 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
       <Components.Event.event_details
         :if={@mode == :show}
         can_edit?={Ash.can?({@publication.event, :update}, @current_scope)}
-        can_relay?={can_start_relay?(@publication.event, @current_scope)}
+        can_relay?={@can_relay?}
         publication={@publication}
         target={@myself}
         user_tz={@user_tz}
@@ -78,7 +78,7 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
     socket =
       case EventForm.submit(socket.assigns.event_form, params, socket.assigns.current_scope) do
         {:ok, _event} ->
-          send(self(), :event_details_saved)
+          send(self(), {:event_details, :saved})
           socket
 
         {:error, form} ->
@@ -133,11 +133,12 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
                  relay_note: relay_note
                ) do
             {:ok, _relay_publication} ->
-              send(self(), :event_relay_completed)
+              send(self(), {:event_details, :relay_completed})
 
               socket
               |> assign(:mode, :show)
               |> assign(:relay_error, nil)
+              |> load_relay_eligibility()
 
             {:error, _error} ->
               assign(socket, :relay_error, "Could not relay event")
@@ -150,6 +151,7 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
 
   defp maybe_reset_state(socket, true) do
     socket
+    |> assign(:can_relay?, false)
     |> assign(:event_form, nil)
     |> assign(:mode, :show)
     |> assign(:relay_error, nil)
@@ -158,6 +160,25 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
   end
 
   defp maybe_reset_state(socket, false), do: socket
+
+  defp maybe_load_relay_eligibility(socket, true) do
+    load_relay_eligibility(socket)
+  end
+
+  defp maybe_load_relay_eligibility(socket, false), do: socket
+
+  defp load_relay_eligibility(socket) do
+    case Events.can_relay_event_to_any_group?(
+           socket.assigns.publication.event,
+           socket.assigns.current_scope
+         ) do
+      {:ok, can_relay?} ->
+        assign(socket, :can_relay?, can_relay?)
+
+      {:error, _error} ->
+        assign(socket, :can_relay?, false)
+    end
+  end
 
   defp load_relay_state(socket) do
     case Events.list_relay_target_groups(
@@ -183,19 +204,4 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
         |> assign(:relay_error, "Could not load relay targets")
     end
   end
-
-  defp can_start_relay?(%{status: status}, _scope) when status != :published, do: false
-  defp can_start_relay?(%{relay_policy: :internal_only}, _scope), do: false
-
-  defp can_start_relay?(%{group_id: group_id, relay_policy: :admins_only_groups}, scope) do
-    allowed?(Access.actor_can_manage_group?(scope.actor.id, group_id))
-  end
-
-  defp can_start_relay?(%{group_id: group_id, relay_policy: :members_to_groups}, scope) do
-    allowed?(Access.actor_can_access_group?(scope.actor.id, group_id))
-  end
-
-  defp allowed?({:ok, allowed}), do: allowed
-  defp allowed?({:error, _error}), do: false
-
 end

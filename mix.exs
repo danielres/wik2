@@ -22,7 +22,7 @@ defmodule Wik.MixProject do
   def application do
     [
       mod: {Wik.Application, []},
-      extra_applications: [:logger, :runtime_tools, :tzdata]
+      extra_applications: [:logger, :runtime_tools]
     ]
   end
 

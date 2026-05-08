@@ -1,9 +1,9 @@
-defmodule WikWeb.EventsLive.EventDetailsComponent do
+defmodule WikWeb.Components.Event.Details do
   use WikWeb, :live_component
 
+  alias AshPhoenix.Form
   alias Wik.Events
-  alias WikWeb.Components
-  alias WikWeb.EventsLive.EventForm
+  alias WikWeb.Components.Event
 
   @impl true
   def update(%{publication: publication} = assigns, socket) do
@@ -26,7 +26,7 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <Components.Event.event_details
+      <Event.event_details
         :if={@mode == :show}
         can_edit?={Ash.can?({@publication.event, :update}, @current_scope)}
         can_relay?={@can_relay?}
@@ -35,13 +35,13 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
         user_tz={@user_tz}
       />
 
-      <Components.Event.event_form
+      <Event.event_form
         :if={@mode == :edit}
         form={@event_form}
         target={@myself}
       />
 
-      <Components.Event.relay_form
+      <Event.relay_form
         :if={@mode == :relay}
         publication={@publication}
         relay_error={@relay_error}
@@ -60,7 +60,7 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
       |> assign(:mode, :edit)
       |> assign(
         :event_form,
-        EventForm.edit(socket.assigns.publication.event, socket.assigns.current_scope)
+        Event.FormState.edit(socket.assigns.publication.event, socket.assigns.current_scope)
       )
 
     {:noreply, socket}
@@ -69,14 +69,17 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
   def handle_event("event_form_validate", %{"form" => params}, socket) do
     socket =
       socket
-      |> assign(:event_form, EventForm.validate(socket.assigns.event_form, params))
+      |> assign(:event_form, Event.FormState.validate(socket.assigns.event_form, params))
 
     {:noreply, socket}
   end
 
   def handle_event("event_form_submit", %{"form" => params}, socket) do
     socket =
-      case EventForm.submit(socket.assigns.event_form, params, socket.assigns.current_scope) do
+      case Form.submit(socket.assigns.event_form,
+             params: params,
+             action_opts: [scope: socket.assigns.current_scope]
+           ) do
         {:ok, _event} ->
           send(self(), {:event_details, :saved})
           socket
@@ -128,7 +131,7 @@ defmodule WikWeb.EventsLive.EventDetailsComponent do
           assign(socket, :relay_error, "Could not relay event")
 
         target_group ->
-          case Events.relay_event_to_group(socket.assigns.publication.event, target_group,
+          case Events.relay_to_group(socket.assigns.publication.event, target_group,
                  scope: socket.assigns.current_scope,
                  relay_note: relay_note
                ) do

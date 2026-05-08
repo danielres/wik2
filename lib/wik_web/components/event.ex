@@ -3,12 +3,14 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Utils.Tz
-  alias WikWeb.EventsLive.EventForm
 
   attr :form, Phoenix.HTML.Form, required: true
   attr :target, :any, default: nil
 
   def event_form(assigns) do
+    all_day? = Phoenix.HTML.Form.input_value(assigns.form, :all_day)
+    assigns = assign(assigns, :all_day?, all_day?)
+
     ~H"""
     <.form
       for={@form}
@@ -24,42 +26,38 @@ defmodule WikWeb.Components.Event do
         <div class="grid gap-3 sm:grid-cols-2">
           <.input
             field={@form[:starts_on]}
-            errors={if EventForm.all_day?(@form), do: translated_errors(@form, :starts_at), else: []}
+            errors={if @all_day?, do: errors_for(@form, :starts_at), else: []}
             id="event-starts-on"
             label="Start date"
             type="date"
-            value={EventForm.value(@form, "starts_on")}
           />
 
           <.input
             field={@form[:ends_on]}
-            errors={if EventForm.all_day?(@form), do: translated_errors(@form, :ends_at), else: []}
+            errors={if @all_day?, do: errors_for(@form, :ends_at), else: []}
             id="event-ends-on"
             label="End date"
             type="date"
-            value={EventForm.value(@form, "ends_on")}
           />
         </div>
 
         <.input field={@form[:all_day]} label="All-day event" type="checkbox" />
 
-        <div :if={not EventForm.all_day?(@form)} class="grid gap-3 sm:grid-cols-2">
+        <div :if={not @all_day?} class="grid gap-3 sm:grid-cols-2">
           <.input
             field={@form[:starts_at_time]}
-            errors={if EventForm.all_day?(@form), do: [], else: translated_errors(@form, :starts_at)}
+            errors={if @all_day?, do: [], else: errors_for(@form, :starts_at)}
             id="event-starts-at-time"
             label="Start time"
             type="time"
-            value={EventForm.value(@form, "starts_at_time")}
           />
 
           <.input
             field={@form[:ends_at_time]}
-            errors={if EventForm.all_day?(@form), do: [], else: translated_errors(@form, :ends_at)}
+            errors={if @all_day?, do: [], else: errors_for(@form, :ends_at)}
             id="event-ends-at-time"
             label="End time"
             type="time"
-            value={EventForm.value(@form, "ends_at_time")}
           />
         </div>
 
@@ -90,7 +88,7 @@ defmodule WikWeb.Components.Event do
         </div>
 
         <.input
-          :if={EventForm.mode(@form) == :edit}
+          :if={@form.source.type == :update}
           field={@form[:status]}
           label="Status"
           type="select"
@@ -113,7 +111,7 @@ defmodule WikWeb.Components.Event do
             class="btn btn-accent btn-sm"
             data-testid="event-form-submit"
           >
-            {if EventForm.mode(@form) == :create, do: "Create event", else: "Save changes"}
+            {if @form.source.type == :create, do: "Create event", else: "Save changes"}
           </button>
         </div>
       </div>
@@ -121,7 +119,7 @@ defmodule WikWeb.Components.Event do
     """
   end
 
-  defp translated_errors(form, field) do
+  defp errors_for(form, field) do
     form[field].errors
     |> Enum.map(&WikWeb.CoreComponents.translate_error/1)
   end

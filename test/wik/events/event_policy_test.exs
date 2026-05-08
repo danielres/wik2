@@ -9,21 +9,20 @@ defmodule Wik.Events.EventPolicyTest do
   alias Wik.Scope
 
   describe "event access" do
-    test "owner can read, create, update, and cancel their group's event" do
+    test "owner can read, create, and update their group's event" do
       owner = generate(user())
       group = generate(group(author: owner))
 
       add_membership(group, owner, :owner)
 
-      {:ok, event} = Events.create_event(event_attrs(), scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
 
       assert Ash.can?({event, :read}, scope(owner, group))
       assert Ash.can?({Event, :create}, scope(owner, group))
       assert Ash.can?({event, :update}, scope(owner, group))
-      assert Ash.can?({event, :cancel}, scope(owner, group))
     end
 
-    test "admin can read, create, update, and cancel their group's event" do
+    test "admin can read, create, and update their group's event" do
       owner = generate(user())
       admin = generate(user())
       group = generate(group(author: owner))
@@ -32,15 +31,14 @@ defmodule Wik.Events.EventPolicyTest do
       add_membership(group, admin, :admin)
       grant_active_telegram_access(group, admin)
 
-      {:ok, event} = Events.create_event(event_attrs(), scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
 
       assert Ash.can?({event, :read}, scope(admin, group))
       assert Ash.can?({Event, :create}, scope(admin, group))
       assert Ash.can?({event, :update}, scope(admin, group))
-      assert Ash.can?({event, :cancel}, scope(admin, group))
     end
 
-    test "member can read but cannot create, update, or cancel" do
+    test "member can read but cannot create or update" do
       owner = generate(user())
       member = generate(user())
       group = generate(group(author: owner))
@@ -49,12 +47,11 @@ defmodule Wik.Events.EventPolicyTest do
       add_membership(group, member, :member)
       grant_active_telegram_access(group, member)
 
-      {:ok, event} = Events.create_event(event_attrs(), scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
 
       assert Ash.can?({event, :read}, scope(member, group))
       refute Ash.can?({Event, :create}, scope(member, group))
       refute Ash.can?({event, :update}, scope(member, group))
-      refute Ash.can?({event, :cancel}, scope(member, group))
     end
 
     test "relay visibility allows target group members to read the event" do
@@ -71,15 +68,15 @@ defmodule Wik.Events.EventPolicyTest do
       grant_active_telegram_access(origin_group, relayer)
 
       {:ok, event} =
-        Events.create_event(
+        Ash.create(
+          Event,
           event_attrs(relay_policy: :members_to_groups),
+          action: :create,
           scope: scope(origin_owner, origin_group)
         )
 
       assert {:ok, _publication} =
-               Events.relay_event_to_group(event, target_group,
-                 scope: scope(relayer, origin_group)
-               )
+               Events.relay_to_group(event, target_group, scope: scope(relayer, origin_group))
 
       assert Ash.can?({event, :read}, scope(target_owner, target_group))
     end
@@ -91,7 +88,7 @@ defmodule Wik.Events.EventPolicyTest do
 
       add_membership(group, owner, :owner)
 
-      {:ok, event} = Events.create_event(event_attrs(), scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
 
       refute Ash.can?({event, :read}, scope(outsider, group))
     end
@@ -102,8 +99,7 @@ defmodule Wik.Events.EventPolicyTest do
       Ash.create(
         GroupUserRelation,
         %{group_id: group.id, type: type, user_id: user.id},
-        authorize?: false,
-        domain: Wik.Accounts
+        authorize?: false
       )
 
     membership

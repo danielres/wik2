@@ -11,16 +11,12 @@ defmodule Wik.Events.Event do
     domain: Wik.Events,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshPhoenix]
+    extensions: [AshPhoenix],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "events"
     repo Wik.Repo
-  end
-
-  code_interface do
-    define :cancel, action: :cancel
-    define :create, action: :create
   end
 
   actions do
@@ -90,12 +86,6 @@ defmodule Wik.Events.Event do
       change SetScheduleFromLocalFields
       require_atomic? false
     end
-
-    update :cancel do
-      accept []
-      require_atomic? false
-      change set_attribute(:status, :cancelled)
-    end
   end
 
   policies do
@@ -130,6 +120,13 @@ defmodule Wik.Events.Event do
     policy action_type(:update) do
       authorize_if Group.Checks.ActorCanManageResourceGroup
     end
+  end
+
+  pub_sub do
+    module WikWeb.Endpoint
+    prefix "event"
+    publish :create, ["group", :group_id]
+    publish :update, ["group", :group_id]
   end
 
   validations do

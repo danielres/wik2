@@ -106,6 +106,10 @@ defmodule WikWeb.Router do
   end
 
   scope "/", WikWeb do
+    get "/calendar/:token", CalendarFeedController, :show
+  end
+
+  scope "/", WikWeb do
     pipe_through [:browser]
 
     superadmin_error_tracker_dashboard("/errors")

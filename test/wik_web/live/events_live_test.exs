@@ -8,6 +8,7 @@ defmodule WikWeb.EventsLiveTest do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.GroupUserRelation
   alias Wik.Events
+  alias Wik.Events.Event
 
   require Ash.Query
 
@@ -23,13 +24,15 @@ defmodule WikWeb.EventsLiveTest do
     grant_active_telegram_access(group, member)
 
     {:ok, _event} =
-      Events.create_event(event_attrs(title: "Shared dinner"), scope: scope(owner, group))
+      Ash.create(Event, event_attrs(title: "Shared dinner"),
+        action: :create,
+        scope: scope(owner, group)
+      )
 
     [publication] =
       Ash.read!(
         Wik.Events.EventPublication,
         authorize?: false,
-        domain: Wik.Events,
         scope: scope(owner, group)
       )
 
@@ -61,15 +64,17 @@ defmodule WikWeb.EventsLiveTest do
     add_membership(target_group, owner, :owner)
 
     {:ok, event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(relay_policy: :admins_only_groups),
+        action: :create,
         scope: scope(owner, origin_group)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
       |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
 
     {:ok, view, _html} =
       conn
@@ -79,20 +84,22 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-detail-relay-#{publication.id}"))
 
     {:ok, internal_event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(
           relay_policy: :internal_only,
           starts_on: "2026-05-11",
           ends_on: "2026-05-11",
           title: "Internal event"
         ),
+        action: :create,
         scope: scope(owner, origin_group)
       )
 
     {:ok, internal_publication} =
       Wik.Events.EventPublication
       |> Ash.Query.filter(event_id == ^internal_event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
 
     {:ok, internal_view, _html} =
       conn
@@ -112,15 +119,17 @@ defmodule WikWeb.EventsLiveTest do
     add_membership(target_group, owner, :owner)
 
     {:ok, event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(relay_policy: :admins_only_groups),
+        action: :create,
         scope: scope(owner, origin_group)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
       |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
 
     {:ok, view, _html} =
       conn
@@ -150,7 +159,6 @@ defmodule WikWeb.EventsLiveTest do
              |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^target_group.id)
              |> Ash.read_first(
                authorize?: false,
-               domain: Wik.Events,
                scope: scope(owner, target_group)
              )
 
@@ -167,15 +175,17 @@ defmodule WikWeb.EventsLiveTest do
     add_membership(target_group, owner, :owner)
 
     {:ok, event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(relay_policy: :admins_only_groups),
+        action: :create,
         scope: scope(owner, origin_group)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
       |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, origin_group))
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
 
     {:ok, view, _html} =
       conn
@@ -232,7 +242,7 @@ defmodule WikWeb.EventsLiveTest do
     assert %Wik.Events.Event{} =
              Wik.Events.Event
              |> Ash.Query.filter(title == "Community dinner")
-             |> Ash.read_one!(authorize?: false, domain: Wik.Events, scope: scope(owner, group))
+             |> Ash.read_one!(authorize?: false, scope: scope(owner, group))
   end
 
   test "create submit shows field errors without a flash", %{conn: conn} do
@@ -277,15 +287,17 @@ defmodule WikWeb.EventsLiveTest do
     add_membership(group, owner, :owner)
 
     {:ok, event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(title: "Community dinner", relay_policy: :admins_only_groups),
+        action: :create,
         scope: scope(owner, group)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
       |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
-      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, group))
+      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
 
     {:ok, view, _html} =
       conn
@@ -335,15 +347,17 @@ defmodule WikWeb.EventsLiveTest do
     add_membership(group, owner, :owner)
 
     {:ok, event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(title: "Community dinner", relay_policy: :admins_only_groups),
+        action: :create,
         scope: scope(owner, group)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
       |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
-      |> Ash.read_first(authorize?: false, domain: Wik.Events, scope: scope(owner, group))
+      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
 
     {:ok, view, _html} =
       conn
@@ -376,6 +390,81 @@ defmodule WikWeb.EventsLiveTest do
     refute render(view) =~ "Could not save the event"
   end
 
+  test "edit form preloads timed event schedule values", %{conn: conn} do
+    owner = generate(user())
+    group = generate(group(author: owner))
+    add_membership(group, owner, :owner)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          starts_on: "2026-05-12",
+          starts_at_time: "18:30",
+          ends_on: "2026-05-13",
+          ends_at_time: "20:45"
+        ),
+        action: :create,
+        scope: scope(owner, group)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{group.name}/events")
+
+    render_click(element(view, testid("event-open-#{publication.id}")))
+    render_click(element(view, testid("event-detail-edit-#{publication.id}")))
+
+    assert has_element?(view, "#event-starts-on[value='2026-05-12']")
+    assert has_element?(view, "#event-ends-on[value='2026-05-13']")
+
+    html = render(view)
+    assert html =~ ~r/id="event-starts-at-time"[^>]*value="18:30(?::00)?"/
+    assert html =~ ~r/id="event-ends-at-time"[^>]*value="20:45(?::00)?"/
+  end
+
+  test "edit form preloads all-day event schedule values", %{conn: conn} do
+    owner = generate(user())
+    group = generate(group(author: owner))
+    add_membership(group, owner, :owner)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          all_day: true,
+          starts_on: "2026-05-12",
+          ends_on: "2026-05-13"
+        ),
+        action: :create,
+        scope: scope(owner, group)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{group.name}/events")
+
+    render_click(element(view, testid("event-open-#{publication.id}")))
+    render_click(element(view, testid("event-detail-edit-#{publication.id}")))
+
+    assert has_element?(view, "#event-starts-on[value='2026-05-12']")
+    assert has_element?(view, "#event-ends-on[value='2026-05-13']")
+    refute has_element?(view, "#event-starts-at-time")
+    refute has_element?(view, "#event-ends-at-time")
+  end
+
   test "all-day toggle keeps timed values and provenance hidden suppresses relay context", %{
     conn: conn
   } do
@@ -390,17 +479,20 @@ defmodule WikWeb.EventsLiveTest do
     grant_active_telegram_access(origin_group, relay_owner)
 
     {:ok, event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(
           title: "Quiet walk",
           provenance_policy: :hidden,
           relay_policy: :admins_only_groups
         ),
+        action: :create,
         scope: scope(owner, origin_group)
       )
 
     {:ok, _publication} =
-      Events.relay_event_to_group(event, target_group,
+      Events.relay_to_group(event, target_group,
+        action: :create,
         scope: scope(relay_owner, origin_group),
         relay_note: "Good fit for your group"
       )
@@ -576,8 +668,12 @@ defmodule WikWeb.EventsLiveTest do
 
     assert has_element?(view, "#event-starts-on[value='2026-05-13']")
     assert has_element?(view, "#event-ends-on[value='2026-05-14']")
-    assert has_element?(view, "#event-starts-at-time[value='14:00']")
-    assert has_element?(view, "#event-ends-at-time[value='16:00']")
+
+    html = render(view)
+    assert html =~ ~s(id="event-starts-at-time")
+    assert html =~ ~s(id="event-ends-at-time")
+    assert html =~ ~r/id="event-starts-at-time"[^>]*value="14:00(?::00)?"/
+    assert html =~ ~r/id="event-ends-at-time"[^>]*value="16:00(?::00)?"/
   end
 
   test "renders both event tz and user tz when they differ", %{conn: conn} do
@@ -590,7 +686,8 @@ defmodule WikWeb.EventsLiveTest do
     grant_active_telegram_access(group, member)
 
     {:ok, _event} =
-      Events.create_event(
+      Ash.create(
+        Event,
         event_attrs(
           title: "Berlin dinner",
           starts_on: "2026-05-12",
@@ -599,6 +696,7 @@ defmodule WikWeb.EventsLiveTest do
           ends_at_time: "20:00",
           tz: "Europe/Berlin"
         ),
+        action: :create,
         scope: scope(owner, group)
       )
 
@@ -616,8 +714,7 @@ defmodule WikWeb.EventsLiveTest do
     Ash.create!(
       GroupUserRelation,
       %{group_id: group.id, type: type, user_id: user.id},
-      authorize?: false,
-      domain: Wik.Accounts
+      authorize?: false
     )
   end
 

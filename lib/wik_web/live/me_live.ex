@@ -4,6 +4,7 @@ defmodule WikWeb.MeLive do
   alias Wik.Access
   alias Wik.Accounts
   alias Utils.Log
+  alias WikWeb.Components
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
 
@@ -46,7 +47,7 @@ defmodule WikWeb.MeLive do
         </div>
 
         <div class="grid gap-4 md:grid-cols-[1fr_1.2fr]">
-          <div>
+          <section>
             <h2 class="text-lg mb-1">Connected identities</h2>
 
             <div :if={@identities == []} class="card bg-base-200 h-min">
@@ -58,9 +59,9 @@ defmodule WikWeb.MeLive do
             <div :if={@identities != []} class="space-y-2" data-testid="me-connected-identities">
               <.identity_card :for={identity <- @identities} identity={identity} />
             </div>
-          </div>
+          </section>
 
-          <div>
+          <section>
             <h2 class="text-lg mb-1">Access grants</h2>
 
             <div
@@ -81,7 +82,14 @@ defmodule WikWeb.MeLive do
             <div :if={@grants != []} class="space-y-2" data-testid="me-access-grants">
               <.grant_card :for={grant <- @grants} current_user={@current_user} grant={grant} />
             </div>
-          </div>
+          </section>
+          <section>
+            <h2 class="text-lg mb-1">All your events</h2>
+
+            <div class="md:col-span-2">
+              <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
+            </div>
+          </section>
         </div>
       </Layouts.container>
     </Layouts.app>

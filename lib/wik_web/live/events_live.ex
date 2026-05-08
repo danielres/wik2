@@ -1,13 +1,14 @@
 defmodule WikWeb.EventsLive do
   use WikWeb, :live_view
 
+  alias AshPhoenix.Form
   alias Ash.Query
   alias Utils.Log
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
   alias WikWeb.Components
-  alias WikWeb.EventsLive.EventDetailsComponent
-  alias WikWeb.EventsLive.EventForm
+  alias WikWeb.Components.Event.Details
+  alias WikWeb.Components.Event.FormState
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
 
@@ -48,6 +49,8 @@ defmodule WikWeb.EventsLive do
             event_publications={@event_publications}
             user_tz={@tz}
           />
+
+          <Components.CalendarFeed.group_subscribe_button scope={@current_scope} />
         </div>
 
         <Components.Modal.render
@@ -59,7 +62,7 @@ defmodule WikWeb.EventsLive do
           <:title :if={@event_form != nil}>
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-lg font-medium">
-                {if EventForm.mode(@event_form) == :create, do: "Create event", else: "Edit event"}
+                {if @event_form.source.type == :create, do: "Create event", else: "Edit event"}
               </h2>
 
               <span class="badge bg-base-300">{@tz}</span>
@@ -68,7 +71,7 @@ defmodule WikWeb.EventsLive do
 
           <.live_component
             :if={@selected_publication != nil}
-            module={EventDetailsComponent}
+            module={Details}
             id={"event-details-#{@selected_publication.id}"}
             current_scope={@current_scope}
             publication={@selected_publication}
@@ -117,7 +120,7 @@ defmodule WikWeb.EventsLive do
     socket =
       socket
       |> assign(:selected_publication, nil)
-      |> assign(:event_form, EventForm.new(current_scope, tz))
+      |> assign(:event_form, FormState.new(current_scope, tz))
 
     {:noreply, socket}
   end
@@ -127,7 +130,7 @@ defmodule WikWeb.EventsLive do
 
     socket =
       socket
-      |> assign(:event_form, EventForm.validate(event_form, params))
+      |> assign(:event_form, FormState.validate(event_form, params))
 
     {:noreply, socket}
   end
@@ -136,7 +139,10 @@ defmodule WikWeb.EventsLive do
     current_scope = socket.assigns.current_scope
 
     socket =
-      case EventForm.submit(socket.assigns.event_form, params, current_scope) do
+      case Form.submit(socket.assigns.event_form,
+             params: params,
+             action_opts: [scope: current_scope]
+           ) do
         {:ok, _event} ->
           socket
           |> assign(:event_form, nil)

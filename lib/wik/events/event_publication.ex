@@ -8,7 +8,8 @@ defmodule Wik.Events.EventPublication do
     domain: Wik.Events,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshPhoenix]
+    extensions: [AshPhoenix],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "event_publications"
@@ -52,6 +53,13 @@ defmodule Wik.Events.EventPublication do
     policy action(:relay_to_group) do
       authorize_if ActorCanRelayEvent
     end
+  end
+
+  pub_sub do
+    module WikWeb.Endpoint
+    prefix "event_publication"
+    publish :publish_to_origin_group, ["group", :target_group_id]
+    publish :relay_to_group, ["group", :target_group_id]
   end
 
   validations do

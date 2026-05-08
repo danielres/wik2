@@ -9,12 +9,8 @@ defmodule Wik.Events.Event.Changes.CreateOriginPublication do
     Changeset.after_action(changeset, fn _changeset, event ->
       case EventPublication.publish_to_origin_group(
              %{event_id: event.id},
-             scope: context,
-             return_notifications?: true
+             scope: context
            ) do
-        {:ok, _publication, notifications} ->
-          {:ok, event, notifications}
-
         {:ok, _publication} ->
           {:ok, event}
 

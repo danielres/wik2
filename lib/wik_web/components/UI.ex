@@ -7,7 +7,7 @@ defmodule WikWeb.Components.UI do
     ~H"""
     <button
       class="btn btn-accent btn-circle btn-xs"
-      phx-click={@rest[:"phx-click"]}
+      {@rest}
     >
       <.icon name="hero-plus-micro" />
     </button>

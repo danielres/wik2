@@ -114,11 +114,11 @@ defmodule Wik.Events.Feeds.Serializer do
     end
   end
 
-  defp maybe_append_origin_line(lines, %{publication_type: :origin, event: %{group: group}}) do
-    lines ++ ["From: #{group.name}"]
-  end
-
-  defp maybe_append_origin_line(lines, %{publication_type: :relay, event: %{group: group}}) do
+  defp maybe_append_origin_line(
+         lines,
+         %{publication_type: publication_type, event: %{group: group}}
+       )
+       when publication_type in [:origin, :relay] do
     lines ++ ["From: #{group.name}"]
   end
 

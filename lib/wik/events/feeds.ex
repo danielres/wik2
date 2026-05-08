@@ -77,8 +77,8 @@ defmodule Wik.Events.Feeds do
 
   defp aggregate_feed_entries(publications) do
     publications
-    |> Enum.group_by(& &1.event_id)
-    |> Enum.map(fn {_event_id, publications} ->
+    |> Enum.chunk_by(& &1.event_id)
+    |> Enum.map(fn publications ->
       [first | _] = publications
 
       %{

@@ -49,12 +49,11 @@ defmodule WikWeb.Components.CalendarFeed do
   attr :url, :string, required: true
 
   defp subscribe_button(assigns) do
-    id = assigns.id |> String.replace("-", "_")
-    assigns = assigns |> assign(id: id)
+    input_name = "#{assigns.id}-url"
+    assigns = assigns |> assign(input_name: input_name)
 
     ~H"""
     <span class="flex items-center gap-1 text-sm opacity-70">
-
       <button
         class="btn btn-circle btn-sm"
         phx-click={UI.modal_open(@id)}
@@ -72,8 +71,8 @@ defmodule WikWeb.Components.CalendarFeed do
 
         <.input
           class="input w-full input-sm text-base-content/50"
-          id={"#{@testid}-url"}
-          name={"#{@testid}-url"}
+          id={@input_name}
+          name={@input_name}
           readonly
           type="text"
           value={@url}

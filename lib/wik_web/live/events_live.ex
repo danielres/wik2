@@ -1,14 +1,15 @@
 defmodule WikWeb.EventsLive do
   use WikWeb, :live_view
 
-  alias AshPhoenix.Form
   alias Ash.Query
+  alias AshPhoenix.Form
   alias Utils.Log
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
   alias WikWeb.Components
   alias WikWeb.Components.Event.Details
   alias WikWeb.Components.Event.FormState
+  alias WikWeb.Components.UI
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
 
@@ -34,14 +35,11 @@ defmodule WikWeb.EventsLive do
               <h1 class="text-2xl font-[100]">Events</h1>
             </div>
 
-            <button
+            <UI.button_plus
               :if={Ash.can?({Event, :create}, @current_scope)}
-              class="btn btn-accent btn-circle btn-sm"
               data-testid="events-create-button"
               phx-click="event_create_start"
-            >
-              <.icon name="hero-plus-micro" />
-            </button>
+            />
           </div>
 
           <Components.Event.list

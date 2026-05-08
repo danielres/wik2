@@ -27,15 +27,9 @@ defmodule WikWeb.HomeLive do
           <section>
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-2xl font-[100]">Your groups</h2>
-
-              <button
-                :if={Ash.can?({Group, :create}, @current_scope)}
-                class="btn btn-accent btn-circle btn-xs"
-                phx-click={UI.modal_open("create-group-modal")}
-              >
-                <.icon name="hero-plus-micro" />
-              </button>
+              <UI.button_plus phx-click={UI.modal_open("create-group-modal")} />
             </div>
+
             <div class="flex-1">
               <Components.Group.list groups={@groups} />
 

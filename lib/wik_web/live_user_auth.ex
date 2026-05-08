@@ -155,8 +155,11 @@ defmodule WikWeb.LiveUserAuth do
   defp assign_tz(socket) do
     tz =
       case get_connect_params(socket) do
-        %{"tz" => tz} when is_binary(tz) and tz != "" -> tz
-        _ -> "Etc/UTC"
+        %{"tz" => tz} when is_binary(tz) and tz != "" ->
+          if Utils.Tz.valid?(tz), do: tz, else: "Etc/UTC"
+
+        _ ->
+          "Etc/UTC"
       end
 
     socket

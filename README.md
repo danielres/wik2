@@ -78,21 +78,32 @@ Wik v2 is built with:
 
 Wik is organized around the **group** as the main unit. 
 
-Every group is a private space designed for knowledge sharing and efficient coordination amongst its members.
+Each group is a private space for shared knowledge and calm coordination.
 
 Right now, that includes:
 
 - A group wiki 
 - Modular content blocks
+- Group events, with relay and calendar subscriptions
 - Group memberships with owner/admin/member roles
 - Pluggable access and identity flows
-- Superadmin and admin tooling for development and operations
+- Admin and maintenance tooling
+
+
+### Events
+
+Post an event once. Share it with the people who should actually see it. Relay it across trusted circles when it makes sense.
+
+Members can follow events in Wik or subscribe in their own calendar app (Google Calendar, ...)
+
+The relay system allows groups to share events with other groups in a way that respects the boundaries of each group.
+
+The result: less chat noise, fewer notifications, less duplication, better turnout.
 
 ### Planned features
 
 - Polls
 - Resources library (videos, articles, files, ...)
-- Event scheduling
 - Community announcements
 - Advanced member profiles with structured skills and interests
 

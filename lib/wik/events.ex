@@ -72,11 +72,11 @@ defmodule Wik.Events do
 
   defp filter_relay_target_groups(groups, event, published_group_ids, actor_id) do
     groups
-    |> Enum.reject(&(&1.id in published_group_ids or &1.id == event.group_id))
+    |> Enum.reject(&(MapSet.member?(published_group_ids, &1.id) or &1.id == event.group_id))
     |> Enum.reduce_while({:ok, []}, fn group, {:ok, acc} ->
       case Checks.ActorCanRelayEvent.relay_allowed_by_event_policy?(actor_id, event, group.id) do
         {:ok, true} ->
-          {:cont, {:ok, acc ++ [group]}}
+          {:cont, {:ok, [group | acc]}}
 
         {:ok, false} ->
           {:cont, {:ok, acc}}
@@ -85,5 +85,12 @@ defmodule Wik.Events do
           {:halt, {:error, error}}
       end
     end)
+    |> case do
+      {:ok, groups} ->
+        {:ok, Enum.reverse(groups)}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 end

@@ -6,7 +6,8 @@ defmodule Wik.Wiki.Page do
     domain: Wik.Wiki,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshPhoenix]
+    extensions: [AshPhoenix],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "pages"
@@ -59,6 +60,14 @@ defmodule Wik.Wiki.Page do
     policy action(:manage_page) do
       authorize_if Group.Checks.ActorCanManageResourceGroup
     end
+  end
+
+  pub_sub do
+    module WikWeb.Endpoint
+    prefix "page"
+    publish :create, ["group", :group_id]
+    publish :update, ["group", :group_id]
+    publish :destroy, ["group", :group_id]
   end
 
   multitenancy do

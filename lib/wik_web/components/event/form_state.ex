@@ -35,13 +35,13 @@ defmodule WikWeb.Components.Event.FormState do
     schedule_params(local_starts_at, local_ends_at, local_ends_at || local_starts_at)
   end
 
-  defp schedule_params(local_starts_at, local_ends_at),
-    do: schedule_params(local_starts_at, local_ends_at, local_ends_at)
+  defp schedule_params(local_starts_at, local_ends_at_naive),
+    do: schedule_params(local_starts_at, local_ends_at_naive, local_ends_at_naive)
 
-  defp schedule_params(local_starts_at, local_ends_at_time, local_ends_on) do
+  defp schedule_params(local_starts_at, local_ends_at_naive, local_ends_on) do
     %{
       "ends_on" => NaiveDateTime.to_date(local_ends_on),
-      "ends_at_time" => local_ends_at_time && NaiveDateTime.to_time(local_ends_at_time),
+      "ends_at_time" => local_ends_at_naive && NaiveDateTime.to_time(local_ends_at_naive),
       "starts_on" => NaiveDateTime.to_date(local_starts_at),
       "starts_at_time" => NaiveDateTime.to_time(local_starts_at)
     }

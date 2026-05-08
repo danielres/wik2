@@ -1,8 +1,6 @@
 defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
-  alias WikWeb.Components
-
   def modal_open(js \\ %JS{}, id), do: js |> JS.add_class("modal-open", to: "##{id}_modal")
   def modal_close(js \\ %JS{}, id), do: js |> JS.remove_class("modal-open", to: "##{id}_modal")
 

@@ -28,8 +28,8 @@ defmodule WikWeb.Superadmin.TelegramLiveTest do
     render_async(view)
 
     assert has_element?(view, testid("telegram-bot-update-123"))
-    assert render(view) =~ "channel_post"
-    assert render(view) =~ "Hobbies"
+    assert has_element?(view, testid("telegram-bot-update-type-123"))
+    assert has_element?(view, testid("telegram-bot-update-chat-title-123"))
   end
 
   test "normal users cannot see Telegram bot updates", %{conn: conn} do

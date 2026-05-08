@@ -15,6 +15,7 @@ defmodule WikWeb.HomeLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
+     |> assign(:create_group_modal_open?, false)
      |> assign_groups_and_form()}
   end
 
@@ -27,13 +28,25 @@ defmodule WikWeb.HomeLive do
           <section>
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-2xl font-[100]">Your groups</h2>
-              <UI.button_plus phx-click={UI.modal_open("create-group-modal")} />
+              <UI.button_plus
+                :if={Ash.can?({Group, :create}, @current_scope)}
+                data-testid="create-group-start"
+                phx-click="create_group_start"
+              />
             </div>
 
             <div class="flex-1">
               <Components.Group.list groups={@groups} />
 
-              <UI.modal id="create-group-modal">
+              <Components.Modal.render
+                :if={@create_group_modal_open?}
+                cancel="create_group_cancel"
+                cancel_testid="create-group-cancel"
+                open?={true}
+                testid="create-group-dialog"
+              >
+                <:title>Create group</:title>
+
                 <Components.Group.form
                   :if={Ash.can?({Group, :create}, @current_scope)}
                   class="flex-1"
@@ -41,7 +54,7 @@ defmodule WikWeb.HomeLive do
                   event_submit="submit"
                   form={@form}
                 />
-              </UI.modal>
+              </Components.Modal.render>
             </div>
           </section>
 
@@ -68,10 +81,37 @@ defmodule WikWeb.HomeLive do
     {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
   end
 
+  def handle_event("create_group_start", _params, socket) do
+    current_scope = socket.assigns.current_scope
+
+    socket =
+      socket
+      |> assign(:create_group_modal_open?, true)
+      |> assign(:form, init_form(current_scope))
+
+    {:noreply, socket}
+  end
+
+  def handle_event("create_group_cancel", _params, socket) do
+    current_scope = socket.assigns.current_scope
+
+    socket =
+      socket
+      |> assign(:create_group_modal_open?, false)
+      |> assign(:form, init_form(current_scope))
+
+    {:noreply, socket}
+  end
+
   def handle_event("submit", %{"form" => params}, socket) do
     case socket.assigns.form |> Form.submit(params: params) do
       {:ok, _group} ->
-        {:noreply, socket |> assign_groups_and_form()}
+        socket =
+          socket
+          |> assign_groups_and_form()
+          |> assign(:create_group_modal_open?, false)
+
+        {:noreply, socket}
 
       {:error, form} ->
         {:noreply,

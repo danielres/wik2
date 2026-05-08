@@ -6,9 +6,41 @@ defmodule WikWeb.HomeLiveTest do
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
+  alias Wik.Accounts
   alias Wik.Accounts.GroupUserRelation
   alias Wik.Events
   alias Wik.Events.Event
+
+  test "create group modal closes on successful submit", %{conn: conn} do
+    user = generate(user())
+    existing_group = generate(group(author: user))
+    add_membership(existing_group, user, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/")
+
+    refute has_element?(view, testid("create-group-dialog"))
+
+    view
+    |> element(testid("create-group-start"))
+    |> render_click()
+
+    assert has_element?(view, testid("create-group-dialog"))
+
+    view
+    |> form(testid("create-group-dialog") <> " form",
+      form: %{"name" => "fresh-group", "description" => "A new group"}
+    )
+    |> render_submit()
+
+    refute has_element?(view, testid("create-group-dialog"))
+    assert render(view) =~ "fresh-group"
+
+    assert {:ok, groups} = Accounts.list_groups(actor: user)
+    assert Enum.any?(groups, &(&1.name == "fresh-group"))
+  end
 
   test "lists the user's aggregate feed events on the home page", %{conn: conn} do
     owner = generate(user())

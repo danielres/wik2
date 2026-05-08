@@ -55,7 +55,7 @@ defmodule WikWeb.Components.CalendarFeed do
     ~H"""
     <span class="flex items-center gap-1 text-sm opacity-70">
       <button
-        class="btn btn-circle btn-sm"
+        class="btn btn-circle btn-xs"
         phx-click={UI.modal_open(@id)}
         data-testid={@testid}
       >

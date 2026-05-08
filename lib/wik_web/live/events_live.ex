@@ -30,10 +30,10 @@ defmodule WikWeb.EventsLive do
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.group presences={@presences} scope={@current_scope} view="events">
         <div class="space-y-6" data-testid="events-page">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="space-y-1">
-              <h1 class="text-2xl font-[100]">Events</h1>
-            </div>
+          <div class="flex flex-wrap items-start gap-4">
+            <h1 class="text-2xl font-[100] flex-grow">Events</h1>
+
+            <Components.CalendarFeed.group_subscribe_button scope={@current_scope} />
 
             <UI.button_plus
               :if={Ash.can?({Event, :create}, @current_scope)}
@@ -47,8 +47,6 @@ defmodule WikWeb.EventsLive do
             event_publications={@event_publications}
             user_tz={@tz}
           />
-
-          <Components.CalendarFeed.group_subscribe_button scope={@current_scope} />
         </div>
 
         <Components.Modal.render

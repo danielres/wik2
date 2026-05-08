@@ -52,19 +52,27 @@ defmodule Wik.Events.Feeds do
   end
 
   defp load_aggregate_feed_publications(groups, user) do
-    Enum.reduce_while(groups, {:ok, []}, fn group, {:ok, publications} ->
+    groups
+    |> Enum.reduce_while({:ok, []}, fn group, {:ok, publication_chunks} ->
       group_scope = %Scope{actor: user, tenant: group}
 
       case Ash.load(group, [event_publications: aggregate_feed_publications_query()],
              scope: group_scope
            ) do
         {:ok, group} ->
-          {:cont, {:ok, publications ++ group.event_publications}}
+          {:cont, {:ok, [group.event_publications | publication_chunks]}}
 
         {:error, error} ->
           {:halt, {:error, error}}
       end
     end)
+    |> case do
+      {:ok, publication_chunks} ->
+        {:ok, publication_chunks |> Enum.reverse() |> List.flatten()}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp aggregate_feed_entries(publications) do

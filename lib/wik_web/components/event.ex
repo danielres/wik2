@@ -388,7 +388,7 @@ defmodule WikWeb.Components.Event do
         ]}
       >
         <.link
-          patch={~p"/#{@current_scope.tenant.name}/events?#{%{event: publication.id}}"}
+          patch={event_link_target(@current_scope, publication)}
           class={[
             "block p-4 hover:bg-base-300/70 transition",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
@@ -415,6 +415,14 @@ defmodule WikWeb.Components.Event do
       </article>
     </div>
     """
+  end
+
+  defp event_link_target(%{tenant: %{name: group_name}}, publication) do
+    ~p"/#{group_name}/events?#{%{event: publication.id}}"
+  end
+
+  defp event_link_target(_scope, publication) do
+    ~p"/#{publication.group.name}/events?#{%{event: publication.id}}"
   end
 
   attr :class, :string, default: nil

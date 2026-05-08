@@ -33,7 +33,6 @@ defmodule WikWeb.MeLiveTest do
     assert has_element?(view, testid("me-access-grants"))
     assert has_element?(view, testid("me-connected-identities"))
     assert render(view) =~ "@ada"
-    assert render(view) =~ "/calendar/"
     assert render(view) =~ group.name
     assert render(view) =~ "member"
     refute render(view) =~ "<th>username</th>"

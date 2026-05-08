@@ -54,14 +54,13 @@ defmodule WikWeb.Components.CalendarFeed do
 
     ~H"""
     <span class="flex items-center gap-1 text-sm opacity-70">
-      <.icon name="hero-signal-micro" />
 
       <button
-        class="link"
+        class="btn btn-circle btn-sm"
         phx-click={UI.modal_open(@id)}
         data-testid={@testid}
       >
-        subscribe in your calendar
+        <.icon name="hero-signal-micro" />
       </button>
     </span>
 

@@ -4,7 +4,6 @@ defmodule WikWeb.MeLive do
   alias Wik.Access
   alias Wik.Accounts
   alias Utils.Log
-  alias WikWeb.Components
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
 
@@ -81,13 +80,6 @@ defmodule WikWeb.MeLive do
 
             <div :if={@grants != []} class="space-y-2" data-testid="me-access-grants">
               <.grant_card :for={grant <- @grants} current_user={@current_user} grant={grant} />
-            </div>
-          </section>
-          <section>
-            <h2 class="text-lg mb-1">All your events</h2>
-
-            <div class="md:col-span-2">
-              <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
             </div>
           </section>
         </div>

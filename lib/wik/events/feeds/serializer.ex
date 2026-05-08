@@ -81,10 +81,8 @@ defmodule Wik.Events.Feeds.Serializer do
   defp event_status(%Event{}), do: :confirmed
 
   defp event_uid(%Event{id: event_id}) do
-    host =
-      Endpoint.url()
-      |> URI.parse()
-      |> Map.get(:host, "wik")
+    uri = URI.parse(Endpoint.url())
+    host = uri.host || "wik"
 
     "#{event_id}@#{host}"
   end

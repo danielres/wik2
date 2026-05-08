@@ -71,6 +71,8 @@ defmodule Wik.Events.Feeds.Serializer do
     |> Date.add(1)
   end
 
+  defp dtend(%Event{all_day: false, ends_at: nil}), do: nil
+
   defp dtend(%Event{all_day: false, ends_at: ends_at, tz: tz}) do
     Tz.to_local!(ends_at, tz)
   end

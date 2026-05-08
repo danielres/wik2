@@ -35,6 +35,16 @@ defmodule Wik.Events.Feeds.SerializerTest do
     assert ics =~ "STATUS:CANCELLED"
   end
 
+  test "serializes timed events without an end time without crashing" do
+    ics =
+      timed_event()
+      |> Map.put(:ends_at, nil)
+      |> then(&Serializer.to_ics([&1], calendar_name: "Timed feed"))
+
+    assert ics =~ "BEGIN:VCALENDAR"
+    refute ics =~ "DTEND"
+  end
+
   test "serializes aggregate visibility context in the description" do
     ics =
       %{

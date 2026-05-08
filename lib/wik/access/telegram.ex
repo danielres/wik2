@@ -38,11 +38,11 @@ defmodule Wik.Access.Telegram do
   def list_bot_updates(%User{} = actor) do
     BotUpdate
     |> Query.sort(inserted_at: :desc, update_id: :desc)
-    |> Ash.read(actor: actor, domain: Access)
+    |> Ash.read(actor: actor)
   end
 
   def get_bot_update(id, %User{} = actor) do
-    Ash.get(BotUpdate, id, actor: actor, domain: Access)
+    Ash.get(BotUpdate, id, actor: actor)
   end
 
   def list_claimable_sources(%User{} = user, telegram_provider \\ TelegramProvider) do
@@ -57,7 +57,7 @@ defmodule Wik.Access.Telegram do
         %User{} = user,
         telegram_provider \\ TelegramProvider
       ) do
-    with {:ok, source} <- Ash.get(Source, source_id, authorize?: false, domain: Access),
+    with {:ok, source} <- Ash.get(Source, source_id, authorize?: false),
          :ok <- authorize_pending_source(source),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_source_claim(source, identity, telegram_provider) do
@@ -71,9 +71,9 @@ defmodule Wik.Access.Telegram do
         %User{} = user,
         telegram_provider \\ TelegramProvider
       ) do
-    with {:ok, source} <- Ash.get(Source, source_id, authorize?: false, domain: Access),
+    with {:ok, source} <- Ash.get(Source, source_id, authorize?: false),
          :ok <- authorize_pending_source(source),
-         {:ok, group} <- Ash.get(Group, group_id, authorize?: false, domain: Wik.Accounts),
+         {:ok, group} <- Ash.get(Group, group_id, authorize?: false),
          :ok <- authorize_owned_group(group, user),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_source_claim(source, identity, telegram_provider) do
@@ -104,7 +104,6 @@ defmodule Wik.Access.Telegram do
                   Ash.create(User, %{},
                     action: :create_from_external_identity,
                     authorize?: false,
-                    domain: Wik.Accounts,
                     return_notifications?: true
                   ),
                 {:ok, identity, identity_notifications} <-
@@ -112,7 +111,6 @@ defmodule Wik.Access.Telegram do
                     ExternalIdentity,
                     telegram_identity_attrs(provider_user_id, telegram_user, user.id),
                     authorize?: false,
-                    domain: Access,
                     return_notifications?: true
                   ),
                 {:ok, identity} <- Ash.load(identity, [:user], authorize?: false) do
@@ -134,8 +132,7 @@ defmodule Wik.Access.Telegram do
     identity
     |> Ash.update(telegram_identity_attrs(telegram_user),
       action: :update,
-      authorize?: false,
-      domain: Access
+      authorize?: false
     )
     |> case do
       {:ok, identity} -> Ash.load(identity, [:user], authorize?: false)
@@ -146,13 +143,13 @@ defmodule Wik.Access.Telegram do
   defp load_external_identity(provider, provider_user_id) do
     ExternalIdentity
     |> Query.filter(provider == ^provider and provider_user_id == ^provider_user_id)
-    |> Ash.read_one(authorize?: false, domain: Access, load: [:user])
+    |> Ash.read_one(authorize?: false, load: [:user])
   end
 
   defp load_telegram_identity(%{id: user_id}) do
     ExternalIdentity
     |> Query.filter(provider == :telegram and user_id == ^user_id)
-    |> Ash.read_one(authorize?: false, domain: Access)
+    |> Ash.read_one(authorize?: false)
     |> case do
       {:ok, nil} -> {:error, :telegram_identity_not_found}
       result -> result
@@ -163,14 +160,14 @@ defmodule Wik.Access.Telegram do
     Source
     |> Query.filter(provider == :telegram and status == :pending)
     |> Query.sort(inserted_at: :desc)
-    |> Ash.read(authorize?: false, domain: Access)
+    |> Ash.read(authorize?: false)
   end
 
   defp list_active_sources do
     Source
     |> Query.filter(provider == :telegram and status == :active)
     |> Query.sort(inserted_at: :desc)
-    |> Ash.read(authorize?: false, domain: Access)
+    |> Ash.read(authorize?: false)
   end
 
   defp refresh_grant(source, identity, user, telegram_provider) do
@@ -207,7 +204,7 @@ defmodule Wik.Access.Telegram do
   defp log_inactive_grant_verification(:active, _reason, _source, _identity, _user), do: :ok
 
   defp log_inactive_grant_verification(:inactive, reason, source, identity, user) do
-    Logger.warning(
+    Logger.info(
       "Telegram access grant verified as inactive " <>
         inspect(%{
           reason: reason,
@@ -235,7 +232,7 @@ defmodule Wik.Access.Telegram do
   defp ensure_group_member(%{group_id: group_id}, %{id: user_id}) do
     GroupUserRelation
     |> Query.filter(group_id == ^group_id and user_id == ^user_id)
-    |> Ash.read_one(authorize?: false, domain: Wik.Accounts)
+    |> Ash.read_one(authorize?: false)
     |> case do
       {:ok, nil} -> create_member_relation(group_id, user_id)
       {:ok, _membership} -> :ok
@@ -247,8 +244,7 @@ defmodule Wik.Access.Telegram do
     case Ash.create(
            GroupUserRelation,
            %{group_id: group_id, type: :member, user_id: user_id},
-           authorize?: false,
-           domain: Wik.Accounts
+           authorize?: false
          ) do
       {:ok, _membership} -> :ok
       {:error, error} -> {:error, error}
@@ -282,7 +278,7 @@ defmodule Wik.Access.Telegram do
   defp authorize_owned_group(%{id: group_id}, %{id: user_id}) do
     GroupUserRelation
     |> Query.filter(group_id == ^group_id and user_id == ^user_id and type == :owner)
-    |> Ash.exists(authorize?: false, domain: Wik.Accounts)
+    |> Ash.exists(authorize?: false)
     |> case do
       {:ok, true} -> :ok
       {:ok, false} -> {:error, :group_owner_required}
@@ -337,7 +333,6 @@ defmodule Wik.Access.Telegram do
       action: :create,
       actor: user,
       authorize?: false,
-      domain: Wik.Accounts,
       return_notifications?: true
     )
   end
@@ -360,7 +355,7 @@ defmodule Wik.Access.Telegram do
       type: :append_and_remove,
       authorize?: false
     )
-    |> Ash.update(domain: Access, return_notifications?: true)
+    |> Ash.update(return_notifications?: true)
   end
 
   defp create_owner_grant(source, identity, user) do

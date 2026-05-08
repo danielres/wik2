@@ -1,0 +1,218 @@
+defmodule WikWeb.EventsLive do
+  use WikWeb, :live_view
+
+  alias AshPhoenix.Form
+  alias Ash.Query
+  alias Utils.Log
+  alias Wik.Events.Event
+  alias Wik.Events.EventPublication
+  alias WikWeb.Components
+  alias WikWeb.Components.Event.Details
+  alias WikWeb.Components.Event.FormState
+
+  on_mount {WikWeb.LiveUserAuth, :live_scope_required}
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(event_form: nil)
+     |> assign(event_publications: [])
+     |> assign(presences: [])
+     |> assign(selected_publication: nil)
+     |> refresh_timeline()}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
+      <Layouts.group presences={@presences} scope={@current_scope} view="events">
+        <div class="space-y-6" data-testid="events-page">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="space-y-1">
+              <h1 class="text-2xl font-[100]">Events</h1>
+            </div>
+
+            <button
+              :if={Ash.can?({Event, :create}, @current_scope)}
+              class="btn btn-accent btn-circle btn-sm"
+              data-testid="events-create-button"
+              phx-click="event_create_start"
+            >
+              <.icon name="hero-plus-micro" />
+            </button>
+          </div>
+
+          <Components.Event.list
+            current_scope={@current_scope}
+            event_publications={@event_publications}
+            user_tz={@tz}
+          />
+
+          <Components.CalendarFeed.group_subscribe_button scope={@current_scope} />
+        </div>
+
+        <Components.Modal.render
+          cancel="event_modal_close"
+          cancel_testid="event-modal-close"
+          open?={@event_form != nil or @selected_publication != nil}
+          testid="event-modal-dialog"
+        >
+          <:title :if={@event_form != nil}>
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-medium">
+                {if @event_form.source.type == :create, do: "Create event", else: "Edit event"}
+              </h2>
+
+              <span class="badge bg-base-300">{@tz}</span>
+            </div>
+          </:title>
+
+          <.live_component
+            :if={@selected_publication != nil}
+            module={Details}
+            id={"event-details-#{@selected_publication.id}"}
+            current_scope={@current_scope}
+            publication={@selected_publication}
+            user_tz={@tz}
+          />
+
+          <Components.Event.event_form
+            :if={@event_form != nil}
+            form={@event_form}
+          />
+        </Components.Modal.render>
+      </Layouts.group>
+    </Layouts.app>
+    """
+  end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    event_publications = socket.assigns.event_publications
+
+    publication =
+      params["event"] &&
+        Enum.find(event_publications, &(&1.id == params["event"]))
+
+    socket =
+      case publication do
+        nil ->
+          socket
+          |> assign(:event_form, nil)
+          |> assign(:selected_publication, nil)
+
+        publication ->
+          socket
+          |> assign(:event_form, nil)
+          |> assign(:selected_publication, publication)
+      end
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("event_create_start", _params, socket) do
+    current_scope = socket.assigns.current_scope
+    tz = socket.assigns.tz
+
+    socket =
+      socket
+      |> assign(:selected_publication, nil)
+      |> assign(:event_form, FormState.new(current_scope, tz))
+
+    {:noreply, socket}
+  end
+
+  def handle_event("event_form_validate", %{"form" => params}, socket) do
+    event_form = socket.assigns.event_form
+
+    socket =
+      socket
+      |> assign(:event_form, FormState.validate(event_form, params))
+
+    {:noreply, socket}
+  end
+
+  def handle_event("event_form_submit", %{"form" => params}, socket) do
+    current_scope = socket.assigns.current_scope
+
+    socket =
+      case Form.submit(socket.assigns.event_form,
+             params: params,
+             action_opts: [scope: current_scope]
+           ) do
+        {:ok, _event} ->
+          socket
+          |> assign(:event_form, nil)
+          |> assign(:selected_publication, nil)
+          |> refresh_timeline()
+          |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+
+        {:error, form} ->
+          assign(socket, :event_form, form)
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("event_form_cancel", _params, socket) do
+    {:noreply, assign(socket, :event_form, nil)}
+  end
+
+  def handle_event("event_modal_close", _params, socket) do
+    current_scope = socket.assigns.current_scope
+
+    socket =
+      socket
+      |> assign(:event_form, nil)
+      |> assign(:selected_publication, nil)
+      |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:event_details, :saved}, socket) do
+    current_scope = socket.assigns.current_scope
+
+    socket =
+      socket
+      |> assign(:selected_publication, nil)
+      |> refresh_timeline()
+      |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:event_details, :relay_completed}, socket) do
+    {:noreply, put_flash(socket, :info, "Event relayed")}
+  end
+
+  defp refresh_timeline(socket) do
+    scope = socket.assigns.current_scope
+
+    publications_query =
+      EventPublication
+      |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
+      |> Query.load([:published_by, event: [:author, :group]])
+
+    with {:ok, group} <-
+           Ash.load(
+             scope.tenant,
+             [event_publications: publications_query],
+             scope: scope
+           ) do
+      socket
+      |> assign(:event_publications, group.event_publications)
+    else
+      {:error, error} ->
+        Log.scoped_error(scope, error, "refresh_timeline failed")
+
+        socket
+        |> assign(:event_publications, [])
+        |> put_flash(:error, "Could not load events")
+    end
+  end
+end

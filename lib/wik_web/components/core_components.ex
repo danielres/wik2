@@ -182,7 +182,12 @@ defmodule WikWeb.CoreComponents do
                 multiple pattern placeholder readonly required rows size step)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+    errors =
+      if just_submitted?(field.form.source) or Phoenix.Component.used_input?(field) do
+        field.errors
+      else
+        []
+      end
 
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
@@ -304,6 +309,9 @@ defmodule WikWeb.CoreComponents do
     </p>
     """
   end
+
+  defp just_submitted?(source) when is_map(source), do: Map.get(source, :just_submitted?, false)
+  defp just_submitted?(_source), do: false
 
   @doc """
   Renders a header with title.

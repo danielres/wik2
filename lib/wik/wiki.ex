@@ -80,23 +80,26 @@ defmodule Wik.Wiki do
     title_segments = opts |> Keyword.get(:title_path) |> parse_title_path()
 
     case Repo.transaction(fn ->
-           with {:ok, page} <- Page.create(scope: scope),
+           with {:ok, page, page_notifications} <-
+                  Page.create(scope: scope, return_notifications?: true),
                 {:ok, page_tree} <- PageTree.ensure(scope: scope),
-                {:ok, _page_tree} <-
+                {:ok, _page_tree, page_tree_notifications} <-
                   PageTree.create_node_at_path(
                     page_tree,
                     path,
                     title,
                     page.id,
                     title_segments,
-                    scope: scope
+                    scope: scope,
+                    return_notifications?: true
                   ) do
-             page
+             {page, page_notifications ++ page_tree_notifications}
            else
              {:error, error} -> Repo.rollback(error)
            end
          end) do
-      {:ok, page} ->
+      {:ok, {page, notifications}} ->
+        Ash.Notifier.notify(notifications)
         node = scope |> load_node_by_path(path)
 
         case page |> Ash.load(load, scope: scope) do
@@ -114,15 +117,25 @@ defmodule Wik.Wiki do
     load = Keyword.get(opts, :load, [])
 
     case Repo.transaction(fn ->
-           with {:ok, page} <- Page.create(scope: scope),
+           with {:ok, page, page_notifications} <-
+                  Page.create(scope: scope, return_notifications?: true),
                 {:ok, page_tree} <- PageTree.ensure(scope: scope),
-                {:ok, _page_tree} <- PageTree.link_page(page_tree, node.id, page.id, scope: scope) do
-             page
+                {:ok, _page_tree, page_tree_notifications} <-
+                  PageTree.link_page(
+                    page_tree,
+                    node.id,
+                    page.id,
+                    scope: scope,
+                    return_notifications?: true
+                  ) do
+             {page, page_notifications ++ page_tree_notifications}
            else
              {:error, error} -> Repo.rollback(error)
            end
          end) do
-      {:ok, page} ->
+      {:ok, {page, notifications}} ->
+        Ash.Notifier.notify(notifications)
+
         case page |> Ash.load(load, scope: scope) do
           {:ok, page} -> {:ok, node, page}
           {:error, error} -> {:error, error}

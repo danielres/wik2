@@ -8,9 +8,10 @@ defmodule WikWeb.LiveUserAuth do
   alias Wik.Accounts
   alias Wik.Accounts.GroupUserRelation
   alias WikWeb.Context
+  alias WikWeb.ErrorTrackerContext
 
   import Phoenix.Component
-  import Phoenix.LiveView, only: [attach_hook: 4]
+  import Phoenix.LiveView, only: [attach_hook: 4, get_connect_params: 1]
   use WikWeb, :verified_routes
 
   # This is used for nested liveviews to fetch the current user.
@@ -21,7 +22,9 @@ defmodule WikWeb.LiveUserAuth do
       socket
       |> AshAuthentication.Phoenix.LiveSession.assign_new_resources(session)
       |> assign_current_user_for_dev()
+      |> assign_tz()
       |> assign_context()
+      |> ErrorTrackerContext.set()
       |> attach_context_hook()
 
     {:cont, socket}
@@ -36,7 +39,9 @@ defmodule WikWeb.LiveUserAuth do
         socket
         |> assign(:current_user, current_user)
         |> assign(current_scope: current_scope)
+        |> assign_tz()
         |> assign_context()
+        |> ErrorTrackerContext.set()
         |> attach_context_hook()
 
       {:cont, socket}
@@ -59,7 +64,9 @@ defmodule WikWeb.LiveUserAuth do
           socket
           |> assign(:current_user, current_user)
           |> assign(current_scope: current_scope)
+          |> assign_tz()
           |> assign_context()
+          |> ErrorTrackerContext.set()
           |> attach_context_hook()
 
         {:cont, socket}
@@ -86,7 +93,9 @@ defmodule WikWeb.LiveUserAuth do
             socket
             |> assign(:current_user, current_user)
             |> assign(current_scope: current_scope)
+            |> assign_tz()
             |> assign_context()
+            |> ErrorTrackerContext.set()
             |> attach_context_hook()
 
           {:cont, socket}
@@ -108,6 +117,7 @@ defmodule WikWeb.LiveUserAuth do
         socket
         |> assign(:current_user, nil)
         |> assign_context()
+        |> ErrorTrackerContext.set()
 
       {:cont, socket}
     end
@@ -142,6 +152,20 @@ defmodule WikWeb.LiveUserAuth do
     assign(socket, :context, Context.build(socket.assigns[:current_user]))
   end
 
+  defp assign_tz(socket) do
+    tz =
+      case get_connect_params(socket) do
+        %{"tz" => tz} when is_binary(tz) and tz != "" ->
+          if Utils.Tz.valid?(tz), do: tz, else: "Etc/UTC"
+
+        _ ->
+          "Etc/UTC"
+      end
+
+    socket
+    |> assign_new(:tz, fn -> tz end)
+  end
+
   defp attach_context_hook(socket) do
     current_user = socket.assigns[:current_user]
     user_pub_sub_topic = current_user && GroupUserRelation.user_pub_sub_topic(current_user.id)
@@ -163,6 +187,7 @@ defmodule WikWeb.LiveUserAuth do
           socket
           |> assign_context()
           |> refresh_current_scope()
+          |> ErrorTrackerContext.set()
           |> Phoenix.LiveView.put_flash(
             :info,
             "Your membership type changed. Some permissions may update on your next action."

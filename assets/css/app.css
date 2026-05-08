@@ -93,7 +93,7 @@
   --size-field: 0.25rem;
 
   /* border size */
-  --border: 0px;
+  --border: 2px;
 
   /* effects */
   --depth: 0;
@@ -125,6 +125,14 @@
   --color-base-100: oklch(98% 0 var(--h));
   --color-base-200: oklch(90% var(--c) var(--h));
   --color-base-300: oklch(85% var(--c) var(--h));
+}
+
+.textarea,
+.input {
+  &:focus,
+  &:focus-within {
+    outline: 0px;
+  }
 }
 
 .btn,
@@ -160,5 +168,13 @@
         border-right: 2.5px solid;
       }
     }
+  }
+}
+
+.stacked {
+  display: grid;
+
+  > * {
+    grid-area: 1 / 1;
   }
 }

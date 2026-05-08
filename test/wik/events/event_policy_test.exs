@@ -1,0 +1,128 @@
+defmodule Wik.Events.EventPolicyTest do
+  use Wik.DataCase, async: true
+
+  import Wik.TestGenerators
+
+  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Events
+  alias Wik.Events.Event
+  alias Wik.Scope
+
+  describe "event access" do
+    test "owner can read, create, and update their group's event" do
+      owner = generate(user())
+      group = generate(group(author: owner))
+
+      add_membership(group, owner, :owner)
+
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+
+      assert Ash.can?({event, :read}, scope(owner, group))
+      assert Ash.can?({Event, :create}, scope(owner, group))
+      assert Ash.can?({event, :update}, scope(owner, group))
+    end
+
+    test "admin can read, create, and update their group's event" do
+      owner = generate(user())
+      admin = generate(user())
+      group = generate(group(author: owner))
+
+      add_membership(group, owner, :owner)
+      add_membership(group, admin, :admin)
+      grant_active_telegram_access(group, admin)
+
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+
+      assert Ash.can?({event, :read}, scope(admin, group))
+      assert Ash.can?({Event, :create}, scope(admin, group))
+      assert Ash.can?({event, :update}, scope(admin, group))
+    end
+
+    test "member can read but cannot create or update" do
+      owner = generate(user())
+      member = generate(user())
+      group = generate(group(author: owner))
+
+      add_membership(group, owner, :owner)
+      add_membership(group, member, :member)
+      grant_active_telegram_access(group, member)
+
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+
+      assert Ash.can?({event, :read}, scope(member, group))
+      refute Ash.can?({Event, :create}, scope(member, group))
+      refute Ash.can?({event, :update}, scope(member, group))
+    end
+
+    test "relay visibility allows target group members to read the event" do
+      origin_owner = generate(user())
+      relayer = generate(user())
+      target_owner = generate(user())
+      origin_group = generate(group(author: origin_owner))
+      target_group = generate(group(author: target_owner))
+
+      add_membership(origin_group, origin_owner, :owner)
+      add_membership(origin_group, relayer, :member)
+      add_membership(target_group, relayer, :owner)
+      add_membership(target_group, target_owner, :owner)
+      grant_active_telegram_access(origin_group, relayer)
+
+      {:ok, event} =
+        Ash.create(
+          Event,
+          event_attrs(relay_policy: :members_to_groups),
+          action: :create,
+          scope: scope(origin_owner, origin_group)
+        )
+
+      assert {:ok, _publication} =
+               Events.relay_to_group(event, target_group, scope: scope(relayer, origin_group))
+
+      assert Ash.can?({event, :read}, scope(target_owner, target_group))
+    end
+
+    test "outsiders cannot read another group's event without a relay" do
+      owner = generate(user())
+      outsider = generate(user())
+      group = generate(group(author: owner))
+
+      add_membership(group, owner, :owner)
+
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+
+      refute Ash.can?({event, :read}, scope(outsider, group))
+    end
+  end
+
+  defp add_membership(group, user, type) do
+    {:ok, membership} =
+      Ash.create(
+        GroupUserRelation,
+        %{group_id: group.id, type: type, user_id: user.id},
+        authorize?: false
+      )
+
+    membership
+  end
+
+  defp event_attrs(overrides \\ []) do
+    %{
+      all_day: false,
+      description: "An event description",
+      ends_at_time: "20:00",
+      ends_on: "2026-05-10",
+      location: "Community Hall, 123 Example Street",
+      provenance_policy: :visible,
+      relay_policy: :internal_only,
+      starts_at_time: "18:00",
+      starts_on: "2026-05-10",
+      tz: "Etc/UTC",
+      title: "Shared Dinner"
+    }
+    |> Map.merge(Enum.into(overrides, %{}))
+  end
+
+  defp scope(actor, tenant) do
+    %Scope{actor: actor, tenant: tenant}
+  end
+end

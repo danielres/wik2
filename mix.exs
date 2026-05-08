@@ -41,6 +41,8 @@ defmodule Wik.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ical, "~> 2.0"},
+      {:error_tracker, "~> 0.9"},
       {:hunt_szymanski_diff, "~> 0.1.0"},
       {:cinder, "~> 0.12"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
@@ -67,6 +69,7 @@ defmodule Wik.MixProject do
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
+      {:tzdata, "~> 1.1"},
       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.2.0",

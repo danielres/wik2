@@ -39,7 +39,7 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
   def render(assigns) do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
-      <Layouts.container>
+      <Layouts.superadmin scope={@current_scope}>
         <div class="space-y-6">
           <div class="space-y-1">
             <h1 class="text-2xl font-[100]">Telegram bot updates</h1>
@@ -77,11 +77,18 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
             </:col>
 
             <:col :let={bot_update} field="summary__update_type" label="Type" filter sort search>
-              <span class="badge badge-sm badge-neutral">{bot_update.summary.update_type}</span>
+              <span
+                class="badge badge-sm badge-neutral"
+                data-testid={"telegram-bot-update-type-#{bot_update.update_id}"}
+              >
+                {bot_update.summary.update_type}
+              </span>
             </:col>
 
             <:col :let={bot_update} field="summary__chat_title" label="Chat" filter search>
-              {bot_update.summary.chat_title |> value_or_dash()}
+              <span data-testid={"telegram-bot-update-chat-title-#{bot_update.update_id}"}>
+                {bot_update.summary.chat_title |> value_or_dash()}
+              </span>
             </:col>
 
             <:col :let={bot_update} field="summary__chat_type" label="Chat type" filter sort>
@@ -131,7 +138,7 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
             ]}><code>{format_payload(@selected_bot_update.payload)}</code></pre>
           </Modal.render>
         </div>
-      </Layouts.container>
+      </Layouts.superadmin>
     </Layouts.app>
     """
   end

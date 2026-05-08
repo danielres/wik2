@@ -33,8 +33,20 @@ defmodule WikWeb.MeLive do
           Your account
         </h1>
 
+        <div class={[
+          "badge badge-lg bg-base-300 text-base-content",
+          "flex ml-auto"
+        ]}>
+          <span class="tooltip">
+            <span class="text-sm">Timezone: {@tz}</span>
+            <div class="tooltip-content max-w-[10rem] text-xs">
+              Auto-detected from your browser settings.
+            </div>
+          </span>
+        </div>
+
         <div class="grid gap-4 md:grid-cols-[1fr_1.2fr]">
-          <div>
+          <section>
             <h2 class="text-lg mb-1">Connected identities</h2>
 
             <div :if={@identities == []} class="card bg-base-200 h-min">
@@ -46,9 +58,9 @@ defmodule WikWeb.MeLive do
             <div :if={@identities != []} class="space-y-2" data-testid="me-connected-identities">
               <.identity_card :for={identity <- @identities} identity={identity} />
             </div>
-          </div>
+          </section>
 
-          <div>
+          <section>
             <h2 class="text-lg mb-1">Access grants</h2>
 
             <div
@@ -69,7 +81,7 @@ defmodule WikWeb.MeLive do
             <div :if={@grants != []} class="space-y-2" data-testid="me-access-grants">
               <.grant_card :for={grant <- @grants} current_user={@current_user} grant={grant} />
             </div>
-          </div>
+          </section>
         </div>
       </Layouts.container>
     </Layouts.app>

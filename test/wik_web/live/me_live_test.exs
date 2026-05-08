@@ -157,8 +157,7 @@ defmodule WikWeb.MeLiveTest do
         type: type,
         user_id: user.id
       },
-      authorize?: false,
-      domain: Wik.Accounts
+      authorize?: false
     )
   end
 
@@ -175,8 +174,7 @@ defmodule WikWeb.MeLiveTest do
           status: :active,
           title: "Telegram Group"
         },
-        authorize?: false,
-        domain: Wik.Access
+        authorize?: false
       )
 
     identity = create_telegram_identity(user, opts)
@@ -190,8 +188,7 @@ defmodule WikWeb.MeLiveTest do
         status: :active,
         user_id: user.id
       },
-      authorize?: false,
-      domain: Wik.Access
+      authorize?: false
     )
   end
 
@@ -208,8 +205,7 @@ defmodule WikWeb.MeLiveTest do
         username: Keyword.get(opts, :username),
         user_id: user.id
       },
-      authorize?: false,
-      domain: Wik.Access
+      authorize?: false
     )
   end
 

@@ -7,7 +7,9 @@
 # General application configuration
 import Config
 
+config :error_tracker, repo: Wik.Repo, otp_app: :wik, enabled: true
 config :cinder, default_theme: "daisy_ui"
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,
@@ -62,6 +64,7 @@ config :wik,
     Wik.Accounts,
     Wik.Blocks,
     Wik.Blog,
+    Wik.Events,
     Wik.Wiki
   ],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true]

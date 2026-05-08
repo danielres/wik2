@@ -8,7 +8,8 @@ defmodule Wik.Wiki.PageTree do
     domain: Wik.Wiki,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshPhoenix]
+    extensions: [AshPhoenix],
+    notifiers: [Ash.Notifier.PubSub]
 
   @type t :: %__MODULE__{
           id: String.t() | nil,
@@ -29,7 +30,7 @@ defmodule Wik.Wiki.PageTree do
   defdelegate build_tree(nodes), to: TreeQueries
 
   def destroy_node(page_tree, node_id, opts \\ []) do
-    # Temporary wrapper until ash fixes the following bug: 
+    # Temporary wrapper until ash fixes the following bug:
     # "scope lost on Ash.update for a record #2662"
     # https://github.com/ash-project/ash/issues/2662
     {destroy_page?, opts} = Keyword.pop(opts, :destroy_page?, false)
@@ -183,6 +184,17 @@ defmodule Wik.Wiki.PageTree do
     policy action(:manage_tree) do
       authorize_if Group.Checks.ActorCanManageResourceGroup
     end
+  end
+
+  pub_sub do
+    module WikWeb.Endpoint
+    prefix "page_tree"
+    publish :create, ["group", :group_id]
+    publish :add_child, ["group", :group_id]
+    publish :create_node_at_path, ["group", :group_id]
+    publish :link_page, ["group", :group_id]
+    publish :destroy_node, ["group", :group_id]
+    publish :move_node, ["group", :group_id]
   end
 
   multitenancy do

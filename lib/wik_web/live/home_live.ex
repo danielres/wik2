@@ -4,7 +4,9 @@ defmodule WikWeb.HomeLive do
   alias AshPhoenix.Form
   alias Wik.Accounts
   alias Wik.Accounts.Group
+  alias Wik.Events
   alias WikWeb.Components
+  alias WikWeb.Components.UI
   alias Utils.Log
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
@@ -21,20 +23,46 @@ defmodule WikWeb.HomeLive do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
-        <h1 class="text-2xl font-[100]">Your groups</h1>
+        <div class="grid sm:grid-cols-2 gap-8">
+          <section>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl font-[100]">Your groups</h2>
 
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div class="flex-1">
-            <Components.Group.list groups={@groups} />
-          </div>
+              <button
+                :if={Ash.can?({Group, :create}, @current_scope)}
+                class="btn btn-accent btn-circle btn-xs"
+                phx-click={UI.modal_open("create-group-modal")}
+              >
+                <.icon name="hero-plus-micro" />
+              </button>
+            </div>
+            <div class="flex-1">
+              <Components.Group.list groups={@groups} />
 
-          <Components.Group.form
-            :if={Ash.can?({Group, :create}, @current_scope)}
-            class="flex-1"
-            event_validate="validate"
-            event_submit="submit"
-            form={@form}
-          />
+              <UI.modal id="create-group-modal">
+                <Components.Group.form
+                  :if={Ash.can?({Group, :create}, @current_scope)}
+                  class="flex-1"
+                  event_validate="validate"
+                  event_submit="submit"
+                  form={@form}
+                />
+              </UI.modal>
+            </div>
+          </section>
+
+          <section>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl font-[100]">All your events</h2>
+              <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
+            </div>
+
+            <Components.Event.list
+              current_scope={@current_scope}
+              event_publications={@event_publications}
+              user_tz={@tz}
+            />
+          </section>
         </div>
       </Layouts.container>
     </Layouts.app>
@@ -63,6 +91,7 @@ defmodule WikWeb.HomeLive do
     scope = socket.assigns.current_scope
 
     socket
+    |> assign(event_publications: list_aggregate_event_publications(scope))
     |> assign(groups: scope |> list_groups())
     |> assign(form: scope |> init_form())
   end
@@ -79,6 +108,18 @@ defmodule WikWeb.HomeLive do
     else
       err ->
         Log.scoped_error(scope, err, "list_groups failed")
+        []
+    end
+  end
+
+  defp list_aggregate_event_publications(nil), do: []
+
+  defp list_aggregate_event_publications(scope) do
+    with {:ok, entries} <- Events.list_aggregate_feed_events(scope.actor) do
+      Enum.map(entries, fn entry -> List.first(entry.publications) end)
+    else
+      err ->
+        Log.scoped_error(scope, err, "list_aggregate_feed_events failed")
         []
     end
   end

@@ -16,16 +16,12 @@ defmodule WikWeb.Components.Group do
         phx-change={@event_validate}
         phx-submit={@event_submit}
       >
-        <div class="card bg-base-200">
-          <div class="card-body">
-            <.input field={@form[:name]} label="Name" />
-            <.input field={@form[:description]} label="Description" type="textarea" />
+        <.input field={@form[:name]} label="Name" />
+        <.input field={@form[:description]} label="Description" type="textarea" />
 
-            <.button type="submit" class="btn btn-accent btn-soft mt-3">
-              {@action_type |> String.capitalize()} group
-            </.button>
-          </div>
-        </div>
+        <.button type="submit" class="btn btn-accent btn-soft mt-3">
+          {@action_type |> String.capitalize()} group
+        </.button>
       </Phoenix.Component.form>
     </div>
     """

@@ -1,6 +1,21 @@
 defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
+  attr :rest, :global, include: ~w(phx-click phx-target data-testid)
+
+  def button_plus(assigns) do
+    ~H"""
+    <button
+      class="btn btn-accent btn-circle btn-xs"
+      phx-click={@rest[:"phx-click"]}
+    >
+      <.icon name="hero-plus-micro" />
+    </button>
+    """
+  end
+
+  # modal ======================================================================
+
   def modal_open(js \\ %JS{}, id), do: js |> JS.add_class("modal-open", to: "##{id}_modal")
   def modal_close(js \\ %JS{}, id), do: js |> JS.remove_class("modal-open", to: "##{id}_modal")
 

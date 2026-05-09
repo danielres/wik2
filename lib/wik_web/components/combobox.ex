@@ -2,6 +2,7 @@ defmodule WikWeb.Components.Combobox do
   use WikWeb, :html
 
   attr :field, Phoenix.HTML.FormField, required: true
+  attr :debounce_ms, :integer, default: 250
   attr :display_value, :string, default: nil
   attr :empty_display, :string, default: ""
   attr :empty_message, :string, default: "No matches"
@@ -43,6 +44,7 @@ defmodule WikWeb.Components.Combobox do
     <div
       id={@picker_id}
       class="fieldset relative"
+      data-debounce-ms={@debounce_ms}
       data-empty-display={@empty_display}
       data-empty-message={@empty_message}
       data-free-text={to_string(@free_text)}

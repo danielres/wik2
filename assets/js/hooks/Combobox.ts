@@ -12,6 +12,7 @@ type PopoverElement = HTMLElement & {
 type ComboboxHook = {
   activeIndex: number;
   debounceTimer?: number;
+  debounceMs: number;
   el: HTMLElement;
   emptyDisplay: string;
   emptyMessage: string;
@@ -67,6 +68,7 @@ function bindElements(hook: ComboboxHook) {
   hook.suggestedValues = parseSuggestedValues(hook.el);
   hook.emptyDisplay = hook.el.dataset.emptyDisplay || "";
   hook.emptyMessage = hook.el.dataset.emptyMessage || "No matches";
+  hook.debounceMs = parseInteger(hook.el.dataset.debounceMs, 250);
   hook.freeText = parseBoolean(hook.el.dataset.freeText);
   hook.searchEvent = hook.el.dataset.searchEvent || undefined;
   hook.searchMinLength = parseInteger(hook.el.dataset.searchMinLength, 1);
@@ -263,7 +265,7 @@ function refreshRemoteOptions(hook: ComboboxHook) {
 
       openPanel(hook);
     });
-  }, 250);
+  }, hook.debounceMs);
 }
 
 function openSearch(hook: ComboboxHook) {
@@ -289,6 +291,7 @@ function openSearch(hook: ComboboxHook) {
 export const Combobox = {
   mounted(this: ComboboxHook) {
     this.activeIndex = -1;
+    this.debounceMs = 250;
     this.filteredOptions = [];
     this.options = [];
     this.optionsByValue = new Map();

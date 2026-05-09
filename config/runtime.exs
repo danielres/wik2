@@ -22,6 +22,8 @@ end
 
 config :wik, WikWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+config :wik, Wik.Locations, api_url: System.get_env("LOCATION_API_URL")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

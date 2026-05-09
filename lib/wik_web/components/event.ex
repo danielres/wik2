@@ -3,6 +3,7 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Utils.Tz
+  alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
 
   attr :form, Phoenix.HTML.Form, required: true
@@ -71,7 +72,12 @@ defmodule WikWeb.Components.Event do
           testid="event-tz-picker"
         />
 
-        <.input field={@form[:location]} label="Location" />
+        <LocationPicker.field
+          field={@form[:location]}
+          id="event-location-picker"
+          label="Location"
+          testid="event-location-picker"
+        />
 
         <.input field={@form[:description]} label="Description" type="textarea" />
 

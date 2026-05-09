@@ -27,6 +27,26 @@ defmodule WikWeb.Layouts do
       </Layouts.app>
 
   """
+  def me(assigns) do
+    ~H"""
+    <div class={[
+      "flex flex-wrap items-center justify-between gap-4",
+      "px-2 sm:px-4 lg:px-8",
+      "mb-8"
+    ]}>
+      <menu class={[]}>
+        <ul class="menu menu-horizontal gap-1">
+          <.menu_item view={@view} target="me">Settings</.menu_item>
+          <.menu_item view={@view} target="me/access">Access</.menu_item>
+        </ul>
+      </menu>
+    </div>
+
+    <.container>
+      {render_slot(@inner_block)}
+    </.container>
+    """
+  end
 
   attr :scope, :map,
     default: %{actor: nil, avatar_url: nil, tenant: nil},
@@ -102,7 +122,11 @@ defmodule WikWeb.Layouts do
       "bg-base-200 rounded",
       @view != @target and "opacity-40"
     ]}>
-      <.link patch={"/#{@tenant}/#{@target}"}>
+      <.link :if={assigns[:tenant]} patch={"/#{@tenant}/#{@target}"}>
+        {render_slot(@inner_block)}
+      </.link>
+
+      <.link :if={assigns[:tenant] == nil} patch={"/#{@target}"}>
         {render_slot(@inner_block)}
       </.link>
     </li>

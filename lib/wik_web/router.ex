@@ -123,7 +123,8 @@ defmodule WikWeb.Router do
 
     ash_authentication_live_session :authenticated_routes do
       live "/", HomeLive, :index
-      live "/me", MeLive, :index
+      live "/me", Me.SettingsLive, :index
+      live "/me/access", Me.AccessLive, :index
 
       scope "/:group_name" do
         pipe_through [:group_tenant]

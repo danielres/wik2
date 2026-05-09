@@ -28,6 +28,7 @@ import topbar from "../vendor/topbar";
 import { CapitalizeFirstLetter } from "./hooks/CapitalizeFirstLetter";
 import { MarkdownEditor } from "./hooks/MarkdownEditor";
 import { TelegramLogin } from "./hooks/TelegramLogin";
+import { TimezoneCombobox } from "./hooks/TimezoneCombobox";
 import { initTheme } from "./theme";
 
 const csrfToken = document
@@ -46,6 +47,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CapitalizeFirstLetter,
     MarkdownEditor,
     TelegramLogin,
+    TimezoneCombobox,
   },
 });
 

@@ -407,7 +407,6 @@ defmodule WikWeb.Components.Event do
             <div class="flex flex-wrap items-center gap-2">
               <.event_header event={publication.event} />
               <.event_status event={publication.event} />
-{ publication.event.tz }
             </div>
 
             <div

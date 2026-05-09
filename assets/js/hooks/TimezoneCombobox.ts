@@ -139,7 +139,7 @@ function renderList(hook: TimezoneComboboxHook) {
   hook.list.replaceChildren();
 
   if (hook.filteredOptions.length === 0) {
-    const emptyState = document.createElement("div");
+    const emptyState = document.createElement("li");
     emptyState.className = "px-3 py-2 text-sm opacity-60";
     emptyState.textContent = "No matching timezone";
     hook.list.appendChild(emptyState);
@@ -204,8 +204,9 @@ export const TimezoneCombobox = {
     this.searchInput?.addEventListener("keydown", (event) => {
       if (event.key === "ArrowDown") {
         event.preventDefault();
+        const currentIndex = this.activeIndex;
         refreshOptions(this);
-        this.activeIndex = Math.min(this.activeIndex + 1, this.filteredOptions.length - 1);
+        this.activeIndex = Math.min(currentIndex + 1, this.filteredOptions.length - 1);
         highlightActiveOption(this);
         return;
       }

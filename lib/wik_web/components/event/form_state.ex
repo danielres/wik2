@@ -33,6 +33,7 @@ defmodule WikWeb.Components.Event.FormState do
     local_ends_at = event.ends_at && utc_to_local_naive(event.ends_at, event.tz)
 
     schedule_params(local_starts_at, local_ends_at, local_ends_at || local_starts_at)
+    |> Map.put("tz", event.tz)
   end
 
   defp schedule_params(local_starts_at, local_ends_at_naive),

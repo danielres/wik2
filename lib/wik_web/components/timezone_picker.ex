@@ -45,6 +45,7 @@ defmodule WikWeb.Components.TimezonePicker do
     <div
       id={@picker_id}
       class="fieldset relative"
+      data-testid={@testid}
       data-options={@options_json}
       data-suggested-values={@suggested_values_json}
       phx-hook="TimezoneCombobox"
@@ -61,7 +62,6 @@ defmodule WikWeb.Components.TimezonePicker do
             "w-full input flex items-center justify-between text-left",
             @errors != [] && "input-error"
           ]}
-          data-testid={@testid}
           data-role="trigger"
           role="combobox"
           style={"anchor-name:#{@anchor_name}"}

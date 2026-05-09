@@ -39,6 +39,7 @@ defmodule WikWeb.Components.Event.Details do
         :if={@mode == :edit}
         form={@event_form}
         target={@myself}
+        user_tz={@user_tz}
       />
 
       <Event.relay_form

@@ -77,6 +77,7 @@ defmodule WikWeb.EventsLive do
           <Components.Event.event_form
             :if={@event_form != nil}
             form={@event_form}
+            user_tz={@tz}
           />
         </Components.Modal.render>
       </Layouts.group>

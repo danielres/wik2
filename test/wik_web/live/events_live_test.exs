@@ -214,6 +214,7 @@ defmodule WikWeb.EventsLiveTest do
     render_click(element(view, testid("events-create-button")))
 
     assert has_element?(view, testid("event-modal-dialog"))
+    assert has_element?(view, testid("event-tz-picker"))
     refute render(view) =~ ~s(name="form[location_text]")
 
     render_submit(
@@ -708,6 +709,45 @@ defmodule WikWeb.EventsLiveTest do
     html = render(view)
     assert html =~ "Europe/Berlin"
     assert html =~ "Etc/UTC"
+  end
+
+  test "edit form timezone picker reflects the event timezone", %{conn: conn} do
+    owner = generate(user())
+    group = generate(group(author: owner))
+    add_membership(group, owner, :owner)
+
+    {:ok, _event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          starts_on: "2026-05-16",
+          ends_on: "2026-05-16",
+          tz: "Europe/Berlin",
+          title: "Berlin event"
+        ),
+        action: :create,
+        scope: scope(owner, group)
+      )
+
+    [publication] =
+      Ash.read!(
+        Wik.Events.EventPublication,
+        authorize?: false,
+        scope: scope(owner, group)
+      )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{group.name}/events?#{%{event: publication.id}}")
+
+    render_click(element(view, testid("event-detail-edit-#{publication.id}")))
+
+    assert has_element?(view, testid("event-form"))
+    assert has_element?(
+             view,
+             ~s(#{testid("event-tz-picker")} input[type="hidden"][value="Europe/Berlin"])
+           )
   end
 
   defp add_membership(group, user, type) do

@@ -3,9 +3,11 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Utils.Tz
+  alias WikWeb.Components.TimezonePicker
 
   attr :form, Phoenix.HTML.Form, required: true
   attr :target, :any, default: nil
+  attr :user_tz, :string, required: true
 
   def event_form(assigns) do
     all_day? = Phoenix.HTML.Form.input_value(assigns.form, :all_day)
@@ -61,7 +63,13 @@ defmodule WikWeb.Components.Event do
           />
         </div>
 
-        <.input field={@form[:tz]} label="Event TZ" />
+        <TimezonePicker.field
+          field={@form[:tz]}
+          id="event-tz-picker"
+          label="Event timezone"
+          suggested_values={[@user_tz]}
+          testid="event-tz-picker"
+        />
 
         <.input field={@form[:location]} label="Location" />
 
@@ -399,6 +407,7 @@ defmodule WikWeb.Components.Event do
             <div class="flex flex-wrap items-center gap-2">
               <.event_header event={publication.event} />
               <.event_status event={publication.event} />
+{ publication.event.tz }
             </div>
 
             <div

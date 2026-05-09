@@ -10,6 +10,7 @@ defmodule Wik.Accounts.User do
   alias Wik.Accounts.GroupUserRelation
   alias Wik.Accounts.User.Changes
   alias Wik.Accounts.User.Senders
+  alias Wik.Accounts.User.Validations
 
   postgres do
     table "users"
@@ -106,6 +107,12 @@ defmodule Wik.Accounts.User do
 
       run AshAuthentication.Strategy.MagicLink.Request
     end
+
+    update :update_tz do
+      accept [:tz]
+      require_atomic? false
+      validate Validations.Tz
+    end
   end
 
   policies do
@@ -116,6 +123,11 @@ defmodule Wik.Accounts.User do
     policy action_type(:read) do
       # TODO : implement proper read policies
       authorize_if always()
+    end
+
+    policy action(:update_tz) do
+      authorize_if expr(id == ^actor(:id))
+      authorize_if actor_attribute_equals(:role, :superadmin)
     end
   end
 
@@ -134,6 +146,11 @@ defmodule Wik.Accounts.User do
     end
 
     attribute :email, :ci_string do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :tz, :string do
       allow_nil? true
       public? true
     end

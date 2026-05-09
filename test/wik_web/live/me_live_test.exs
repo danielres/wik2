@@ -10,6 +10,7 @@ defmodule WikWeb.MeLiveTest do
   alias Wik.Access.Grant
   alias Wik.Access.Source
   alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.User
 
   test "renders connected identity and access grant instead of global username and email details",
        %{
@@ -143,6 +144,52 @@ defmodule WikWeb.MeLiveTest do
 
     assert has_element?(view, testid("superadmin-access-bypass"))
     assert render(view) =~ "As Superadmin, you have access to all spaces."
+  end
+
+  test "user can update their timezone from the account page", %{conn: conn} do
+    user = generate(user(email: "ada@example.com"))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/me")
+
+    assert has_element?(view, testid("me-timezone-button"), "Timezone: Etc/UTC")
+
+    render_click(element(view, testid("me-timezone-button")))
+
+    assert has_element?(view, testid("update-user-tz-dialog"))
+
+    render_submit(view, "update_user_tz_submit", %{"form" => %{"tz" => "Europe/Berlin"}})
+
+    refute has_element?(view, "#update-user-tz-form")
+    assert has_element?(view, testid("me-timezone-button"), "Timezone: Europe/Berlin")
+
+    assert {:ok, updated_user} = Ash.get(User, user.id, authorize?: false)
+    assert updated_user.tz == "Europe/Berlin"
+  end
+
+  test "user can reset their timezone to browser auto-detection", %{conn: conn} do
+    user = generate(user(email: "ada@example.com", tz: "Europe/Berlin"))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/me")
+
+    assert has_element?(view, testid("me-timezone-button"), "Timezone: Europe/Berlin")
+
+    render_click(element(view, testid("me-timezone-button")))
+
+    assert has_element?(view, testid("update-user-tz-auto-detect"))
+
+    render_click(element(view, testid("update-user-tz-auto-detect")))
+
+    refute has_element?(view, "#update-user-tz-form")
+    assert has_element?(view, testid("me-timezone-button"), "Timezone: Etc/UTC")
+
+    assert {:ok, updated_user} = Ash.get(User, user.id, authorize?: false)
+    assert updated_user.tz == nil
   end
 
   defp create_membership(group, user, type \\ :member) do

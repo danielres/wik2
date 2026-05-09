@@ -1,9 +1,12 @@
 defmodule WikWeb.MeLive do
   use WikWeb, :live_view
 
+  alias AshPhoenix.Form
+  alias Utils.Log
   alias Wik.Access
   alias Wik.Accounts
-  alias Utils.Log
+  alias WikWeb.Components.Modal
+  alias WikWeb.MeLive
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
 
@@ -18,6 +21,7 @@ defmodule WikWeb.MeLive do
 
     {:ok,
      socket
+     |> assign(form_update_user_tz: nil)
      |> assign(grants: grants)
      |> assign(groups: groups)
      |> assign(identities: identities)
@@ -29,21 +33,27 @@ defmodule WikWeb.MeLive do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
-        <h1 class="text-2xl font-[100] flex justify-between items-center">
-          Your account
-        </h1>
+        <div class="flex items-center gap-4 mb-6">
+          <h1 class="text-2xl font-[100]">
+            Your account
+          </h1>
 
-        <div class={[
-          "badge badge-lg bg-base-300 text-base-content",
-          "flex ml-auto"
-        ]}>
-          <span class="tooltip">
-            <span class="text-sm">Timezone: {@tz}</span>
-            <div class="tooltip-content max-w-[10rem] text-xs">
-              Auto-detected from your browser settings.
-            </div>
-          </span>
+          <MeLive.Components.button_tz current_user={@current_user} active_tz={@active_tz} />
         </div>
+
+        <Modal.render
+          cancel="update_user_tz_cancel"
+          cancel_testid="update-user-tz-cancel"
+          open?={@form_update_user_tz != nil}
+          testid="update-user-tz-dialog"
+        >
+          <MeLive.Components.form_tz
+            :if={Ash.can?({@current_user, :update_tz}, @current_scope)}
+            saved_tz={@current_user.tz}
+            form={@form_update_user_tz}
+            active_tz={@active_tz}
+          />
+        </Modal.render>
 
         <div class="grid gap-4 md:grid-cols-[1fr_1.2fr]">
           <section>
@@ -89,7 +99,7 @@ defmodule WikWeb.MeLive do
   end
 
   slot :inner_block
-  attr :rest, :global
+  attr :rest, :global, default: %{}
 
   def card(assigns) do
     ~H"""
@@ -237,6 +247,79 @@ defmodule WikWeb.MeLive do
       </div>
     </.card>
     """
+  end
+
+  @impl true
+  def handle_event("update_user_tz_start", _params, socket) do
+    current_scope = socket.assigns.current_scope
+    current_user = socket.assigns.current_user
+
+    socket =
+      socket
+      |> assign(
+        :form_update_user_tz,
+        current_user |> Form.for_update(:update_tz, scope: current_scope) |> to_form()
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_event("update_user_tz_validate", %{"form" => params}, socket) do
+    form_update_user_tz = socket.assigns.form_update_user_tz
+
+    socket =
+      socket
+      |> assign(:form_update_user_tz, Form.validate(form_update_user_tz, params) |> to_form())
+
+    {:noreply, socket}
+  end
+
+  def handle_event("update_user_tz_submit", %{"form" => params}, socket) do
+    socket =
+      case Form.submit(socket.assigns.form_update_user_tz, params: params) do
+        {:ok, current_user} ->
+          current_scope = %{socket.assigns.current_scope | actor: current_user}
+
+          socket
+          |> assign(:current_scope, current_scope)
+          |> assign(:current_user, current_user)
+          |> assign(:active_tz, current_user.tz)
+          |> assign(:form_update_user_tz, nil)
+          |> put_flash(:info, "Timezone updated")
+
+        {:error, form_update_user_tz} ->
+          assign(socket, :form_update_user_tz, form_update_user_tz)
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("update_user_tz_auto_detect", _params, socket) do
+    current_scope = socket.assigns.current_scope
+    current_user = socket.assigns.current_user
+
+    socket =
+      case Ash.update(current_user, %{tz: nil}, action: :update_tz, scope: current_scope) do
+        {:ok, current_user} ->
+          current_scope = %{current_scope | actor: current_user}
+
+          socket
+          |> assign(:current_scope, current_scope)
+          |> assign(:current_user, current_user)
+          |> assign(:active_tz, socket.assigns.browser_detected_tz)
+          |> assign(:form_update_user_tz, nil)
+          |> put_flash(:info, "Timezone reset to browser auto-detection")
+
+        {:error, error} ->
+          Log.scoped_error(current_scope, error, "resetting user timezone failed")
+          put_flash(socket, :error, "Couldn't reset timezone")
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("update_user_tz_cancel", _params, socket) do
+    {:noreply, assign(socket, :form_update_user_tz, nil)}
   end
 
   defp list_groups(nil), do: []

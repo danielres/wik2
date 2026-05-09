@@ -22,7 +22,7 @@ defmodule WikWeb.LiveUserAuth do
       socket
       |> AshAuthentication.Phoenix.LiveSession.assign_new_resources(session)
       |> assign_current_user_for_dev()
-      |> assign_tz()
+      |> assign_active_tz()
       |> assign_context()
       |> ErrorTrackerContext.set()
       |> attach_context_hook()
@@ -39,7 +39,7 @@ defmodule WikWeb.LiveUserAuth do
         socket
         |> assign(:current_user, current_user)
         |> assign(current_scope: current_scope)
-        |> assign_tz()
+        |> assign_active_tz()
         |> assign_context()
         |> ErrorTrackerContext.set()
         |> attach_context_hook()
@@ -64,7 +64,7 @@ defmodule WikWeb.LiveUserAuth do
           socket
           |> assign(:current_user, current_user)
           |> assign(current_scope: current_scope)
-          |> assign_tz()
+          |> assign_active_tz()
           |> assign_context()
           |> ErrorTrackerContext.set()
           |> attach_context_hook()
@@ -93,7 +93,7 @@ defmodule WikWeb.LiveUserAuth do
             socket
             |> assign(:current_user, current_user)
             |> assign(current_scope: current_scope)
-            |> assign_tz()
+            |> assign_active_tz()
             |> assign_context()
             |> ErrorTrackerContext.set()
             |> attach_context_hook()
@@ -152,18 +152,32 @@ defmodule WikWeb.LiveUserAuth do
     assign(socket, :context, Context.build(socket.assigns[:current_user]))
   end
 
-  defp assign_tz(socket) do
-    tz =
-      case get_connect_params(socket) do
-        %{"tz" => tz} when is_binary(tz) and tz != "" ->
-          if Utils.Tz.valid?(tz), do: tz, else: "Etc/UTC"
+  defp assign_active_tz(socket) do
+    current_user = socket.assigns[:current_user]
+    browser_detected_tz = browser_detected_tz(socket)
+
+    active_tz =
+      case current_user do
+        %{tz: tz} when is_binary(tz) and tz != "" ->
+          if Utils.Tz.valid?(tz), do: tz, else: browser_detected_tz
 
         _ ->
-          "Etc/UTC"
+          browser_detected_tz
       end
 
     socket
-    |> assign_new(:tz, fn -> tz end)
+    |> assign(:browser_detected_tz, browser_detected_tz)
+    |> assign(:active_tz, active_tz)
+  end
+
+  defp browser_detected_tz(socket) do
+    case get_connect_params(socket) do
+      %{"tz" => tz} when is_binary(tz) and tz != "" ->
+        if Utils.Tz.valid?(tz), do: tz, else: "Etc/UTC"
+
+      _ ->
+        "Etc/UTC"
+    end
   end
 
   defp attach_context_hook(socket) do

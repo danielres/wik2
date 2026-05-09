@@ -744,6 +744,7 @@ defmodule WikWeb.EventsLiveTest do
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 
     assert has_element?(view, testid("event-form"))
+
     assert has_element?(
              view,
              ~s(#{testid("event-tz-picker")} input[type="hidden"][value="Europe/Berlin"])

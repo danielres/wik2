@@ -73,7 +73,7 @@ defmodule WikWeb.Components.Combobox do
           aria-controls={"#{@picker_id}-panel"}
           aria-expanded="false"
           class={[
-            "w-full input flex items-center justify-between text-left",
+            "w-full input flex items-center justify-between text-left cursor-pointer",
             @errors != [] && "input-error"
           ]}
           data-role="trigger"

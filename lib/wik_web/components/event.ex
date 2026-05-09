@@ -138,6 +138,11 @@ defmodule WikWeb.Components.Event do
     |> Enum.map(&WikWeb.CoreComponents.translate_error/1)
   end
 
+  defp google_maps_search_url(location) do
+    "https://www.google.com/maps/search/?" <>
+      URI.encode_query(%{api: 1, query: location})
+  end
+
   attr :publication, :map, required: true
 
   def event_header(assigns) do
@@ -237,9 +242,20 @@ defmodule WikWeb.Components.Event do
         </div>
       </div>
 
-      <div :if={@publication.event.location not in [nil, ""]} class="flex gap-2 items-center">
-        <.icon name="hero-map-pin-mini" />
-        <div class="text-sm">{@publication.event.location}</div>
+      <div :if={@publication.event.location not in [nil, ""]} class="flex gap-2 items-start">
+        <.icon name="hero-map-pin-mini" class="mt-0.5" />
+        <div class="min-w-0">
+          <div class="text-sm">{@publication.event.location}</div>
+          <.link
+            class="link link-hover text-xs opacity-70"
+            data-testid="event-location-google-maps-link"
+            href={google_maps_search_url(@publication.event.location)}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open in Google Maps
+          </.link>
+        </div>
       </div>
 
       <div>

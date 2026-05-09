@@ -63,6 +63,10 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-detail"))
     assert render(view) =~ "An event description"
     assert render(view) =~ "Community Hall, 123 Example Street"
+
+    assert has_element?(view, testid("event-location-google-maps-link"))
+    assert render(view) =~ "https://www.google.com/maps/search/"
+    assert render(view) =~ "Community+Hall%2C+123+Example+Street"
   end
 
   test "relay button appears only when there is an eligible target group", %{conn: conn} do

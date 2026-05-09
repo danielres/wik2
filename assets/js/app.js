@@ -26,9 +26,9 @@ import { hooks as colocatedHooks } from "phoenix-colocated/wik";
 import topbar from "../vendor/topbar";
 
 import { CapitalizeFirstLetter } from "./hooks/CapitalizeFirstLetter";
+import { Combobox } from "./hooks/Combobox";
 import { MarkdownEditor } from "./hooks/MarkdownEditor";
 import { TelegramLogin } from "./hooks/TelegramLogin";
-import { TimezoneCombobox } from "./hooks/TimezoneCombobox";
 import { initTheme } from "./theme";
 
 const csrfToken = document
@@ -45,9 +45,9 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: {
     ...colocatedHooks,
     CapitalizeFirstLetter,
+    Combobox,
     MarkdownEditor,
     TelegramLogin,
-    TimezoneCombobox,
   },
 });
 

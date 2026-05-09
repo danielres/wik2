@@ -12,6 +12,17 @@ defmodule WikWeb.EventsLiveTest do
 
   require Ash.Query
 
+  setup do
+    previous = Application.get_env(:wik, Wik.Locations, [])
+    Application.put_env(:wik, Wik.Locations, api_url: "https://example.test/location")
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Locations, previous)
+    end)
+
+    :ok
+  end
+
   test "group members can view the compact timeline and open event detail by query param", %{
     conn: conn
   } do
@@ -215,6 +226,7 @@ defmodule WikWeb.EventsLiveTest do
 
     assert has_element?(view, testid("event-modal-dialog"))
     assert has_element?(view, testid("event-tz-picker"))
+    assert has_element?(view, testid("event-location-picker"))
     refute render(view) =~ ~s(name="form[location_text]")
 
     render_submit(
@@ -276,7 +288,11 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert has_element?(view, "#event-form input[name='form[location]'].input-error")
+    assert has_element?(
+             view,
+             ~s(#{testid("event-location-picker")} [data-role="trigger"].input-error)
+           )
+
     refute render(view) =~ "Could not save the event"
   end
 
@@ -387,7 +403,11 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert has_element?(view, "#event-form input[name='form[location]'].input-error")
+    assert has_element?(
+             view,
+             ~s(#{testid("event-location-picker")} [data-role="trigger"].input-error)
+           )
+
     refute render(view) =~ "Could not save the event"
   end
 
@@ -747,7 +767,7 @@ defmodule WikWeb.EventsLiveTest do
 
     assert has_element?(
              view,
-             ~s(#{testid("event-tz-picker")} input[type="hidden"][value="Europe/Berlin"])
+             ~s(#{testid("event-tz-picker")} input[data-role="value"][value="Europe/Berlin"])
            )
   end
 

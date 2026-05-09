@@ -6,6 +6,7 @@ defmodule WikWeb.EventsLive do
   alias Utils.Log
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
+  alias Wik.Locations
   alias WikWeb.Components
   alias WikWeb.Components.Event.Details
   alias WikWeb.Components.Event.FormState
@@ -130,6 +131,19 @@ defmodule WikWeb.EventsLive do
       |> assign(:event_form, FormState.validate(event_form, params))
 
     {:noreply, socket}
+  end
+
+  def handle_event("location_search", %{"q" => query}, socket) do
+    scope = socket.assigns.current_scope
+
+    case Locations.search(query) do
+      {:ok, options} ->
+        {:reply, %{options: options}, socket}
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "location_search failed")
+        {:reply, %{options: []}, socket}
+    end
   end
 
   def handle_event("event_form_submit", %{"form" => params}, socket) do

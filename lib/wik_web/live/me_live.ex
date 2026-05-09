@@ -7,6 +7,7 @@ defmodule WikWeb.MeLive do
   alias Wik.Accounts
   alias WikWeb.Components.Modal
   alias WikWeb.MeLive
+  alias WikWeb.LiveUserAuth
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
 
@@ -283,7 +284,10 @@ defmodule WikWeb.MeLive do
           socket
           |> assign(:current_scope, current_scope)
           |> assign(:current_user, current_user)
-          |> assign(:active_tz, current_user.tz)
+          |> assign(
+            :active_tz,
+            LiveUserAuth.active_tz(current_user, socket.assigns.browser_detected_tz)
+          )
           |> assign(:form_update_user_tz, nil)
           |> put_flash(:info, "Timezone updated")
 

@@ -156,18 +156,19 @@ defmodule WikWeb.LiveUserAuth do
     current_user = socket.assigns[:current_user]
     browser_detected_tz = browser_detected_tz(socket)
 
-    active_tz =
-      case current_user do
-        %{tz: tz} when is_binary(tz) and tz != "" ->
-          if Utils.Tz.valid?(tz), do: tz, else: browser_detected_tz
-
-        _ ->
-          browser_detected_tz
-      end
-
     socket
     |> assign(:browser_detected_tz, browser_detected_tz)
-    |> assign(:active_tz, active_tz)
+    |> assign(:active_tz, active_tz(current_user, browser_detected_tz))
+  end
+
+  def active_tz(current_user, browser_detected_tz) do
+    case current_user do
+      %{tz: tz} when is_binary(tz) and tz != "" ->
+        if Utils.Tz.valid?(tz), do: tz, else: browser_detected_tz
+
+      _ ->
+        browser_detected_tz
+    end
   end
 
   defp browser_detected_tz(socket) do

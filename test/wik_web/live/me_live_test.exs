@@ -147,7 +147,7 @@ defmodule WikWeb.MeLiveTest do
   end
 
   test "user can update their timezone from the account page", %{conn: conn} do
-    user = generate(user(email: "ada@example.com"))
+    user = generate(user())
 
     {:ok, view, _html} =
       conn
@@ -170,7 +170,7 @@ defmodule WikWeb.MeLiveTest do
   end
 
   test "user can reset their timezone to browser auto-detection", %{conn: conn} do
-    user = generate(user(email: "ada@example.com", tz: "Europe/Berlin"))
+    user = generate(user(tz: "Europe/Berlin"))
 
     {:ok, view, _html} =
       conn

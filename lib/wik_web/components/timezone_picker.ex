@@ -12,6 +12,7 @@ defmodule WikWeb.Components.TimezonePicker do
     "Australia/Sydney",
     "Pacific/Auckland"
   ]
+  @timezone_data_key {__MODULE__, :timezone_data}
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :id, :string, default: nil
@@ -22,8 +23,7 @@ defmodule WikWeb.Components.TimezonePicker do
 
   def field(assigns) do
     value = field_value(assigns.field)
-    options = timezone_options()
-    option_by_value = Map.new(options, &{&1.value, &1})
+    %{option_by_value: option_by_value, options_json: options_json} = timezone_data()
     display_value = display_value(option_by_value, value)
 
     suggested_values =
@@ -37,7 +37,7 @@ defmodule WikWeb.Components.TimezonePicker do
       |> assign(:display_id, "#{assigns.id || assigns.field.id}-display")
       |> assign(:display_value, display_value)
       |> assign(:errors, Enum.map(assigns.field.errors, &CoreComponents.translate_error/1))
-      |> assign(:options_json, Jason.encode!(options))
+      |> assign(:options_json, options_json)
       |> assign(:picker_id, assigns.id || "#{assigns.field.id}-picker")
       |> assign(:suggested_values_json, Jason.encode!(suggested_values))
 
@@ -119,28 +119,45 @@ defmodule WikWeb.Components.TimezonePicker do
     end
   end
 
-  defp timezone_options do
-    Tzdata.canonical_zone_list()
-    |> Enum.sort()
-    |> Enum.map(&timezone_option/1)
+  defp timezone_data do
+    case :persistent_term.get(@timezone_data_key, nil) do
+      nil ->
+        data = build_timezone_data()
+        :persistent_term.put(@timezone_data_key, data)
+        data
+
+      data ->
+        data
+    end
   end
 
-  defp timezone_option(value) do
-    city = city_label(value)
+  defp build_timezone_data do
+    options =
+      Tzdata.canonical_zone_list()
+      |> Enum.sort()
+      |> Enum.map(fn value ->
+        city =
+          case value do
+            "Etc/UTC" ->
+              "UTC"
+
+            _ ->
+              value
+              |> String.split("/")
+              |> List.last()
+              |> String.replace("_", " ")
+          end
+
+        %{
+          label: "#{city} - #{value}",
+          search: "#{String.downcase(city)} #{String.downcase(value)}",
+          value: value
+        }
+      end)
 
     %{
-      label: "#{city} - #{value}",
-      search: "#{String.downcase(city)} #{String.downcase(value)}",
-      value: value
+      option_by_value: Map.new(options, &{&1.value, &1}),
+      options_json: Jason.encode!(options)
     }
-  end
-
-  defp city_label("Etc/UTC"), do: "UTC"
-
-  defp city_label(value) do
-    value
-    |> String.split("/")
-    |> List.last()
-    |> String.replace("_", " ")
   end
 end

@@ -71,7 +71,7 @@ function currentSelection(hook: TimezoneComboboxHook): TimezoneOption | undefine
 }
 
 function currentSelectionLabel(hook: TimezoneComboboxHook): string {
-  return currentSelection(hook)?.label || hook.hiddenInput?.value || "Choose timezone";
+  return currentSelection(hook)?.label || hook.hiddenInput?.value || "Set custom timezone";
 }
 
 function syncTriggerLabel(hook: TimezoneComboboxHook) {

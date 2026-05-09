@@ -45,7 +45,7 @@ defmodule WikWeb.EventsLive do
           <Components.Event.list
             current_scope={@current_scope}
             event_publications={@event_publications}
-            user_tz={@tz}
+            user_tz={@active_tz}
           />
         </div>
 
@@ -61,7 +61,7 @@ defmodule WikWeb.EventsLive do
                 {if @event_form.source.type == :create, do: "Create event", else: "Edit event"}
               </h2>
 
-              <span class="badge bg-base-300">{@tz}</span>
+              <span class="badge bg-base-300">{@active_tz}</span>
             </div>
           </:title>
 
@@ -71,13 +71,13 @@ defmodule WikWeb.EventsLive do
             id={"event-details-#{@selected_publication.id}"}
             current_scope={@current_scope}
             publication={@selected_publication}
-            user_tz={@tz}
+            user_tz={@active_tz}
           />
 
           <Components.Event.event_form
             :if={@event_form != nil}
             form={@event_form}
-            user_tz={@tz}
+            user_tz={@active_tz}
           />
         </Components.Modal.render>
       </Layouts.group>
@@ -112,12 +112,12 @@ defmodule WikWeb.EventsLive do
   @impl true
   def handle_event("event_create_start", _params, socket) do
     current_scope = socket.assigns.current_scope
-    tz = socket.assigns.tz
+    active_tz = socket.assigns.active_tz
 
     socket =
       socket
       |> assign(:selected_publication, nil)
-      |> assign(:event_form, FormState.new(current_scope, tz))
+      |> assign(:event_form, FormState.new(current_scope, active_tz))
 
     {:noreply, socket}
   end

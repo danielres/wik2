@@ -50,7 +50,7 @@ defmodule WikWeb.Components.TimezonePicker do
       data-suggested-values={@suggested_values_json}
       phx-hook="TimezoneCombobox"
     >
-      <.input field={@field} type="hidden" />
+      <input id={@field.id} name={@field.name} type="hidden" value={field_value(@field) || ""} />
 
       <label for={@display_id}>
         <span class="label">{@label}</span>

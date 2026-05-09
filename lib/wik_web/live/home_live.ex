@@ -67,7 +67,7 @@ defmodule WikWeb.HomeLive do
             <Components.Event.list
               current_scope={@current_scope}
               event_publications={@event_publications}
-              user_tz={@tz}
+              user_tz={@active_tz}
             />
           </section>
         </div>

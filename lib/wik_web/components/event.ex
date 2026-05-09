@@ -138,16 +138,26 @@ defmodule WikWeb.Components.Event do
     |> Enum.map(&WikWeb.CoreComponents.translate_error/1)
   end
 
-  attr :event, :map, required: true
+  attr :publication, :map, required: true
 
   def event_header(assigns) do
     ~H"""
     <h2 class={[
       "truncate text-base font-medium leading-tight",
       "flex-grow",
-      @event.status == :cancelled && "line-through decoration-base-content"
+      "flex items-center gap-2",
+      @publication.event.status == :cancelled && "line-through decoration-base-content"
     ]}>
-      {@event.title}
+      <span
+        :if={@publication.publication_type == :relay}
+        class={[
+          "rounded size-4 bg-base-content/20",
+          "flex items-center justify-center"
+        ]}
+      >
+        <.icon name="hero-chevron-double-right-mini" class="size-4" />
+      </span>
+      {@publication.event.title}
     </h2>
     """
   end
@@ -206,13 +216,13 @@ defmodule WikWeb.Components.Event do
           phx-value-publication_id={@publication.id}
           phx-target={@target}
         >
-          <.icon name="hero-share-micro" class="size-4" />
+          <.icon name="hero-chevron-double-right-mini" class="size-5" />
         </button>
       </div>
 
       <div class="">
         <div class="flex justify-between gap-2 mb-4">
-          <.event_header event={@publication.event} />
+          <.event_header publication={@publication} />
           <.event_status event={@publication.event} />
         </div>
 
@@ -411,7 +421,7 @@ defmodule WikWeb.Components.Event do
         >
           <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
-              <.event_header event={publication.event} />
+              <.event_header publication={publication} />
               <.event_status event={publication.event} />
             </div>
 

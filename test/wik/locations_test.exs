@@ -70,5 +70,12 @@ defmodule Wik.LocationsTest do
       assert {:ok, []} =
                Locations.search("berlin", fn _url, _opts -> flunk("unexpected request") end)
     end
+
+    test "treats whitespace-only api_url as disabled" do
+      Application.put_env(:wik, Wik.Locations, api_url: "   ")
+
+      assert {:ok, []} =
+               Locations.search("berlin", fn _url, _opts -> flunk("unexpected request") end)
+    end
   end
 end

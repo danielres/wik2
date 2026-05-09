@@ -25,7 +25,17 @@ defmodule Wik.Locations do
   defp api_url do
     Application.get_env(:wik, __MODULE__, [])
     |> Keyword.get(:api_url)
+    |> normalize_api_url()
   end
+
+  defp normalize_api_url(api_url) when is_binary(api_url) do
+    case String.trim(api_url) do
+      "" -> nil
+      normalized_api_url -> normalized_api_url
+    end
+  end
+
+  defp normalize_api_url(api_url), do: api_url
 
   defp search_from_response({:ok, %Req.Response{status: 200, body: %{"features" => features}}})
        when is_list(features) do

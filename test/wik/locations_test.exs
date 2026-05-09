@@ -1,5 +1,5 @@
 defmodule Wik.LocationsTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Wik.Locations
 

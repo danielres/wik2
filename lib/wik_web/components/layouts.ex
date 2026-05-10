@@ -27,6 +27,10 @@ defmodule WikWeb.Layouts do
       </Layouts.app>
 
   """
+
+  attr :view, :string, default: nil, doc: "the current view for active menu state"
+  slot :inner_block, required: true
+
   def me(assigns) do
     ~H"""
     <div class={[

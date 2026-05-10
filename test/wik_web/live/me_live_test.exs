@@ -29,7 +29,7 @@ defmodule WikWeb.MeLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/me")
+      |> live(~p"/me/access")
 
     assert has_element?(view, testid("me-access-grants"))
     assert has_element?(view, testid("me-connected-identities"))
@@ -54,7 +54,7 @@ defmodule WikWeb.MeLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/me")
+      |> live(~p"/me/access")
 
     assert has_element?(view, testid("me-access-grants"))
     assert render(view) =~ "admin"
@@ -71,7 +71,7 @@ defmodule WikWeb.MeLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/me")
+      |> live(~p"/me/access")
 
     assert has_element?(view, testid("me-connected-identities"))
     refute has_element?(view, testid("me-access-grants"))
@@ -93,7 +93,7 @@ defmodule WikWeb.MeLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/me")
+      |> live(~p"/me/access")
 
     assert render(view) =~ "Ada Lovelace"
   end
@@ -113,7 +113,7 @@ defmodule WikWeb.MeLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/me")
+      |> live(~p"/me/access")
 
     assert render(view) =~ "telegram:telegram-user-42"
   end
@@ -127,7 +127,7 @@ defmodule WikWeb.MeLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/me")
+      |> live(~p"/me/access")
 
     assert has_element?(view, testid("owner-access-bypass"))
     assert render(view) =~ "As the space owner, you always keep access to:"
@@ -140,7 +140,7 @@ defmodule WikWeb.MeLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/me")
+      |> live(~p"/me/access")
 
     assert has_element?(view, testid("superadmin-access-bypass"))
     assert render(view) =~ "As Superadmin, you have access to all spaces."
@@ -154,7 +154,7 @@ defmodule WikWeb.MeLiveTest do
       |> log_in(user)
       |> live(~p"/me")
 
-    assert has_element?(view, testid("me-timezone-button"), "Timezone: Etc/UTC")
+    assert has_element?(view, testid("me-timezone-button"), "Etc/UTC")
 
     render_click(element(view, testid("me-timezone-button")))
 
@@ -163,7 +163,7 @@ defmodule WikWeb.MeLiveTest do
     render_submit(view, "update_user_tz_submit", %{"form" => %{"tz" => "Europe/Berlin"}})
 
     refute has_element?(view, "#update-user-tz-form")
-    assert has_element?(view, testid("me-timezone-button"), "Timezone: Europe/Berlin")
+    assert has_element?(view, testid("me-timezone-button"), "Europe/Berlin")
 
     assert {:ok, updated_user} = Ash.get(User, user.id, authorize?: false)
     assert updated_user.tz == "Europe/Berlin"
@@ -177,7 +177,7 @@ defmodule WikWeb.MeLiveTest do
       |> log_in(user)
       |> live(~p"/me")
 
-    assert has_element?(view, testid("me-timezone-button"), "Timezone: Europe/Berlin")
+    assert has_element?(view, testid("me-timezone-button"), "Europe/Berlin")
 
     render_click(element(view, testid("me-timezone-button")))
 
@@ -186,7 +186,7 @@ defmodule WikWeb.MeLiveTest do
     render_click(element(view, testid("update-user-tz-auto-detect")))
 
     refute has_element?(view, "#update-user-tz-form")
-    assert has_element?(view, testid("me-timezone-button"), "Timezone: Etc/UTC")
+    assert has_element?(view, testid("me-timezone-button"), "Etc/UTC")
 
     assert {:ok, updated_user} = Ash.get(User, user.id, authorize?: false)
     assert updated_user.tz == nil

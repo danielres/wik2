@@ -32,8 +32,7 @@ defmodule WikWeb.Me.Components do
             data-testid="update-user-tz-auto-detect"
             phx-click="update_user_tz_auto_detect"
           >
-            <.icon name="hero-magnifying-glass-mini" />
-            Auto-detect
+            <.icon name="hero-magnifying-glass-mini" /> Auto-detect
           </button>
 
           <button type="submit" class="btn btn-accent btn-sm" data-testid="update-user-tz-submit">

@@ -104,7 +104,6 @@ defmodule WikWeb.Me.SettingsLive do
             LiveUserAuth.active_tz(current_user, socket.assigns.browser_detected_tz)
           )
           |> assign(:form_update_user_tz, nil)
-          # |> put_flash(:info, "Timezone updated")
 
         {:error, form_update_user_tz} ->
           assign(socket, :form_update_user_tz, form_update_user_tz)
@@ -127,7 +126,6 @@ defmodule WikWeb.Me.SettingsLive do
           |> assign(:current_user, current_user)
           |> assign(:active_tz, socket.assigns.browser_detected_tz)
           |> assign(:form_update_user_tz, nil)
-          # |> put_flash(:info, "Timezone reset to browser auto-detection")
 
         {:error, error} ->
           Log.scoped_error(current_scope, error, "resetting user timezone failed")

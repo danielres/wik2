@@ -28,7 +28,7 @@ defmodule WikWeb.Me.AccessLive do
   def render(assigns) do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
-      <Layouts.me scope={@current_scope} view="me/access">
+      <Layouts.me view="me/access">
         <div class="grid gap-4 md:grid-cols-[1fr_1.2fr]">
           <section>
             <h2 class="text-lg mb-1">Connected identities</h2>

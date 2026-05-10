@@ -11,9 +11,6 @@ defmodule WikWeb.Me.SettingsLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    scope = socket.assigns.current_scope
-    current_user = socket.assigns.current_user
-
     {:ok, socket |> assign(form_update_user_tz: nil)}
   end
 
@@ -21,7 +18,7 @@ defmodule WikWeb.Me.SettingsLive do
   def render(assigns) do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
-      <Layouts.me scope={@current_scope} view="me">
+      <Layouts.me view="me">
         <div class="card bg-base-200 max-w-sm">
           <div class="card-body">
             <div class="font-bold">Your timezone</div>

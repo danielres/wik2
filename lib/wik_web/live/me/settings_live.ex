@@ -85,7 +85,7 @@ defmodule WikWeb.Me.SettingsLive do
 
     socket =
       socket
-      |> assign(:form_update_user_tz, Form.validate(form_update_user_tz, params) |> to_form())
+      |> assign(:form_update_user_tz, Form.validate(form_update_user_tz, params))
 
     {:noreply, socket}
   end

@@ -96,7 +96,14 @@
   --size-field: 0.25rem;
 
   /* border size */
-  --border: 2px;
+  --border: 0px;
+  form {
+    --border: 1px;
+    input.checkbox {
+      --border: 1px;
+      @apply scale-80 bg-base-content/5;
+    }
+  }
 
   /* effects */
   --depth: 0;

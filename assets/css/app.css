@@ -120,11 +120,12 @@
 }
 
 [data-color-mode="light"] {
-  --h: 250;
-  --c: 0.012;
-  --color-base-100: oklch(98% 0 var(--h));
-  --color-base-200: oklch(90% var(--c) var(--h));
-  --color-base-300: oklch(85% var(--c) var(--h));
+  --c: 0.01;
+  --h: 260;
+  --color-base-100: oklch(95% var(--c) var(--h));
+  --color-base-200: oklch(93% var(--c) var(--h));
+  --color-base-300: oklch(89% var(--c) var(--h));
+  --color-base-content: oklch(32% var(--c) var(--h));
 }
 
 .textarea,

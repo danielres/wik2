@@ -1,4 +1,6 @@
 defmodule WikWeb.Components.Event do
+  import Iconify
+
   use Phoenix.Component
   use WikWeb, :html
 

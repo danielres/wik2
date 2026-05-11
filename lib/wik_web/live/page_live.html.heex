@@ -19,34 +19,19 @@
             >
               <%= if @editing? do %>
                 <WikWeb.Components.Block.AddBlockMenuButton.render
-                  class={[
-                    "btn btn-sm btn-circle",
-                    "bg-accent/70 hover:bg-accent",
-                    "transition-opacity",
-                    "backdrop-blur"
-                  ]}
+                  class={["btn btn-sm btn-circle btn-accent"]}
                   event_open="add_block_modal_open"
                 />
 
                 <button
-                  class={[
-                    "btn btn-sm btn-circle",
-                    "bg-accent/70 hover:bg-accent",
-                    "transition-opacity",
-                    "backdrop-blur"
-                  ]}
+                  class={["btn btn-sm btn-circle btn-accent"]}
                   phx-click="toggle_edit_mode"
                 >
                   <.icon name="hero-check-micro" class="size-5" />
                 </button>
               <% else %>
                 <button
-                  class={[
-                    "btn btn-sm btn-circle",
-                    "bg-accent/70 hover:bg-accent",
-                    "transition-opacity",
-                    "backdrop-blur"
-                  ]}
+                  class={["btn btn-sm btn-circle btn-accent"]}
                   phx-click="toggle_edit_mode"
                 >
                   <.icon name="hero-pencil-square-micro" class="size-5" />

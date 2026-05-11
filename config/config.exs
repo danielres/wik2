@@ -11,6 +11,9 @@ config :error_tracker, repo: Wik.Repo, otp_app: :wik, enabled: true
 config :cinder, default_theme: "daisy_ui"
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
+config :iconify_ex, :mode, :css
+config :iconify_ex, :env, config_env()
+
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,
   include_embedded_source_by_default?: false,

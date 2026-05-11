@@ -105,13 +105,17 @@ defmodule WikWeb.Components.Block do
           {@block_title}
         </h2>
 
-        <.dispatch_render
-          block={@placement.block}
-          node={@node}
-          page_tree={@page_tree}
-          path={@path}
-          scope={@scope}
-        />
+        <div class={[
+          @editing? and "pointer-events-none"
+        ]}>
+          <.dispatch_render
+            block={@placement.block}
+            node={@node}
+            page_tree={@page_tree}
+            path={@path}
+            scope={@scope}
+          />
+        </div>
       </div>
     </div>
     """

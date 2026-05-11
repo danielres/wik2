@@ -18,7 +18,10 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     <div
       data-testid="markdown-block"
       id={"markdown-block-#{@block.id}"}
-      class={["BLOCK_MARKDOWN"]}
+      class={[
+        "BLOCK_MARKDOWN",
+        "[overflow-wrap:anywhere]"
+      ]}
     >
       {raw(@html)}
     </div>

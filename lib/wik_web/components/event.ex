@@ -195,12 +195,7 @@ defmodule WikWeb.Components.Event do
       <div class="float-right flex flex-col items-start gap-1">
         <button
           :if={@can_edit?}
-          class={[
-            "btn btn-sm btn-circle",
-            "bg-accent/70 hover:bg-accent",
-            "transition-opacity",
-            "backdrop-blur"
-          ]}
+          class={["btn btn-sm btn-circle btn-accent"]}
           data-testid={"event-detail-edit-#{@publication.id}"}
           phx-click="event_detail_edit_start"
           phx-value-publication_id={@publication.id}
@@ -210,12 +205,7 @@ defmodule WikWeb.Components.Event do
         </button>
         <button
           :if={@can_relay?}
-          class={[
-            "btn btn-sm btn-circle",
-            "bg-accent/70 hover:bg-accent",
-            "transition-opacity",
-            "backdrop-blur"
-          ]}
+          class={["btn btn-sm btn-circle btn-accent"]}
           data-testid={"event-detail-relay-#{@publication.id}"}
           phx-click="event_detail_relay_start"
           phx-value-publication_id={@publication.id}

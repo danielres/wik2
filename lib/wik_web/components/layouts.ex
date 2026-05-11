@@ -1,4 +1,6 @@
 defmodule WikWeb.Layouts do
+  import Iconify
+
   @moduledoc """
   This module holds layouts and related functionality
   used by your application.
@@ -155,23 +157,20 @@ defmodule WikWeb.Layouts do
   def app(assigns) do
     ~H"""
     <header class="navbar px-2 sm:px-4 lg:px-8">
-      <div class="flex-1">
-        <div class="flex-1 flex w-fit items-center gap-2">
-          <.link navigate={~p"/"} class="btn btn-circle btn-sm opacity-50 hover:opacity-100">
-            <i class="hero-home-mini size-4" />
-          </.link>
-          <.link
-            :if={@scope.tenant}
-            class={[
-              "font-bold tracking-wide",
-              "opacity-25 hover:opacity-100 transition",
-              "leading-none"
-            ]}
-            navigate={~p"/#{@scope.tenant.name}"}
-          >
-            {@scope.tenant |> to_string()}
-          </.link>
-        </div>
+      <div class="flex-1 flex w-fit items-center gap-0">
+        <.link navigate={~p"/"} class="btn-xs opacity-50 hover:opacity-100">
+          <.iconify icon="mynaui:bubbles-solid" class="size-4" />
+        </.link>
+
+        <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mt-0.5" />
+
+        <.link
+          :if={@scope.tenant}
+          class={["opacity-30 hover:opacity-100 transition"]}
+          navigate={~p"/#{@scope.tenant.name}"}
+        >
+          {@scope.tenant |> to_string()}
+        </.link>
       </div>
 
       <div>

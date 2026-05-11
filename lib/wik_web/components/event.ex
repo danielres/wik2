@@ -153,15 +153,11 @@ defmodule WikWeb.Components.Event do
       "flex items-center gap-2",
       @publication.event.status == :cancelled && "line-through decoration-base-content"
     ]}>
-      <span
+      <.iconify
         :if={@publication.publication_type == :relay}
-        class={[
-          "rounded size-4 bg-base-content/20",
-          "flex items-center justify-center"
-        ]}
-      >
-        <.icon name="hero-chevron-double-right-mini" class="size-4" />
-      </span>
+        icon="mdi:share"
+        class="text-base-content/30 size-5 -ml-5 absolute"
+      />
       {@publication.event.title}
     </h2>
     """
@@ -211,7 +207,7 @@ defmodule WikWeb.Components.Event do
           phx-value-publication_id={@publication.id}
           phx-target={@target}
         >
-          <.icon name="hero-chevron-double-right-mini" class="size-5" />
+          <.iconify icon="mdi:share" class="size-5" />
         </button>
       </div>
 

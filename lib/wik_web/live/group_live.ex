@@ -7,6 +7,7 @@ defmodule WikWeb.GroupLive do
   alias Wik.Blocks
   alias WikWeb.Components
   alias WikWeb.Components.Modal
+  alias WikWeb.Components.UI
   alias WikWeb.GroupLive.MembershipTypeSelector
   alias WikWeb.GroupLive.NewOwnerSelector
   alias WikWeb.GroupLive.OrphanBlocks
@@ -57,12 +58,8 @@ defmodule WikWeb.GroupLive do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.group presences={@presences} scope={@current_scope}>
-        <h1 class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
-          <div>
-            <span class="font-[400] opacity-70">
-              {@current_scope.tenant.name |> String.capitalize()}
-            </span>
-          </div>
+        <UI.page_title class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
+          {@current_scope.tenant.name |> String.capitalize()}
 
           <button
             :if={Ash.can?({@group, :update}, @current_scope)}
@@ -71,7 +68,7 @@ defmodule WikWeb.GroupLive do
           >
             <.icon name="hero-pencil-mini" />
           </button>
-        </h1>
+        </UI.page_title>
 
         <div class="opacity-50 text-sm">{@group.description}</div>
 

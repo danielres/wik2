@@ -1,6 +1,20 @@
 defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
+  attr :class, :string, default: ""
+  slot :inner_block, required: true
+
+  def page_title(assigns) do
+    ~H"""
+    <h1 class={[
+      "text-2xl",
+      @class
+    ]}>
+      {render_slot(@inner_block)}
+    </h1>
+    """
+  end
+
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
   def button_plus(assigns) do

@@ -2,11 +2,12 @@ defmodule WikWeb.BlogLive do
   use WikWeb, :live_view
   use WikWeb.Presence.Handlers
 
+  alias AshPhoenix.Form
+  alias Utils.Log
+  alias Utils.Time
   alias Wik.Blog
   alias Wik.Blog.Post
-  alias AshPhoenix.Form
-  alias Utils.Time
-  alias Utils.Log
+  alias WikWeb.Components.UI
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
@@ -30,7 +31,7 @@ defmodule WikWeb.BlogLive do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.group presences={@presences} scope={@current_scope} view="blog">
-        <h1 class="text-2xl font-[100]">Blog Posts</h1>
+        <UI.page_title>Blog</UI.page_title>
         <div class="grid sm:grid-cols-2 gap-4">
           <ul class="space-y-2">
             <%= for post <- @posts do %>

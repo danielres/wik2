@@ -140,7 +140,6 @@ defmodule WikWeb.Components.Block do
     <div
       class={["scroll-mt-20"]}
       id={"active-block-editor-#{@block.id}"}
-      phx-mounted={JS.dispatch("wik:scroll-into-view")}
     >
       <Phoenix.Component.form
         for={@form}

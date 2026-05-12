@@ -203,11 +203,13 @@ defmodule WikWeb.Components.Event do
         </button>
         <button
           :if={@can_relay?}
+          aria-label="Relay event"
+          title="Relay event"
           class={["btn btn-sm btn-circle btn-accent"]}
           data-testid={"event-detail-relay-#{@publication.id}"}
           phx-click="event_detail_relay_start"
-          phx-value-publication_id={@publication.id}
           phx-target={@target}
+          phx-value-publication_id={@publication.id}
         >
           <.iconify icon="mdi:share" class="size-5" />
         </button>

@@ -158,7 +158,7 @@ defmodule WikWeb.Layouts do
     ~H"""
     <header class="navbar px-2 sm:px-4 lg:px-8">
       <div class="flex-1 flex w-fit items-center gap-0">
-        <.link navigate={~p"/"} class="btn-xs opacity-50 hover:opacity-100">
+        <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
           <.iconify icon="mynaui:bubbles-solid" class="size-4" />
         </.link>
 

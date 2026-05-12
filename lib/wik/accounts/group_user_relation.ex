@@ -114,6 +114,12 @@ defmodule Wik.Accounts.GroupUserRelation do
   end
 
   calculations do
+    calculate :avatar_url, :string, Wik.Accounts.GroupUserRelation.Calculations.AvatarUrl do
+      public? true
+      filterable? false
+      sortable? false
+    end
+
     calculate :type_sort,
               :integer,
               expr(

@@ -26,6 +26,15 @@ defmodule Wik.Access.ResourcesTest do
 
       assert identity.user.id == user.id
     end
+
+    test "can be loaded from a user" do
+      user = generate(user())
+      identity = create_external_identity(user)
+
+      assert {:ok, user} = Ash.load(user, [:external_identities], authorize?: false)
+
+      assert Enum.map(user.external_identities, & &1.id) == [identity.id]
+    end
   end
 
   describe "sources" do

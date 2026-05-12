@@ -15,6 +15,16 @@ defmodule WikWeb.Components.UserTest do
     assert html =~ "hero-user"
   end
 
+  test "avatar renders a generic user icon with tenant context when initials are blank" do
+    html =
+      render_component(&User.avatar/1, %{
+        tenant: generate(group()),
+        user: generate(user(email: nil))
+      })
+
+    assert html =~ "hero-user"
+  end
+
   test "avatar renders the resolved avatar image when provided" do
     html =
       render_component(&User.avatar/1, %{

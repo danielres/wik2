@@ -161,6 +161,7 @@ defmodule WikWeb.Presence do
             locks
           else
             Map.put_new(locks, block_id, %{
+              avatar_url: presence.avatar_url,
               block_id: block_id,
               user: presence.user,
               user_id: presence.id
@@ -183,11 +184,8 @@ defmodule WikWeb.Presence do
   defp list_avatar_urls(_group_id, []), do: %{}
 
   defp list_avatar_urls(group_id, user_ids) do
-    with {:ok, grants} <- Access.list_group_grants_for_users(group_id, user_ids) do
-      grants
-      |> Enum.reject(&is_nil(&1.external_identity.avatar_url))
-      |> Map.new(&{&1.user_id, &1.external_identity.avatar_url})
-    else
+    case Access.list_group_avatar_urls(group_id, user_ids) do
+      {:ok, avatar_urls} -> avatar_urls
       {:error, _error} -> %{}
     end
   end

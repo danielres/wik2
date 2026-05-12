@@ -74,7 +74,7 @@
 
         <div class={[
           "grid grid-cols-1 gap-4",
-          has_area?(@page, :aside) && "lg:grid-cols-[minmax(0,1fr)_18rem]"
+          has_area?(@page, :aside) && "md:grid-cols-[minmax(0,1fr)_18rem]"
         ]}>
           <PageLive.Components.Area.render
             area={:main}
@@ -93,7 +93,7 @@
             :if={has_area?(@page, :aside)}
             area={:aside}
             class={[
-              "sm:border-l pl-4",
+              "md:border-l lg:pl-4",
               if(@editing?, do: "border-transparent", else: "border-base-content/10")
             ]}
             editing?={@editing?}

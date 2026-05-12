@@ -171,12 +171,13 @@ defmodule WikWeb.Components.Block do
         />
 
         <div class={[
-          !@actions? && "xhidden",
+          "sticky bottom-0",
+          "bg-accent/7 backdrop-blur pt-4 rounded-b-box",
           "flex justify-between gap-2",
           @block.type == :markdown && "px-4 pb-4"
         ]}>
           <.button
-            class="btn hover:bg-error/50 btn-sm"
+            class="btn bg-base-300/40 hover:bg-error/50 backdrop-blur btn-sm"
             phx-click="edit_block_cancel"
             phx-value-block_id={@block.id}
             type="button"

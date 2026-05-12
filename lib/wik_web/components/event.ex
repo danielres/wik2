@@ -1,4 +1,6 @@
 defmodule WikWeb.Components.Event do
+  import Iconify
+
   use Phoenix.Component
   use WikWeb, :html
 
@@ -153,15 +155,11 @@ defmodule WikWeb.Components.Event do
       "flex items-center gap-2",
       @publication.event.status == :cancelled && "line-through decoration-base-content"
     ]}>
-      <span
+      <.iconify
         :if={@publication.publication_type == :relay}
-        class={[
-          "rounded size-4 bg-base-content/20",
-          "flex items-center justify-center"
-        ]}
-      >
-        <.icon name="hero-chevron-double-right-mini" class="size-4" />
-      </span>
+        icon="mdi:share"
+        class="text-base-content/30 size-5 -ml-5 absolute"
+      />
       {@publication.event.title}
     </h2>
     """
@@ -195,12 +193,7 @@ defmodule WikWeb.Components.Event do
       <div class="float-right flex flex-col items-start gap-1">
         <button
           :if={@can_edit?}
-          class={[
-            "btn btn-sm btn-circle",
-            "bg-accent/70 hover:bg-accent",
-            "transition-opacity",
-            "backdrop-blur"
-          ]}
+          class={["btn btn-sm btn-circle btn-accent"]}
           data-testid={"event-detail-edit-#{@publication.id}"}
           phx-click="event_detail_edit_start"
           phx-value-publication_id={@publication.id}
@@ -210,18 +203,13 @@ defmodule WikWeb.Components.Event do
         </button>
         <button
           :if={@can_relay?}
-          class={[
-            "btn btn-sm btn-circle",
-            "bg-accent/70 hover:bg-accent",
-            "transition-opacity",
-            "backdrop-blur"
-          ]}
+          class={["btn btn-sm btn-circle btn-accent"]}
           data-testid={"event-detail-relay-#{@publication.id}"}
           phx-click="event_detail_relay_start"
           phx-value-publication_id={@publication.id}
           phx-target={@target}
         >
-          <.icon name="hero-chevron-double-right-mini" class="size-5" />
+          <.iconify icon="mdi:share" class="size-5" />
         </button>
       </div>
 

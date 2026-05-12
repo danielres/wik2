@@ -105,13 +105,17 @@ defmodule WikWeb.Components.Block do
           {@block_title}
         </h2>
 
-        <.dispatch_render
-          block={@placement.block}
-          node={@node}
-          page_tree={@page_tree}
-          path={@path}
-          scope={@scope}
-        />
+        <div class={[
+          @editing? and "pointer-events-none"
+        ]}>
+          <.dispatch_render
+            block={@placement.block}
+            node={@node}
+            page_tree={@page_tree}
+            path={@path}
+            scope={@scope}
+          />
+        </div>
       </div>
     </div>
     """
@@ -136,7 +140,6 @@ defmodule WikWeb.Components.Block do
     <div
       class={["scroll-mt-20"]}
       id={"active-block-editor-#{@block.id}"}
-      phx-mounted={JS.dispatch("wik:scroll-into-view")}
     >
       <Phoenix.Component.form
         for={@form}
@@ -167,12 +170,13 @@ defmodule WikWeb.Components.Block do
         />
 
         <div class={[
-          !@actions? && "xhidden",
+          "sticky bottom-0",
+          "bg-accent/7 backdrop-blur pt-4 rounded-b-box",
           "flex justify-between gap-2",
           @block.type == :markdown && "px-4 pb-4"
         ]}>
           <.button
-            class="btn hover:bg-error/50 btn-sm"
+            class="btn bg-base-300/40 hover:bg-error/50 backdrop-blur btn-sm"
             phx-click="edit_block_cancel"
             phx-value-block_id={@block.id}
             type="button"

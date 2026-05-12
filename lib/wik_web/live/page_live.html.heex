@@ -19,34 +19,19 @@
             >
               <%= if @editing? do %>
                 <WikWeb.Components.Block.AddBlockMenuButton.render
-                  class={[
-                    "btn btn-sm btn-circle",
-                    "bg-accent/70 hover:bg-accent",
-                    "transition-opacity",
-                    "backdrop-blur"
-                  ]}
+                  class={["btn btn-sm btn-circle btn-accent"]}
                   event_open="add_block_modal_open"
                 />
 
                 <button
-                  class={[
-                    "btn btn-sm btn-circle",
-                    "bg-accent/70 hover:bg-accent",
-                    "transition-opacity",
-                    "backdrop-blur"
-                  ]}
+                  class={["btn btn-sm btn-circle btn-accent"]}
                   phx-click="toggle_edit_mode"
                 >
                   <.icon name="hero-check-micro" class="size-5" />
                 </button>
               <% else %>
                 <button
-                  class={[
-                    "btn btn-sm btn-circle",
-                    "bg-accent/70 hover:bg-accent",
-                    "transition-opacity",
-                    "backdrop-blur"
-                  ]}
+                  class={["btn btn-sm btn-circle btn-accent"]}
                   phx-click="toggle_edit_mode"
                 >
                   <.icon name="hero-pencil-square-micro" class="size-5" />
@@ -81,18 +66,15 @@
             page={@page}
             open?={false}
           >
-            <h1 class={[
-              "text-2xl font-bold",
-              " opacity-90 hover:opacity-100 transition-opacity"
-            ]}>
+            <UI.page_title class="opacity-90 hover:opacity-100 transition-opacity">
               {@node.title}
-            </h1>
+            </UI.page_title>
           </PageLive.Components.Details.render>
         </header>
 
         <div class={[
           "grid grid-cols-1 gap-4",
-          has_area?(@page, :aside) && "lg:grid-cols-[minmax(0,1fr)_18rem]"
+          has_area?(@page, :aside) && "md:grid-cols-[minmax(0,1fr)_18rem]"
         ]}>
           <PageLive.Components.Area.render
             area={:main}
@@ -111,7 +93,7 @@
             :if={has_area?(@page, :aside)}
             area={:aside}
             class={[
-              "sm:border-l pl-4",
+              "md:border-l lg:pl-4",
               if(@editing?, do: "border-transparent", else: "border-base-content/10")
             ]}
             editing?={@editing?}

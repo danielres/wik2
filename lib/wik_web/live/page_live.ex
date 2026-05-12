@@ -3,6 +3,7 @@ defmodule WikWeb.PageLive do
   use WikWeb.Presence.Handlers
 
   alias WikWeb.Components
+  alias WikWeb.Components.UI
   alias WikWeb.PageLive
   alias WikWeb.PageLive.BlockActions
   alias WikWeb.PageLive.BlockEdit

@@ -54,7 +54,7 @@
   }
 
   a[href^="http"] {
-    @apply inline-flex items-center;
+    @apply inline-block text-balance;
     &::after {
       content: "";
       @apply hero-arrow-top-right-on-square-mini;

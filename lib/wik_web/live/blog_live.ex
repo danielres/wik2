@@ -29,7 +29,12 @@ defmodule WikWeb.BlogLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
+    <Layouts.app
+      context={@context}
+      flash={@flash}
+      tenant_context={@tenant_context}
+      scope={@current_scope}
+    >
       <Layouts.group presences={@presences} scope={@current_scope} view="blog">
         <UI.page_title>Blog</UI.page_title>
         <div class="grid sm:grid-cols-2 gap-4">

@@ -5,6 +5,7 @@ defmodule WikWeb.PageLive.Components.Details do
   use WikWeb, :html
   alias WikWeb.Components
 
+  attr :tenant_context, :map, default: nil
   attr :scope, :map, required: true
   attr :node, :map, required: true
   attr :page, :map, required: true
@@ -44,9 +45,8 @@ defmodule WikWeb.PageLive.Components.Details do
         <div class="font-bold">By:</div>
         <div class="flex items-center gap-2">
           <Components.User.avatar
-            avatar_url={@scope.avatar_url}
+            membership={@tenant_context && @tenant_context[:current_membership]}
             tenant={@scope.tenant}
-            user={@scope.actor}
             size="sm"
             link?
           />

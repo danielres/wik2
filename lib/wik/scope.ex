@@ -1,5 +1,5 @@
 defmodule Wik.Scope do
-  defstruct [:actor, :avatar_url, :tenant]
+  defstruct [:actor, :tenant]
 
   defimpl Ash.Scope.ToOpts do
     def get_actor(%{actor: actor}), do: {:ok, actor}

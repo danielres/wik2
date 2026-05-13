@@ -46,11 +46,10 @@ defmodule WikWeb.Components.Block.Types.Members do
     >
       <:col :let={membership} label="" class="w-0">
         <Components.User.avatar
-          avatar_url={membership.avatar_url}
           link?
+          membership={membership}
           size="md"
           tenant={@scope.tenant}
-          user={membership.user}
         />
       </:col>
 

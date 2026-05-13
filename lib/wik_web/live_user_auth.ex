@@ -4,11 +4,11 @@ defmodule WikWeb.LiveUserAuth do
   """
   @dev_routes? Application.compile_env(:wik, :dev_routes, false)
 
-  alias Wik.Access
   alias Wik.Accounts
   alias Wik.Accounts.GroupUserRelation
   alias WikWeb.Context
   alias WikWeb.ErrorTrackerContext
+  alias WikWeb.TenantContext
 
   import Phoenix.Component
   import Phoenix.LiveView, only: [attach_hook: 4, get_connect_params: 1]
@@ -39,6 +39,7 @@ defmodule WikWeb.LiveUserAuth do
         socket
         |> assign(:current_user, current_user)
         |> assign(current_scope: current_scope)
+        |> assign(:tenant_context, nil)
         |> assign_active_tz()
         |> assign_context()
         |> ErrorTrackerContext.set()
@@ -64,6 +65,7 @@ defmodule WikWeb.LiveUserAuth do
           socket
           |> assign(:current_user, current_user)
           |> assign(current_scope: current_scope)
+          |> assign(:tenant_context, nil)
           |> assign_active_tz()
           |> assign_context()
           |> ErrorTrackerContext.set()
@@ -85,14 +87,14 @@ defmodule WikWeb.LiveUserAuth do
 
       case group_name |> Accounts.get_group_by_name(actor: current_user) do
         {:ok, group} ->
-          current_scope =
-            %Wik.Scope{actor: current_user, tenant: group}
-            |> assign_scope_avatar_url()
+          current_scope = %Wik.Scope{actor: current_user, tenant: group}
+          tenant_context = TenantContext.build(current_user, group)
 
           socket =
             socket
             |> assign(:current_user, current_user)
             |> assign(current_scope: current_scope)
+            |> assign(:tenant_context, tenant_context)
             |> assign_active_tz()
             |> assign_context()
             |> ErrorTrackerContext.set()
@@ -116,6 +118,7 @@ defmodule WikWeb.LiveUserAuth do
       socket =
         socket
         |> assign(:current_user, nil)
+        |> assign(:tenant_context, nil)
         |> assign_context()
         |> ErrorTrackerContext.set()
 
@@ -190,7 +193,8 @@ defmodule WikWeb.LiveUserAuth do
       :ok = subscribe_to_membership_updates(current_user)
     end
 
-    attach_hook(socket, :context, :handle_info, fn
+    socket
+    |> attach_hook(:context, :handle_info, fn
       {Context, :claimable_sources_changed}, socket ->
         socket =
           assign(socket, :context, Context.build(socket.assigns[:current_user]))
@@ -203,17 +207,58 @@ defmodule WikWeb.LiveUserAuth do
           |> assign_context()
           |> refresh_current_scope()
           |> ErrorTrackerContext.set()
-          |> Phoenix.LiveView.put_flash(
-            :info,
-            "Your membership type changed. Some permissions may update on your next action."
-          )
 
         {:halt, socket}
 
       _message, socket ->
         {:cont, socket}
     end)
+    |> attach_membership_username_hook()
   end
+
+  defp attach_membership_username_hook(socket) do
+    attach_hook(socket, :membership_username, :handle_event, fn
+      "membership_username_validate", %{"form" => params}, socket ->
+        params = slugify_username_params(params)
+
+        form =
+          socket.assigns.tenant_context.membership_username_form
+          |> AshPhoenix.Form.validate(params)
+          |> to_form()
+
+        tenant_context =
+          socket.assigns.tenant_context
+          |> Map.put(:membership_username_form, form)
+
+        {:halt, assign(socket, :tenant_context, tenant_context)}
+
+      "membership_username_submit", %{"form" => params}, socket ->
+        params = slugify_username_params(params)
+
+        case AshPhoenix.Form.submit(socket.assigns.tenant_context.membership_username_form,
+               params: params
+             ) do
+          {:ok, _membership} ->
+            {:halt, refresh_current_scope(socket)}
+
+          {:error, form} ->
+            tenant_context =
+              socket.assigns.tenant_context
+              |> Map.put(:membership_username_form, to_form(form))
+
+            {:halt, assign(socket, :tenant_context, tenant_context)}
+        end
+
+      _event, _params, socket ->
+        {:cont, socket}
+    end)
+  end
+
+  defp slugify_username_params(%{"username" => username} = params) do
+    Map.put(params, "username", Utils.Slugify.generate(username))
+  end
+
+  defp slugify_username_params(params), do: params
 
   defp subscribe_to_membership_updates(nil), do: :ok
 
@@ -235,14 +280,6 @@ defmodule WikWeb.LiveUserAuth do
     @dev_routes? and System.get_env("WIK_DEV_DEMOTE_SUPERADMIN") == "true"
   end
 
-  defp assign_scope_avatar_url(%{actor: actor, tenant: tenant} = scope) do
-    case Access.get_user_group_avatar_url(actor, tenant) do
-      {:ok, avatar_url} when is_binary(avatar_url) -> %{scope | avatar_url: avatar_url}
-      {:ok, nil} -> scope
-      {:error, _error} -> scope
-    end
-  end
-
   defp refresh_current_scope(%{assigns: %{current_scope: %{tenant: nil}}} = socket), do: socket
   defp refresh_current_scope(%{assigns: %{current_scope: nil}} = socket), do: socket
 
@@ -251,11 +288,12 @@ defmodule WikWeb.LiveUserAuth do
 
     case Accounts.get_group_by_name(tenant.name, actor: current_user) do
       {:ok, group} ->
-        current_scope =
-          %Wik.Scope{actor: current_user, tenant: group}
-          |> assign_scope_avatar_url()
+        current_scope = %Wik.Scope{actor: current_user, tenant: group}
+        tenant_context = TenantContext.build(current_user, group)
 
-        assign(socket, :current_scope, current_scope)
+        socket
+        |> assign(:current_scope, current_scope)
+        |> assign(:tenant_context, tenant_context)
 
       _ ->
         socket

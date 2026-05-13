@@ -28,7 +28,12 @@ defmodule WikWeb.EventsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
+    <Layouts.app
+      context={@context}
+      flash={@flash}
+      tenant_context={@tenant_context}
+      scope={@current_scope}
+    >
       <Layouts.group presences={@presences} scope={@current_scope} view="events">
         <div class="space-y-6" data-testid="events-page">
           <div class="flex flex-wrap items-start gap-4">

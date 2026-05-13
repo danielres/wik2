@@ -60,10 +60,9 @@ defmodule WikWeb.Components.Block do
           "flex items-center gap-1"
         ]}>
           <WikWeb.Components.User.avatar
-            avatar_url={@lock[:avatar_url]}
             link?
+            membership={@lock[:membership]}
             tenant={@scope.tenant}
-            user={@lock.user}
             size="xs"
           />
           <.icon name="hero-ellipsis-horizontal-mini" class="size-4 animate-pulse" />

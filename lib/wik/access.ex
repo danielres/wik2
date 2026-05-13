@@ -124,6 +124,16 @@ defmodule Wik.Access do
     end
   end
 
+  def get_user_group_username_suggestion(%User{id: user_id}, %{id: group_id}) do
+    case list_group_grants_for_users(group_id, [user_id]) do
+      {:ok, grants} ->
+        {:ok, grants_to_username_suggestion(grants, user_id)}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   def list_group_avatar_urls(group_id, user_ids) when is_list(user_ids) do
     normalized_user_ids = user_ids |> Enum.uniq()
 
@@ -179,4 +189,28 @@ defmodule Wik.Access do
       load: [:external_identity]
     )
   end
+
+  defp grants_to_username_suggestion(grants, user_id) do
+    grants
+    |> Enum.find_value(fn
+      %{user_id: ^user_id, external_identity: %{username: username}} ->
+        normalize_username(username)
+
+      _grant ->
+        nil
+    end)
+  end
+
+  defp normalize_username(username) when is_binary(username) do
+    username
+    |> String.trim()
+    |> String.trim_leading("@")
+    |> Utils.Slugify.generate()
+    |> case do
+      "" -> nil
+      normalized -> normalized
+    end
+  end
+
+  defp normalize_username(_), do: nil
 end

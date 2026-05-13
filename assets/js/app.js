@@ -28,6 +28,7 @@ import topbar from "../vendor/topbar";
 import { CapitalizeFirstLetter } from "./hooks/CapitalizeFirstLetter";
 import { Combobox } from "./hooks/Combobox";
 import { MarkdownEditor } from "./hooks/MarkdownEditor";
+import { SlugifyInput } from "./hooks/SlugifyInput";
 import { TelegramLogin } from "./hooks/TelegramLogin";
 import { initTheme } from "./theme";
 
@@ -47,6 +48,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CapitalizeFirstLetter,
     Combobox,
     MarkdownEditor,
+    SlugifyInput,
     TelegramLogin,
   },
 });

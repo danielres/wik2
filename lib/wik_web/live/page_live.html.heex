@@ -1,4 +1,9 @@
-<Layouts.app context={@context} flash={@flash} scope={@current_scope}>
+<Layouts.app
+  context={@context}
+  flash={@flash}
+  tenant_context={@tenant_context}
+  scope={@current_scope}
+>
   <Layouts.group presences={@presences} scope={@current_scope} view="wiki">
     <%= if assigns[:not_found_path] do %>
       <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
@@ -61,6 +66,7 @@
           />
 
           <PageLive.Components.Details.render
+            tenant_context={@tenant_context}
             scope={@current_scope}
             node={@node}
             page={@page}

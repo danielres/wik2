@@ -78,7 +78,7 @@ defmodule WikWeb.HomeLive do
 
   @impl true
   def handle_event("validate", %{"form" => params}, socket) do
-    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
+    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(group_params(params)))}
   end
 
   def handle_event("create_group_start", _params, socket) do
@@ -104,7 +104,7 @@ defmodule WikWeb.HomeLive do
   end
 
   def handle_event("submit", %{"form" => params}, socket) do
-    case socket.assigns.form |> Form.submit(params: params) do
+    case socket.assigns.form |> Form.submit(params: group_params(params)) do
       {:ok, _group} ->
         socket =
           socket
@@ -133,6 +133,12 @@ defmodule WikWeb.HomeLive do
   defp init_form(scope) do
     Group |> Form.for_create(:create, scope: scope) |> to_form()
   end
+
+  defp group_params(%{"name" => name} = params) do
+    Map.put(params, "slug", Utils.Slugify.generate(name))
+  end
+
+  defp group_params(params), do: params
 
   defp list_groups(nil), do: []
 

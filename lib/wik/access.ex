@@ -67,7 +67,7 @@ defmodule Wik.Access do
     to: Telegram,
     as: :list_claimable_sources
 
-  defdelegate telegram_claim_source_with_new_group(source_id, user),
+  defdelegate telegram_claim_source_with_new_group(source_id, group_attrs, user),
     to: Telegram,
     as: :claim_source_with_new_group
 

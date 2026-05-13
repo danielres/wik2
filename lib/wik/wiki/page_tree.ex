@@ -200,7 +200,7 @@ defmodule Wik.Wiki.PageTree do
   multitenancy do
     strategy :attribute
     attribute :group_id
-    parse_attribute {Wik.Accounts, :group_name_to_id, []}
+    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
   end
 
   attributes do

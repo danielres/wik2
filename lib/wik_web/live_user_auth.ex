@@ -83,9 +83,9 @@ defmodule WikWeb.LiveUserAuth do
     current_user = socket.assigns[:current_user] |> current_user_for_dev()
 
     if current_user do
-      group_name = params["group_name"]
+      group_slug = params["group_slug"]
 
-      case group_name |> Accounts.get_group_by_name(actor: current_user) do
+      case group_slug |> Accounts.get_group_by_slug(actor: current_user) do
         {:ok, group} ->
           current_scope = %Wik.Scope{actor: current_user, tenant: group}
           tenant_context = TenantContext.build(current_user, group)
@@ -103,7 +103,7 @@ defmodule WikWeb.LiveUserAuth do
           {:cont, socket}
 
         _ ->
-          socket = Phoenix.LiveView.put_flash(socket, :error, ~s(Group "#{group_name}" not found))
+          socket = Phoenix.LiveView.put_flash(socket, :error, ~s(Group "#{group_slug}" not found))
           {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
       end
     else
@@ -286,7 +286,7 @@ defmodule WikWeb.LiveUserAuth do
   defp refresh_current_scope(%{assigns: %{current_scope: %{tenant: tenant}}} = socket) do
     current_user = socket.assigns.current_user
 
-    case Accounts.get_group_by_name(tenant.name, actor: current_user) do
+    case Accounts.get_group_by_slug(tenant.slug, actor: current_user) do
       {:ok, group} ->
         current_scope = %Wik.Scope{actor: current_user, tenant: group}
         tenant_context = TenantContext.build(current_user, group)

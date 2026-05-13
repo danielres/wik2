@@ -126,7 +126,7 @@ defmodule WikWeb.Router do
       live "/me", Me.SettingsLive, :index
       live "/me/access", Me.AccessLive, :index
 
-      scope "/:group_name" do
+      scope "/:group_slug" do
         pipe_through [:group_tenant]
         live "/", GroupLive, :members
         live "/members", GroupLive, :members

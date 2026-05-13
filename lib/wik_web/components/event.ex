@@ -447,12 +447,12 @@ defmodule WikWeb.Components.Event do
     """
   end
 
-  defp event_link_target(%{tenant: %{name: group_name}}, publication) do
-    ~p"/#{group_name}/events?#{%{event: publication.id}}"
+  defp event_link_target(%{tenant: %{slug: group_slug}}, publication) do
+    ~p"/#{group_slug}/events?#{%{event: publication.id}}"
   end
 
   defp event_link_target(_scope, publication) do
-    ~p"/#{publication.group.name}/events?#{%{event: publication.id}}"
+    ~p"/#{publication.group.slug}/events?#{%{event: publication.id}}"
   end
 
   attr :class, :string, default: nil

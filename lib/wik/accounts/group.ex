@@ -14,7 +14,7 @@ defmodule Wik.Accounts.Group do
     authorizers: [Ash.Policy.Authorizer]
 
   defimpl Ash.ToTenant do
-    def to_tenant(%{name: name}, _resource), do: name
+    def to_tenant(%{slug: slug}, _resource), do: slug
   end
 
   postgres do
@@ -35,7 +35,7 @@ defmodule Wik.Accounts.Group do
     ]
 
     create :create do
-      accept [:name, :description]
+      accept [:name, :slug, :description]
       change Changes.CreateWithOwnerMembership
     end
   end
@@ -91,6 +91,11 @@ defmodule Wik.Accounts.Group do
       allow_nil? false
     end
 
+    attribute :slug, Wik.Types.Slug do
+      public? true
+      allow_nil? false
+    end
+
     attribute :description, :string do
       public? true
       allow_nil? true
@@ -125,7 +130,7 @@ defmodule Wik.Accounts.Group do
   end
 
   identities do
-    identity :unique_name, :name
+    identity :unique_slug, :slug
   end
 end
 

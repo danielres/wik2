@@ -50,7 +50,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(member)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     assert has_element?(view, testid("events-page"))
     assert has_element?(view, testid("event-publication-#{publication.id}"))
@@ -59,7 +59,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{publication.id}")))
 
-    assert_patch(view, ~p"/#{group.name}/events?#{%{event: publication.id}}")
+    assert_patch(view, ~p"/#{group.slug}/events?#{%{event: publication.id}}")
     assert has_element?(view, testid("event-detail"))
     assert render(view) =~ "An event description"
     assert render(view) =~ "Community Hall, 123 Example Street"
@@ -94,7 +94,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.name}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_group.slug}/events?#{%{event: publication.id}}")
 
     assert has_element?(view, testid("event-detail-relay-#{publication.id}"))
 
@@ -119,7 +119,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, internal_view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.name}/events?#{%{event: internal_publication.id}}")
+      |> live(~p"/#{origin_group.slug}/events?#{%{event: internal_publication.id}}")
 
     refute has_element?(internal_view, testid("event-detail-relay-#{internal_publication.id}"))
   end
@@ -149,7 +149,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.name}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_group.slug}/events?#{%{event: publication.id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
 
@@ -205,7 +205,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.name}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_group.slug}/events?#{%{event: publication.id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
     assert has_element?(view, testid("event-relay-form"))
@@ -224,7 +224,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
 
@@ -251,7 +251,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{group.name}/events")
+    assert_patch(view, ~p"/#{group.slug}/events")
     assert has_element?(view, testid("events-timeline"))
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
@@ -270,7 +270,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
 
@@ -323,13 +323,13 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     assert has_element?(view, testid("event-publication-#{publication.id}"))
     refute render(view) =~ ~s(name="form[status]")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
-    assert_patch(view, ~p"/#{group.name}/events?#{%{event: publication.id}}")
+    assert_patch(view, ~p"/#{group.slug}/events?#{%{event: publication.id}}")
     assert has_element?(view, testid("event-detail"))
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -355,7 +355,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{group.name}/events")
+    assert_patch(view, ~p"/#{group.slug}/events")
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
     assert render(view) =~ "Community dinner updated"
@@ -383,7 +383,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -441,7 +441,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -479,7 +479,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -525,7 +525,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(relay_owner)
-      |> live(~p"/#{target_group.name}/events")
+      |> live(~p"/#{target_group.slug}/events")
 
     refute render(view) =~ "Good fit for your group"
     refute render(view) =~ origin_group.name
@@ -600,7 +600,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
 
@@ -728,7 +728,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(member)
-      |> live(~p"/#{group.name}/events")
+      |> live(~p"/#{group.slug}/events")
 
     html = render(view)
     assert html =~ "Europe/Berlin"
@@ -763,7 +763,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.name}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{group.slug}/events?#{%{event: publication.id}}")
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 

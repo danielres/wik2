@@ -47,17 +47,18 @@ defmodule WikWeb.ErrorTrackerContext do
   defp tenant_context(%{tenant: tenant}), do: tenant_context(tenant)
   defp tenant_context(nil), do: nil
 
-  defp tenant_context(%{id: id, name: name}) do
+  defp tenant_context(%{id: id, name: name, slug: slug}) do
     %{
       id: id,
-      name: name
+      name: name,
+      slug: slug
     }
   end
 
-  defp tenant_context(group_name) when is_binary(group_name) do
+  defp tenant_context(group_slug) when is_binary(group_slug) do
     %{
-      id: Accounts.group_name_to_id(group_name),
-      name: group_name
+      id: Accounts.group_slug_to_id(group_slug),
+      slug: group_slug
     }
   end
 

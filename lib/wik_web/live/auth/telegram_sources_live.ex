@@ -1,12 +1,19 @@
 defmodule WikWeb.Auth.TelegramSourcesLive do
   use WikWeb, :live_view
 
+  alias AshPhoenix.Form
   alias Wik.Access
   alias Wik.Accounts
+  alias Wik.Accounts.Group
+  alias WikWeb.Components
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign_claim_form_state()}
+    {:ok,
+     socket
+     |> assign(:create_group_form, nil)
+     |> assign(:create_group_source, nil)
+     |> assign_claim_form_state()}
   end
 
   @impl true
@@ -19,6 +26,8 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
             claimable_sources={@context.claimable_sources}
             owned_groups={@owned_groups}
             claim_existing_group_form={@claim_existing_group_form}
+            create_group_form={@create_group_form}
+            create_group_source={@create_group_source}
             owned_group_options={@owned_group_options}
           />
         </div>
@@ -30,6 +39,8 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
   attr :claimable_sources, :list, required: true
   attr :owned_groups, :list, required: true
   attr :claim_existing_group_form, :map, required: true
+  attr :create_group_form, :any, default: nil
+  attr :create_group_source, :map, default: nil
   attr :owned_group_options, :list, required: true
 
   def claimable_sources(assigns) do
@@ -87,7 +98,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
 
               <button
                 class="btn btn-accent btn-sm"
-                phx-click="claim_source_with_new_group"
+                phx-click="claim_source_with_new_group_start"
                 phx-value-source_id={source.id}
               >
                 Create new space
@@ -131,19 +142,95 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
         </div>
       </div>
     </div>
+
+    <Components.Modal.render
+      :if={@create_group_form != nil and @create_group_source != nil}
+      cancel="claim_source_with_new_group_cancel"
+      cancel_testid="telegram-create-group-cancel"
+      open?={true}
+      testid="telegram-create-group-dialog"
+    >
+      <:title>Create group</:title>
+
+      <div class="mb-4 rounded-box border border-base-300 bg-base-100/70 px-4 py-3 text-sm opacity-80">
+        Telegram group: {@create_group_source.title}
+      </div>
+
+      <Components.Group.form
+        class="flex-1"
+        event_validate="claim_source_with_new_group_validate"
+        event_submit="claim_source_with_new_group_submit"
+        form={@create_group_form}
+      />
+    </Components.Modal.render>
     """
   end
 
   @impl true
-  def handle_event("claim_source_with_new_group", %{"source_id" => source_id}, socket) do
-    case Access.telegram_claim_source_with_new_group(source_id, socket.assigns.current_user) do
-      {:ok, {group, _source}} ->
-        {:noreply, socket |> push_navigate(to: ~p"/#{group.name}")}
+  def handle_event("claim_source_with_new_group_start", %{"source_id" => source_id}, socket) do
+    case Enum.find(socket.assigns.context.claimable_sources, &(&1.id == source_id)) do
+      nil ->
+        {:noreply, socket}
 
-      {:error, _error} ->
+      source ->
+        params = %{
+          "description" => "Created from Telegram group #{source.title}",
+          "name" => source.title
+        }
+
+        form =
+          socket.assigns.current_scope
+          |> init_group_form()
+          |> Form.validate(params)
+          |> to_form()
+
         {:noreply,
          socket
-         |> put_flash(:error, "Could not claim Telegram group")}
+         |> assign(:create_group_form, form)
+         |> assign(:create_group_source, source)}
+    end
+  end
+
+  @impl true
+  def handle_event("claim_source_with_new_group_cancel", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:create_group_form, nil)
+     |> assign(:create_group_source, nil)}
+  end
+
+  @impl true
+  def handle_event("claim_source_with_new_group_validate", %{"form" => params}, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :create_group_form,
+       socket.assigns.create_group_form
+       |> Form.validate(group_params(params))
+       |> to_form()
+     )}
+  end
+
+  @impl true
+  def handle_event("claim_source_with_new_group_submit", %{"form" => params}, socket) do
+    case Access.telegram_claim_source_with_new_group(
+           socket.assigns.create_group_source.id,
+           group_params(params),
+           socket.assigns.current_user
+         ) do
+      {:ok, {group, _source}} ->
+        {:noreply, socket |> push_navigate(to: ~p"/#{group.slug}")}
+
+      {:error, error} ->
+        form =
+          socket.assigns.create_group_form
+          |> Form.validate(group_params(params))
+          |> Form.add_error(error)
+          |> to_form()
+
+        {:noreply,
+         socket
+         |> assign(:create_group_form, form)}
     end
   end
 
@@ -159,7 +246,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
            socket.assigns.current_user
          ) do
       {:ok, {group, _source}} ->
-        {:noreply, socket |> push_navigate(to: ~p"/#{group.name}")}
+        {:noreply, socket |> push_navigate(to: ~p"/#{group.slug}")}
 
       {:error, _error} ->
         {:noreply,
@@ -176,4 +263,15 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
     |> assign(:owned_group_options, Enum.map(owned_groups, &{&1.name, &1.id}))
     |> assign(:owned_groups, owned_groups)
   end
+
+  defp init_group_form(scope) do
+    Group
+    |> Form.for_create(:create, scope: scope)
+  end
+
+  defp group_params(%{"name" => name} = params) do
+    Map.put(params, "slug", Utils.Slugify.generate(name))
+  end
+
+  defp group_params(params), do: params
 end

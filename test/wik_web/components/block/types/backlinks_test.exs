@@ -59,19 +59,19 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
 
     assert document
            |> LazyHTML.query(
-             ~s([data-testid="backlinks-list"] a[href="/#{group.name}/wiki/recipes"])
+             ~s([data-testid="backlinks-list"] a[href="/#{group.slug}/wiki/recipes"])
            )
            |> Enum.any?()
 
     assert document
            |> LazyHTML.query(
-             ~s([data-testid="backlinks-list"] a[href="/#{group.name}/wiki/recipes/cakes"])
+             ~s([data-testid="backlinks-list"] a[href="/#{group.slug}/wiki/recipes/cakes"])
            )
            |> Enum.any?()
 
     assert document
            |> LazyHTML.query(
-             ~s([data-testid="backlinks-list"] a[href="/#{group.name}/wiki/recipes/cakes/cheesecake"])
+             ~s([data-testid="backlinks-list"] a[href="/#{group.slug}/wiki/recipes/cakes/cheesecake"])
            )
            |> Enum.any?()
   end

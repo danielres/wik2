@@ -64,7 +64,7 @@ defmodule WikWeb.Components.Page do
   end
 
   defp build_page_path(%{tenant: tenant}, path) do
-    "/" <> tenant.name <> "/wiki" <> "/" <> path
+    "/" <> tenant.slug <> "/wiki" <> "/" <> path
   end
 
   defp breadcrumb_path(%PageTree{}, %{path: path}) when is_binary(path), do: path

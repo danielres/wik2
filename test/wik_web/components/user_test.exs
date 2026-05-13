@@ -96,6 +96,6 @@ defmodule WikWeb.Components.UserTest do
         tenant: group
       })
 
-    assert html =~ ~s(href="/#{group.name}/wiki/members/ada")
+    assert html =~ ~s(href="/#{group.slug}/wiki/members/ada")
   end
 end

@@ -41,11 +41,17 @@ defmodule Wik.Access.TelegramSourceClaimTest do
       assert {:ok, {group, source}} =
                Telegram.claim_source_with_new_group(
                  source.id,
+                 %{
+                   "description" => "Created from Telegram group #{source.title}",
+                   "name" => source.title,
+                   "slug" => "wiktest-local-group-1"
+                 },
                  user,
                  CreatorTelegramProvider
                )
 
-      assert group.name == "wiktest-local-group-1"
+      assert group.name == "Wiktest Local Group 1"
+      assert group.slug == "wiktest-local-group-1"
       assert source.status == :active
       assert source.group_id == group.id
       assert source.claimed_by_user_id == user.id
@@ -68,6 +74,11 @@ defmodule Wik.Access.TelegramSourceClaimTest do
       assert {:error, :telegram_source_claim_requires_creator} =
                Telegram.claim_source_with_new_group(
                  source.id,
+                 %{
+                   "description" => "Created from Telegram group #{source.title}",
+                   "name" => source.title,
+                   "slug" => "wiktest-local-group-1"
+                 },
                  user,
                  MemberTelegramProvider
                )
@@ -94,6 +105,11 @@ defmodule Wik.Access.TelegramSourceClaimTest do
       assert {:error, :pending_source_required} =
                Telegram.claim_source_with_new_group(
                  source.id,
+                 %{
+                   "description" => "Created from Telegram group #{source.title}",
+                   "name" => source.title,
+                   "slug" => "wiktest-local-group-1"
+                 },
                  user,
                  CreatorTelegramProvider
                )

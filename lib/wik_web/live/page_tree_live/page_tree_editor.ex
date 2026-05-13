@@ -182,7 +182,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
 
   defp link_target_for_node(scope, nodes, node) do
     path = PageTree.get_node_path(nodes, node.id)
-    "/#{scope.tenant.name}/wiki/#{path}"
+    "/#{scope.tenant.slug}/wiki/#{path}"
   end
 
   defp current_move_node_title(_nodes, nil), do: "Top"

@@ -96,6 +96,6 @@ defmodule WikWeb.Components.Block.Types.Pages do
   end
 
   defp build_page_path(%{tenant: tenant}, path) do
-    "/" <> tenant.name <> "/wiki" <> "/" <> path
+    "/" <> tenant.slug <> "/wiki" <> "/" <> path
   end
 end

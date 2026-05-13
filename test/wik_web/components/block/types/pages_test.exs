@@ -70,9 +70,9 @@ defmodule WikWeb.Components.Block.Types.PagesTest do
         scope: scope
       })
 
-    assert html =~ ~s(href="/#{group.name}/wiki/docs")
-    assert html =~ ~s(href="/#{group.name}/wiki/docs/guide")
-    refute html =~ ~s(href="/#{group.name}/wiki/docs/guide/intro")
+    assert html =~ ~s(href="/#{group.slug}/wiki/docs")
+    assert html =~ ~s(href="/#{group.slug}/wiki/docs/guide")
+    refute html =~ ~s(href="/#{group.slug}/wiki/docs/guide/intro")
   end
 
   test "render shows a missing-node message when the configured source node no longer exists" do

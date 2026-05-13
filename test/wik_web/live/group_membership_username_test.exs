@@ -17,7 +17,7 @@ defmodule WikWeb.GroupMembershipUsernameTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/#{group.name}/tree")
+      |> live(~p"/#{group.slug}/tree")
 
     assert has_element?(view, testid("membership-username-dialog"))
 
@@ -26,7 +26,7 @@ defmodule WikWeb.GroupMembershipUsernameTest do
     |> render_submit()
 
     refute has_element?(view, testid("membership-username-dialog"))
-    assert render(view) =~ "/#{group.name}/wiki/members/alice"
+    assert render(view) =~ "/#{group.slug}/wiki/members/alice"
 
     assert {:ok, membership} = Accounts.get_membership(group, user)
     assert membership.username == "alice"
@@ -40,7 +40,7 @@ defmodule WikWeb.GroupMembershipUsernameTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/#{group.name}/tree")
+      |> live(~p"/#{group.slug}/tree")
 
     html =
       view
@@ -59,7 +59,7 @@ defmodule WikWeb.GroupMembershipUsernameTest do
     {:ok, view, _html} =
       conn
       |> log_in(superadmin)
-      |> live(~p"/#{group.name}/tree")
+      |> live(~p"/#{group.slug}/tree")
 
     refute has_element?(view, testid("membership-username-dialog"))
   end

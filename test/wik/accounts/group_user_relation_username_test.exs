@@ -84,6 +84,20 @@ defmodule Wik.Accounts.GroupUserRelationUsernameTest do
                )
     end
 
+    test "rejects usernames with underscores" do
+      group = generate(group())
+      user = generate(user())
+      membership = add_membership(group, user, :member)
+
+      assert {:error, _error} =
+               Ash.update(
+                 membership,
+                 %{username: "not_valid"},
+                 action: :set_username,
+                 scope: scope(user, group)
+               )
+    end
+
     test "allows reusing the same username in another group" do
       first_group = generate(group())
       second_group = generate(group())

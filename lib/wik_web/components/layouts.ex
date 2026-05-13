@@ -55,7 +55,7 @@ defmodule WikWeb.Layouts do
   end
 
   attr :scope, :map,
-    default: %{actor: nil, avatar_url: nil, tenant: nil},
+    default: %{actor: nil, tenant: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
   attr :view, :string, default: nil, doc: "the current view for active menu state"
@@ -82,7 +82,7 @@ defmodule WikWeb.Layouts do
   end
 
   attr :scope, :map,
-    default: %{actor: nil, avatar_url: nil, tenant: nil},
+    default: %{actor: nil, tenant: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
   attr :presences, :list, default: []
@@ -151,7 +151,10 @@ defmodule WikWeb.Layouts do
 
   attr :flash, :map, required: true, doc: "the map of flash messages"
   attr :context, :map, default: %{claimable_sources: []}
-  attr :scope, :map, default: %{actor: nil, avatar_url: nil, tenant: nil}
+  attr :tenant_context, :map, default: nil
+
+  attr :scope, :map, default: %{actor: nil, tenant: nil}
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -183,9 +186,8 @@ defmodule WikWeb.Layouts do
           style="anchor-name:--anchor-user-dropdown"
         >
           <Components.User.avatar
-            avatar_url={@scope.avatar_url}
+            membership={@tenant_context && @tenant_context[:current_membership]}
             tenant={@scope.tenant}
-            user={@scope.actor}
           />
 
           <div
@@ -247,14 +249,20 @@ defmodule WikWeb.Layouts do
           </ul>
 
           <ul
-            :if={@scope.tenant}
+            :if={
+              @scope.tenant && @tenant_context &&
+                @tenant_context[:current_membership] &&
+                @tenant_context[:current_membership].username != nil
+            }
             class={[
               "menu w-full",
               "border-t-1 border-base-content/20"
             ]}
           >
             <li>
-              <.link navigate={~p"/#{@scope.tenant.name}/wiki/members/#{@scope.actor |> to_string()}"}>
+              <.link navigate={
+                ~p"/#{@scope.tenant.name}/wiki/members/#{@tenant_context[:current_membership].username}"
+              }>
                 <.icon name="hero-face-smile" /> Profile
               </.link>
             </li>
@@ -291,6 +299,42 @@ defmodule WikWeb.Layouts do
     <div class="mb-8">
       {render_slot(@inner_block)}
     </div>
+
+    <Components.Modal.render
+      :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
+      open?={true}
+      testid="membership-username-dialog"
+    >
+      <:title>
+        <div class="space-y-1">
+          <h2 class="text-lg font-medium">Choose your username</h2>
+          <p class="text-sm opacity-70">
+            This will be used for your member profile URL in this group.
+          </p>
+        </div>
+      </:title>
+
+      <.form
+        :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
+        for={@tenant_context[:membership_username_form]}
+        id="membership-username-form"
+        phx-change="membership_username_validate"
+        phx-submit="membership_username_submit"
+        class="space-y-4"
+      >
+        <.input
+          field={@tenant_context[:membership_username_form][:username]}
+          label="Username"
+          type="text"
+          autocomplete="off"
+          phx-hook="SlugifyInput"
+        />
+
+        <div class="flex justify-end">
+          <.button type="submit" class="btn btn-primary">Continue</.button>
+        </div>
+      </.form>
+    </Components.Modal.render>
 
     <.flash_group flash={@flash} />
     """

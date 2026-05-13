@@ -17,10 +17,9 @@ defmodule WikWeb.Components.Presences do
       >
         <Components.User.avatar
           link?
-          avatar_url={presence.avatar_url}
+          membership={presence.membership}
           tenant={@tenant}
           size="sm"
-          user={presence.user}
         />
       </li>
     </ul>

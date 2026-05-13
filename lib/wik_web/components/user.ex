@@ -3,11 +3,14 @@ defmodule WikWeb.Components.User do
 
   attr :avatar_url, :string, default: nil
   attr :link?, :boolean, default: false
+  attr :membership, :map, default: nil
+  attr :profile_path, :string, default: nil
   attr :size, :string, default: "md"
   attr :tenant, :map, default: nil
   attr :tooltip?, :boolean, default: false
   attr :tooltip_direction, :string, default: "left"
   attr :tooltip_variant_class, :string, default: ""
+  attr :username, :string, default: nil
   attr :user, :map, default: nil
 
   def avatar(assigns) do
@@ -17,11 +20,6 @@ defmodule WikWeb.Components.User do
         "sm" -> "size-6 text-[0.7rem]"
         "md" -> "size-8"
         _ -> "size-8"
-      end
-
-    profile_path =
-      if assigns.tenant != nil and assigns.link? do
-        profile_path(assigns.tenant, assigns.user)
       end
 
     tooltip_direction_class =
@@ -35,8 +33,11 @@ defmodule WikWeb.Components.User do
 
     assigns =
       assigns
+      |> assign(:resolved_avatar_url, resolved_avatar_url(assigns))
+      |> assign(:resolved_profile_path, resolved_profile_path(assigns))
+      |> assign(:resolved_user, resolved_user(assigns))
+      |> assign(:resolved_username, resolved_username(assigns))
       |> assign(tooltip_direction_class: tooltip_direction_class)
-      |> assign(profile_path: profile_path)
       |> assign(size_class: size_class)
 
     ~H"""
@@ -50,36 +51,42 @@ defmodule WikWeb.Components.User do
     >
       <div class={[
         "avatar",
-        @avatar_url == nil && "avatar-placeholder"
+        @resolved_avatar_url == nil && "avatar-placeholder"
       ]}>
         <div class={[
           "rounded-full",
-          @avatar_url && "overflow-hidden",
-          @avatar_url == nil && "bg-base-300 text-xs grid place-items-center",
+          @resolved_avatar_url && "overflow-hidden",
+          @resolved_avatar_url == nil && "bg-base-300 text-xs grid place-items-center",
           @size_class
         ]}>
           <.link
-            :if={@profile_path}
-            navigate={@profile_path}
+            :if={@link? and @resolved_profile_path != nil}
+            navigate={@resolved_profile_path}
             class={[
               "size-full grid place-items-center",
               "opacity-80 hover:opacity-100 transition"
             ]}
           >
-            <.avatar_content avatar_url={@avatar_url} tenant={@tenant} user={@user} />
+            <.avatar_content
+              avatar_url={@resolved_avatar_url}
+              tenant={@tenant}
+              username={@resolved_username}
+              user={@resolved_user}
+            />
           </.link>
 
           <.avatar_content
-            :if={@profile_path == nil}
-            avatar_url={@avatar_url}
+            :if={not (@link? and @resolved_profile_path != nil)}
+            avatar_url={@resolved_avatar_url}
             tenant={@tenant}
-            user={@user}
+            username={@resolved_username}
+            user={@resolved_user}
           />
         </div>
       </div>
 
       <div :if={@tooltip?} class="tooltip-content text-xs">
-        {@user |> to_string()}
+        {@resolved_user |> to_string()}
       </div>
     </div>
     """
@@ -87,10 +94,11 @@ defmodule WikWeb.Components.User do
 
   attr :avatar_url, :string, default: nil
   attr :tenant, :map, default: nil
+  attr :username, :string, default: nil
   attr :user, :map, default: nil
 
   defp avatar_content(assigns) do
-    initials = initials(assigns.user)
+    initials = initials(assigns.username, assigns.user)
     show_icon? = is_nil(assigns.avatar_url) and (is_nil(assigns.tenant) or initials == nil)
 
     assigns =
@@ -105,9 +113,19 @@ defmodule WikWeb.Components.User do
     """
   end
 
-  defp initials(nil), do: nil
+  defp initials(username, _user) when is_binary(username) and username != "" do
+    username
+    |> String.slice(0, 2)
+    |> String.upcase()
+    |> case do
+      "" -> nil
+      initials -> initials
+    end
+  end
 
-  defp initials(user) do
+  defp initials(_username, nil), do: nil
+
+  defp initials(_username, user) do
     user
     |> to_string()
     |> String.slice(0, 2)
@@ -118,7 +136,37 @@ defmodule WikWeb.Components.User do
     end
   end
 
-  defp profile_path(tenant, user) do
-    "/#{tenant.name}/wiki/members/#{user |> to_string()}"
+  defp resolved_avatar_url(%{membership: membership}) when not is_nil(membership) do
+    Map.get(membership, :avatar_url)
   end
+
+  defp resolved_avatar_url(assigns), do: assigns.avatar_url
+
+  defp resolved_profile_path(%{profile_path: profile_path}) when is_binary(profile_path),
+    do: profile_path
+
+  defp resolved_profile_path(%{membership: membership, tenant: %{name: tenant_name}})
+       when not is_nil(membership) do
+    case Map.get(membership, :username) do
+      username when is_binary(username) and username != "" ->
+        "/#{tenant_name}/wiki/members/#{username}"
+
+      _username ->
+        nil
+    end
+  end
+
+  defp resolved_profile_path(_assigns), do: nil
+
+  defp resolved_user(%{membership: membership}) when not is_nil(membership) do
+    Map.get(membership, :user)
+  end
+
+  defp resolved_user(assigns), do: assigns.user
+
+  defp resolved_username(%{membership: membership}) when not is_nil(membership) do
+    Map.get(membership, :username)
+  end
+
+  defp resolved_username(assigns), do: assigns.username
 end

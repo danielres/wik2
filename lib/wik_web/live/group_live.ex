@@ -56,7 +56,12 @@ defmodule WikWeb.GroupLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
+    <Layouts.app
+      context={@context}
+      flash={@flash}
+      tenant_context={@tenant_context}
+      scope={@current_scope}
+    >
       <Layouts.group presences={@presences} scope={@current_scope}>
         <UI.page_title class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
           {@current_scope.tenant.name |> String.capitalize()}

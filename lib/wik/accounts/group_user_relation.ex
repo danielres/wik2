@@ -8,6 +8,7 @@ defmodule Wik.Accounts.GroupUserRelation do
     notifiers: [Ash.Notifier.PubSub]
 
   alias Wik.Accounts.Group
+  alias Wik.Accounts.GroupUserRelation.Changes
 
   postgres do
     table "group_user_relations"
@@ -49,6 +50,13 @@ defmodule Wik.Accounts.GroupUserRelation do
 
       change Wik.Accounts.GroupUserRelation.Changes.TransferOwnership
     end
+
+    update :set_username do
+      accept [:username]
+      require_atomic? false
+
+      change Changes.SetUsername
+    end
   end
 
   policies do
@@ -71,6 +79,11 @@ defmodule Wik.Accounts.GroupUserRelation do
       authorize_if expr(type == :owner and user_id == ^actor(:id))
     end
 
+    policy action(:set_username) do
+      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
     policy action_type(:create) do
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
@@ -83,6 +96,8 @@ defmodule Wik.Accounts.GroupUserRelation do
   pub_sub do
     module WikWeb.Endpoint
     prefix "group_user_relation"
+    publish :set_username, ["group", :group_id]
+    publish :set_username, ["user", :user_id]
     publish :update_membership_type, ["group", :group_id]
     publish :update_membership_type, ["user", :user_id]
   end
@@ -96,6 +111,10 @@ defmodule Wik.Accounts.GroupUserRelation do
       public? true
       allow_nil? false
       default :member
+    end
+
+    attribute :username, Wik.Types.Slug do
+      public? true
     end
   end
 
@@ -133,6 +152,7 @@ defmodule Wik.Accounts.GroupUserRelation do
 
   identities do
     identity :unique_group_user_relation, [:group_id, :user_id]
+    identity :unique_group_username, [:group_id, :username]
   end
 
   def updatable_types do

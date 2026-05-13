@@ -34,6 +34,7 @@ defmodule Wik.Accounts do
   require Ash.Query
 
   alias Wik.Accounts.Group
+  alias Wik.Accounts.GroupUserRelation
   alias Wik.Accounts.User
 
   def list_owned_groups(%User{id: user_id}) do
@@ -53,4 +54,76 @@ defmodule Wik.Accounts do
   def tenant_to_group_id(%{id: group_id}), do: group_id
   def tenant_to_group_id(group_name) when is_binary(group_name), do: group_name_to_id(group_name)
   def tenant_to_group_id(_), do: nil
+
+  def get_membership(%Group{id: group_id}, %User{id: user_id}),
+    do: get_membership(group_id, user_id)
+
+  def get_membership(group_id, user_id) when is_binary(group_id) and is_binary(user_id) do
+    GroupUserRelation
+    |> Ash.Query.filter(group_id == ^group_id and user_id == ^user_id)
+    |> Ash.Query.load([:user, :avatar_url])
+    |> Ash.read_one(authorize?: false, domain: __MODULE__)
+  end
+
+  def get_membership(_group_id, _user_id), do: {:ok, nil}
+
+  def list_memberships(%Group{id: group_id}, user_ids),
+    do: list_memberships(group_id, user_ids)
+
+  def list_memberships(group_id, user_ids)
+      when is_binary(group_id) and is_list(user_ids) do
+    normalized_user_ids =
+      user_ids
+      |> Enum.filter(&is_binary/1)
+      |> Enum.uniq()
+
+    case {Ecto.UUID.cast(group_id), normalized_user_ids} do
+      {_cast_result, []} ->
+        {:ok, []}
+
+      {:error, _user_ids} ->
+        {:ok, []}
+
+      {{:ok, _uuid}, _user_ids} ->
+        memberships =
+          GroupUserRelation
+          |> Ash.Query.filter(group_id == ^group_id and user_id in ^normalized_user_ids)
+          |> Ash.Query.load([:user, :avatar_url])
+          |> Ash.read!(authorize?: false, domain: __MODULE__)
+
+        {:ok, memberships}
+    end
+  end
+
+  def list_memberships(_group_id, _user_ids), do: {:ok, []}
+
+  def list_memberships_by_user_id(group_id, user_ids) do
+    case list_memberships(group_id, user_ids) do
+      {:ok, memberships} -> {:ok, Map.new(memberships, &{&1.user_id, &1})}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def present_membership(%GroupUserRelation{} = membership) do
+    user = membership.user
+    username = membership.username
+    avatar_url = membership.avatar_url
+
+    %{
+      avatar_url: avatar_url,
+      display_name: present_membership_display_name(username, user),
+      user: user,
+      username: username
+    }
+  end
+
+  def present_membership(_membership),
+    do: %{avatar_url: nil, display_name: nil, user: nil, username: nil}
+
+  defp present_membership_display_name(username, _user)
+       when is_binary(username) and username != "",
+       do: username
+
+  defp present_membership_display_name(_username, %User{} = user), do: to_string(user)
+  defp present_membership_display_name(_username, _user), do: nil
 end

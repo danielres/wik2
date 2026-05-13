@@ -9,7 +9,7 @@ defmodule WikWeb.Presence do
 
   require Ash.Query
 
-  alias Wik.Access
+  alias Wik.Accounts
   alias Wik.Accounts.User
 
   @impl true
@@ -22,21 +22,28 @@ defmodule WikWeb.Presence do
     user_ids = Map.keys(presences)
     group_id = group_id_from_topic(topic)
 
-    users =
-      User
-      |> Ash.Query.filter(id in ^user_ids)
-      |> Ash.read!(authorize?: false)
-      |> Map.new(&{&1.id, &1})
+    memberships =
+      case Accounts.list_memberships_by_user_id(group_id, user_ids) do
+        {:ok, memberships} -> memberships
+        {:error, _error} -> %{}
+      end
 
-    avatar_urls = list_avatar_urls(group_id, user_ids)
+    presentation_by_user_id = present_memberships(memberships)
+    users = list_users_by_id(user_ids, presentation_by_user_id)
 
     for {user_id, %{metas: [meta | metas]}} <- presences, into: %{} do
+      membership =
+        presentation_by_user_id
+        |> Map.get(user_id, %{})
+        |> normalize_membership(Map.get(users, user_id), user_id)
+
       {user_id,
        %{
-         avatar_url: Map.get(avatar_urls, user_id),
+         display_name: Map.get(membership, :display_name) || user_id,
          id: user_id,
+         membership: membership,
          metas: [meta | metas],
-         user: Map.get(users, user_id)
+         user: Map.get(membership, :user) || Map.get(users, user_id)
        }}
     end
   end
@@ -133,7 +140,7 @@ defmodule WikWeb.Presence do
     for presence <- presences,
         meta <- presence.metas,
         meta.path == path,
-        do: presence.user |> to_string()
+        do: Map.get(presence, :display_name) || presence.id
   end
 
   @spec presences_to_locks([map()], String.t()) :: %{optional(String.t()) => map()}
@@ -161,8 +168,8 @@ defmodule WikWeb.Presence do
             locks
           else
             Map.put_new(locks, block_id, %{
-              avatar_url: presence.avatar_url,
               block_id: block_id,
+              membership: presence.membership,
               user: presence.user,
               user_id: presence.id
             })
@@ -179,14 +186,46 @@ defmodule WikWeb.Presence do
     )
   end
 
-  defp list_avatar_urls(nil, _user_ids), do: %{}
+  defp present_memberships(memberships_by_user_id) do
+    Map.new(memberships_by_user_id, fn {user_id, membership} ->
+      {user_id, Accounts.present_membership(membership)}
+    end)
+  end
 
-  defp list_avatar_urls(_group_id, []), do: %{}
+  defp normalize_membership(membership, user, user_id) do
+    membership
+    |> Map.put_new(:user, user)
+    |> Map.put_new(:display_name, default_display_name(user, user_id))
+  end
 
-  defp list_avatar_urls(group_id, user_ids) do
-    case Access.list_group_avatar_urls(group_id, user_ids) do
-      {:ok, avatar_urls} -> avatar_urls
-      {:error, _error} -> %{}
+  defp default_display_name(%User{} = user, _user_id), do: to_string(user)
+  defp default_display_name(_user, user_id), do: user_id
+
+  defp list_users_by_id(user_ids, presentation_by_user_id) do
+    loaded_users =
+      presentation_by_user_id
+      |> Map.values()
+      |> Enum.reduce(%{}, fn presentation, users ->
+        case presentation.user do
+          %User{} = user -> Map.put(users, user.id, user)
+          nil -> users
+        end
+      end)
+
+    missing_user_ids = Enum.reject(user_ids, &Map.has_key?(loaded_users, &1))
+
+    case missing_user_ids do
+      [] ->
+        loaded_users
+
+      _user_ids ->
+        fetched_users =
+          User
+          |> Ash.Query.filter(id in ^missing_user_ids)
+          |> Ash.read!(authorize?: false)
+          |> Map.new(&{&1.id, &1})
+
+        Map.merge(loaded_users, fetched_users)
     end
   end
 

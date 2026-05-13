@@ -4,6 +4,7 @@ defmodule WikWeb.Components.BlockTest do
   import Phoenix.Component, only: [to_form: 2]
   import Phoenix.LiveViewTest, only: [render_component: 2]
 
+  alias Wik.Accounts.User
   alias Wik.Wiki.PageTree
   alias WikWeb.Components.Block
 
@@ -40,6 +41,26 @@ defmodule WikWeb.Components.BlockTest do
     document = LazyHTML.from_fragment(html)
 
     refute document |> LazyHTML.query("h2") |> Enum.any?()
+  end
+
+  test "render shows the lock owner's avatar when available" do
+    html =
+      render_component(&Block.render/1, %{
+        lock: %{
+          avatar_url: "https://telegram.example/locker.png",
+          user: %User{id: "user-1", email: "locker@example.com"}
+        },
+        placement: %{
+          block: %{
+            id: "block-1",
+            data: %{"title" => "", "url" => ""},
+            type: :youtube
+          }
+        },
+        scope: %{tenant: %{name: "group"}}
+      })
+
+    assert html =~ ~s(src="https://telegram.example/locker.png")
   end
 
   test "form renders title input for titled blocks" do

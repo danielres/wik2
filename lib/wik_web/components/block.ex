@@ -60,6 +60,7 @@ defmodule WikWeb.Components.Block do
           "flex items-center gap-1"
         ]}>
           <WikWeb.Components.User.avatar
+            avatar_url={@lock[:avatar_url]}
             link?
             tenant={@scope.tenant}
             user={@lock.user}

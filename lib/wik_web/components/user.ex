@@ -90,18 +90,32 @@ defmodule WikWeb.Components.User do
   attr :user, :map, default: nil
 
   defp avatar_content(assigns) do
+    initials = initials(assigns.user)
+    show_icon? = is_nil(assigns.avatar_url) and (is_nil(assigns.tenant) or initials == nil)
+
+    assigns =
+      assigns
+      |> assign(:initials, initials)
+      |> assign(:show_icon?, show_icon?)
+
     ~H"""
     <img :if={@avatar_url} src={@avatar_url} class="size-full object-cover" />
-    <.icon :if={@avatar_url == nil and @tenant == nil} name="hero-user" class="size-1/2" />
-    <span :if={@avatar_url == nil and @tenant != nil}>{initials(@user)}</span>
+    <.icon :if={@show_icon?} name="hero-user" class="size-1/2" />
+    <span :if={@avatar_url == nil and @tenant != nil and @initials != nil}>{@initials}</span>
     """
   end
+
+  defp initials(nil), do: nil
 
   defp initials(user) do
     user
     |> to_string()
     |> String.slice(0, 2)
     |> String.upcase()
+    |> case do
+      "" -> nil
+      initials -> initials
+    end
   end
 
   defp profile_path(tenant, user) do

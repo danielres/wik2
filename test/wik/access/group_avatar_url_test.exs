@@ -41,6 +41,43 @@ defmodule Wik.Access.GroupAvatarUrlTest do
              Access.get_user_group_avatar_url(user, group)
   end
 
+  test "lists avatar urls keyed by user for the first usable group grant" do
+    group = generate(group())
+    user_with_avatar = generate(user())
+    user_without_avatar = generate(user())
+
+    source_with_avatar =
+      create_source(group, user_with_avatar, "source-with-avatar-map")
+
+    source_without_avatar =
+      create_source(group, user_without_avatar, "source-without-avatar-map")
+
+    create_grant(
+      source_without_avatar,
+      create_identity(user_without_avatar,
+        provider_user_id: "telegram-user-without-avatar-map",
+        avatar_url: nil
+      ),
+      user_without_avatar,
+      DateTime.utc_now()
+    )
+
+    create_grant(
+      source_with_avatar,
+      create_identity(user_with_avatar,
+        provider_user_id: "telegram-user-with-avatar-map",
+        avatar_url: "https://telegram.example/avatar-map.png"
+      ),
+      user_with_avatar,
+      DateTime.utc_now()
+    )
+
+    assert {:ok, avatar_urls} =
+             Access.list_group_avatar_urls(group.id, [user_with_avatar.id, user_without_avatar.id])
+
+    assert avatar_urls == %{user_with_avatar.id => "https://telegram.example/avatar-map.png"}
+  end
+
   defp create_source(group, user, provider_source_id) do
     Ash.create!(
       Source,

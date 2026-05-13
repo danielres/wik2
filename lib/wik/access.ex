@@ -118,8 +118,30 @@ defmodule Wik.Access do
   end
 
   def get_user_group_avatar_url(%User{id: user_id}, %{id: group_id}) do
+    case list_group_avatar_urls(group_id, [user_id]) do
+      {:ok, avatar_urls} -> {:ok, Map.get(avatar_urls, user_id)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def list_group_avatar_urls(group_id, user_ids) when is_list(user_ids) do
+    normalized_user_ids = user_ids |> Enum.uniq()
+
+    cond do
+      is_nil(group_id) ->
+        {:ok, %{}}
+
+      normalized_user_ids == [] ->
+        {:ok, %{}}
+
+      true ->
+        do_list_group_avatar_urls(group_id, normalized_user_ids)
+    end
+  end
+
+  defp do_list_group_avatar_urls(group_id, user_ids) do
     Grant
-    |> Ash.Query.filter(user_id == ^user_id and source.group_id == ^group_id)
+    |> Ash.Query.filter(user_id in ^user_ids and source.group_id == ^group_id)
     |> Ash.Query.sort(last_verified_at: :desc)
     |> Ash.read(
       authorize?: false,
@@ -128,19 +150,23 @@ defmodule Wik.Access do
     )
     |> case do
       {:ok, grants} ->
-        grants
-        |> Enum.find_value(fn
-          %{external_identity: %{avatar_url: avatar_url}} when is_binary(avatar_url) ->
-            avatar_url
-
-          _grant ->
-            nil
-        end)
-        |> then(&{:ok, &1})
+        {:ok, grants_to_avatar_urls(grants)}
 
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp grants_to_avatar_urls(grants) do
+    grants
+    |> Enum.reduce(%{}, fn
+      %{user_id: user_id, external_identity: %{avatar_url: avatar_url}}, avatar_urls
+      when is_binary(avatar_url) ->
+        Map.put_new(avatar_urls, user_id, avatar_url)
+
+      _grant, avatar_urls ->
+        avatar_urls
+    end)
   end
 
   def list_group_grants_for_users(group_id, user_ids) do

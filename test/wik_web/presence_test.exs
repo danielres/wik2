@@ -65,6 +65,7 @@ defmodule WikWeb.PresenceTest do
 
     presences = [
       %{
+        avatar_url: "https://telegram.example/current.png",
         id: current_user.id,
         metas: [
           %{
@@ -77,6 +78,7 @@ defmodule WikWeb.PresenceTest do
         user: current_user
       },
       %{
+        avatar_url: "https://telegram.example/other.png",
         id: other_user.id,
         metas: [
           %{editing_block_id: "block-a", path: "/group-1/wiki/home", tab_id: "tab-3"},
@@ -87,9 +89,24 @@ defmodule WikWeb.PresenceTest do
     ]
 
     assert %{
-             "block-a" => %{block_id: "block-a", user: ^other_user, user_id: ^other_user_id},
-             "block-b" => %{block_id: "block-b", user: ^other_user, user_id: ^other_user_id},
-             "block-c" => %{block_id: "block-c", user: ^current_user, user_id: ^current_user_id}
+             "block-a" => %{
+               avatar_url: "https://telegram.example/other.png",
+               block_id: "block-a",
+               user: ^other_user,
+               user_id: ^other_user_id
+             },
+             "block-b" => %{
+               avatar_url: "https://telegram.example/other.png",
+               block_id: "block-b",
+               user: ^other_user,
+               user_id: ^other_user_id
+             },
+             "block-c" => %{
+               avatar_url: "https://telegram.example/current.png",
+               block_id: "block-c",
+               user: ^current_user,
+               user_id: ^current_user_id
+             }
            } = WikWeb.Presence.presences_to_locks(presences, current_user.id, "tab-1")
   end
 

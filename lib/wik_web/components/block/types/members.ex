@@ -27,7 +27,7 @@ defmodule WikWeb.Components.Block.Types.Members do
       id={"members-block-#{@block.id}"}
       page_size={[default: 25]}
       query={@query}
-      query_opts={[load: [:user]]}
+      query_opts={[load: [:avatar_url, :user]]}
       scope={@scope}
       show_filters={false}
       theme={WikWeb.Cinder.Themes.Dense}
@@ -46,6 +46,7 @@ defmodule WikWeb.Components.Block.Types.Members do
     >
       <:col :let={membership} label="" class="w-0">
         <Components.User.avatar
+          avatar_url={membership.avatar_url}
           link?
           size="md"
           tenant={@scope.tenant}

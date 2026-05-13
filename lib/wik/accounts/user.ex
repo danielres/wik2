@@ -157,6 +157,10 @@ defmodule Wik.Accounts.User do
   end
 
   relationships do
+    has_many :external_identities, Wik.Access.ExternalIdentity do
+      destination_attribute :user_id
+    end
+
     many_to_many :groups, Group do
       through GroupUserRelation
       source_attribute_on_join_resource :user_id

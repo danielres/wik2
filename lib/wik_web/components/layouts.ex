@@ -163,7 +163,7 @@ defmodule WikWeb.Layouts do
     <header class="navbar px-2 sm:px-4 lg:px-8">
       <div class="flex-1 flex w-fit items-center gap-0">
         <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
-          <.iconify icon="mynaui:bubbles-solid" class="size-4" />
+          <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
         </.link>
 
         <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mt-0.5" />

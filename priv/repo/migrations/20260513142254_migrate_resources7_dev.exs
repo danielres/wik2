@@ -9,11 +9,22 @@ defmodule Wik.Repo.Migrations.MigrateResources7 do
 
   def up do
     alter table(:groups) do
-      add :slug, :text, null: false
+      add :slug, :text
+    end
+
+    execute("""
+    update groups
+    set slug = trim(
+      both '-' from regexp_replace(lower(name), '[^a-z0-9]+', '-', 'g')
+    )
+    where slug is null
+    """)
+
+    alter table(:groups) do
+      modify :slug, :text, null: false
     end
 
     drop_if_exists unique_index(:groups, [:name], name: "groups_unique_name_index")
-
     create unique_index(:groups, [:slug], name: "groups_unique_slug_index")
   end
 

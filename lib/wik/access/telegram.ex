@@ -54,6 +54,7 @@ defmodule Wik.Access.Telegram do
 
   def claim_source_with_new_group(
         source_id,
+        group_attrs,
         %User{} = user,
         telegram_provider \\ TelegramProvider
       ) do
@@ -61,7 +62,7 @@ defmodule Wik.Access.Telegram do
          :ok <- authorize_pending_source(source),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_source_claim(source, identity, telegram_provider) do
-      create_group_and_claim_source(source, identity, user)
+      create_group_and_claim_source(source, group_attrs, identity, user)
     end
   end
 
@@ -304,9 +305,9 @@ defmodule Wik.Access.Telegram do
     end
   end
 
-  defp create_group_and_claim_source(source, identity, user) do
+  defp create_group_and_claim_source(source, group_attrs, identity, user) do
     case Repo.transaction(fn ->
-           with {:ok, group, group_notifications} <- create_group_from_source(source, user),
+           with {:ok, group, group_notifications} <- create_group(group_attrs, user),
                 {:ok, source, source_notifications} <- claim_source(source, group, user),
                 {:ok, _grant, grant_notifications} <- create_owner_grant(source, identity, user) do
              {group, source, group_notifications ++ source_notifications ++ grant_notifications}
@@ -323,13 +324,10 @@ defmodule Wik.Access.Telegram do
     end
   end
 
-  defp create_group_from_source(source, user) do
+  defp create_group(group_attrs, user) do
     Ash.create(
       Group,
-      %{
-        description: "Created from Telegram group #{source.title}",
-        name: source.title |> group_name_from_source_title()
-      },
+      group_attrs,
       action: :create,
       actor: user,
       authorize?: false,
@@ -370,13 +368,6 @@ defmodule Wik.Access.Telegram do
       authorize?: false,
       return_notifications?: true
     )
-  end
-
-  defp group_name_from_source_title(title) do
-    title
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9]+/, "-")
-    |> String.trim("-")
   end
 
   defp telegram_identity_attrs(provider_user_id, telegram_user, user_id) do

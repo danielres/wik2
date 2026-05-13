@@ -12,7 +12,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     group = generate(group())
     superadmin = generate(user(role: :superadmin))
     generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
+    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
 
     render_click(element(view, testid("page-tree-editor-node-2-add-child")))
 
@@ -55,7 +55,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     assert has_element?(view, testid("page-tree-node-5"))
 
     assert Enum.any?(
-             page_tree_for(group.name, superadmin.id).nodes,
+             page_tree_for(group.slug, superadmin.id).nodes,
              &(&1.parent_id == 2 and &1.slug == "guide")
            )
   end
@@ -64,7 +64,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     group = generate(group())
     superadmin = generate(user(role: :superadmin))
     generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
+    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
 
     render_click(element(view, testid("page-tree-editor-node-3-move")))
 
@@ -84,7 +84,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     refute has_element?(view, testid("move-node-modal"))
 
     assert Enum.any?(
-             page_tree_for(group.name, superadmin.id).nodes,
+             page_tree_for(group.slug, superadmin.id).nodes,
              &(&1.id == 3 and &1.parent_id == 1)
            )
   end
@@ -103,7 +103,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
       )
     )
 
-    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
+    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
 
     assert has_element?(view, testid("page-tree-editor-node-2-move"))
 
@@ -116,14 +116,14 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     group = generate(group())
     superadmin = generate(user(role: :superadmin))
     generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.name, superadmin.id)
+    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
 
     assert has_element?(view, testid("page-tree-node-3"))
 
     render_click(element(view, testid("page-tree-editor-node-3-remove")))
 
     refute has_element?(view, testid("page-tree-node-3"))
-    refute Enum.any?(page_tree_for(group.name, superadmin.id).nodes, &(&1.id == 3))
+    refute Enum.any?(page_tree_for(group.slug, superadmin.id).nodes, &(&1.id == 3))
   end
 
   test "read-only mode hides all action buttons", %{conn: conn} do
@@ -132,7 +132,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     add_membership(group, member, :member)
     grant_active_telegram_access(group, member)
     generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.name, member.id, editable?: false)
+    {:ok, view, _html} = mount_editor(conn, group.slug, member.id, editable?: false)
 
     refute has_element?(view, testid("page-tree-editor-add-root"))
     refute has_element?(view, testid("page-tree-editor-node-2-add-child"))

@@ -31,13 +31,13 @@ defmodule WikWeb.PageTreeLive do
             <div>
               <span class="font-[400] opacity-70 flex items-center flex-wrap gap-2">
                 <.link
-                  navigate={~p"/#{@current_scope.tenant.name}"}
+                  navigate={~p"/#{@current_scope.tenant.slug}"}
                   class={[
                     "opacity-50 hover:opacity-100 transition-opacity",
                     "leading-none"
                   ]}
                 >
-                  {@current_scope.tenant.name |> String.capitalize()}
+                  {@current_scope.tenant.name}
                 </.link>
                 <.icon name="hero-chevron-right-mini" class="opacity-50" />
                 <span class="text-base">Page tree</span>

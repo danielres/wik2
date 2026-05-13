@@ -153,7 +153,7 @@ defmodule WikWeb.Me.AccessLive do
               "opacity-90 hover:opacity-100 transition",
               "group"
             ]}
-            navigate={~p"/#{@grant.source.group.name}/wiki"}
+            navigate={~p"/#{@grant.source.group.slug}/wiki"}
           >
             <span>{@grant.source.group.name}</span>
             <.icon
@@ -213,7 +213,7 @@ defmodule WikWeb.Me.AccessLive do
               "badge badge-sm badge-neutral",
               "opacity-90 hover:opacity-100 transition"
             ]}
-            navigate={~p"/#{group.name}/wiki"}
+            navigate={~p"/#{group.slug}/wiki"}
           >
             {group.name}
           </.link>

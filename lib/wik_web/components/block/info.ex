@@ -50,7 +50,7 @@ defmodule WikWeb.Components.Block.Info do
           <.link
             :if={page_placement.kind == :linked}
             class=""
-            navigate={~p"/#{@scope.tenant.name}/wiki/#{page_placement.path}"}
+            navigate={~p"/#{@scope.tenant.slug}/wiki/#{page_placement.path}"}
           >
             <span>{page_placement.title}</span>
             <span class="opacity-60">{page_placement.path}</span>

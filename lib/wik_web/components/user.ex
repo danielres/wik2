@@ -145,11 +145,11 @@ defmodule WikWeb.Components.User do
   defp resolved_profile_path(%{profile_path: profile_path}) when is_binary(profile_path),
     do: profile_path
 
-  defp resolved_profile_path(%{membership: membership, tenant: %{name: tenant_name}})
+  defp resolved_profile_path(%{membership: membership, tenant: %{slug: tenant_slug}})
        when not is_nil(membership) do
     case Map.get(membership, :username) do
       username when is_binary(username) and username != "" ->
-        "/#{tenant_name}/wiki/members/#{username}"
+        "/#{tenant_slug}/wiki/members/#{username}"
 
       _username ->
         nil

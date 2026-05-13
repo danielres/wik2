@@ -37,7 +37,7 @@ defmodule WikWeb.PresenceTest do
     create_telegram_access(group, user)
 
     presences = %{
-      user.id => %{metas: [%{group_id: group.id, path: "/#{group.name}/wiki/home"}]}
+      user.id => %{metas: [%{group_id: group.id, path: "/#{group.slug}/wiki/home"}]}
     }
 
     fetched_presences = WikWeb.Presence.fetch("group:#{group.id}:users", presences)
@@ -52,7 +52,7 @@ defmodule WikWeb.PresenceTest do
     add_membership(group, user, :member, username: "zoe-group")
 
     presences = %{
-      user.id => %{metas: [%{group_id: group.id, path: "/#{group.name}/wiki/home"}]}
+      user.id => %{metas: [%{group_id: group.id, path: "/#{group.slug}/wiki/home"}]}
     }
 
     fetched_presences = WikWeb.Presence.fetch("group:#{group.id}:users", presences)

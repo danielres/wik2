@@ -4,10 +4,11 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormAddChild do
   use WikWeb, :live_component
   use Phoenix.Component
 
+  alias Utils.Log
   alias Wik.Wiki.PageTree
+  alias WikWeb.Components.UI
   alias WikWeb.PageTreeLive.PageTreeEditor
   alias WikWeb.PageTreeLive.PageTreeEditor.FlowAddChild
-  alias Utils.Log
 
   @impl true
   def update(assigns, socket) do
@@ -111,36 +112,12 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormAddChild do
             phx-hook="CapitalizeFirstLetter"
           />
 
-          <div class={[
-            "flex items-baseline",
-            "[&_._prepend]:w-2 [&_.alert]:-ml-2"
-          ]}>
-            <span
-              :if={@form[:title].value}
-              class={[
-                "_prepend",
-                "font-mono opacity-80"
-              ]}
-            >
-              /
-            </span>
+          <.input hidden field={@form[:slug]} value={@auto_slug} />
 
-            <.input hidden field={@form[:slug]} value={@auto_slug} />
-
-            <div class={["flex-grow"]}>
-              <div
-                class={[
-                  "opacity-80",
-                  "font-mono",
-                  "w-full",
-                  "!bg-transparent"
-                ]}
-                data-testid={data_auto_slug_testid(@auto_slug)}
-              >
-                {@auto_slug}
-              </div>
-            </div>
-          </div>
+          <UI.Forms.autoslug_preview
+            source_value={@form[:title].value}
+            data-testid={data_auto_slug_testid(@auto_slug)}
+          />
 
           <div :for={{:nodes, msg} <- @form_errors} data-testid="add-child-error-nodes">
             <.error>{msg}</.error>

@@ -98,7 +98,8 @@ defmodule WikWeb.Layouts do
     ]}>
       <menu class={[]}>
         <ul class="menu menu-horizontal gap-1">
-          <.menu_item tenant={@scope.tenant} view={@view} target="wiki/home">Wiki</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="wiki">Wiki</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="members">Members</.menu_item>
           <.menu_item tenant={@scope.tenant} view={@view} target="events">Events</.menu_item>
           <.menu_item
             :if={@scope.actor.role == :superadmin}
@@ -128,7 +129,7 @@ defmodule WikWeb.Layouts do
       "bg-base-200 rounded",
       @view != @target and "opacity-40"
     ]}>
-      <.link :if={assigns[:tenant]} patch={"/#{@tenant}/#{@target}"}>
+      <.link :if={assigns[:tenant]} patch={"/#{@tenant.slug}/#{@target}"}>
         {render_slot(@inner_block)}
       </.link>
 
@@ -170,7 +171,7 @@ defmodule WikWeb.Layouts do
         <.link
           :if={@scope.tenant}
           class={["opacity-30 hover:opacity-100 transition"]}
-          navigate={~p"/#{@scope.tenant.name}"}
+          navigate={~p"/#{@scope.tenant.slug}"}
         >
           {@scope.tenant |> to_string()}
         </.link>
@@ -261,7 +262,7 @@ defmodule WikWeb.Layouts do
           >
             <li>
               <.link navigate={
-                ~p"/#{@scope.tenant.name}/wiki/members/#{@tenant_context[:current_membership].username}"
+                ~p"/#{@scope.tenant.slug}/wiki/members/#{@tenant_context[:current_membership].username}"
               }>
                 <.icon name="hero-face-smile" /> Profile
               </.link>
@@ -316,11 +317,12 @@ defmodule WikWeb.Layouts do
 
       <.form
         :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
+        autocomplete="off"
+        class="space-y-4"
         for={@tenant_context[:membership_username_form]}
         id="membership-username-form"
         phx-change="membership_username_validate"
         phx-submit="membership_username_submit"
-        class="space-y-4"
       >
         <.input
           field={@tenant_context[:membership_username_form][:username]}

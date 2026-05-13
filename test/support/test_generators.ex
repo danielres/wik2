@@ -26,10 +26,12 @@ defmodule Wik.TestGenerators do
     seed_generator(
       fn %{author: author} ->
         author = generate(author)
+        slug = sequence(:group_slug, &"group-#{System.unique_integer([:positive])}-#{&1}")
 
         %Group{
           author_id: author.id,
-          name: sequence(:group_name, &"group-#{System.unique_integer([:positive])}-#{&1}")
+          name: slug,
+          slug: slug
         }
       end,
       uses: [author: author],

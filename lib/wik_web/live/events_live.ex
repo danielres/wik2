@@ -166,7 +166,7 @@ defmodule WikWeb.EventsLive do
           |> assign(:event_form, nil)
           |> assign(:selected_publication, nil)
           |> refresh_timeline()
-          |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+          |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events")
 
         {:error, form} ->
           assign(socket, :event_form, form)
@@ -186,7 +186,7 @@ defmodule WikWeb.EventsLive do
       socket
       |> assign(:event_form, nil)
       |> assign(:selected_publication, nil)
-      |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+      |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events")
 
     {:noreply, socket}
   end
@@ -199,7 +199,7 @@ defmodule WikWeb.EventsLive do
       socket
       |> assign(:selected_publication, nil)
       |> refresh_timeline()
-      |> push_patch(to: ~p"/#{current_scope.tenant.name}/events")
+      |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events")
 
     {:noreply, socket}
   end

@@ -39,7 +39,7 @@ defmodule WikWeb.HomeLiveTest do
     assert render(view) =~ "fresh-group"
 
     assert {:ok, groups} = Accounts.list_groups(actor: user)
-    assert Enum.any?(groups, &(&1.name == "fresh-group"))
+    assert Enum.any?(groups, &(&1.name == "fresh-group" and &1.slug == "fresh-group"))
   end
 
   test "lists the user's aggregate feed events on the home page", %{conn: conn} do

@@ -96,7 +96,7 @@ defmodule WikWeb.GroupLive do
           <div role="tablist" class="tabs tabs-box p-0 pb-0.5 bg-base-300">
             <Components.Tabs.tab
               active?={@live_action == :members}
-              patch={~p"/#{@group.name}/members"}
+              patch={~p"/#{@group.slug}/members"}
             >
               <span class="badge badge-xs bg-base-200 mr-1">{@group.memberships |> length()}</span>
               Members
@@ -105,7 +105,7 @@ defmodule WikWeb.GroupLive do
             <Components.Tabs.tab
               :if={@can_destroy_orphan_blocks?}
               active?={@live_action == :orphans}
-              patch={~p"/#{@group.name}/orphans"}
+              patch={~p"/#{@group.slug}/orphans"}
             >
               <span class="badge badge-xs badge-warning mr-1">{@orphan_blocks |> length()}</span>
               Orphan blocks
@@ -113,7 +113,7 @@ defmodule WikWeb.GroupLive do
 
             <Components.Tabs.tab
               active?={@live_action == :page_tree}
-              navigate={~p"/#{@group.name}/tree"}
+              navigate={~p"/#{@group.slug}/tree"}
             >
               Page tree <.icon name="hero-arrow-up-right-micro" class="ml-1" />
             </Components.Tabs.tab>
@@ -342,17 +342,17 @@ defmodule WikWeb.GroupLive do
 
   @impl true
   def handle_event("group_validate", %{"form" => params}, socket) do
-    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(params))}
+    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(group_params(params)))}
   end
 
   @impl true
   def handle_event("group_submit", %{"form" => params}, socket) do
     prev_group = socket.assigns.group
 
-    case socket.assigns.form |> Form.submit(params: params) do
+    case socket.assigns.form |> Form.submit(params: group_params(params)) do
       {:ok, group} ->
-        if prev_group.name != group.name do
-          {:noreply, socket |> Phoenix.LiveView.redirect(to: ~p"/#{group.name}")}
+        if prev_group.slug != group.slug do
+          {:noreply, socket |> Phoenix.LiveView.redirect(to: ~p"/#{group.slug}")}
         else
           {:noreply, socket |> assign(group: group, form: nil)}
         end
@@ -403,4 +403,10 @@ defmodule WikWeb.GroupLive do
         end
     end
   end
+
+  defp group_params(%{"name" => name} = params) do
+    Map.put(params, "slug", Utils.Slugify.generate(name))
+  end
+
+  defp group_params(params), do: params
 end

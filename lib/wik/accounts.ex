@@ -16,7 +16,7 @@ defmodule Wik.Accounts do
     resource Wik.Accounts.Profile
 
     resource Wik.Accounts.Group do
-      define :get_group_by_name, action: :read, get_by_identity: :unique_name
+      define :get_group_by_slug, action: :read, get_by_identity: :unique_slug
 
       # TODO: filter by actor
       define :list_groups,
@@ -44,15 +44,15 @@ defmodule Wik.Accounts do
     |> Ash.read(authorize?: false, domain: __MODULE__)
   end
 
-  def group_name_to_id(group_name) do
-    case get_group_by_name(group_name, authorize?: false) do
+  def group_slug_to_id(group_slug) do
+    case get_group_by_slug(group_slug, authorize?: false) do
       {:ok, %{id: id}} -> id
       {:error, _reason} -> nil
     end
   end
 
   def tenant_to_group_id(%{id: group_id}), do: group_id
-  def tenant_to_group_id(group_name) when is_binary(group_name), do: group_name_to_id(group_name)
+  def tenant_to_group_id(group_slug) when is_binary(group_slug), do: group_slug_to_id(group_slug)
   def tenant_to_group_id(_), do: nil
 
   def get_membership(%Group{id: group_id}, %User{id: user_id}),

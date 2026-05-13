@@ -99,10 +99,10 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
         scope: scope
       })
 
-    assert html =~ ~s(href="/#{group.name}/wiki/members")
+    assert html =~ ~s(href="/#{group.slug}/wiki/members")
     assert html =~ ~r|>\s*Members\s*</a>|
-    assert html =~ ~s(href="/#{group.name}/wiki/members/alice")
-    assert html =~ ~s(href="/#{group.name}/wiki/members/bob")
+    assert html =~ ~s(href="/#{group.slug}/wiki/members/alice")
+    assert html =~ ~s(href="/#{group.slug}/wiki/members/bob")
   end
 
   test "render shows a missing-node message when the configured source node no longer exists" do

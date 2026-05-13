@@ -90,17 +90,17 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     end)
   end
 
-  defp patch_internal_wiki_links(html, %{tenant: %{name: group_name}})
-       when is_binary(group_name) do
-    Regex.replace(~r/<a href="\/#{Regex.escape(group_name)}\/wiki\/[^"]*"/, html, fn link ->
+  defp patch_internal_wiki_links(html, %{tenant: %{slug: group_slug}})
+       when is_binary(group_slug) do
+    Regex.replace(~r/<a href="\/#{Regex.escape(group_slug)}\/wiki\/[^"]*"/, html, fn link ->
       link <> ~s( data-phx-link="patch" data-phx-link-state="push")
     end)
   end
 
   defp patch_internal_wiki_links(html, _scope), do: html
 
-  defp render_visible_wikilinks(markdown, %{tenant: %{name: group_name}}, %{nodes: nodes})
-       when is_binary(group_name) do
+  defp render_visible_wikilinks(markdown, %{tenant: %{slug: group_slug}}, %{nodes: nodes})
+       when is_binary(group_slug) do
     title_path_to_slug_path = Wikilinks.title_paths_to_slug_path_map(nodes)
 
     Wikilinks.replace_visible(markdown, fn wikilink, path ->
@@ -111,11 +111,11 @@ defmodule WikWeb.Components.Block.Types.Markdown do
           wikilink
 
         slug_path = Map.get(title_path_to_slug_path, title_path) ->
-          "[#{title_path}](/#{group_name}/wiki/#{slug_path})"
+          "[#{title_path}](/#{group_slug}/wiki/#{slug_path})"
 
         slug_path = Wikilinks.slug_path_from_title_path(title_path) ->
           query = URI.encode_query(%{"title_path" => title_path})
-          "[#{title_path}](/#{group_name}/wiki/#{slug_path}?#{query})"
+          "[#{title_path}](/#{group_slug}/wiki/#{slug_path}?#{query})"
 
         true ->
           wikilink

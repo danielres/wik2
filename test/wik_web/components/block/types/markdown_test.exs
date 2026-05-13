@@ -24,7 +24,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
   test "render converts canonical wikilinks to wiki page links" do
     page_tree = page_tree_fixture()
-    scope = %Scope{tenant: %{name: "cool-stuff"}}
+    scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}
 
     html =
       render_component(&Markdown.render/1, %{
@@ -36,11 +36,11 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     document = LazyHTML.from_fragment(html)
 
     assert document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.slug}/wiki/soups"]))
            |> Enum.any?()
 
     assert document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups/vegetable-soup"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.slug}/wiki/soups/vegetable-soup"]))
            |> Enum.any?()
 
     assert html =~ ">Soups<"
@@ -49,7 +49,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
   test "render patches canonical wikilinks through the current LiveView" do
     page_tree = page_tree_fixture()
-    scope = %Scope{tenant: %{name: "cool-stuff"}}
+    scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}
 
     html =
       render_component(&Markdown.render/1, %{
@@ -62,7 +62,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
     assert document
            |> LazyHTML.query(
-             ~s(a[href="/#{scope.tenant.name}/wiki/soups"][data-phx-link="patch"][data-phx-link-state="push"])
+             ~s(a[href="/#{scope.tenant.slug}/wiki/soups"][data-phx-link="patch"][data-phx-link-state="push"])
            )
            |> Enum.any?()
   end
@@ -85,7 +85,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
   test "render does not open internal wiki links in a new tab" do
     page_tree = page_tree_fixture()
-    scope = %Scope{tenant: %{name: "cool-stuff"}}
+    scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}
 
     html =
       render_component(&Markdown.render/1, %{
@@ -97,16 +97,16 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     document = LazyHTML.from_fragment(html)
 
     assert document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.slug}/wiki/soups"]))
            |> Enum.any?()
 
     refute document
-           |> LazyHTML.query(~s(a[href="/#{scope.tenant.name}/wiki/soups"][target="_blank"]))
+           |> LazyHTML.query(~s(a[href="/#{scope.tenant.slug}/wiki/soups"][target="_blank"]))
            |> Enum.any?()
   end
 
   test "render unresolved wikilinks as missing-page links using title labels and slug hrefs" do
-    scope = %Scope{tenant: %{name: "cool-stuff"}}
+    scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}
 
     html =
       render_component(&Markdown.render/1, %{
@@ -119,7 +119,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
     assert document
            |> LazyHTML.query(
-             ~s(a[href="/#{scope.tenant.name}/wiki/soups/vegetable-soup?title_path=Soups%2FVegetable+Soup"][data-wikilink-status="missing"])
+             ~s(a[href="/#{scope.tenant.slug}/wiki/soups/vegetable-soup?title_path=Soups%2FVegetable+Soup"][data-wikilink-status="missing"])
            )
            |> Enum.any?()
 

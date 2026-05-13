@@ -98,7 +98,7 @@ defmodule WikWeb.Layouts do
     ]}>
       <menu class={[]}>
         <ul class="menu menu-horizontal gap-1">
-          <.menu_item tenant={@scope.tenant} view={@view} target="wiki/home">Wiki</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="wiki">Wiki</.menu_item>
           <.menu_item tenant={@scope.tenant} view={@view} target="events">Events</.menu_item>
           <.menu_item
             :if={@scope.actor.role == :superadmin}

@@ -327,6 +327,7 @@ defmodule WikWeb.Layouts do
           label="Username"
           type="text"
           autocomplete="off"
+          data-slugify-pattern={Utils.Slugify.js_slugify_pattern()}
           phx-hook="SlugifyInput"
         />
 

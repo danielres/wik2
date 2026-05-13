@@ -1,5 +1,5 @@
 defmodule Wik.Types.Slug do
   use Ash.Type.NewType,
     subtype_of: :string,
-    constraints: [match: ~r/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/]
+    constraints: [match: Utils.Slugify.match_regex()]
 end

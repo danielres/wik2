@@ -43,7 +43,7 @@ defmodule WikWeb.Components.Block.Types.Members do
         "[&_table]:bg-white/80 dark:[&_table]:bg-base-300/20"
       ]}
       }
-      >
+    >
       <:col :let={membership} label="" class="w-0">
         <Components.User.avatar
           link?

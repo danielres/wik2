@@ -181,7 +181,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
         form =
           socket.assigns.current_scope
           |> init_group_form()
-          |> Form.validate(params)
+          |> Form.validate(group_params(params))
           |> to_form()
 
         {:noreply,

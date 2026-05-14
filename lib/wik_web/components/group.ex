@@ -53,7 +53,7 @@ defmodule WikWeb.Components.Group do
 
   def list(assigns) do
     ~H"""
-    <ul class="menu bg-base-200 rounded-box w-full p-2">
+    <ul class="menu w-full">
       <li>
         <.link
           :for={group <- @groups}

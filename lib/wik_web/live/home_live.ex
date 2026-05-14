@@ -25,17 +25,18 @@ defmodule WikWeb.HomeLive do
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
         <div class="grid sm:grid-cols-2 gap-8">
-          <section>
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-2xl font-[100]">Your groups</h2>
+          <UI.page_blocks>
+            <:title>Your groups</:title>
+
+            <:actions>
               <UI.button_plus
                 :if={Ash.can?({Group, :create}, @current_scope)}
                 data-testid="create-group-start"
                 phx-click="create_group_start"
               />
-            </div>
+            </:actions>
 
-            <div class="flex-1">
+            <:body>
               <Components.Group.list groups={@groups} />
 
               <Components.Modal.render
@@ -55,21 +56,23 @@ defmodule WikWeb.HomeLive do
                   form={@form}
                 />
               </Components.Modal.render>
-            </div>
-          </section>
+            </:body>
+          </UI.page_blocks>
+          <UI.page_blocks>
+            <:title>All your events</:title>
 
-          <section>
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-2xl font-[100]">All your events</h2>
+            <:actions>
               <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
-            </div>
+            </:actions>
 
-            <Components.Event.list
-              current_scope={@current_scope}
-              event_publications={@event_publications}
-              user_tz={@active_tz}
-            />
-          </section>
+            <:body>
+              <Components.Event.list
+                current_scope={@current_scope}
+                event_publications={@event_publications}
+                user_tz={@active_tz}
+              />
+            </:body>
+          </UI.page_blocks>
         </div>
       </Layouts.container>
     </Layouts.app>

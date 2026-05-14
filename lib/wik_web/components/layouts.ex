@@ -307,26 +307,51 @@ defmodule WikWeb.Layouts do
       testid="membership-username-dialog"
     >
       <:title>
-        <div class="space-y-1">
-          <h2 class="text-lg font-medium">Choose your username</h2>
-          <p class="text-sm opacity-70">
-            This will be used for your member profile URL in this group.
-          </p>
-        </div>
+        Welcome to <span class="font-bold">{@scope.tenant |> to_string()}</span>!
       </:title>
 
       <.form
         :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
         autocomplete="off"
-        class="space-y-4"
         for={@tenant_context[:membership_username_form]}
         id="membership-username-form"
         phx-change="membership_username_validate"
         phx-submit="membership_username_submit"
+        class="space-y-4"
       >
+        <div class="mt-4">
+          <h2 class="label">Group description</h2>
+
+          <div class="bg-base-200 px-4 py-3 rounded text-sm opacity-80">
+            {@scope.tenant.description}
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <h2 class="label">Wik acceptable usage</h2>
+
+          <div class="bg-base-200 px-4 py-3 rounded text-sm opacity-80">
+            <ul class="space-y-0">
+              <li class="flex items-start gap-2">
+                <.icon name="hero-x-mark" class="mt-0.5 size-4 text-base-content/40 shrink-0" />
+                <span>No illegal content or activity.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <.icon name="hero-x-mark" class="mt-0.5 size-4 text-base-content/40 shrink-0" />
+                <span>No political content, campaigning, or activism.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <.icon name="hero-x-mark" class="mt-0.5 size-4 text-base-content/40 shrink-0" />
+                <span>Always treat others with respect.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
         <.input
           field={@tenant_context[:membership_username_form][:username]}
-          label="Username"
+          label="Please choose your username"
+          placeholder="Your username"
           type="text"
           autocomplete="off"
           data-slugify-pattern={Utils.Slugify.js_slugify_pattern()}

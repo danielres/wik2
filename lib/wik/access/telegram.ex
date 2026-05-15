@@ -382,9 +382,24 @@ defmodule Wik.Access.Telegram do
     %{
       avatar_url: telegram_user["picture"],
       display_name: telegram_user |> telegram_display_name(),
-      metadata: telegram_user,
+      metadata: telegram_identity_metadata(telegram_user),
       username: telegram_user["preferred_username"]
     }
+  end
+
+  # only store necessary fields according to privacy notice (.../privacy.html.heex)
+  defp telegram_identity_metadata(telegram_user) do
+    %{
+      "auth_date" => telegram_user["auth_date"],
+      "family_name" => telegram_user["family_name"],
+      "given_name" => telegram_user["given_name"],
+      "picture" => telegram_user["picture"],
+      "preferred_username" => telegram_user["preferred_username"],
+      "provider" => "telegram",
+      "sub" => telegram_user["sub"]
+    }
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
   end
 
   defp telegram_display_name(telegram_user) do

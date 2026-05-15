@@ -21,8 +21,8 @@ defmodule Wik.Accounts.User.Senders.SendMagicLinkEmail do
       end
 
     new()
-    # TODO: Replace with your email
-    |> from({"noreply", "noreply@example.com"})
+    |> from({"Wik", contact_email()})
+    |> reply_to(privacy_contact_email())
     |> to(to_string(email))
     |> subject("Your login link")
     |> html_body(body(token: token, email: email))
@@ -51,5 +51,13 @@ defmodule Wik.Accounts.User.Senders.SendMagicLinkEmail do
 
   defp endpoint_port do
     WikWeb.Endpoint.config(:http) |> Keyword.fetch!(:port)
+  end
+
+  defp contact_email do
+    Application.get_env(:wik, :contact_email, "noreply@example.com")
+  end
+
+  defp privacy_contact_email do
+    Application.get_env(:wik, :privacy_contact_email, contact_email())
   end
 end

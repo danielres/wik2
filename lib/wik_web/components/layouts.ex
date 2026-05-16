@@ -44,6 +44,7 @@ defmodule WikWeb.Layouts do
         <ul class="menu menu-horizontal gap-1">
           <.menu_item view={@view} target="me">Settings</.menu_item>
           <.menu_item view={@view} target="me/access">Access</.menu_item>
+          <.menu_item view={@view} target="me/tickets">Tickets</.menu_item>
         </ul>
       </menu>
     </div>
@@ -70,12 +71,22 @@ defmodule WikWeb.Layouts do
     ]}>
       <menu class={[]}>
         <ul class="menu menu-horizontal gap-1">
-          <.menu_item tenant={@scope.tenant} view="bot" target="_">Bot</.menu_item>
+          <li class={["bg-base-200 rounded", @view != "bot" and "opacity-40"]}>
+            <.link patch={~p"/_"}>Bot</.link>
+          </li>
+
+          <li class={["bg-base-200 rounded", @view != "inbox" and "opacity-40"]}>
+            <.link patch={~p"/_/inbox"}>Inbox</.link>
+          </li>
+
+          <li class={["bg-base-200 rounded", @view != "errors" and "opacity-40"]}>
+            <.link patch={~p"/_/errors"}>Errors</.link>
+          </li>
         </ul>
       </menu>
     </div>
 
-    <.container>
+    <.container width_class="">
       {render_slot(@inner_block)}
     </.container>
     """
@@ -140,10 +151,16 @@ defmodule WikWeb.Layouts do
     """
   end
 
+  attr :width_class, :string, default: "max-w-3xl"
+  slot :inner_block, required: true
+
   def container(assigns) do
     ~H"""
     <main class="px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-3xl space-y-4">
+      <div class={[
+        "mx-auto space-y-4",
+        @width_class
+      ]}>
         {render_slot(@inner_block)}
       </div>
     </main>

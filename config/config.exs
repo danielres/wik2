@@ -68,6 +68,7 @@ config :wik,
     Wik.Blocks,
     Wik.Blog,
     Wik.Events,
+    Wik.Tickets,
     Wik.Wiki
   ],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true]

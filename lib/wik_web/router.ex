@@ -120,6 +120,7 @@ defmodule WikWeb.Router do
       on_mount: [{WikWeb.LiveUserAuth, :live_superadmin_required}] do
       scope "/_", Superadmin do
         live "/", TelegramBotUpdatesLive
+        live "/inbox", InboxLive
       end
     end
 
@@ -127,6 +128,8 @@ defmodule WikWeb.Router do
       live "/", HomeLive, :index
       live "/me", Me.SettingsLive, :index
       live "/me/access", Me.AccessLive, :index
+      live "/me/tickets", Me.TicketsLive, :index
+      live "/me/tickets/new", Me.NewTicketLive, :new
 
       scope "/:group_slug" do
         pipe_through [:group_tenant]

@@ -33,7 +33,7 @@ defmodule WikWeb.Components.Block.Types.Members do
       theme={WikWeb.Cinder.Themes.Dense}
       class={[
         "@sm/block:[&_th]:px-4 @sm/block:[&_th]:py-2",
-        "@sm/block:[&_td]:px-4 @sm/block:[&_td]:py-2",
+        "@sm/block:[&_td]:px-4 @sm/block:[&_td]:py-2"
       ]}
       }
     >

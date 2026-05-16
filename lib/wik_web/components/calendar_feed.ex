@@ -10,7 +10,7 @@ defmodule WikWeb.Components.CalendarFeed do
 
   def aggregate_subscribe_button(assigns) do
     current_user = assigns.scope.actor
-    aggregate_feed_token = Token.issue_aggregate(current_user)
+    aggregate_feed_token = Token.issue_for_aggregate(current_user)
     url = url(~p"/calendar/#{aggregate_feed_token}")
     assigns = assigns |> assign(url: url)
 
@@ -30,7 +30,7 @@ defmodule WikWeb.Components.CalendarFeed do
   def group_subscribe_button(assigns) do
     current_user = assigns.scope.actor
     current_group = assigns.scope.tenant
-    group_feed_token = Token.issue_group(current_user, current_group)
+    group_feed_token = Token.issue_for_group(current_user, current_group)
     url = url(~p"/calendar/#{group_feed_token}")
     assigns = assigns |> assign(url: url)
 

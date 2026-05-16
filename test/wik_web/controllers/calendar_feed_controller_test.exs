@@ -25,7 +25,7 @@ defmodule WikWeb.CalendarFeedControllerTest do
         scope: scope(owner, group)
       )
 
-    token = Token.issue_aggregate(member)
+    token = Token.issue_for_aggregate(member)
     conn = get(conn, ~p"/calendar/#{token}")
 
     assert response(conn, 200) =~ "BEGIN:VCALENDAR"
@@ -64,7 +64,7 @@ defmodule WikWeb.CalendarFeedControllerTest do
         scope: scope(owner, origin_group)
       )
 
-    token = Token.issue_aggregate(member)
+    token = Token.issue_for_aggregate(member)
     conn = get(conn, ~p"/calendar/#{token}")
 
     assert response(conn, 200) =~ "Visible in: #{origin_group.name}"
@@ -91,7 +91,7 @@ defmodule WikWeb.CalendarFeedControllerTest do
         scope: scope(owner, group)
       )
 
-    token = Token.issue_group(member, group)
+    token = Token.issue_for_group(member, group)
     conn = get(conn, ~p"/calendar/#{token}")
 
     assert response(conn, 200) =~ "BEGIN:VCALENDAR"
@@ -100,6 +100,17 @@ defmodule WikWeb.CalendarFeedControllerTest do
 
   test "returns not found for an invalid token", %{conn: conn} do
     conn = get(conn, ~p"/calendar/invalid-token")
+
+    assert response(conn, 404) == "Not found"
+  end
+
+  test "returns not found for a revoked token", %{conn: conn} do
+    member = generate(user())
+    token = Token.issue_for_aggregate(member)
+
+    assert :ok = Token.revoke_for_aggregate(member)
+
+    conn = get(conn, ~p"/calendar/#{token}")
 
     assert response(conn, 404) == "Not found"
   end
@@ -121,7 +132,7 @@ defmodule WikWeb.CalendarFeedControllerTest do
         scope: scope(owner, group)
       )
 
-    token = Token.issue_group(member, group)
+    token = Token.issue_for_group(member, group)
 
     Ash.update!(grant, %{status: :inactive},
       action: :update,
@@ -150,7 +161,7 @@ defmodule WikWeb.CalendarFeedControllerTest do
         scope: scope(owner, group)
       )
 
-    token = Token.issue_aggregate(member)
+    token = Token.issue_for_aggregate(member)
 
     Ash.update!(grant, %{status: :inactive},
       action: :update,

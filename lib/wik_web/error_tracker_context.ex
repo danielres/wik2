@@ -4,6 +4,7 @@ defmodule WikWeb.ErrorTrackerContext do
   import Ash.Expr
   require Ash.Query
 
+  alias Wik.Access
   alias Wik.Accounts
   alias Wik.Accounts.GroupUserRelation
   alias Wik.Accounts.User
@@ -41,6 +42,31 @@ defmodule WikWeb.ErrorTrackerContext do
       email: user.email && to_string(user.email),
       role: Atom.to_string(user.role)
     }
+    |> Map.merge(telegram_context(user))
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
+  end
+
+  defp telegram_context(%User{} = user) do
+    case Access.list_user_external_identities(user) do
+      {:ok, identities} ->
+        identities
+        |> Enum.find(&(&1.provider == :telegram))
+        |> case do
+          nil ->
+            %{}
+
+          identity ->
+            %{
+              telegram_display_name: identity.display_name,
+              telegram_user_id: identity.provider_user_id,
+              telegram_username: identity.username
+            }
+        end
+
+      {:error, _error} ->
+        %{}
+    end
   end
 
   defp tenant_context(%Scope{tenant: tenant}), do: tenant_context(tenant)

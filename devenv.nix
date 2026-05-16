@@ -11,7 +11,7 @@
     [
       #
       git
-      # lefthook
+      lefthook
       nodejs_24
       pnpm
       # pgcli

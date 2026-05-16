@@ -50,13 +50,6 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
 
           <Cinder.collection
             actor={@current_user}
-            class={[
-              "[&_tr]:hover:bg-base-100",
-              "[&_th:first-child]:rounded-tl-md",
-              "[&_th:last-child]:rounded-tr-md",
-              "[&_th]:bg-base-200",
-              "[&_table]:bg-white/80 dark:[&_table]:bg-base-300/20"
-            ]}
             click={fn bot_update -> JS.push("show_bot_update", value: %{id: bot_update.id}) end}
             empty_message="No bot updates received yet."
             id="telegram-bot-updates"

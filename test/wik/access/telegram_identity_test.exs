@@ -19,6 +19,9 @@ defmodule Wik.Access.TelegramIdentityTest do
       assert identity.display_name == "Ada Lovelace"
       assert identity.username == "ada"
       assert identity.avatar_url == "https://telegram.example/ada.png"
+      assert identity.metadata["sub"] == 42
+      assert identity.metadata["preferred_username"] == "ada"
+      refute Map.has_key?(identity.metadata, "hash")
       assert identity.user.email == nil
     end
 

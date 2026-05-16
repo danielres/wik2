@@ -24,6 +24,13 @@ config :wik, WikWeb.Endpoint, http: [port: String.to_integer(System.get_env("POR
 
 config :wik, Wik.Locations, api_url: System.get_env("LOCATION_API_URL")
 
+config :wik,
+  contact_email: System.get_env("CONTACT_EMAIL") || "noreply@example.com",
+  privacy_contact_email:
+    System.get_env("PRIVACY_CONTACT_EMAIL") ||
+      System.get_env("CONTACT_EMAIL") ||
+      "noreply@example.com"
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

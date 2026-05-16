@@ -1,0 +1,23 @@
+<Layouts.app flash={@flash}>
+  <Layouts.container>
+    <main class="prose">
+      <article class={["mx-auto max-w-xl"]}>
+        <header>
+          <p class="page_name">Privacy</p>
+          <h1>Privacy notice</h1>
+
+          <p class="px-4 py-2 rounded bg-base-200 !my-4">
+            Applies to the instance hosted at: <span class="font-bold">{@public_host}</span>
+          </p>
+
+          <p>
+            This notice covers the invitation-only hosted Wik service run by the operator of this
+            instance. It does not cover self-hosted copies run by other people.
+          </p>
+        </header>
+
+        <WikWeb.Components.Content.privacy />
+      </article>
+    </main>
+  </Layouts.container>
+</Layouts.app>

@@ -1,0 +1,6 @@
+pre-commit:
+  commands:
+    mix-format:
+      glob: "*.{ex,exs,heex}"
+      run: mix format {staged_files}
+      stage_fixed: true

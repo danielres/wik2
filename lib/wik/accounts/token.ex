@@ -14,6 +14,16 @@ defmodule Wik.Accounts.Token do
   actions do
     defaults [:read]
 
+    create :store_custom_token do
+      accept [:extra_data, :expires_at, :jti, :purpose, :subject]
+    end
+
+    update :revoke_custom_token do
+      accept []
+      require_atomic? false
+      change Wik.Accounts.Token.Changes.RevokeCustomToken
+    end
+
     read :expired do
       description "Look up all expired tokens."
       filter expr(expires_at < now())

@@ -44,6 +44,7 @@ defmodule WikWeb.Layouts do
         <ul class="menu menu-horizontal gap-1">
           <.menu_item view={@view} target="me">Settings</.menu_item>
           <.menu_item view={@view} target="me/access">Access</.menu_item>
+          <.menu_item view={@view} target="me/tickets">Tickets</.menu_item>
         </ul>
       </menu>
     </div>
@@ -70,12 +71,22 @@ defmodule WikWeb.Layouts do
     ]}>
       <menu class={[]}>
         <ul class="menu menu-horizontal gap-1">
-          <.menu_item tenant={@scope.tenant} view="bot" target="_">Bot</.menu_item>
+          <li class={["bg-base-200 rounded", @view != "bot" and "opacity-40"]}>
+            <.link patch={~p"/_"}>Bot</.link>
+          </li>
+
+          <li class={["bg-base-200 rounded", @view != "inbox" and "opacity-40"]}>
+            <.link patch={~p"/_/inbox"}>Inbox</.link>
+          </li>
+
+          <li class={["bg-base-200 rounded", @view != "errors" and "opacity-40"]}>
+            <.link patch={~p"/_/errors"}>Errors</.link>
+          </li>
         </ul>
       </menu>
     </div>
 
-    <.container>
+    <.container width_class="">
       {render_slot(@inner_block)}
     </.container>
     """
@@ -140,10 +151,16 @@ defmodule WikWeb.Layouts do
     """
   end
 
+  attr :width_class, :string, default: "max-w-3xl"
+  slot :inner_block, required: true
+
   def container(assigns) do
     ~H"""
     <main class="px-4 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-3xl space-y-4">
+      <div class={[
+        "mx-auto space-y-4",
+        @width_class
+      ]}>
         {render_slot(@inner_block)}
       </div>
     </main>
@@ -160,147 +177,202 @@ defmodule WikWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-2 sm:px-4 lg:px-8">
-      <div class="flex-1 flex w-fit items-center gap-0">
-        <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
-          <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
-        </.link>
+    <div class="grid grid-rows-[auto_1fr_auto] min-h-screen">
+      <header class="navbar px-2 sm:px-4 lg:px-8">
+        <div class="flex-1 flex w-fit items-center gap-0">
+          <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
+            <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
+          </.link>
 
-        <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mt-0.5" />
+          <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mt-0.5" />
 
-        <.link
-          :if={@scope.tenant}
-          class={["opacity-30 hover:opacity-100 transition"]}
-          navigate={~p"/#{@scope.tenant.slug}"}
-        >
-          {@scope.tenant |> to_string()}
-        </.link>
-      </div>
+          <.link
+            :if={@scope.tenant}
+            class={["opacity-30 hover:opacity-100 transition"]}
+            navigate={~p"/#{@scope.tenant.slug}"}
+          >
+            {@scope.tenant |> to_string()}
+          </.link>
+        </div>
 
-      <div>
-        <button
-          class={[
-            "opacity-80 hover:opacity-100 transition cursor-pointer",
-            "relative"
-          ]}
-          popovertarget="popover-user-dropdown"
-          style="anchor-name:--anchor-user-dropdown"
-        >
-          <Components.User.avatar
-            membership={@tenant_context && @tenant_context[:current_membership]}
-            tenant={@scope.tenant}
-          />
+        <div>
+          <button
+            class={[
+              "opacity-80 hover:opacity-100 transition cursor-pointer",
+              "relative"
+            ]}
+            popovertarget="popover-user-dropdown"
+            style="anchor-name:--anchor-user-dropdown"
+          >
+            <Components.User.avatar
+              membership={@tenant_context && @tenant_context[:current_membership]}
+              tenant={@scope.tenant}
+            />
+
+            <div
+              :if={@context.claimable_sources != []}
+              class={[
+                "status status-accent animate-ping",
+                "absolute top-0 left-0"
+              ]}
+            >
+            </div>
+          </button>
 
           <div
-            :if={@context.claimable_sources != []}
             class={[
-              "status status-accent animate-ping",
-              "absolute top-0 left-0"
+              "min-w-36",
+              "dropdown dropdown-end mt-1",
+              "bg-base-200/80 backdrop-blur",
+              "shadow",
+              "border border-base-200",
+              "rounded-box",
+              "p-2"
             ]}
+            popover
+            id="popover-user-dropdown"
+            style="position-anchor:--anchor-user-dropdown"
           >
+            <ul
+              :if={@context.claimable_sources != []}
+              class={[
+                "menu w-full",
+                "border-b-1 border-base-content/20"
+              ]}
+            >
+              <li>
+                <.link
+                  class="btn btn-sm btn-soft btn-accent border"
+                  navigate={~p"/auth/telegram"}
+                >
+                  <span class="font-bold">New sources</span>
+                  <.icon name="hero-chevron-right-micro" />
+                </.link>
+              </li>
+            </ul>
+
+            <ul class={[
+              "menu w-full"
+            ]}>
+              <li>
+                <.link navigate={~p"/sign-out"} class="">
+                  <.icon name="hero-arrow-right-on-rectangle" /> Log out
+                </.link>
+              </li>
+
+              <li>
+                <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
+                  <.icon name="hero-user" /> Account
+                </.link>
+              </li>
+            </ul>
+
+            <ul
+              :if={
+                @scope.tenant && @tenant_context &&
+                  @tenant_context[:current_membership] &&
+                  @tenant_context[:current_membership].username != nil
+              }
+              class={[
+                "menu w-full",
+                "border-t-1 border-base-content/20"
+              ]}
+            >
+              <li>
+                <.link navigate={
+                  ~p"/#{@scope.tenant.slug}/wiki/members/#{@tenant_context[:current_membership].username}"
+                }>
+                  <.icon name="hero-face-smile" /> Profile
+                </.link>
+              </li>
+            </ul>
+
+            <ul class={[
+              "py-2",
+              "border-t-1 border-base-content/20"
+            ]}>
+              <li>
+                <div class="w-min mx-auto">
+                  <WikWeb.Layouts.theme_toggle />
+                </div>
+              </li>
+            </ul>
+
+            <ul
+              :if={@scope.actor && @scope.actor.role == :superadmin}
+              class={[
+                "menu w-full",
+                "border-t-1 border-base-content/20"
+              ]}
+            >
+              <li>
+                <.link navigate={~p"/_"}>
+                  <span class="badge badge-error">Superadmin</span>
+                </.link>
+              </li>
+            </ul>
           </div>
-        </button>
-
-        <div
-          class={[
-            "min-w-36",
-            "dropdown dropdown-end mt-1",
-            "bg-base-200/80 backdrop-blur",
-            "shadow",
-            "border border-base-200",
-            "rounded-box",
-            "p-2"
-          ]}
-          popover
-          id="popover-user-dropdown"
-          style="position-anchor:--anchor-user-dropdown"
-        >
-          <ul
-            :if={@context.claimable_sources != []}
-            class={[
-              "menu w-full",
-              "border-b-1 border-base-content/20"
-            ]}
-          >
-            <li>
-              <.link
-                class="btn btn-sm btn-soft btn-accent border"
-                navigate={~p"/auth/telegram"}
-              >
-                <span class="font-bold">New sources</span>
-                <.icon name="hero-chevron-right-micro" />
-              </.link>
-            </li>
-          </ul>
-
-          <ul class={[
-            "menu w-full"
-          ]}>
-            <li>
-              <.link navigate={~p"/sign-out"} class="">
-                <.icon name="hero-arrow-right-on-rectangle" /> Log out
-              </.link>
-            </li>
-
-            <li>
-              <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
-                <.icon name="hero-user" /> Account
-              </.link>
-            </li>
-          </ul>
-
-          <ul
-            :if={
-              @scope.tenant && @tenant_context &&
-                @tenant_context[:current_membership] &&
-                @tenant_context[:current_membership].username != nil
-            }
-            class={[
-              "menu w-full",
-              "border-t-1 border-base-content/20"
-            ]}
-          >
-            <li>
-              <.link navigate={
-                ~p"/#{@scope.tenant.slug}/wiki/members/#{@tenant_context[:current_membership].username}"
-              }>
-                <.icon name="hero-face-smile" /> Profile
-              </.link>
-            </li>
-          </ul>
-
-          <ul class={[
-            "py-2",
-            "border-t-1 border-base-content/20"
-          ]}>
-            <li>
-              <div class="w-min mx-auto">
-                <WikWeb.Layouts.theme_toggle />
-              </div>
-            </li>
-          </ul>
-
-          <ul
-            :if={@scope.actor && @scope.actor.role == :superadmin}
-            class={[
-              "menu w-full",
-              "border-t-1 border-base-content/20"
-            ]}
-          >
-            <li>
-              <.link navigate={~p"/_"}>
-                <span class="badge badge-error">Superadmin</span>
-              </.link>
-            </li>
-          </ul>
         </div>
+      </header>
+
+      <div class="mb-8">
+        {render_slot(@inner_block)}
       </div>
-    </header>
 
-    <div class="mb-8">
-      {render_slot(@inner_block)}
+      <footer>
+        <div class="">
+          <div class="hidden">
+            <%= if @scope.actor do %>
+              Privacy and moderation requests can be submitted <.link
+                class="link link-hover font-medium"
+                navigate={~p"/me/tickets/new"}
+              >
+              in-app while logged in
+            </.link>.
+            <% else %>
+              Privacy and moderation requests are handled in-app for logged-in users. If you cannot
+              access your account, use the recovery path shared with your group operator.
+            <% end %>
+          </div>
+
+          <div class={[
+            "flex justify-center gap-6 text-xs mt-4 mb-1",
+            "[&_a]:flex [&_a]:items-center [&_a]:gap-1",
+            "[&_a]:opacity-30 hover:[&_a]:opacity-70 [&_a:hover]:opacity-100 [&_a]:transition",
+            "[&_.icon]:size-3"
+          ]}>
+            <.link :if={false} navigate={~p"/about"}>
+              <.icon name="hero-information-circle-micro" />
+              <span>about</span>
+            </.link>
+
+            <.link navigate={~p"/terms"}>
+              <.icon name="hero-document-text-micro" />
+              <span>terms</span>
+            </.link>
+
+            <.link navigate={~p"/privacy"}>
+              <.icon name="hero-lock-closed-micro" />
+              <span>privacy</span>
+            </.link>
+
+            <.link
+              href="https://github.com/danielres/wik2"
+              target="_blank"
+              rel="noopener"
+              class="group"
+            >
+              <.icon name="hero-code-bracket-micro" class="group-hover:hidden" />
+              <.icon
+                name="hero-arrow-top-right-on-square-micro"
+                class="hidden group-hover:inline-block"
+              />
+              <span>github</span>
+            </.link>
+          </div>
+        </div>
+      </footer>
     </div>
-
     <Components.Modal.render
       :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
       open?={true}

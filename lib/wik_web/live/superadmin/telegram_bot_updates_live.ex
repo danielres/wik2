@@ -5,6 +5,7 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
   alias Wik.Access
   alias Wik.Access.Telegram.Bot.Update, as: BotUpdate
   alias WikWeb.Components.Modal
+  alias WikWeb.Components.UI
 
   require Ash.Query
 
@@ -19,14 +20,12 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
   @impl true
   def handle_params(params, uri, socket) do
     socket = Cinder.UrlSync.handle_params(params, uri, socket)
-
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("show_bot_update", %{"id" => id}, socket) do
     {:ok, bot_update} = Access.telegram_get_bot_update(id, socket.assigns.current_user)
-
     {:noreply, assign(socket, :selected_bot_update, bot_update)}
   end
 
@@ -39,30 +38,18 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
   def render(assigns) do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
-      <Layouts.superadmin scope={@current_scope}>
+      <Layouts.superadmin scope={@current_scope} view="bot">
         <div class="space-y-6">
-          <div class="space-y-1">
-            <h1 class="text-2xl font-[100]">Telegram bot updates</h1>
-            <p class="opacity-70">
-              Telegram webhook updates, newest first. Click a row to inspect the raw JSON.
-            </p>
-          </div>
+          <UI.page_title>Telegram bot updates</UI.page_title>
 
           <Cinder.collection
             actor={@current_user}
-            class={[
-              "[&_tr]:hover:bg-base-100",
-              "[&_th:first-child]:rounded-tl-md",
-              "[&_th:last-child]:rounded-tr-md",
-              "[&_th]:bg-base-200",
-              "[&_table]:bg-white/80 dark:[&_table]:bg-base-300/20"
-            ]}
             click={fn bot_update -> JS.push("show_bot_update", value: %{id: bot_update.id}) end}
             empty_message="No bot updates received yet."
             id="telegram-bot-updates"
             page_size={[default: 25, options: [10, 25, 50, 100]]}
             query={@bot_updates_query}
-            show_filters={:toggle_open}
+            show_filters={:toggle}
             sort_mode="exclusive"
             theme={WikWeb.Cinder.Themes.Dense}
             url_state={@url_state}

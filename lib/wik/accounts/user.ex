@@ -11,6 +11,7 @@ defmodule Wik.Accounts.User do
   alias Wik.Accounts.User.Changes
   alias Wik.Accounts.User.Senders
   alias Wik.Accounts.User.Validations
+  alias Wik.Tickets.Ticket
 
   postgres do
     table "users"
@@ -159,6 +160,10 @@ defmodule Wik.Accounts.User do
   relationships do
     has_many :external_identities, Wik.Access.ExternalIdentity do
       destination_attribute :user_id
+    end
+
+    has_many :submitted_tickets, Ticket do
+      destination_attribute :submitted_by_id
     end
 
     many_to_many :groups, Group do

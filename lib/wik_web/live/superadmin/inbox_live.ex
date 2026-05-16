@@ -4,7 +4,6 @@ defmodule WikWeb.Superadmin.InboxLive do
 
   alias AshPhoenix.Form
   alias Utils.Log
-  alias Wik.Tickets
   alias Wik.Tickets.Ticket
   require Ash.Query
 
@@ -14,7 +13,7 @@ defmodule WikWeb.Superadmin.InboxLive do
      socket
      |> assign(:inbox_query, inbox_query())
      |> assign(:selected_ticket, nil)
-     |> assign(:triage_form, nil)}
+     |> assign(:ticket_update_form, nil)}
   end
 
   @impl true
@@ -27,15 +26,15 @@ defmodule WikWeb.Superadmin.InboxLive do
   def handle_event("show_ticket", %{"id" => id}, socket) do
     current_user = socket.assigns.current_user
 
-    case Tickets.get_ticket_for_superadmin(id, current_user) do
+    case Ash.get(Ticket, id, actor: current_user, load: [:submitted_by]) do
       {:ok, ticket} ->
         {:noreply,
          socket
          |> assign(:selected_ticket, ticket)
-         |> assign(:triage_form, ticket |> init_triage_form(current_user))}
+         |> assign(:ticket_update_form, ticket |> init_ticket_update_form(current_user))}
 
       {:error, error} ->
-        Log.scoped_error(socket.assigns.current_scope, error, "get_ticket_for_superadmin failed")
+        Log.scoped_error(socket.assigns.current_scope, error, "ticket lookup failed")
         {:noreply, put_flash(socket, :error, "Couldn't open ticket")}
     end
   end
@@ -44,30 +43,45 @@ defmodule WikWeb.Superadmin.InboxLive do
     {:noreply,
      socket
      |> assign(:selected_ticket, nil)
-     |> assign(:triage_form, nil)}
+     |> assign(:ticket_update_form, nil)}
   end
 
-  def handle_event("triage_validate", %{"form" => params}, socket) do
-    {:noreply, assign(socket, :triage_form, Form.validate(socket.assigns.triage_form, params))}
+  def handle_event("ticket_update_validate", %{"form" => params}, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :ticket_update_form,
+       Form.validate(socket.assigns.ticket_update_form, params)
+     )}
   end
 
-  def handle_event("triage_submit", %{"form" => params}, socket) do
+  def handle_event("ticket_update_submit", %{"form" => params}, socket) do
     current_user = socket.assigns.current_user
-    attrs = triage_params(params, current_user.id)
+    attrs = ticket_update_params(params)
 
-    case Tickets.triage_ticket(socket.assigns.selected_ticket, attrs, current_user) do
+    case Form.submit(socket.assigns.ticket_update_form, params: attrs) do
       {:ok, _ticket} ->
-        {:ok, selected_ticket} =
-          Tickets.get_ticket_for_superadmin(socket.assigns.selected_ticket.id, current_user)
+        case Ash.get(Ticket, socket.assigns.selected_ticket.id,
+               actor: current_user,
+               load: [:submitted_by]
+             ) do
+          {:ok, selected_ticket} ->
+            {:noreply,
+             socket
+             |> assign(:selected_ticket, selected_ticket)
+             |> assign(
+               :ticket_update_form,
+               init_ticket_update_form(selected_ticket, current_user)
+             )
+             |> put_flash(:info, "Ticket updated")}
 
-        {:noreply,
-         socket
-         |> assign(:selected_ticket, selected_ticket)
-         |> assign(:triage_form, init_triage_form(selected_ticket, current_user))
-         |> put_flash(:info, "Ticket updated")}
+          {:error, error} ->
+            Log.scoped_error(socket.assigns.current_scope, error, "ticket reload failed")
+            {:noreply, put_flash(socket, :error, "Ticket was updated, but couldn't be reloaded")}
+        end
 
       {:error, error} ->
-        Log.scoped_error(socket.assigns.current_scope, error, "triage_ticket failed")
+        Log.scoped_error(socket.assigns.current_scope, error, "ticket update failed")
         {:noreply, put_flash(socket, :error, "Couldn't update ticket")}
     end
   end
@@ -129,7 +143,7 @@ defmodule WikWeb.Superadmin.InboxLive do
         </Cinder.collection>
 
         <WikWeb.Components.Modal.render
-          :if={@selected_ticket && @triage_form}
+          :if={@selected_ticket && @ticket_update_form}
           cancel="hide_ticket"
           cancel_testid="inbox-ticket-close"
           open?={true}
@@ -165,28 +179,27 @@ defmodule WikWeb.Superadmin.InboxLive do
             </div>
 
             <.form
-              for={@triage_form}
-              id="inbox-triage-form"
-              phx-change="triage_validate"
-              phx-submit="triage_submit"
+              for={@ticket_update_form}
+              id="inbox-ticket-update-form"
+              phx-change="ticket_update_validate"
+              phx-submit="ticket_update_submit"
               class="space-y-4 rounded-[1.25rem] border border-base-300 bg-base-100 p-4"
             >
               <div class="grid gap-4 sm:grid-cols-2">
                 <.input
-                  field={@triage_form[:status]}
+                  field={@ticket_update_form[:status]}
                   type="select"
                   label="Status"
                   options={ticket_status_options()}
                 />
 
                 <div class="rounded-[1rem] border border-base-300 bg-base-200/50 px-4 py-3 text-xs leading-6 text-base-content/65">
-                  Saving an update will mark this ticket as handled by the current superadmin
-                  unless it is returned to <span class="font-semibold">New</span>.
+                  Update the status and leave internal notes for your own follow-up.
                 </div>
               </div>
 
               <.input
-                field={@triage_form[:admin_notes]}
+                field={@ticket_update_form[:admin_notes]}
                 type="textarea"
                 label="Internal notes"
                 rows="6"
@@ -207,31 +220,27 @@ defmodule WikWeb.Superadmin.InboxLive do
   defp inbox_query do
     Ticket
     |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.Query.load([:submitted_by, :handled_by])
+    |> Ash.Query.load([:submitted_by])
   end
 
-  defp init_triage_form(ticket, current_user) do
+  defp init_ticket_update_form(ticket, current_user) do
     ticket
-    |> Form.for_update(:triage, actor: current_user)
+    |> Form.for_update(:update, actor: current_user)
     |> to_form()
   end
 
-  defp triage_params(params, current_user_id) do
-    handled_by_id =
-      case params["status"] do
-        "new" -> nil
-        _ -> current_user_id
-      end
-
+  defp ticket_update_params(params) do
     handled_at =
       case params["status"] do
         "closed" -> DateTime.utc_now()
         _ -> nil
       end
 
-    params
-    |> Map.put("handled_by_id", handled_by_id)
-    |> Map.put("handled_at", handled_at)
+    %{
+      admin_notes: params["admin_notes"],
+      handled_at: handled_at,
+      status: params["status"]
+    }
   end
 
   defp user_label(%{email: email}) when not is_nil(email) and email != "", do: to_string(email)

@@ -8,7 +8,7 @@ defmodule WikWeb.Superadmin.InboxLiveTest do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Tickets.Ticket
 
-  test "superadmin can see and triage tickets", %{conn: conn} do
+  test "superadmin can see and update ticket admin state", %{conn: conn} do
     superadmin = generate(user(role: :superadmin))
     user = generate(user())
 
@@ -38,7 +38,7 @@ defmodule WikWeb.Superadmin.InboxLiveTest do
     assert has_element?(view, testid("inbox-ticket-dialog"))
 
     view
-    |> form("#inbox-triage-form",
+    |> form("#inbox-ticket-update-form",
       form: %{
         "admin_notes" => "Handled manually",
         "status" => "closed"

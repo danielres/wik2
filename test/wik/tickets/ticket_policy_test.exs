@@ -2,22 +2,22 @@ defmodule Wik.Tickets.TicketPolicyTest do
   use Wik.DataCase, async: true
 
   import Wik.TestGenerators
-
-  alias Wik.Tickets
   alias Wik.Tickets.Ticket
 
   test "authenticated user can submit a ticket" do
     user = generate(user())
 
     assert {:ok, ticket} =
-             Tickets.submit_ticket(
+             Ash.create(
+               Ticket,
                %{
                  app_path: "/me/tickets/new",
                  body: "Please delete my data.",
                  subject: "Privacy request",
                  type: :privacy_request
                },
-               user
+               action: :submit,
+               actor: user
              )
 
     assert ticket.submitted_by_id == user.id
@@ -42,12 +42,12 @@ defmodule Wik.Tickets.TicketPolicyTest do
         domain: Wik.Tickets
       )
 
-    assert {:ok, %{id: ticket_id}} = Tickets.get_ticket_for_user(ticket.id, user)
+    assert {:ok, %{id: ticket_id}} = Ash.get(Ticket, ticket.id, actor: user)
     assert ticket_id == ticket.id
-    assert {:error, _error} = Tickets.get_ticket_for_user(ticket.id, other_user)
+    assert {:error, _error} = Ash.get(Ticket, ticket.id, actor: other_user)
   end
 
-  test "superadmin can triage any ticket" do
+  test "superadmin can update ticket admin state" do
     user = generate(user())
     superadmin = generate(user(role: :superadmin))
 
@@ -66,18 +66,59 @@ defmodule Wik.Tickets.TicketPolicyTest do
       )
 
     assert {:ok, updated_ticket} =
-             Tickets.triage_ticket(
+             Ash.update(
                ticket,
                %{
                  admin_notes: "Handled",
                  handled_at: DateTime.utc_now(),
-                 handled_by_id: superadmin.id,
                  status: :closed
                },
-               superadmin
+               action: :update,
+               actor: superadmin
              )
 
     assert updated_ticket.status == :closed
-    assert updated_ticket.handled_by_id == superadmin.id
+  end
+
+  test "superadmin can update ticket notes after changing status" do
+    user = generate(user())
+    superadmin = generate(user(role: :superadmin))
+
+    ticket =
+      Ash.create!(
+        Ticket,
+        %{
+          app_path: "/me/tickets/new",
+          body: "Needs follow-up.",
+          subject: "Feedback",
+          type: :feedback
+        },
+        action: :submit,
+        actor: user,
+        domain: Wik.Tickets
+      )
+
+    {:ok, in_progress_ticket} =
+      Ash.update(
+        ticket,
+        %{
+          status: :in_progress
+        },
+        action: :update,
+        actor: superadmin
+      )
+
+    assert {:ok, updated_ticket} =
+             Ash.update(
+               in_progress_ticket,
+               %{
+                 admin_notes: "Still investigating"
+               },
+               action: :update,
+               actor: superadmin
+             )
+
+    assert updated_ticket.status == :in_progress
+    assert updated_ticket.admin_notes == "Still investigating"
   end
 end

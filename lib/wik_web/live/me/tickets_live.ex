@@ -4,10 +4,7 @@ defmodule WikWeb.Me.TicketsLive do
 
   alias Utils.Log
   alias Wik.Tickets
-  alias Wik.Tickets.Ticket
   alias WikWeb.Components.UI
-
-  require Ash.Query
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
 
@@ -16,7 +13,7 @@ defmodule WikWeb.Me.TicketsLive do
     {:ok,
      socket
      |> assign(:selected_ticket, nil)
-     |> assign(:tickets_query, tickets_query(socket.assigns.current_user))}
+     |> assign(:tickets_query, Tickets.tickets_query_for_user(socket.assigns.current_user))}
   end
 
   @impl true
@@ -29,12 +26,12 @@ defmodule WikWeb.Me.TicketsLive do
   def handle_event("show_ticket", %{"id" => id}, socket) do
     current_user = socket.assigns.current_user
 
-    case Tickets.get_ticket_for_user(id, current_user) do
+    case Tickets.get_ticket(id, actor: current_user) do
       {:ok, ticket} ->
         {:noreply, assign(socket, :selected_ticket, ticket)}
 
       {:error, error} ->
-        Log.scoped_error(socket.assigns.current_scope, error, "get_ticket_for_user failed")
+        Log.scoped_error(socket.assigns.current_scope, error, "ticket lookup failed")
         {:noreply, put_flash(socket, :error, "Couldn't open ticket")}
     end
   end
@@ -124,7 +121,7 @@ defmodule WikWeb.Me.TicketsLive do
     """
   end
 
-  attr :ticket, Ticket, required: true
+  attr :ticket, :map, required: true
 
   def ticket(assigns) do
     ~H"""
@@ -153,12 +150,6 @@ defmodule WikWeb.Me.TicketsLive do
       <div class="rounded bg-base-200/70 p-4 whitespace-pre-wrap">{@ticket.body}</div>
     </div>
     """
-  end
-
-  defp tickets_query(current_user) do
-    Ticket
-    |> Ash.Query.filter(submitted_by_id == ^current_user.id)
-    |> Ash.Query.sort(inserted_at: :desc)
   end
 
   defp ticket_type_label(:feedback), do: "Feedback"

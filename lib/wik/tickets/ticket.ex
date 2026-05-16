@@ -12,7 +12,7 @@ defmodule Wik.Tickets.Ticket do
   end
 
   admin do
-    table_columns [:type, :status, :submitted_by, :handled_by, :inserted_at]
+    table_columns [:type, :status, :submitted_by, :inserted_at]
 
     format_fields inserted_at: {Calendar, :strftime, ["%Y-%m-%d %H:%M"]}
   end
@@ -26,7 +26,7 @@ defmodule Wik.Tickets.Ticket do
       change relate_actor(:submitted_by, allow_nil?: false)
     end
 
-    update :triage do
+    update :update do
       accept [:admin_notes, :handled_at, :status]
       require_atomic? false
     end
@@ -45,7 +45,7 @@ defmodule Wik.Tickets.Ticket do
       authorize_if expr(submitted_by_id == ^actor(:id))
     end
 
-    policy action(:triage) do
+    policy action(:update) do
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
   end
@@ -96,10 +96,6 @@ defmodule Wik.Tickets.Ticket do
   relationships do
     belongs_to :submitted_by, Wik.Accounts.User do
       allow_nil? false
-    end
-
-    belongs_to :handled_by, Wik.Accounts.User do
-      allow_nil? true
     end
   end
 end

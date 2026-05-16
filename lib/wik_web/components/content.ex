@@ -1,0 +1,216 @@
+defmodule WikWeb.Components.Content do
+  use WikWeb, :html
+
+  def privacy(assigns) do
+    ~H"""
+    <section>
+      <h2>What Wik collects and why</h2>
+      <h3>Account and sign-in data</h3>
+      <p>
+        We store your email address, timezone, session and authentication token data so you can
+        sign in, stay signed in, and see times in the right timezone.
+      </p>
+
+      <h3>Telegram-linked identity data</h3>
+      <p>
+        If you use Telegram login or a group relies on Telegram-backed access, we store your
+        Telegram provider user ID, username, avatar URL, display name, and a reduced copy of the
+        Telegram identity fields needed for account linking and access checks.
+      </p>
+
+      <h3>Groups, memberships, and access grants</h3>
+      <p>
+        We store which groups you belong to, your role in those groups, linked access sources,
+        and access grant verification state so the service can decide what you are allowed to see.
+      </p>
+
+      <h3>Content you create</h3>
+      <p>
+        Wik stores authored wiki pages, blocks, blog posts, events, and profile or membership
+        usernames so groups can collaborate inside their shared space.
+      </p>
+
+      <h3>Presence and activity data</h3>
+      <p>
+        Group members can see live presence, current path, and editing indicators while you are
+        active in a group. This data is used for collaboration and lock hints and is intended to
+        be operational and short-lived rather than a long-term activity log.
+      </p>
+
+      <h3>Private calendar feed links</h3>
+      <p>
+        Calendar subscriptions use private tokenized URLs. These tokens are treated like secrets
+        because anyone with the link can fetch the related calendar feed until the token is
+        revoked.
+      </p>
+
+      <h3>Logs and error tracking</h3>
+      <p>
+        We keep server logs, webhook traffic metadata, and error tracking context to operate,
+        secure, and debug the service. Error tracking is limited to operational identifiers such
+        as user ID, username, role, tenant identifiers, and membership type.
+      </p>
+    </section>
+
+    <section>
+      <h2>Where data comes from</h2>
+      <p>You provide account details, authored content, and profile information directly.</p>
+      <p>
+        Telegram provides identity data if you choose Telegram login or a Telegram-backed access
+        flow applies.
+      </p>
+      <p>
+        Operational systems generate logs, presence events, error events, and webhook metadata.
+      </p>
+    </section>
+
+    <section>
+      <h2>Who can see what</h2>
+      <p>
+        The service operator can access production data needed to run, secure, moderate, and
+        support the hosted service.
+      </p>
+      <p>
+        Members of the same group can generally see group membership lists, usernames, avatars,
+        authored content, and live presence or editing indicators inside that group.
+      </p>
+      <p>
+        Calendar feeds are visible to anyone who has the private feed URL, so those links must
+        not be shared.
+      </p>
+    </section>
+
+    <section>
+      <h2>Processors and services</h2>
+      <p>Hosting and database providers used to run this Wik instance.</p>
+      <p>The email provider used for magic-link sign-in.</p>
+      <p>Error tracking used to capture application failures.</p>
+      <p>
+        Telegram, if you use Telegram login or a group depends on Telegram-backed access
+        verification.
+      </p>
+    </section>
+
+    <section>
+      <h2>Retention</h2>
+      <p>
+        We keep account, access, and content data for as long as the account or group needs it to
+        operate.
+      </p>
+      <p>
+        Operational logs and error events are kept only for a short fixed period, then deleted
+        according to the internal retention policy.
+      </p>
+      <p>
+        When you ask for deletion, we aim to remove or anonymize personal data within 30 days
+        unless we need limited records to protect the service or resolve abuse or security issues.
+      </p>
+      <p>Calendar feed tokens can be revoked on request.</p>
+    </section>
+
+    <section>
+      <h2>Your choices</h2>
+      <p>
+        Logged-in users can submit privacy requests and moderation reports in-app through the
+        ticket flow. Requests are reviewed manually by the operator.
+      </p>
+      <p>
+        We may ask you to verify control of the account email address or linked Telegram account
+        before we act on access, export, correction, or deletion requests.
+      </p>
+      <p>
+        If you cannot access your account, use the separate recovery or contact path shared by
+        your group operator. This fallback is handled outside the app.
+      </p>
+    </section>
+
+    <section>
+      <h2>Invitation-only hosted service</h2>
+      <p>
+        This hosted service is intended for invited users and private groups. If someone else
+        self-hosts Wik, they are responsible for their own legal, privacy, and operational
+        compliance for that separate instance.
+      </p>
+    </section>
+    """
+  end
+
+  def terms(assigns) do
+    ~H"""
+    <section>
+      <h2>Access and behavior</h2>
+      <p>
+        Access is invitation-only. <br />
+        The operator may approve, refuse, suspend, or remove access at any time.
+      </p>
+
+      <ul class="list space-y-2 mt-4">
+        <li class="flex items-start gap-2">
+          <.icon
+            name="hero-exclamation-triangle-micro"
+            class="mt-0.5 size-4 text-base-content/40 shrink-0"
+          />
+          <span>No illegal content or illegal activity.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <.icon
+            name="hero-exclamation-triangle-micro"
+            class="mt-0.5 size-4 text-base-content/40 shrink-0"
+          />
+          <span>No political content, campaigning, or activism on this hosted instance.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <.icon
+            name="hero-exclamation-triangle-micro"
+            class="mt-0.5 size-4 text-base-content/40 shrink-0"
+          />
+          <span>
+            Treat other users respectfully. Harassment, intimidation, or abuse is not allowed.
+          </span>
+        </li>
+        <li class="flex items-start gap-2">
+          <.icon
+            name="hero-exclamation-triangle-micro"
+            class="mt-0.5 size-4 text-base-content/40 shrink-0"
+          />
+          <span>
+            You are responsible for the content you post, publish, upload, or relay through the service.
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Content and moderation</h2>
+      <p>
+        The operator may remove content, invites, memberships, users, sources, grants, or groups
+        at their discretion.
+      </p>
+      <p>
+        The operator may investigate misuse, enforce these rules, and preserve limited records
+        needed for security or moderation.
+      </p>
+      <p>
+        If you share a private calendar feed token or link, you are responsible for the resulting
+        access until it is revoked.
+      </p>
+    </section>
+
+    <section>
+      <h2>Service limits</h2>
+      <p>The service is provided as-is, with no warranty and no uptime guarantee.</p>
+      <p>Features, access rules, and integrations may change at any time.</p>
+      <p>The service may be paused, restricted, or shut down entirely.</p>
+    </section>
+
+    <section>
+      <h2>Questions and requests</h2>
+      <p>
+        Logged-in users can submit feedback, privacy requests, and moderation reports in-app
+        through the ticket flow. Access-lost recovery or fallback contact is handled outside the
+        app.
+      </p>
+    </section>
+    """
+  end
+end

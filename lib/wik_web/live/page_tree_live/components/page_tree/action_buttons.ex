@@ -35,7 +35,7 @@ defmodule WikWeb.PageTreeLive.Components.PageTree.ActionButtons do
     ~H"""
     <CoreComponents.button
       class={[
-        "btn btn-xs btn-circle",
+        "btn btn-xs btn-circle btn-soft btn-accent",
         "tooltip tooltip-left tooltip-delayed",
         @variant_class,
         @class
@@ -44,7 +44,7 @@ defmodule WikWeb.PageTreeLive.Components.PageTree.ActionButtons do
       style="--tt-delay: 400ms"
       {@rest}
     >
-      <CoreComponents.icon name={@icon} />
+      <CoreComponents.icon name={@icon} class="size-4" />
       <span class="sr-only">{assigns[:"data-tip"]}</span>
     </CoreComponents.button>
     """

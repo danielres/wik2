@@ -1,4 +1,4 @@
-defmodule Wik.Events.Event.Changes.SetGroupFromCurrentTenant do
+defmodule Wik.Changes.SetGroupFromCurrentTenant do
   use Ash.Resource.Change
 
   alias Ash.Changeset

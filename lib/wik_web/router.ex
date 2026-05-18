@@ -136,6 +136,7 @@ defmodule WikWeb.Router do
         live "/", GroupLive, :members
         live "/members", GroupLive, :members
         live "/orphans", GroupLive, :orphans
+        live "/tags", TagGraphLive, :index
         live "/events", EventsLive, :index
         live "/tree", PageTreeLive, :index
         live "/blog", BlogLive, :index

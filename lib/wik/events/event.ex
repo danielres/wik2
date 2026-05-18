@@ -1,7 +1,7 @@
 defmodule Wik.Events.Event do
   alias Wik.Accounts.Group
+  alias Wik.Changes.SetGroupFromCurrentTenant
   alias Wik.Events.Event.Changes.CreateOriginPublication
-  alias Wik.Events.Event.Changes.SetGroupFromCurrentTenant
   alias Wik.Events.Event.Changes.SetScheduleFromLocalFields
   alias Wik.Events.Event.Validations.Timing
   alias Wik.Events.Event.Validations.Tz

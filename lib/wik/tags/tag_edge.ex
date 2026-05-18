@@ -20,6 +20,12 @@ defmodule Wik.Tags.TagEdge do
       reference :parent_tag, on_delete: :delete, match_with: [group_id: :group_id]
       reference :child_tag, on_delete: :delete, match_with: [group_id: :group_id]
     end
+
+    check_constraints do
+      check_constraint [:parent_tag_id, :child_tag_id], "tag_edges_no_self_reference",
+        check: "parent_tag_id <> child_tag_id",
+        message: "parent and child tags must differ"
+    end
   end
 
   admin do

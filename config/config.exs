@@ -68,6 +68,7 @@ config :wik,
     Wik.Blocks,
     Wik.Blog,
     Wik.Events,
+    Wik.Tags,
     Wik.Tickets,
     Wik.Wiki
   ],

@@ -152,6 +152,7 @@ defmodule WikWeb.Layouts do
   end
 
   attr :width_class, :string, default: "max-w-3xl"
+  attr :class, :string, default: ""
   slot :inner_block, required: true
 
   def container(assigns) do
@@ -159,7 +160,8 @@ defmodule WikWeb.Layouts do
     <main class="px-4 sm:px-6 lg:px-8">
       <div class={[
         "mx-auto space-y-4",
-        @width_class
+        @width_class,
+        @class
       ]}>
         {render_slot(@inner_block)}
       </div>
@@ -373,67 +375,16 @@ defmodule WikWeb.Layouts do
         </div>
       </footer>
     </div>
+
     <Components.Modal.render
       :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
       open?={true}
       testid="membership-username-dialog"
     >
-      <:title>
-        Welcome to <span class="font-bold">{@scope.tenant |> to_string()}</span>!
-      </:title>
-
-      <.form
-        :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
-        autocomplete="off"
-        for={@tenant_context[:membership_username_form]}
-        id="membership-username-form"
-        phx-change="membership_username_validate"
-        phx-submit="membership_username_submit"
-        class="space-y-4"
-      >
-        <div class="mt-4">
-          <h2 class="label">Group description</h2>
-
-          <div class="bg-base-200 px-4 py-3 rounded text-sm opacity-80">
-            {@scope.tenant.description}
-          </div>
-        </div>
-
-        <div class="mt-4">
-          <h2 class="label">Wik acceptable usage</h2>
-
-          <div class="bg-base-200 px-4 py-3 rounded text-sm opacity-80">
-            <ul class="space-y-0">
-              <li class="flex items-start gap-2">
-                <.icon name="hero-x-mark" class="mt-0.5 size-4 text-base-content/40 shrink-0" />
-                <span>No illegal content or activity.</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <.icon name="hero-x-mark" class="mt-0.5 size-4 text-base-content/40 shrink-0" />
-                <span>No political content, campaigning, or activism.</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <.icon name="hero-x-mark" class="mt-0.5 size-4 text-base-content/40 shrink-0" />
-                <span>Always treat others with respect.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <.input
-          field={@tenant_context[:membership_username_form][:username]}
-          label="Please choose your username"
-          placeholder="Your username"
-          type="text"
-          autocomplete="off"
-          data-slugify-pattern={Utils.Slugify.js_slugify_pattern()}
-          phx-hook="SlugifyInput"
-        />
-
-        <div class="flex justify-end">
-          <.button type="submit" class="btn btn-primary">Continue</.button>
-        </div>
-      </.form>
+      <Components.Membership.steps
+        form={@tenant_context[:membership_username_form]}
+        group={@scope.tenant}
+      />
     </Components.Modal.render>
 
     <.flash_group flash={@flash} />

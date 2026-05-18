@@ -3,7 +3,7 @@ defmodule WikWeb.Components.Content do
 
   def privacy(assigns) do
     ~H"""
-    <section>
+    <article>
       <h2>What Wik collects and why</h2>
       <h3>Account and sign-in data</h3>
       <p>
@@ -50,9 +50,7 @@ defmodule WikWeb.Components.Content do
         secure, and debug the service. Error tracking is limited to operational identifiers such
         as user ID, username, role, tenant identifiers, and membership type.
       </p>
-    </section>
 
-    <section>
       <h2>Where data comes from</h2>
       <p>You provide account details, authored content, and profile information directly.</p>
       <p>
@@ -62,9 +60,7 @@ defmodule WikWeb.Components.Content do
       <p>
         Operational systems generate logs, presence events, error events, and webhook metadata.
       </p>
-    </section>
 
-    <section>
       <h2>Who can see what</h2>
       <p>
         The service operator can access production data needed to run, secure, moderate, and
@@ -78,9 +74,7 @@ defmodule WikWeb.Components.Content do
         Calendar feeds are visible to anyone who has the private feed URL, so those links must
         not be shared.
       </p>
-    </section>
 
-    <section>
       <h2>Processors and services</h2>
       <p>Hosting and database providers used to run this Wik instance.</p>
       <p>The email provider used for magic-link sign-in.</p>
@@ -89,9 +83,7 @@ defmodule WikWeb.Components.Content do
         Telegram, if you use Telegram login or a group depends on Telegram-backed access
         verification.
       </p>
-    </section>
 
-    <section>
       <h2>Retention</h2>
       <p>
         We keep account, access, and content data for as long as the account or group needs it to
@@ -106,9 +98,7 @@ defmodule WikWeb.Components.Content do
         unless we need limited records to protect the service or resolve abuse or security issues.
       </p>
       <p>Calendar feed tokens can be revoked on request.</p>
-    </section>
 
-    <section>
       <h2>Your choices</h2>
       <p>
         Logged-in users can submit privacy requests and moderation reports in-app through the
@@ -122,95 +112,118 @@ defmodule WikWeb.Components.Content do
         If you cannot access your account, use the separate recovery or contact path shared by
         your group operator. This fallback is handled outside the app.
       </p>
-    </section>
 
-    <section>
       <h2>Invitation-only hosted service</h2>
       <p>
         This hosted service is intended for invited users and private groups. If someone else
         self-hosts Wik, they are responsible for their own legal, privacy, and operational
         compliance for that separate instance.
       </p>
-    </section>
+    </article>
     """
   end
 
   def terms(assigns) do
     ~H"""
-    <section>
-      <h2>Access and behavior</h2>
-      <p>
-        Access is invitation-only. <br />
-        The operator may approve, refuse, suspend, or remove access at any time.
-      </p>
+    <article class="prose text-pretty">
+      <section>
+        <div class="">
+          <p>
+            These terms apply to the invitation-only hosted Wik service run by the operator of the instance hosted at:
+          </p>
+          <p class="text-center bg-base-200 px-4 py-2 rounded-lg my-4 w-fit mx-auto">
+            <span class="text-base-content">{WikWeb.Endpoint.struct_url().host || "localhost"}</span>
+          </p>
+          <p>
+            Self-hosted copies run by other people are outside these terms.
+          </p>
+        </div>
 
-      <ul class="list space-y-2 mt-4">
-        <li class="flex items-start gap-2">
-          <.icon
-            name="hero-exclamation-triangle-micro"
-            class="mt-0.5 size-4 text-base-content/40 shrink-0"
-          />
-          <span>No illegal content or illegal activity.</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <.icon
-            name="hero-exclamation-triangle-micro"
-            class="mt-0.5 size-4 text-base-content/40 shrink-0"
-          />
-          <span>No political content, campaigning, or activism on this hosted instance.</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <.icon
-            name="hero-exclamation-triangle-micro"
-            class="mt-0.5 size-4 text-base-content/40 shrink-0"
-          />
-          <span>
-            Treat other users respectfully. Harassment, intimidation, or abuse is not allowed.
-          </span>
-        </li>
-        <li class="flex items-start gap-2">
-          <.icon
-            name="hero-exclamation-triangle-micro"
-            class="mt-0.5 size-4 text-base-content/40 shrink-0"
-          />
-          <span>
-            You are responsible for the content you post, publish, upload, or relay through the service.
-          </span>
-        </li>
-      </ul>
-    </section>
+        <h2>Access and behavior</h2>
 
-    <section>
-      <h2>Content and moderation</h2>
-      <p>
-        The operator may remove content, invites, memberships, users, sources, grants, or groups
-        at their discretion.
-      </p>
-      <p>
-        The operator may investigate misuse, enforce these rules, and preserve limited records
-        needed for security or moderation.
-      </p>
-      <p>
-        If you share a private calendar feed token or link, you are responsible for the resulting
-        access until it is revoked.
-      </p>
-    </section>
+        <ul class="bg-base-200 p-4 rounded-lg my-4">
+          <li class="flex items-start gap-2">
+            <.icon
+              name="hero-exclamation-triangle-micro"
+              class="mt-0.5 size-4 text-base-content/40 shrink-0"
+            />
+            <span>No illegal content or illegal activity.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <.icon
+              name="hero-exclamation-triangle-micro"
+              class="mt-0.5 size-4 text-base-content/40 shrink-0"
+            />
+            <span>No political content, campaigning, or activism on this hosted instance.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <.icon
+              name="hero-exclamation-triangle-micro"
+              class="mt-0.5 size-4 text-base-content/40 shrink-0"
+            />
+            <div>
+              <div>Harassment, intimidation, or abuse is not allowed.</div>
+              <div>Treat other users respectfully.</div>
+            </div>
+          </li>
+          <li class="flex items-start gap-2">
+            <.icon
+              name="hero-exclamation-triangle-micro"
+              class="mt-0.5 size-4 text-base-content/40 shrink-0"
+            />
+            <span>
+              You are responsible for the content you post, publish, upload, or relay through the service.
+            </span>
+          </li>
+        </ul>
 
-    <section>
-      <h2>Service limits</h2>
-      <p>The service is provided as-is, with no warranty and no uptime guarantee.</p>
-      <p>Features, access rules, and integrations may change at any time.</p>
-      <p>The service may be paused, restricted, or shut down entirely.</p>
-    </section>
+        <ul>
+          <li>Access is invitation-only.</li>
+          <li>The operator may approve, refuse, suspend, or remove access at any time.</li>
+        </ul>
+      </section>
 
-    <section>
-      <h2>Questions and requests</h2>
-      <p>
-        Logged-in users can submit feedback, privacy requests, and moderation reports in-app
-        through the ticket flow. Access-lost recovery or fallback contact is handled outside the
-        app.
-      </p>
-    </section>
+      <section>
+        <h2>Content and moderation</h2>
+        <ul>
+          <li>
+            The operator may remove content, invites, memberships, users, sources, grants, or groups
+            at their discretion.
+          </li>
+          <li>
+            The operator may investigate misuse, enforce these rules, and preserve limited records
+            needed for security or moderation.
+          </li>
+          <li>
+            If you share a private calendar feed token or link, you are responsible for the resulting
+            access until it is revoked.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Service limits</h2>
+        <ul>
+          <li>The service is provided as-is, with no warranty and no uptime guarantee.</li>
+          <li>Features, access rules, and integrations may change at any time.</li>
+          <li>The service may be paused, restricted, or shut down entirely.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Questions and requests</h2>
+        <ul>
+          <li>
+            Logged-in users can submit feedback, privacy requests, and moderation reports in-app
+            through the ticket flow.
+          </li>
+          <li>
+            Access-lost recovery or fallback contact is handled outside the
+            app.
+          </li>
+        </ul>
+      </section>
+    </article>
     """
   end
 end

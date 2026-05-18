@@ -76,14 +76,24 @@ defmodule Wik.TestGenerators do
 
   def tag_edge(opts \\ []) do
     group = Keyword.get(opts, :group, group())
-    parent_tag = Keyword.get(opts, :parent_tag, tag(group: group))
-    child_tag = Keyword.get(opts, :child_tag, tag(group: group))
+    parent_tag = Keyword.get(opts, :parent_tag)
+    child_tag = Keyword.get(opts, :child_tag)
 
     seed_generator(
       fn %{group: group, parent_tag: parent_tag, child_tag: child_tag} ->
         group = generate(group)
-        parent_tag = generate(parent_tag)
-        child_tag = generate(child_tag)
+
+        parent_tag =
+          case parent_tag do
+            nil -> generate(tag(group: group))
+            value -> generate(value)
+          end
+
+        child_tag =
+          case child_tag do
+            nil -> generate(tag(group: group))
+            value -> generate(value)
+          end
 
         %TagEdge{
           group_id: group.id,

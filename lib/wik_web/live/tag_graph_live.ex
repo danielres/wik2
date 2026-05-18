@@ -33,9 +33,6 @@ defmodule WikWeb.TagGraphLive do
      socket
      |> assign(editable?: editable?)
      |> assign(group: group)
-     |> assign(graph: graph)
-     |> assign(selected_tag_id: nil)
-     |> assign(selected_tag: nil)
      |> assign(tag_form: nil)
      |> assign(tag_form_mode: nil)
      |> assign(tag_form_parent_id: nil)
@@ -43,35 +40,12 @@ defmodule WikWeb.TagGraphLive do
      |> assign(link_form: nil)
      |> assign(link_form_mode: nil)
      |> assign(link_form_tag_id: nil)
-     |> assign(link_form_error: nil)}
+     |> assign(link_form_error: nil)
+     |> assign_graph_state(graph, nil)}
   end
 
   @impl true
   def render(assigns) do
-    selected_descendants =
-      case assigns.selected_tag do
-        nil -> []
-        tag -> GraphQueries.descendant_tree(assigns.graph, tag)
-      end
-
-    eligible_children =
-      case assigns.selected_tag do
-        nil -> []
-        tag -> GraphQueries.eligible_child_tags(assigns.graph, tag)
-      end
-
-    eligible_parents =
-      case assigns.selected_tag do
-        nil -> []
-        tag -> GraphQueries.eligible_parent_tags(assigns.graph, tag)
-      end
-
-    assigns =
-      assigns
-      |> assign(selected_descendants: selected_descendants)
-      |> assign(eligible_children: eligible_children)
-      |> assign(eligible_parents: eligible_parents)
-
     ~H"""
     <Layouts.app
       context={@context}
@@ -537,12 +511,32 @@ defmodule WikWeb.TagGraphLive do
 
   defp refresh_graph(socket, selected_tag_id) do
     graph = Tags.load_tag_graph(socket.assigns.current_scope)
+    assign_graph_state(socket, graph, selected_tag_id)
+  end
+
+  defp assign_graph_state(socket, graph, selected_tag_id) do
     selected_tag = selected_tag_id && Map.get(graph.tags_by_id, selected_tag_id)
+
+    {selected_descendants, eligible_children, eligible_parents} =
+      case selected_tag do
+        nil ->
+          {[], [], []}
+
+        tag ->
+          {
+            GraphQueries.descendant_tree(graph, tag),
+            GraphQueries.eligible_child_tags(graph, tag),
+            GraphQueries.eligible_parent_tags(graph, tag)
+          }
+      end
 
     socket
     |> assign(graph: graph)
     |> assign(selected_tag_id: selected_tag && selected_tag.id)
     |> assign(selected_tag: selected_tag)
+    |> assign(selected_descendants: selected_descendants)
+    |> assign(eligible_children: eligible_children)
+    |> assign(eligible_parents: eligible_parents)
   end
 
   defp open_link_form(socket, mode, tag_id) do

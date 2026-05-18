@@ -1,25 +1,12 @@
 <Layouts.app flash={@flash}>
-  <Layouts.container>
-    <main class="prose">
-      <article class={["mx-auto max-w-xl"]}>
-        <header>
-          <p class="page_name">Terms</p>
-          <h1 class="">
-            Service rules
-          </h1>
+  <Layouts.container class="prose">
+    <header>
+      <p class="page_name">Terms</p>
+      <h1 class="">
+        Service rules
+      </h1>
+    </header>
 
-          <p class="px-4 py-2 rounded bg-base-200 !my-4">
-            Applies to the instance hosted at: <span class="font-bold">{@public_host}</span>
-          </p>
-
-          <p>
-            These terms apply to the invitation-only hosted Wik service run by the operator of this
-            instance. Self-hosted copies run by other people are outside these terms.
-          </p>
-        </header>
-
-        <WikWeb.Components.Content.terms />
-      </article>
-    </main>
+    <WikWeb.Components.Content.terms />
   </Layouts.container>
 </Layouts.app>

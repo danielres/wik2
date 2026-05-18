@@ -23,24 +23,11 @@
               class="flex items-center gap-2"
             >
               <%= if @editing? do %>
-                <WikWeb.Components.Block.AddBlockMenuButton.render
-                  class={["btn btn-sm btn-circle btn-accent"]}
-                  event_open="add_block_modal_open"
-                />
+                <WikWeb.Components.Block.AddBlockMenuButton.render event_open="add_block_modal_open" />
 
-                <button
-                  class={["btn btn-sm btn-circle btn-accent"]}
-                  phx-click="toggle_edit_mode"
-                >
-                  <.icon name="hero-check-micro" class="size-5" />
-                </button>
+                <UI.button_ok phx-click="toggle_edit_mode" />
               <% else %>
-                <button
-                  class={["btn btn-sm btn-circle btn-accent"]}
-                  phx-click="toggle_edit_mode"
-                >
-                  <.icon name="hero-pencil-square-micro" class="size-5" />
-                </button>
+                <UI.button_edit phx-click="toggle_edit_mode" />
               <% end %>
             </div>
           </div>

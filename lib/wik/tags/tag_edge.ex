@@ -1,6 +1,6 @@
 defmodule Wik.Tags.TagEdge do
   alias Wik.Accounts.Group
-  alias Wik.Tags.Changes.SetGroupFromCurrentTenant
+  alias Wik.Changes.SetGroupFromCurrentTenant
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge.Changes.ValidateLink
 

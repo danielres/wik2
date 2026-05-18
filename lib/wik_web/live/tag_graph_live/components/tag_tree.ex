@@ -82,15 +82,6 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
               !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
             ]}
           />
-          <.icon
-            :if={false}
-            name="hero-chevron-right-mini"
-            class={[
-              "opacity-30 transition",
-              @selected? && "rotate-90 opacity-100",
-              !@selected? && "group-hover:rotate-45 group-hover:opacity-100"
-            ]}
-          />
 
           <div class="min-w-0">
             <div class="flex items-center gap-2">

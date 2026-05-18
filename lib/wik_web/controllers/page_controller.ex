@@ -11,7 +11,6 @@ defmodule WikWeb.PageController do
   end
 
   def terms(conn, _params) do
-    public_host = WikWeb.Endpoint.struct_url().host || "localhost"
-    render(conn, :terms, public_host: public_host)
+    render(conn, :terms)
   end
 end

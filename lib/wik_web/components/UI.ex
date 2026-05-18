@@ -34,9 +34,11 @@ defmodule WikWeb.Components.UI do
           <% action = step_action(@action, index) %>
           <div class={[
             "mt-8 flex gap-4",
-            index == 1 && "justify-end",
-            index == length(@step) && "justify-between",
-            index > 1 && index < length(@step) && "justify-between"
+            cond do
+              index == 1 -> "justify-end"
+              index > 1 -> "justify-between"
+              true -> nil
+            end
           ]}>
             <label
               :if={index > 1}
@@ -45,11 +47,11 @@ defmodule WikWeb.Components.UI do
               for={step_id(@id, index - 1)}
               title={"Go to step #{index - 1}"}
             >
-              <.icon name="hero-chevron-left-micro" class="size-4" />
+              <.icon name="hero-chevron-left-mini" class="size-5" />
             </label>
 
             <label
-              :if={index < length(@step)}
+              :if={index < length(@step) && !action}
               aria-label="Next step"
               class="btn btn-xs btn-circle btn-primary"
               for={step_id(@id, index + 1)}
@@ -59,7 +61,7 @@ defmodule WikWeb.Components.UI do
             </label>
 
             <div :if={action}>
-              {render_slot(action)}
+              {render_slot(action, %{next_step_id: step_id(@id, index + 1)})}
             </div>
           </div>
         </div>

@@ -44,6 +44,17 @@ defmodule WikWeb.Components.Membership do
         </.form>
       </:step>
 
+      <:action :let={props} step={1}>
+        <label
+          aria-label="Next step"
+          class="btn btn-sm btn-primary"
+          for={props.next_step_id}
+          title="Accept and continue"
+        >
+          Accept and continue <.icon name="hero-chevron-right-micro" class="size-4" />
+        </label>
+      </:action>
+
       <:action step={2}>
         <button
           aria-label="Submit"

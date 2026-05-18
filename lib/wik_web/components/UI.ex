@@ -1,6 +1,77 @@
 defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
+  defp step_id(id, index), do: "#{id}-step#{index}"
+
+  attr :id, :string, required: true
+  attr :class, :string, default: ""
+
+  slot :step, required: true do
+    attr :label, :string, required: true
+  end
+
+  slot :action do
+    attr :step, :integer, required: true
+  end
+
+  def steps(assigns) do
+    ~H"""
+    <div class={["tabs [&_.tab]:hidden", @class]}>
+      <%= for {step, index} <- Enum.with_index(@step, 1) do %>
+        <input
+          phx-update="ignore"
+          id={step_id(@id, index)}
+          type="radio"
+          name={"#{@id}-steps"}
+          class="tab"
+          aria-label={step[:label]}
+          checked={index == 1}
+        />
+
+        <div class="tab-content">
+          {render_slot(step)}
+
+          <% action = step_action(@action, index) %>
+          <div class={[
+            "mt-8 flex gap-4",
+            index == 1 && "justify-end",
+            index == length(@step) && "justify-between",
+            index > 1 && index < length(@step) && "justify-between"
+          ]}>
+            <label
+              :if={index > 1}
+              aria-label="Previous step"
+              class="btn btn-xs btn-circle btn-primary btn-ghost"
+              for={step_id(@id, index - 1)}
+              title={"Go to step #{index - 1}"}
+            >
+              <.icon name="hero-chevron-left-micro" class="size-4" />
+            </label>
+
+            <label
+              :if={index < length(@step)}
+              aria-label="Next step"
+              class="btn btn-xs btn-circle btn-primary"
+              for={step_id(@id, index + 1)}
+              title={"Go to step #{index + 1}"}
+            >
+              <.icon name="hero-chevron-right-micro" class="size-4" />
+            </label>
+
+            <div :if={action}>
+              {render_slot(action)}
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp step_action(actions, index) do
+    Enum.find(actions, &(&1[:step] == index))
+  end
+
   attr :class, :string, default: ""
   slot :inner_block, required: true
 

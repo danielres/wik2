@@ -1,8 +1,11 @@
 defmodule Wik.Tags.GraphQueries do
+  alias Ash.Query
   alias Wik.Repo
   alias Wik.Tags
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
+
+  require Ash.Query
 
   @type graph_node :: %{
           tag: Tag.t(),
@@ -119,7 +122,6 @@ defmodule Wik.Tags.GraphQueries do
   end
 
   def list_ancestors(scope, tag_or_id) do
-    graph = load_graph(scope)
     group_id = tenant_group_id!(scope)
     tag_id = tag_id(tag_or_id)
 
@@ -128,12 +130,10 @@ defmodule Wik.Tags.GraphQueries do
       |> ancestor_rows(tag_id)
       |> Enum.map(fn %{id: id} -> id end)
 
-    ancestor_ids
-    |> Enum.map(&Map.fetch!(graph.tags_by_id, &1))
+    fetch_tags_in_order(scope, group_id, ancestor_ids)
   end
 
   def list_descendants(scope, tag_or_id) do
-    graph = load_graph(scope)
     group_id = tenant_group_id!(scope)
     tag_id = tag_id(tag_or_id)
 
@@ -142,8 +142,7 @@ defmodule Wik.Tags.GraphQueries do
       |> descendant_rows(tag_id)
       |> Enum.map(fn %{id: id} -> id end)
 
-    descendant_ids
-    |> Enum.map(&Map.fetch!(graph.tags_by_id, &1))
+    fetch_tags_in_order(scope, group_id, descendant_ids)
   end
 
   def path_exists?(group_id, source_tag_id, target_tag_id) do
@@ -303,6 +302,18 @@ defmodule Wik.Tags.GraphQueries do
 
   defp tag_id(%Tag{id: id}), do: id
   defp tag_id(tag_id) when is_binary(tag_id), do: tag_id
+
+  defp fetch_tags_in_order(_scope, _group_id, []), do: []
+
+  defp fetch_tags_in_order(scope, group_id, tag_ids) do
+    tags_by_id =
+      Tag
+      |> Query.filter(group_id == ^group_id and id in ^tag_ids)
+      |> Ash.read!(scope: scope, domain: Tags)
+      |> Map.new(&{&1.id, &1})
+
+    Enum.map(tag_ids, &Map.fetch!(tags_by_id, &1))
+  end
 
   defp dump_uuid!(value) do
     case Ecto.UUID.dump(value) do

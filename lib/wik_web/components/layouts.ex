@@ -112,6 +112,7 @@ defmodule WikWeb.Layouts do
           <.menu_item tenant={@scope.tenant} view={@view} target="wiki/home">Wiki</.menu_item>
           <.menu_item tenant={@scope.tenant} view={@view} target="members">Members</.menu_item>
           <.menu_item tenant={@scope.tenant} view={@view} target="events">Events</.menu_item>
+          <.menu_item tenant={@scope.tenant} view={@view} target="tags">Tags</.menu_item>
           <.menu_item
             :if={@scope.actor.role == :superadmin}
             tenant={@scope.tenant}

@@ -6,6 +6,8 @@ defmodule Wik.TestGenerators do
   alias Wik.Access.Source
   alias Wik.Accounts.Group
   alias Wik.Accounts.User
+  alias Wik.Tags.Tag
+  alias Wik.Tags.TagEdge
   alias Wik.Wiki.PageTree
 
   def user(opts \\ []) do
@@ -50,6 +52,47 @@ defmodule Wik.TestGenerators do
       end,
       uses: [group: group],
       overrides: Keyword.drop(opts, [:group])
+    )
+  end
+
+  def tag(opts \\ []) do
+    group = Keyword.get(opts, :group, group())
+
+    seed_generator(
+      fn %{group: group} ->
+        group = generate(group)
+        slug = sequence(:tag_slug, &"tag-#{System.unique_integer([:positive])}-#{&1}")
+
+        %Tag{
+          group_id: group.id,
+          name: slug,
+          slug: slug
+        }
+      end,
+      uses: [group: group],
+      overrides: Keyword.drop(opts, [:group])
+    )
+  end
+
+  def tag_edge(opts \\ []) do
+    group = Keyword.get(opts, :group, group())
+    parent_tag = Keyword.get(opts, :parent_tag, tag(group: group))
+    child_tag = Keyword.get(opts, :child_tag, tag(group: group))
+
+    seed_generator(
+      fn %{group: group, parent_tag: parent_tag, child_tag: child_tag} ->
+        group = generate(group)
+        parent_tag = generate(parent_tag)
+        child_tag = generate(child_tag)
+
+        %TagEdge{
+          group_id: group.id,
+          parent_tag_id: parent_tag.id,
+          child_tag_id: child_tag.id
+        }
+      end,
+      uses: [group: group, parent_tag: parent_tag, child_tag: child_tag],
+      overrides: Keyword.drop(opts, [:group, :parent_tag, :child_tag])
     )
   end
 

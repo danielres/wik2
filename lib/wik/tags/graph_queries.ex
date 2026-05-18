@@ -33,7 +33,7 @@ defmodule Wik.Tags.GraphQueries do
     edges = TagEdge |> Ash.read!(scope: scope, domain: Tags)
     tags_by_id = Map.new(tags, &{&1.id, &1})
 
-    child_ids_by_parent_id =
+    children_by_parent_id =
       edges
       |> Enum.group_by(& &1.parent_tag_id, & &1.child_tag_id)
       |> Map.new(fn {parent_id, child_ids} ->
@@ -46,7 +46,7 @@ defmodule Wik.Tags.GraphQueries do
         {parent_id, children}
       end)
 
-    parent_ids_by_child_id =
+    parents_by_child_id =
       edges
       |> Enum.group_by(& &1.child_tag_id, & &1.parent_tag_id)
       |> Map.new(fn {child_id, parent_ids} ->
@@ -61,17 +61,17 @@ defmodule Wik.Tags.GraphQueries do
 
     root_tags =
       tags
-      |> Enum.reject(&Map.has_key?(parent_ids_by_child_id, &1.id))
+      |> Enum.reject(&Map.has_key?(parents_by_child_id, &1.id))
       |> sort_tags()
 
     %{
       tags: tags,
       edges: edges,
       root_tags: root_tags,
-      root_tree: build_tree(root_tags, child_ids_by_parent_id),
+      root_tree: build_tree(root_tags, children_by_parent_id),
       tags_by_id: tags_by_id,
-      children_by_parent_id: child_ids_by_parent_id,
-      parents_by_child_id: parent_ids_by_child_id
+      children_by_parent_id: children_by_parent_id,
+      parents_by_child_id: parents_by_child_id
     }
   end
 

@@ -86,19 +86,6 @@ defmodule WikWeb.Components.UI do
     """
   end
 
-  attr :rest, :global, include: ~w(phx-click phx-target data-testid)
-
-  def button_plus(assigns) do
-    ~H"""
-    <button
-      class="btn btn-accent btn-circle btn-xs"
-      {@rest}
-    >
-      <.icon name="hero-plus-micro" />
-    </button>
-    """
-  end
-
   slot :body, required: true
   slot :title, required: false
   slot :actions, required: false
@@ -124,6 +111,60 @@ defmodule WikWeb.Components.UI do
         </div>
       </div>
     </section>
+    """
+  end
+
+  # buttons ======================================================================
+
+  attr :rest, :global, include: ~w(phx-click phx-target data-testid)
+
+  def button_add(assigns) do
+    ~H"""
+    <button
+      class="btn btn-sm btn-circle btn-accent"
+      {@rest}
+    >
+      <.icon name="hero-plus-micro" />
+    </button>
+    """
+  end
+
+  attr :rest, :global, include: ~w(phx-click phx-target data-testid)
+
+  def button_ok(assigns) do
+    ~H"""
+    <button
+      class="btn btn-sm btn-circle btn-accent"
+      {@rest}
+    >
+      <.icon name="hero-check-micro" />
+    </button>
+    """
+  end
+
+  attr :rest, :global, include: ~w(phx-click phx-target data-testid)
+
+  def button_edit(assigns) do
+    ~H"""
+    <button
+      class="btn btn-sm btn-circle btn-accent"
+      {@rest}
+    >
+      <.icon name="hero-pencil-solid" />
+    </button>
+    """
+  end
+
+  attr :rest, :global, include: ~w(phx-click phx-target data-testid)
+
+  def button_plus(assigns) do
+    ~H"""
+    <button
+      class="btn btn-accent btn-circle btn-xs"
+      {@rest}
+    >
+      <.icon name="hero-plus-micro" />
+    </button>
     """
   end
 

@@ -10,18 +10,13 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
   alias Wik.Wiki
   alias Wik.Wiki.PageTree
   alias WikWeb.Components.Modal
+  alias WikWeb.Components.UI
 
-  attr :class, :any, default: ""
   attr :event_open, :string, required: true
 
   def render(assigns) do
     ~H"""
-    <button
-      class={@class}
-      phx-click={@event_open}
-    >
-      <.icon name="hero-plus-micro" class="size-5" />
-    </button>
+    <UI.button_add phx-click={@event_open} />
     """
   end
 

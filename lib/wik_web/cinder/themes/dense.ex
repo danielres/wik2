@@ -19,8 +19,8 @@ defmodule WikWeb.Cinder.Themes.Dense do
   set :row_class, "hover:bg-base-300/40"
 
   set :th_class,
-      "py-1 sm:py-2 px-2 sm:px-4 bg-base-300 [&:first-child]:rounded-tl-md [&:last-child]:rounded-tr-md"
+      "py-1 sm:py-2 px-2 sm:px-4 bg-base-300 [&:first-child]:rounded-tl-md [&:last-child]:rounded-tr-md text-xs uppercase tracking-wider"
 
-  set :td_class, "py-1 sm:py-2 px-2 sm:px-4"
+  set :td_class, "py-1 sm:py-2 px-2 sm:px-4 align-top"
   set :loading_container_class, "hidden"
 end

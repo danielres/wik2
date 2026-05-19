@@ -226,7 +226,7 @@ defmodule WikWeb.Components.MembershipTagging do
           class="progress w-full"
           data-testid={@testid}
           style={"color: #{@dimension.color};"}
-          value={trunc(@level * 10)}
+          value={meter_value(@level, @dimension.max)}
           max="100"
         >
         </progress>
@@ -270,6 +270,13 @@ defmodule WikWeb.Components.MembershipTagging do
   end
 
   defp dimension_level(_tagging, _key), do: nil
+
+  defp meter_value(level, max_level)
+       when is_integer(level) and is_integer(max_level) and max_level > 0 do
+    trunc(level / max_level * 100)
+  end
+
+  defp meter_value(_level, _max_level), do: 0
 
   defp present?(value) when is_binary(value), do: String.trim(value) != ""
   defp present?(_value), do: false

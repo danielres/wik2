@@ -6,11 +6,15 @@ defmodule Wik.Tags do
       AshPhoenix
     ]
 
+  import Ash.Expr
+
   alias Ash.Query
   alias Utils.Log
+  alias Wik.Accounts.GroupUserRelation
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
+  alias Wik.Tags.Tagging
 
   require Ash.Query
 
@@ -25,19 +29,18 @@ defmodule Wik.Tags do
     end
 
     resource TagEdge
+    resource Tagging
   end
 
   def update_tag(%Tag{} = tag, attrs, opts \\ []) do
-    Ash.update(tag, attrs, Keyword.put_new(opts, :domain, __MODULE__))
+    Ash.update(tag, attrs, opts)
   end
 
   def destroy_tag(tag_or_id, opts \\ [])
 
   def destroy_tag(%Tag{} = tag, opts) do
-    case Ash.destroy(tag, Keyword.put_new(opts, :domain, __MODULE__)) do
-      :ok -> {:ok, tag}
-      {:ok, _destroyed_tag} -> {:ok, tag}
-      {:error, error} -> {:error, error}
+    with :ok <- Ash.destroy(tag, opts) do
+      {:ok, tag}
     end
   end
 
@@ -63,16 +66,14 @@ defmodule Wik.Tags do
 
     Tag
     |> Query.filter(slug == ^slug)
-    |> Ash.read_one(scope: scope, domain: __MODULE__)
+    |> Ash.read_one(scope: scope)
   end
 
   def link_tags(parent_tag_id, child_tag_id, opts \\ []) do
     Ash.create(
       TagEdge,
       %{parent_tag_id: parent_tag_id, child_tag_id: child_tag_id},
-      opts
-      |> Keyword.put_new(:domain, __MODULE__)
-      |> Keyword.put(:action, :create)
+      Keyword.put(opts, :action, :create)
     )
   end
 
@@ -81,16 +82,14 @@ defmodule Wik.Tags do
 
     TagEdge
     |> Query.filter(parent_tag_id == ^parent_tag_id and child_tag_id == ^child_tag_id)
-    |> Ash.read_one(scope: scope, domain: __MODULE__)
+    |> Ash.read_one(scope: scope)
     |> case do
       {:ok, nil} ->
         {:error, :not_found}
 
       {:ok, %TagEdge{} = edge} ->
-        case Ash.destroy(edge, Keyword.put_new(opts, :domain, __MODULE__)) do
-          :ok -> {:ok, edge}
-          {:ok, _destroyed_edge} -> {:ok, edge}
-          {:error, error} -> {:error, error}
+        with :ok <- Ash.destroy(edge, opts) do
+          {:ok, edge}
         end
 
       {:error, error} ->
@@ -146,5 +145,155 @@ defmodule Wik.Tags do
     error ->
       Log.scoped_error(scope, error, "tag graph load failed; falling back to empty graph")
       GraphQueries.empty_graph()
+  end
+
+  def list_taggings_for(taggable_type, taggable_id, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    taggings_query_for(taggable_type, taggable_id)
+    |> Ash.read(scope: scope)
+  end
+
+  def upsert_tagging(
+        taggable_type,
+        taggable_id,
+        tagged_by_group_user_relation_id,
+        tag_id,
+        attrs,
+        opts \\ []
+      ) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    attrs =
+      tagging_identity_attrs(
+        taggable_type,
+        taggable_id,
+        tagged_by_group_user_relation_id,
+        tag_id
+      )
+      |> Map.merge(attrs)
+
+    case get_tagging_by_identity(attrs, scope) do
+      {:ok, nil} ->
+        Ash.create(
+          Tagging,
+          attrs,
+          Keyword.put(opts, :action, :create)
+        )
+
+      {:ok, %Tagging{} = tagging} ->
+        Ash.update(
+          tagging,
+          Map.take(attrs, [:dimensions, :description]),
+          Keyword.put(opts, :action, :update_details)
+        )
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def remove_tagging(
+        taggable_type,
+        taggable_id,
+        tagged_by_group_user_relation_id,
+        tag_id,
+        opts \\ []
+      ) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    attrs =
+      tagging_identity_attrs(
+        taggable_type,
+        taggable_id,
+        tagged_by_group_user_relation_id,
+        tag_id
+      )
+
+    case get_tagging_by_identity(attrs, scope) do
+      {:ok, nil} ->
+        {:error, :not_found}
+
+      {:ok, %Tagging{} = tagging} ->
+        with :ok <- Ash.destroy(tagging, opts) do
+          {:ok, tagging}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def list_membership_taggings(%GroupUserRelation{} = membership, opts \\ []) do
+    list_taggings_for("group_user_relation", membership.id, opts)
+  end
+
+  def membership_taggings_query(%GroupUserRelation{} = membership) do
+    taggings_query_for("group_user_relation", membership.id)
+  end
+
+  def list_group_tags(scope) do
+    Tag
+    |> Query.sort(name: :asc)
+    |> Ash.read(scope: scope)
+  end
+
+  def upsert_membership_tagging(%GroupUserRelation{} = membership, tag_id, attrs, opts \\ []) do
+    upsert_tagging(
+      "group_user_relation",
+      membership.id,
+      membership.id,
+      tag_id,
+      attrs,
+      opts
+    )
+  end
+
+  def remove_membership_tagging(%GroupUserRelation{} = membership, tag_id, opts \\ []) do
+    remove_tagging(
+      "group_user_relation",
+      membership.id,
+      membership.id,
+      tag_id,
+      opts
+    )
+  end
+
+  defp get_tagging_by_identity(attrs, scope) do
+    %{tag_id: tag_id, tagged_by_group_user_relation_id: author_id} = attrs
+
+    Tagging
+    |> Query.filter(
+      taggable_type == ^attrs.taggable_type and
+        taggable_id == ^attrs.taggable_id and
+        tagged_by_group_user_relation_id == ^author_id and
+        tag_id == ^tag_id
+    )
+    |> Ash.read_one(scope: scope)
+  end
+
+  defp tagging_identity_attrs(
+         taggable_type,
+         taggable_id,
+         tagged_by_group_user_relation_id,
+         tag_id
+       ) do
+    %{
+      tag_id: tag_id,
+      taggable_id: taggable_id,
+      taggable_type: taggable_type,
+      tagged_by_group_user_relation_id: tagged_by_group_user_relation_id
+    }
+  end
+
+  defp taggings_query_for(taggable_type, taggable_id) do
+    Tagging
+    |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
+    |> Query.load([:tag, :tagged_by_group_user_relation])
+    |> Query.sort([
+      {calc(get_path(^ref(:dimensions), ^[:interest])), :desc},
+      {calc(get_path(^ref(:dimensions), ^[:skill])), :desc},
+      {"tag.name", :asc}
+    ])
   end
 end

@@ -56,7 +56,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
     <div
       class={[
         "card-body pl-4",
-        @depth > 1 and "py-1 pr-0",
+        @depth > 1 and "pb-1 pt-0 pr-0",
         @node.children != [] and "pb-2"
       ]}
       data-testid={"tag-branch-#{@node.dom_id}"}
@@ -65,7 +65,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       <div class="group flex justify-between gap-2">
         <button
           class={[
-            "flex min-w-0 flex-1 items-center gap-2 text-left transition",
+            "flex min-w-0 flex-1 items-center gap-0 text-left transition",
             "cursor-pointer",
             @selected? && "opacity-100",
             !@selected? && "opacity-80 hover:opacity-100"

@@ -143,6 +143,7 @@ defmodule WikWeb.Router do
 
         scope "/wiki" do
           get "/", WikiRedirectController, :home
+          live "/members/:username", MemberProfileLive, :show
           live "/*path", PageLive, :index
         end
 

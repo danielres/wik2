@@ -19,6 +19,8 @@ defmodule WikWeb.Components.User do
         "xs" -> "size-4 text-[0.6rem]"
         "sm" -> "size-6 text-[0.7rem]"
         "md" -> "size-8"
+        "lg" -> "size-10"
+        "xl" -> "size-12"
         _ -> "size-8"
       end
 

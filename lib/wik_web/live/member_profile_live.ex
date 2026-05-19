@@ -5,7 +5,6 @@ defmodule WikWeb.MemberProfileLive do
   alias Utils.Log
   alias Wik.Accounts
   alias Wik.Tags
-  alias Wik.Tags.Dimensions
   alias Wik.Tags.Tag
   alias Wik.Tags.Tagging
   alias WikWeb.Components.MembershipTagging
@@ -22,6 +21,8 @@ defmodule WikWeb.MemberProfileLive do
        available_tags: [],
        editable?: false,
        membership: nil,
+       sort_by: :interest,
+       sort_dir: :desc,
        subscribed_target_id: nil,
        taggings: [],
        tagging_count: 0,
@@ -123,7 +124,12 @@ defmodule WikWeb.MemberProfileLive do
               No taggings yet.
             </div>
 
-            <MembershipTagging.table editable?={@editable?} taggings={@taggings} />
+            <MembershipTagging.table
+              editable?={@editable?}
+              sort_by={@sort_by}
+              sort_dir={@sort_dir}
+              taggings={@taggings}
+            />
           </section>
         </div>
 
@@ -174,6 +180,17 @@ defmodule WikWeb.MemberProfileLive do
 
   def handle_event("tagging_form_cancel", _params, socket) do
     {:noreply, close_tagging_form(socket)}
+  end
+
+  def handle_event("taggings_sort", %{"by" => by}, socket) do
+    sort_by = parse_sort_by(by)
+    sort_dir = next_sort_dir(socket.assigns.sort_by, socket.assigns.sort_dir, sort_by)
+
+    {:noreply,
+     socket
+     |> assign(:sort_by, sort_by)
+     |> assign(:taggings, sort_membership_taggings(socket.assigns.taggings, sort_by, sort_dir))
+     |> assign(:sort_dir, sort_dir)}
   end
 
   def handle_event("tagging_validate", %{"form" => params}, socket) do
@@ -296,7 +313,10 @@ defmodule WikWeb.MemberProfileLive do
     socket
     |> assign(:available_tags, available_tags)
     |> assign(:membership, membership)
-    |> assign(:taggings, sort_membership_taggings(taggings))
+    |> assign(
+      :taggings,
+      sort_membership_taggings(taggings, socket.assigns.sort_by, socket.assigns.sort_dir)
+    )
     |> assign(profile_state)
   end
 
@@ -333,26 +353,18 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   defp parse_tagging_params(params) do
-    normalized = normalize_tagging_form(params)
-    interest_max = dimension_max("interest")
-    skill_max = dimension_max("skill")
-
-    with tag_id when is_binary(tag_id) and tag_id != "" <- normalized["tag_id"],
-         {interest_level, ""} <- Integer.parse(normalized["interest_level"]),
-         {skill_level, ""} <- Integer.parse(normalized["skill_level"]),
-         true <- interest_level in 0..interest_max,
-         true <- skill_level in 0..skill_max do
+    with tag_id when is_binary(tag_id) and tag_id != "" <- Map.get(params, "tag_id"),
+         {:ok, interest_level} <- parse_level(params, "interest_level"),
+         {:ok, skill_level} <- parse_level(params, "skill_level") do
       {:ok,
        %{
-         description: normalized["description"],
+         description: Map.get(params, "description", ""),
          interest_level: interest_level,
          skill_level: skill_level,
          tag_id: tag_id
        }}
     else
-      _ ->
-        {:error,
-         "Select a tag and set interest between 0 and #{interest_max} and skill between 0 and #{skill_max}."}
+      _ -> {:error, "Select a tag and enter valid levels."}
     end
   end
 
@@ -419,15 +431,89 @@ defmodule WikWeb.MemberProfileLive do
 
   defp dimension_level(_tagging, _key), do: nil
 
-  defp dimension_max(key), do: Dimensions.get!("group_user_relation", key).max
-
-  defp sort_membership_taggings(taggings) do
-    Enum.sort_by(taggings, fn tagging ->
-      {
-        -(Map.get(tagging.dimensions || %{}, "interest") || 0),
-        -(Map.get(tagging.dimensions || %{}, "skill") || 0),
-        tagging.tag && String.downcase(tagging.tag.name || "")
-      }
-    end)
+  defp parse_level(params, key) do
+    case Integer.parse(Map.get(params, key, "0")) do
+      {level, ""} -> {:ok, level}
+      _ -> :error
+    end
   end
+
+  defp sort_membership_taggings(taggings, sort_by, sort_dir) do
+    Enum.sort(taggings, &tagging_before?(&1, &2, sort_by, sort_dir))
+  end
+
+  defp tagging_before?(left, right, sort_by, sort_dir) do
+    compare_taggings(left, right, sort_by, sort_dir) != :gt
+  end
+
+  defp compare_taggings(left, right, :interest, sort_dir) do
+    compare_by(
+      left,
+      right,
+      [
+        {:interest, sort_dir},
+        {:skill, :desc},
+        {:tag, :asc}
+      ]
+    )
+  end
+
+  defp compare_taggings(left, right, :skill, sort_dir) do
+    compare_by(
+      left,
+      right,
+      [
+        {:skill, sort_dir},
+        {:interest, :desc},
+        {:tag, :asc}
+      ]
+    )
+  end
+
+  defp compare_taggings(left, right, :tag, sort_dir) do
+    compare_by(
+      left,
+      right,
+      [
+        {:tag, sort_dir},
+        {:interest, :desc},
+        {:skill, :desc}
+      ]
+    )
+  end
+
+  defp compare_by(left, right, [{field, dir} | rest]) do
+    case compare_values(field_value(left, field), field_value(right, field), dir) do
+      :eq -> compare_by(left, right, rest)
+      result -> result
+    end
+  end
+
+  defp compare_by(_left, _right, []), do: :eq
+
+  defp compare_values(left, right, :asc) do
+    cond do
+      left < right -> :lt
+      left > right -> :gt
+      true -> :eq
+    end
+  end
+
+  defp compare_values(left, right, :desc), do: compare_values(right, left, :asc)
+
+  defp field_value(tagging, :interest), do: dimension_level(tagging, "interest") || 0
+  defp field_value(tagging, :skill), do: dimension_level(tagging, "skill") || 0
+  defp field_value(tagging, :tag), do: tagging.tag && String.downcase(tagging.tag.name || "")
+
+  defp next_sort_dir(current_by, current_dir, sort_by) when current_by == sort_by do
+    if current_dir == :asc, do: :desc, else: :asc
+  end
+
+  defp next_sort_dir(_current_by, _current_dir, :tag), do: :asc
+  defp next_sort_dir(_current_by, _current_dir, _sort_by), do: :desc
+
+  defp parse_sort_by("interest"), do: :interest
+  defp parse_sort_by("skill"), do: :skill
+  defp parse_sort_by("tag"), do: :tag
+  defp parse_sort_by(_value), do: :interest
 end

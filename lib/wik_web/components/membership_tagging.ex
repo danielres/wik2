@@ -8,6 +8,8 @@ defmodule WikWeb.Components.MembershipTagging do
   alias WikWeb.Components.UI
 
   attr :editable?, :boolean, required: true
+  attr :sort_by, :atom, required: true
+  attr :sort_dir, :atom, required: true
   attr :taggings, :list, required: true
 
   def table(assigns) do
@@ -25,14 +27,34 @@ defmodule WikWeb.Components.MembershipTagging do
     >
       <table class={[
         "table",
-        "[&_td]:align-top",
-        "[&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wider"
+        "[&_td]:align-top"
       ]}>
         <thead>
           <tr class="bg-base-200">
-            <th>Tag</th>
-            <th class="w-32">{@interest_dimension.label}</th>
-            <th class="w-32">{@skill_dimension.label}</th>
+            <th>
+              <.sort_button
+                active?={@sort_by == :tag}
+                direction={@sort_dir}
+                field="tag"
+                label="Tag"
+              />
+            </th>
+            <th class="w-32">
+              <.sort_button
+                active?={@sort_by == :interest}
+                direction={@sort_dir}
+                field="interest"
+                label={@interest_dimension.label}
+              />
+            </th>
+            <th class="w-32">
+              <.sort_button
+                active?={@sort_by == :skill}
+                direction={@sort_dir}
+                field="skill"
+                label={@skill_dimension.label}
+              />
+            </th>
             <th></th>
           </tr>
         </thead>
@@ -259,6 +281,40 @@ defmodule WikWeb.Components.MembershipTagging do
         style={"color: #{@dimension.color};"}
       />
     </div>
+    """
+  end
+
+  attr :active?, :boolean, required: true
+  attr :direction, :atom, required: true
+  attr :field, :string, required: true
+  attr :label, :string, required: true
+
+  defp sort_button(assigns) do
+    ~H"""
+    <button
+      class={[
+        "flex items-center gap-1 transition hover:opacity-100 w-full",
+        "cursor-pointer",
+        @active? && "opacity-100",
+        !@active? && "opacity-60"
+      ]}
+      data-testid={"member-tagging-sort-#{@field}"}
+      phx-click="taggings_sort"
+      phx-value-by={@field}
+      type="button"
+    >
+      <span class="text-xs uppercase tracking-wider">{@label}</span>
+      <.icon
+        :if={@active? and @direction == :asc}
+        name="hero-chevron-up-mini"
+        class="size-3"
+      />
+      <.icon
+        :if={@active? and @direction == :desc}
+        name="hero-chevron-down-mini"
+        class="size-3"
+      />
+    </button>
     """
   end
 

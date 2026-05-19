@@ -6,7 +6,6 @@ defmodule WikWeb.MemberProfileLiveTest do
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
-  alias LazyHTML
   alias Wik.Accounts.GroupUserRelation
   alias Wik.Scope
   alias Wik.Tags
@@ -168,22 +167,22 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_async(view)
 
-    html = render(view)
-    document = LazyHTML.from_fragment(html)
-
-    row_nodes = LazyHTML.query(document, ~s([data-testid^="member-tagging-name-"]))
-
-    assert Enum.map(row_nodes, &(LazyHTML.text(&1) |> String.trim())) == [
-             "Tango",
-             "Acro",
-             "Dance"
-           ]
-
     assert has_element?(view, testid("member-tagging-row-#{tango.id}"))
     assert has_element?(view, testid("member-tagging-interest-#{tango.id}"))
     assert has_element?(view, testid("member-tagging-skill-#{tango.id}"))
+    assert has_element?(view, testid("member-tagging-name-#{tango.id}"))
+    assert has_element?(view, testid("member-tagging-name-#{acro.id}"))
+    assert has_element?(view, testid("member-tagging-name-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-interest-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-skill-#{dance.id}"))
+
+    html = render(view)
+
+    assert index_of_testid(html, "member-tagging-name-#{tango.id}") <
+             index_of_testid(html, "member-tagging-name-#{acro.id}")
+
+    assert index_of_testid(html, "member-tagging-name-#{acro.id}") <
+             index_of_testid(html, "member-tagging-name-#{dance.id}")
   end
 
   defp member_fixture(opts \\ []) do
@@ -240,6 +239,10 @@ defmodule WikWeb.MemberProfileLiveTest do
     conn
     |> init_test_session(%{})
     |> AuthHelpers.store_in_session(user)
+  end
+
+  defp index_of_testid(html, testid) do
+    String.index(html, ~s(data-testid="#{testid}"))
   end
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}

@@ -67,6 +67,19 @@ defmodule Wik.Accounts do
 
   def get_membership(_group_id, _user_id), do: {:ok, nil}
 
+  def get_membership_by_username(%Group{id: group_id}, username),
+    do: get_membership_by_username(group_id, username)
+
+  def get_membership_by_username(group_id, username)
+      when is_binary(group_id) and is_binary(username) and username != "" do
+    GroupUserRelation
+    |> Ash.Query.filter(group_id == ^group_id and username == ^username)
+    |> Ash.Query.load([:user, :avatar_url])
+    |> Ash.read_one(authorize?: false, domain: __MODULE__)
+  end
+
+  def get_membership_by_username(_group_id, _username), do: {:ok, nil}
+
   def list_memberships(%Group{id: group_id}, user_ids),
     do: list_memberships(group_id, user_ids)
 

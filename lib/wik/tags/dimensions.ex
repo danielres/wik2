@@ -1,0 +1,32 @@
+defmodule Wik.Tags.Dimensions do
+  @definitions %{
+    "group_user_relation" => %{
+      "interest" => %{
+        color: "oklch(72% 0.18 358)",
+        icon: "hero-heart-micro",
+        key: "interest",
+        label: "Interest",
+        max: 10
+      },
+      "skill" => %{
+        color: "oklch(62% 0.12 255)",
+        icon: "hero-academic-cap-micro",
+        key: "skill",
+        label: "Skill",
+        max: 10
+      }
+    }
+  }
+
+  def all_for(taggable_type) when is_binary(taggable_type) do
+    @definitions
+    |> Map.get(taggable_type, %{})
+    |> Map.values()
+  end
+
+  def get!(taggable_type, key) when is_binary(taggable_type) and is_binary(key) do
+    @definitions
+    |> Map.fetch!(taggable_type)
+    |> Map.fetch!(key)
+  end
+end

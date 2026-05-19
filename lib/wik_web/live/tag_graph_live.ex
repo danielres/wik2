@@ -53,18 +53,8 @@ defmodule WikWeb.TagGraphLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope}>
-        <div class="mb-4 flex items-center gap-4">
-          <h1 class="text-xl font-[100]">
-            <span class="flex flex-wrap items-center gap-2 font-[400] opacity-70">
-              <.link navigate={~p"/#{@group.slug}"} class="leading-none opacity-50 hover:opacity-100">
-                {@group.name}
-              </.link>
-              <.icon name="hero-chevron-right-mini" class="opacity-50" />
-              <span class="text-base">Tags</span>
-            </span>
-          </h1>
-        </div>
+      <Layouts.group presences={@presences} scope={@current_scope} view="tags">
+        <UI.page_title>Tags</UI.page_title>
 
         <div
           class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.8fr)]"

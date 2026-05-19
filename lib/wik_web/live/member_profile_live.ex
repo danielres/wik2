@@ -1,5 +1,6 @@
 defmodule WikWeb.MemberProfileLive do
   use WikWeb, :live_view
+  use Cinder.UrlSync
   use WikWeb.Presence.Handlers
 
   alias Utils.Log
@@ -21,17 +22,18 @@ defmodule WikWeb.MemberProfileLive do
        available_tags: [],
        editable?: false,
        membership: nil,
-       sort_by: :interest,
-       sort_dir: :desc,
        subscribed_target_id: nil,
        taggings: [],
+       taggings_query: nil,
        tagging_count: 0,
        tagging_modal: new_tagging_modal()
      )}
   end
 
   @impl true
-  def handle_params(%{"username" => username}, url, socket) do
+  def handle_params(%{"username" => username} = params, url, socket) do
+    socket = Cinder.UrlSync.handle_params(params, url, socket)
+
     socket =
       case if(socket.assigns.membership && socket.assigns.membership.username == username,
              do: {:ok, socket},
@@ -126,9 +128,9 @@ defmodule WikWeb.MemberProfileLive do
 
             <MembershipTagging.table
               editable?={@editable?}
-              sort_by={@sort_by}
-              sort_dir={@sort_dir}
-              taggings={@taggings}
+              query={@taggings_query}
+              scope={@current_scope}
+              url_state={@url_state}
             />
           </section>
         </div>
@@ -180,17 +182,6 @@ defmodule WikWeb.MemberProfileLive do
 
   def handle_event("tagging_form_cancel", _params, socket) do
     {:noreply, close_tagging_form(socket)}
-  end
-
-  def handle_event("taggings_sort", %{"by" => by}, socket) do
-    sort_by = parse_sort_by(by)
-    sort_dir = next_sort_dir(socket.assigns.sort_by, socket.assigns.sort_dir, sort_by)
-
-    {:noreply,
-     socket
-     |> assign(:sort_by, sort_by)
-     |> assign(:taggings, sort_membership_taggings(socket.assigns.taggings, sort_by, sort_dir))
-     |> assign(:sort_dir, sort_dir)}
   end
 
   def handle_event("tagging_validate", %{"form" => params}, socket) do
@@ -313,10 +304,8 @@ defmodule WikWeb.MemberProfileLive do
     socket
     |> assign(:available_tags, available_tags)
     |> assign(:membership, membership)
-    |> assign(
-      :taggings,
-      sort_membership_taggings(taggings, socket.assigns.sort_by, socket.assigns.sort_dir)
-    )
+    |> assign(:taggings, taggings)
+    |> assign(:taggings_query, Tags.membership_taggings_query(membership))
     |> assign(profile_state)
   end
 
@@ -437,83 +426,4 @@ defmodule WikWeb.MemberProfileLive do
       _ -> :error
     end
   end
-
-  defp sort_membership_taggings(taggings, sort_by, sort_dir) do
-    Enum.sort(taggings, &tagging_before?(&1, &2, sort_by, sort_dir))
-  end
-
-  defp tagging_before?(left, right, sort_by, sort_dir) do
-    compare_taggings(left, right, sort_by, sort_dir) != :gt
-  end
-
-  defp compare_taggings(left, right, :interest, sort_dir) do
-    compare_by(
-      left,
-      right,
-      [
-        {:interest, sort_dir},
-        {:skill, :desc},
-        {:tag, :asc}
-      ]
-    )
-  end
-
-  defp compare_taggings(left, right, :skill, sort_dir) do
-    compare_by(
-      left,
-      right,
-      [
-        {:skill, sort_dir},
-        {:interest, :desc},
-        {:tag, :asc}
-      ]
-    )
-  end
-
-  defp compare_taggings(left, right, :tag, sort_dir) do
-    compare_by(
-      left,
-      right,
-      [
-        {:tag, sort_dir},
-        {:interest, :desc},
-        {:skill, :desc}
-      ]
-    )
-  end
-
-  defp compare_by(left, right, [{field, dir} | rest]) do
-    case compare_values(field_value(left, field), field_value(right, field), dir) do
-      :eq -> compare_by(left, right, rest)
-      result -> result
-    end
-  end
-
-  defp compare_by(_left, _right, []), do: :eq
-
-  defp compare_values(left, right, :asc) do
-    cond do
-      left < right -> :lt
-      left > right -> :gt
-      true -> :eq
-    end
-  end
-
-  defp compare_values(left, right, :desc), do: compare_values(right, left, :asc)
-
-  defp field_value(tagging, :interest), do: dimension_level(tagging, "interest") || 0
-  defp field_value(tagging, :skill), do: dimension_level(tagging, "skill") || 0
-  defp field_value(tagging, :tag), do: tagging.tag && String.downcase(tagging.tag.name || "")
-
-  defp next_sort_dir(current_by, current_dir, sort_by) when current_by == sort_by do
-    if current_dir == :asc, do: :desc, else: :asc
-  end
-
-  defp next_sort_dir(_current_by, _current_dir, :tag), do: :asc
-  defp next_sort_dir(_current_by, _current_dir, _sort_by), do: :desc
-
-  defp parse_sort_by("interest"), do: :interest
-  defp parse_sort_by("skill"), do: :skill
-  defp parse_sort_by("tag"), do: :tag
-  defp parse_sort_by(_value), do: :interest
 end

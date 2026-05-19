@@ -183,7 +183,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     assert has_element?(view, testid("member-tagging-interest-#{tango.id}"))
     assert has_element?(view, testid("member-tagging-skill-#{tango.id}"))
     assert has_element?(view, testid("member-tagging-interest-#{dance.id}"))
-    refute has_element?(view, testid("member-tagging-skill-#{dance.id}"))
+    assert has_element?(view, testid("member-tagging-skill-#{dance.id}"))
   end
 
   defp member_fixture(opts \\ []) do

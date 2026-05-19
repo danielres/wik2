@@ -5,6 +5,7 @@ defmodule WikWeb.MemberProfileLive do
   alias Utils.Log
   alias Wik.Accounts
   alias Wik.Tags
+  alias Wik.Tags.Dimensions
   alias Wik.Tags.Tag
   alias Wik.Tags.Tagging
   alias WikWeb.Components.MembershipTagging
@@ -13,8 +14,6 @@ defmodule WikWeb.MemberProfileLive do
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
-
-  @max_level 10
 
   @impl true
   def mount(_params, _session, socket) do
@@ -335,12 +334,14 @@ defmodule WikWeb.MemberProfileLive do
 
   defp parse_tagging_params(params) do
     normalized = normalize_tagging_form(params)
+    interest_max = dimension_max("interest")
+    skill_max = dimension_max("skill")
 
     with tag_id when is_binary(tag_id) and tag_id != "" <- normalized["tag_id"],
          {interest_level, ""} <- Integer.parse(normalized["interest_level"]),
          {skill_level, ""} <- Integer.parse(normalized["skill_level"]),
-         true <- interest_level in 0..@max_level,
-         true <- skill_level in 0..@max_level do
+         true <- interest_level in 0..interest_max,
+         true <- skill_level in 0..skill_max do
       {:ok,
        %{
          description: normalized["description"],
@@ -349,7 +350,9 @@ defmodule WikWeb.MemberProfileLive do
          tag_id: tag_id
        }}
     else
-      _ -> {:error, "Select a tag and set both levels between 0 and #{@max_level}."}
+      _ ->
+        {:error,
+         "Select a tag and set interest between 0 and #{interest_max} and skill between 0 and #{skill_max}."}
     end
   end
 
@@ -415,6 +418,8 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   defp dimension_level(_tagging, _key), do: nil
+
+  defp dimension_max(key), do: Dimensions.get!("group_user_relation", key).max
 
   defp sort_membership_taggings(taggings) do
     Enum.sort_by(taggings, fn tagging ->

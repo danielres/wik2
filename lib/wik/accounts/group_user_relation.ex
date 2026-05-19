@@ -153,6 +153,7 @@ defmodule Wik.Accounts.GroupUserRelation do
   identities do
     identity :unique_group_user_relation, [:group_id, :user_id]
     identity :unique_group_username, [:group_id, :username]
+    identity :unique_group_scoped_id, [:id, :group_id]
   end
 
   def updatable_types do

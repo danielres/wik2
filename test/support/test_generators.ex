@@ -5,9 +5,11 @@ defmodule Wik.TestGenerators do
   alias Wik.Access.Grant
   alias Wik.Access.Source
   alias Wik.Accounts.Group
+  alias Wik.Accounts.GroupUserRelation
   alias Wik.Accounts.User
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
+  alias Wik.Tags.Tagging
   alias Wik.Wiki.PageTree
 
   def user(opts \\ []) do
@@ -74,6 +76,27 @@ defmodule Wik.TestGenerators do
     )
   end
 
+  def membership(opts \\ []) do
+    group = Keyword.get(opts, :group, group())
+    user = Keyword.get(opts, :user, user())
+    type = Keyword.get(opts, :type, :member)
+
+    seed_generator(
+      fn %{group: group, type: type, user: user} ->
+        group = generate(group)
+        user = generate(user)
+
+        %GroupUserRelation{
+          group_id: group.id,
+          type: type,
+          user_id: user.id
+        }
+      end,
+      uses: [group: group, type: type, user: user],
+      overrides: Keyword.drop(opts, [:group, :type, :user])
+    )
+  end
+
   def tag_edge(opts \\ []) do
     group = Keyword.get(opts, :group, group())
     parent_tag = Keyword.get(opts, :parent_tag)
@@ -103,6 +126,56 @@ defmodule Wik.TestGenerators do
       end,
       uses: [group: group, parent_tag: parent_tag, child_tag: child_tag],
       overrides: Keyword.drop(opts, [:group, :parent_tag, :child_tag])
+    )
+  end
+
+  def tagging(opts \\ []) do
+    group = Keyword.get(opts, :group, group())
+    membership_seed = Keyword.get(opts, :membership)
+    tag_seed = Keyword.get(opts, :tag)
+    dimensions = Keyword.get(opts, :dimensions, %{"interest" => 3})
+    description = Keyword.get(opts, :description)
+
+    seed_generator(
+      fn %{
+           description: description,
+           dimensions: dimensions,
+           group: group,
+           membership_seed: membership_seed,
+           tag_seed: tag_seed
+         } ->
+        group = generate(group)
+
+        membership =
+          case membership_seed do
+            nil -> generate(membership(group: group))
+            value -> generate(value)
+          end
+
+        tag =
+          case tag_seed do
+            nil -> generate(tag(group: group))
+            value -> generate(value)
+          end
+
+        %Tagging{
+          description: description,
+          dimensions: dimensions,
+          group_id: group.id,
+          tag_id: tag.id,
+          tagged_by_group_user_relation_id: membership.id,
+          taggable_id: membership.id,
+          taggable_type: "group_user_relation"
+        }
+      end,
+      uses: [
+        description: description,
+        dimensions: dimensions,
+        group: group,
+        membership_seed: membership_seed,
+        tag_seed: tag_seed
+      ],
+      overrides: Keyword.drop(opts, [:description, :dimensions, :group, :membership, :tag])
     )
   end
 

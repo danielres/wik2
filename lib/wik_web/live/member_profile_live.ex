@@ -22,6 +22,7 @@ defmodule WikWeb.MemberProfileLive do
        available_tags: [],
        editable?: false,
        membership: nil,
+       subscribed_group_id: nil,
        subscribed_target_id: nil,
        taggings: [],
        taggings_query: nil,
@@ -269,9 +270,11 @@ defmodule WikWeb.MemberProfileLive do
       {:ok, membership} ->
         with {:ok, taggings} <- Tags.list_membership_taggings(membership, scope: scope),
              {:ok, available_tags} <- Tags.list_group_tags(scope) do
-          if connected?(socket) and socket.assigns.subscribed_target_id != membership.id do
+          if connected?(socket) and socket.assigns.subscribed_group_id != scope.tenant.id do
             :ok = WikWeb.Endpoint.subscribe(Tag.group_pub_sub_topic(scope.tenant.id))
+          end
 
+          if connected?(socket) and socket.assigns.subscribed_target_id != membership.id do
             :ok =
               WikWeb.Endpoint.subscribe(
                 Tagging.target_pub_sub_topic("group_user_relation", membership.id)
@@ -393,6 +396,7 @@ defmodule WikWeb.MemberProfileLive do
   defp profile_state(membership, taggings, current_membership) do
     %{
       editable?: current_membership && current_membership.id == membership.id,
+      subscribed_group_id: membership.group_id,
       subscribed_target_id: membership.id,
       tagging_count: length(taggings)
     }

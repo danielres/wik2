@@ -6,6 +6,8 @@ defmodule Wik.Tags do
       AshPhoenix
     ]
 
+  import Ash.Expr
+
   alias Ash.Query
   alias Utils.Log
   alias Wik.Accounts.GroupUserRelation
@@ -148,16 +150,8 @@ defmodule Wik.Tags do
   def list_taggings_for(taggable_type, taggable_id, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
 
-    Tagging
-    |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
-    |> Ash.read(scope: scope, load: [:tag, :tagged_by_group_user_relation])
-    |> case do
-      {:ok, taggings} ->
-        {:ok, Enum.sort_by(taggings, &(&1.tag && String.downcase(&1.tag.name || "")))}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    taggings_query_for(taggable_type, taggable_id)
+    |> Ash.read(scope: scope)
   end
 
   def upsert_tagging(
@@ -234,6 +228,10 @@ defmodule Wik.Tags do
     list_taggings_for("group_user_relation", membership.id, opts)
   end
 
+  def membership_taggings_query(%GroupUserRelation{} = membership) do
+    taggings_query_for("group_user_relation", membership.id)
+  end
+
   def list_group_tags(scope) do
     Tag
     |> Query.sort(name: :asc)
@@ -286,5 +284,16 @@ defmodule Wik.Tags do
       taggable_type: taggable_type,
       tagged_by_group_user_relation_id: tagged_by_group_user_relation_id
     }
+  end
+
+  defp taggings_query_for(taggable_type, taggable_id) do
+    Tagging
+    |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
+    |> Query.load([:tag, :tagged_by_group_user_relation])
+    |> Query.sort([
+      {calc(get_path(^ref(:dimensions), ^[:interest])), :desc},
+      {calc(get_path(^ref(:dimensions), ^[:skill])), :desc},
+      {"tag.name", :asc}
+    ])
   end
 end

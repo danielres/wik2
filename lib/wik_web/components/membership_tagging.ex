@@ -5,12 +5,13 @@ defmodule WikWeb.Components.MembershipTagging do
 
   alias Wik.Tags.Dimensions
   alias Wik.Tags.Tagging
+  alias WikWeb.Cinder.Themes.Dense
   alias WikWeb.Components.UI
 
   attr :editable?, :boolean, required: true
-  attr :sort_by, :atom, required: true
-  attr :sort_dir, :atom, required: true
-  attr :taggings, :list, required: true
+  attr :query, :any, required: true
+  attr :scope, :map, required: true
+  attr :url_state, :any, default: false
 
   def table(assigns) do
     assigns =
@@ -21,103 +22,81 @@ defmodule WikWeb.Components.MembershipTagging do
 
     ~H"""
     <div
-      :if={@taggings != []}
+      :if={@query != nil}
       class="overflow-hidden rounded border border-base-300 bg-base-content/3"
       data-testid="member-taggings-table"
     >
-      <table class={[
-        "table",
-        "[&_td]:align-top"
-      ]}>
-        <thead>
-          <tr class="bg-base-200">
-            <th>
-              <.sort_button
-                active?={@sort_by == :tag}
-                direction={@sort_dir}
-                field="tag"
-                label="Tag"
-              />
-            </th>
-            <th class="w-32">
-              <.sort_button
-                active?={@sort_by == :interest}
-                direction={@sort_dir}
-                field="interest"
-                label={@interest_dimension.label}
-              />
-            </th>
-            <th class="w-32">
-              <.sort_button
-                active?={@sort_by == :skill}
-                direction={@sort_dir}
-                field="skill"
-                label={@skill_dimension.label}
-              />
-            </th>
-            <th></th>
-          </tr>
-        </thead>
+      <Cinder.collection
+        id="member-taggings"
+        page_size={100}
+        query={@query}
+        scope={@scope}
+        show_filters={false}
+        sort_mode="exclusive"
+        theme={Dense}
+        url_state={@url_state}
+      >
+        <:col :let={tagging} field="tag.name" label="Tag" sort>
+          <div class="" data-testid={"member-tagging-row-#{tagging.tag_id}"}>
+            <div data-testid={"member-tagging-name-#{tagging.tag_id}"}>
+              {tagging.tag.name}
+            </div>
+            <div
+              :if={present?(tagging.description)}
+              class="mt-1 text-xs opacity-60 max-h-20 overflow-y-auto pr-2 text-balance"
+              data-testid={"member-tagging-description-#{tagging.tag_id}"}
+            >
+              <div class="whitespace-pre-wrap">{tagging.description}</div>
+            </div>
+          </div>
+        </:col>
 
-        <tbody>
-          <tr
-            :for={tagging <- @taggings}
-            class="hover border-b-1 border-base-300 [&:last-child]:border-0"
-          >
-            <td>
-              <div
-                class="min-w-0 font-medium"
-                data-testid={"member-tagging-row-#{tagging.tag_id}"}
-              >
-                <div data-testid={"member-tagging-name-#{tagging.tag_id}"}>
-                  {tagging.tag.name}
-                </div>
-                <div
-                  :if={present?(tagging.description)}
-                  class="mt-1 text-xs opacity-60 max-h-20 overflow-y-auto pr-2 text-balance"
-                  data-testid={"member-tagging-description-#{tagging.tag_id}"}
-                >
-                  <div class="whitespace-pre-wrap">{tagging.description}</div>
-                </div>
-              </div>
-            </td>
+        <:col
+          :let={tagging}
+          field="dimensions__interest"
+          label={@interest_dimension.label}
+          sort={[cycle: [:desc, :asc]]}
+          class="w-32"
+        >
+          <.level_meter
+            :if={dimension_level(tagging, "interest")}
+            dimension={@interest_dimension}
+            label={@interest_dimension.label}
+            level={dimension_level(tagging, "interest")}
+            testid={"member-tagging-interest-#{tagging.tag_id}"}
+          />
+        </:col>
 
-            <td>
-              <.level_meter
-                :if={dimension_level(tagging, "interest")}
-                dimension={@interest_dimension}
-                label={@interest_dimension.label}
-                level={dimension_level(tagging, "interest")}
-                testid={"member-tagging-interest-#{tagging.tag_id}"}
-              />
-            </td>
+        <:col
+          :let={tagging}
+          field="dimensions__skill"
+          label={@skill_dimension.label}
+          sort={[cycle: [:desc, :asc]]}
+          class="w-32"
+        >
+          <.level_meter
+            :if={dimension_level(tagging, "skill")}
+            dimension={@skill_dimension}
+            label={@skill_dimension.label}
+            level={dimension_level(tagging, "skill")}
+            testid={"member-tagging-skill-#{tagging.tag_id}"}
+          />
+        </:col>
 
-            <td>
-              <.level_meter
-                :if={dimension_level(tagging, "skill")}
-                dimension={@skill_dimension}
-                label={@skill_dimension.label}
-                level={dimension_level(tagging, "skill")}
-                testid={"member-tagging-skill-#{tagging.tag_id}"}
-              />
-            </td>
-
-            <td>
-              <div :if={@editable?} class="flex items-center gap-2 justify-end">
-                <button
-                  class="btn btn-xs btn-soft btn-accent btn-circle"
-                  data-testid={"member-tagging-edit-#{tagging.tag_id}"}
-                  phx-click="tagging_edit_start"
-                  phx-value-tag_id={tagging.tag_id}
-                  type="button"
-                >
-                  <.icon name="hero-pencil-mini" class="size-3" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <:col :let={tagging} label="">
+          <div :if={@editable?} class="flex items-center gap-2 justify-end">
+            <button
+              class="btn btn-xs btn-soft btn-accent btn-circle"
+              data-testid={"member-tagging-edit-#{tagging.tag_id}"}
+              phx-click="tagging_edit_start"
+              phx-value-tag_id={tagging.tag_id}
+              type="button"
+            >
+              <.icon name="hero-pencil-mini" class="size-3" />
+            </button>
+          </div>
+        </:col>
+      </Cinder.collection>
     </div>
     """
   end
@@ -281,40 +260,6 @@ defmodule WikWeb.Components.MembershipTagging do
         style={"color: #{@dimension.color};"}
       />
     </div>
-    """
-  end
-
-  attr :active?, :boolean, required: true
-  attr :direction, :atom, required: true
-  attr :field, :string, required: true
-  attr :label, :string, required: true
-
-  defp sort_button(assigns) do
-    ~H"""
-    <button
-      class={[
-        "flex items-center gap-1 transition hover:opacity-100 w-full",
-        "cursor-pointer",
-        @active? && "opacity-100",
-        !@active? && "opacity-60"
-      ]}
-      data-testid={"member-tagging-sort-#{@field}"}
-      phx-click="taggings_sort"
-      phx-value-by={@field}
-      type="button"
-    >
-      <span class="text-xs uppercase tracking-wider">{@label}</span>
-      <.icon
-        :if={@active? and @direction == :asc}
-        name="hero-chevron-up-mini"
-        class="size-3"
-      />
-      <.icon
-        :if={@active? and @direction == :desc}
-        name="hero-chevron-down-mini"
-        class="size-3"
-      />
-    </button>
     """
   end
 

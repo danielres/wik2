@@ -6,6 +6,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
 
   attr :editing?, :boolean, default: false
+  attr :group_slug, :string, required: true
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -18,13 +19,20 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         </div>
       </div>
     <% else %>
-      <.tag_nodes editing?={@editing?} nodes={@nodes} selected_tag_id={@selected_tag_id} depth={0} />
+      <.tag_nodes
+        editing?={@editing?}
+        group_slug={@group_slug}
+        nodes={@nodes}
+        selected_tag_id={@selected_tag_id}
+        depth={0}
+      />
     <% end %>
     """
   end
 
   attr :depth, :integer, required: true
   attr :editing?, :boolean, default: false
+  attr :group_slug, :string, required: true
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -35,6 +43,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         <.tag_node
           depth={@depth + 1}
           editing?={@editing?}
+          group_slug={@group_slug}
           node={node}
           selected_tag_id={@selected_tag_id}
         />
@@ -45,6 +54,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   attr :depth, :integer, required: true
   attr :editing?, :boolean, default: false
+  attr :group_slug, :string, required: true
   attr :node, :map, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -64,6 +74,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
     >
       <div class="group flex justify-between gap-2">
         <button
+          :if={@editing?}
           class={[
             "flex min-w-0 flex-1 items-center gap-0 text-left transition",
             "cursor-pointer",
@@ -89,6 +100,33 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             </div>
           </div>
         </button>
+
+        <.link
+          :if={not @editing?}
+          navigate={~p"/#{@group_slug}/tags/#{@node.tag.slug}"}
+          class={[
+            "flex min-w-0 flex-1 items-center gap-0 text-left transition",
+            "cursor-pointer",
+            @selected? && "opacity-100",
+            !@selected? && "opacity-80 hover:opacity-100"
+          ]}
+          data-testid={"tag-select-#{@node.dom_id}"}
+        >
+          <.icon
+            name="hero-chevron-right-mini"
+            class={[
+              "opacity-30 transition",
+              @selected? && "rotate-0 opacity-100",
+              !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
+            ]}
+          />
+
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="truncate">{@node.tag.name}</span>
+            </div>
+          </div>
+        </.link>
 
         <ActionButtons.wrapper :if={@editing?}>
           <ActionButtons.button
@@ -133,6 +171,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         :if={@node.children != []}
         depth={@depth}
         editing?={@editing?}
+        group_slug={@group_slug}
         nodes={@node.children}
         selected_tag_id={@selected_tag_id}
       />

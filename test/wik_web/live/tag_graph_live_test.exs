@@ -116,6 +116,27 @@ defmodule WikWeb.TagGraphLiveTest do
     refute has_element?(view, testid("tag-detail-#{child.id}"))
   end
 
+  test "read mode tag click navigates to the tag page", %{conn: conn} do
+    owner = generate(user())
+    group = generate(group(author: owner))
+    add_membership(group, owner, :owner)
+    scope = scope(owner, group)
+
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", "Foundational rhythm", scope: scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{group.slug}/tags")
+
+    refute has_element?(view, testid("tag-add-root"))
+
+    render_click(element(view, testid("tag-select-tag-path-#{alpha.id}")))
+
+    path = ~p"/#{group.slug}/tags/#{alpha.slug}"
+    assert_redirect(view, path)
+  end
+
   defp add_membership(group, user, type) do
     Ash.create!(
       GroupUserRelation,

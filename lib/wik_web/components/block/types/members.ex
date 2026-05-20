@@ -25,7 +25,7 @@ defmodule WikWeb.Components.Block.Types.Members do
     <Cinder.collection
       :if={@query}
       id={"members-block-#{@block.id}"}
-      page_size={[default: 25]}
+      page_size={[default: 10]}
       query={@query}
       query_opts={[load: [:avatar_url, :user]]}
       scope={@scope}

@@ -123,7 +123,7 @@ defmodule WikWeb.Components.UI do
   def button_add(assigns) do
     ~H"""
     <button
-      class="btn btn-sm btn-circle btn-accent"
+      class="btn btn-xs btn-circle btn-accent btn-soft"
       {@rest}
     >
       <.icon name="hero-plus-micro" />
@@ -136,7 +136,7 @@ defmodule WikWeb.Components.UI do
   def button_ok(assigns) do
     ~H"""
     <button
-      class="btn btn-sm btn-circle btn-accent"
+      class="btn btn-xs btn-circle btn-accent btn-soft"
       {@rest}
     >
       <.icon name="hero-check-micro" />
@@ -149,7 +149,7 @@ defmodule WikWeb.Components.UI do
   def button_edit(assigns) do
     ~H"""
     <button
-      class="btn btn-sm btn-circle btn-accent"
+      class="btn btn-xs btn-circle btn-accent btn-soft"
       {@rest}
     >
       <.icon name="hero-pencil-solid" />

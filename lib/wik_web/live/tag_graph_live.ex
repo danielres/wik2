@@ -31,6 +31,7 @@ defmodule WikWeb.TagGraphLive do
 
     {:ok,
      socket
+     |> assign(editing?: false)
      |> assign(editable?: editable?)
      |> assign(group: group)
      |> assign(tag_form: nil)
@@ -58,18 +59,26 @@ defmodule WikWeb.TagGraphLive do
 
         <div class="space-y-4" data-testid="tag-graph-page">
           <section class="space-y-4">
-            <div class="mb-2 flex items-center justify-end gap-3 ">
-              <ActionButtons.button
-                :if={@editable?}
-                data-tip="add root tag"
-                icon="hero-plus-mini"
-                data-testid="tag-add-root"
-                phx-click="create_root_start"
-              />
+            <div :if={@editable?} class="mb-2 flex items-center justify-end gap-2">
+              <%= if @editing? do %>
+                <ActionButtons.button
+                  data-tip="add root tag"
+                  icon="hero-plus-mini"
+                  data-testid="tag-add-root"
+                  phx-click="create_root_start"
+                />
+
+                <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
+              <% else %>
+                <UI.button_edit
+                  phx-click="toggle_edit_mode"
+                  data-testid="tag-edit-mode-toggle"
+                />
+              <% end %>
             </div>
 
             <TagTree.render
-              editable?={@editable?}
+              editing?={@editing?}
               nodes={@graph.root_tree}
               selected_tag_id={@selected_tag_id}
             />
@@ -83,8 +92,8 @@ defmodule WikWeb.TagGraphLive do
           testid="tag-detail-dialog"
         >
           <.tag_detail
-            :if={@selected_tag}
-            editable?={@editable?}
+            :if={@selected_tag != nil}
+            editing?={@editing?}
             eligible_children={@eligible_children}
             eligible_parents={@eligible_parents}
             graph={@graph}
@@ -161,7 +170,7 @@ defmodule WikWeb.TagGraphLive do
     """
   end
 
-  attr :editable?, :boolean, required: true
+  attr :editing?, :boolean, required: true
   attr :eligible_children, :list, required: true
   attr :eligible_parents, :list, required: true
   attr :graph, :map, required: true
@@ -201,7 +210,7 @@ defmodule WikWeb.TagGraphLive do
         <% end %>
       </div>
 
-      <div :if={@editable?} class="flex flex-wrap gap-2 [&>*]:flex-grow">
+      <div :if={@editing?} class="flex flex-wrap gap-2 [&>*]:flex-grow">
         <button
           class="btn btn-xs btn-soft btn-accent"
           data-testid="tag-detail-add-child"
@@ -251,7 +260,7 @@ defmodule WikWeb.TagGraphLive do
       <div :if={@children != []} class="space-y-2">
         <h3 class="text-sm uppercase tracking-[0.18em] opacity-50">Descendants</h3>
         <TagTree.render
-          editable?={false}
+          editing?={false}
           nodes={@selected_descendants}
           selected_tag_id={@selected_tag_id}
         />
@@ -347,6 +356,17 @@ defmodule WikWeb.TagGraphLive do
   @impl true
   def handle_event("select_tag", %{"tag_id" => tag_id}, socket) do
     {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.group.slug}/tags?#{%{tag: tag_id}}")}
+  end
+
+  def handle_event("toggle_edit_mode", _params, socket) do
+    socket = assign(socket, editing?: !socket.assigns.editing?)
+
+    socket =
+      if socket.assigns.editing?,
+        do: socket,
+        else: socket |> close_tag_form() |> close_link_form()
+
+    {:noreply, socket}
   end
 
   def handle_event("tag_detail_close", _params, socket) do

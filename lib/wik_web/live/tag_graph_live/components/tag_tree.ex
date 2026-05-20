@@ -5,7 +5,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
 
-  attr :editable?, :boolean, default: false
+  attr :editing?, :boolean, default: false
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -18,13 +18,13 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         </div>
       </div>
     <% else %>
-      <.tag_nodes editable?={@editable?} nodes={@nodes} selected_tag_id={@selected_tag_id} depth={0} />
+      <.tag_nodes editing?={@editing?} nodes={@nodes} selected_tag_id={@selected_tag_id} depth={0} />
     <% end %>
     """
   end
 
   attr :depth, :integer, required: true
-  attr :editable?, :boolean, default: false
+  attr :editing?, :boolean, default: false
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -34,7 +34,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       <li :for={node <- @nodes} class={["card", @depth == 0 and "bg-base-300/50"]}>
         <.tag_node
           depth={@depth + 1}
-          editable?={@editable?}
+          editing?={@editing?}
           node={node}
           selected_tag_id={@selected_tag_id}
         />
@@ -44,7 +44,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   end
 
   attr :depth, :integer, required: true
-  attr :editable?, :boolean, default: false
+  attr :editing?, :boolean, default: false
   attr :node, :map, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -90,7 +90,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
           </div>
         </button>
 
-        <ActionButtons.wrapper :if={@editable?}>
+        <ActionButtons.wrapper :if={@editing?}>
           <ActionButtons.button
             :if={@node.parent}
             data-tip="detach"
@@ -132,7 +132,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       <.tag_nodes
         :if={@node.children != []}
         depth={@depth}
-        editable?={@editable?}
+        editing?={@editing?}
         nodes={@node.children}
         selected_tag_id={@selected_tag_id}
       />

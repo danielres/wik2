@@ -28,6 +28,11 @@ defmodule WikWeb.TagGraphLiveTest do
     assert has_element?(view, testid("tag-graph-page"))
     assert has_element?(view, testid("tag-branch-tag-path-#{alpha.id}"))
     assert has_element?(view, testid("tag-branch-tag-path-#{beta.id}"))
+    assert has_element?(view, testid("tag-edit-mode-toggle"))
+    refute has_element?(view, testid("tag-add-root"))
+
+    render_click(element(view, testid("tag-edit-mode-toggle")))
+    assert has_element?(view, testid("tag-edit-mode-ok"))
 
     render_click(element(view, testid("tag-add-root")))
 
@@ -100,6 +105,10 @@ defmodule WikWeb.TagGraphLiveTest do
 
     assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
+    refute has_element?(view, testid("tag-delete-tag-path-#{root.id}__#{child.id}"))
+
+    render_click(element(view, testid("tag-edit-mode-toggle")))
+    assert has_element?(view, testid("tag-edit-mode-ok"))
 
     render_click(element(view, testid("tag-delete-tag-path-#{root.id}__#{child.id}")))
 

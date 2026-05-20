@@ -35,6 +35,8 @@ defmodule WikWeb.MemberProfileLive do
 
   @impl true
   def handle_params(%{"username" => username} = params, url, socket) do
+    selected_tag_slug = Map.get(params, "tag_slug")
+
     socket =
       case if(socket.assigns.membership && socket.assigns.membership.username == username,
              do: {:ok, socket},
@@ -42,6 +44,8 @@ defmodule WikWeb.MemberProfileLive do
            ) do
         {:ok, socket} ->
           socket
+          |> assign(:selected_tag_slug, selected_tag_slug)
+          |> sync_tagging_modal()
 
         {:error, :not_found} ->
           socket
@@ -59,8 +63,6 @@ defmodule WikWeb.MemberProfileLive do
           |> put_flash(:error, "Couldn't load member profile")
           |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/members")
       end
-      |> assign(:selected_tag_slug, Map.get(params, "tag_slug"))
-      |> sync_tagging_modal()
 
     {:noreply, WikWeb.Presence.track_in_liveview(socket, url)}
   end
@@ -475,6 +477,11 @@ defmodule WikWeb.MemberProfileLive do
           to: member_profile_path(socket.assigns.current_scope, socket.assigns.membership)
         )
     end
+  end
+
+  defp sync_tagging_modal(%{assigns: %{selected_tag_slug: tag_slug, membership: nil}} = socket)
+       when is_binary(tag_slug) and tag_slug != "" do
+    close_tagging_form(socket)
   end
 
   defp sync_tagging_modal(socket) do

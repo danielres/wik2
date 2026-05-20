@@ -28,6 +28,11 @@ defmodule WikWeb.TagGraphLiveTest do
     assert has_element?(view, testid("tag-graph-page"))
     assert has_element?(view, testid("tag-branch-tag-path-#{alpha.id}"))
     assert has_element?(view, testid("tag-branch-tag-path-#{beta.id}"))
+    assert has_element?(view, testid("tag-edit-mode-toggle"))
+    refute has_element?(view, testid("tag-add-root"))
+
+    render_click(element(view, testid("tag-edit-mode-toggle")))
+    assert has_element?(view, testid("tag-edit-mode-ok"))
 
     render_click(element(view, testid("tag-add-root")))
 
@@ -72,6 +77,7 @@ defmodule WikWeb.TagGraphLiveTest do
 
     render_click(element(view, testid("tag-select-tag-path-#{alpha.id}__#{child.id}")))
     assert_patch(view, ~p"/#{group.slug}/tags?#{%{tag: child.id}}")
+    assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
     assert has_element?(view, testid("tag-detail-jump-#{alpha.id}"))
     assert has_element?(view, testid("tag-detail-jump-#{beta.id}"))
@@ -97,12 +103,38 @@ defmodule WikWeb.TagGraphLiveTest do
       |> log_in(owner)
       |> live(~p"/#{group.slug}/tags?#{%{tag: child.id}}")
 
+    assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
+    refute has_element?(view, testid("tag-delete-tag-path-#{root.id}__#{child.id}"))
+
+    render_click(element(view, testid("tag-edit-mode-toggle")))
+    assert has_element?(view, testid("tag-edit-mode-ok"))
 
     render_click(element(view, testid("tag-delete-tag-path-#{root.id}__#{child.id}")))
 
     refute has_element?(view, testid("tag-branch-tag-path-#{root.id}__#{child.id}"))
-    assert has_element?(view, testid("tag-detail-empty"))
+    refute has_element?(view, testid("tag-detail-#{child.id}"))
+  end
+
+  test "read mode tag click navigates to the tag page", %{conn: conn} do
+    owner = generate(user())
+    group = generate(group(author: owner))
+    add_membership(group, owner, :owner)
+    scope = scope(owner, group)
+
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", "Foundational rhythm", scope: scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{group.slug}/tags")
+
+    refute has_element?(view, testid("tag-add-root"))
+
+    render_click(element(view, testid("tag-select-tag-path-#{alpha.id}")))
+
+    path = ~p"/#{group.slug}/tags/#{alpha.slug}"
+    assert_redirect(view, path)
   end
 
   defp add_membership(group, user, type) do

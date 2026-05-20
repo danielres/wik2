@@ -1,7 +1,8 @@
 defmodule WikWeb.MemberProfileLive do
   use WikWeb, :live_view
-  use Cinder.UrlSync
   use WikWeb.Presence.Handlers
+
+  import Cinder.Refresh
 
   alias Utils.Log
   alias Wik.Accounts
@@ -22,6 +23,7 @@ defmodule WikWeb.MemberProfileLive do
        available_tags: [],
        editable?: false,
        membership: nil,
+       selected_tag_slug: nil,
        subscribed_group_id: nil,
        subscribed_target_id: nil,
        taggings: [],
@@ -33,7 +35,7 @@ defmodule WikWeb.MemberProfileLive do
 
   @impl true
   def handle_params(%{"username" => username} = params, url, socket) do
-    socket = Cinder.UrlSync.handle_params(params, url, socket)
+    selected_tag_slug = Map.get(params, "tag_slug")
 
     socket =
       case if(socket.assigns.membership && socket.assigns.membership.username == username,
@@ -42,6 +44,8 @@ defmodule WikWeb.MemberProfileLive do
            ) do
         {:ok, socket} ->
           socket
+          |> assign(:selected_tag_slug, selected_tag_slug)
+          |> sync_tagging_modal()
 
         {:error, :not_found} ->
           socket
@@ -68,7 +72,7 @@ defmodule WikWeb.MemberProfileLive do
     assigns =
       assign(assigns,
         tagging_form_action: if(assigns.tagging_modal.mode == :edit, do: "Update", else: "Save"),
-        tagging_form_open?: not is_nil(assigns.tagging_modal.form)
+        tagging_modal_open?: assigns.tagging_modal.mode != nil
       )
 
     ~H"""
@@ -127,11 +131,10 @@ defmodule WikWeb.MemberProfileLive do
               No taggings yet.
             </div>
 
-            <MembershipTagging.table
-              editable?={@editable?}
+            <MembershipTagging.list
+              membership={@membership}
               query={@taggings_query}
               scope={@current_scope}
-              url_state={@url_state}
             />
           </section>
         </div>
@@ -139,18 +142,25 @@ defmodule WikWeb.MemberProfileLive do
         <Modal.render
           cancel="tagging_form_cancel"
           cancel_testid="member-tagging-cancel"
-          open?={@tagging_form_open?}
+          open?={@tagging_modal_open?}
           testid="member-tagging-dialog"
         >
+          <MembershipTagging.details
+            :if={@tagging_modal.mode == :show and @tagging_modal.tagging}
+            editable?={@editable?}
+            membership={@membership}
+            tagging={@tagging_modal.tagging}
+            tenant={@current_scope.tenant}
+          />
+
           <MembershipTagging.form
-            :if={@tagging_form_open?}
+            :if={@tagging_modal.mode in [:create, :edit] and @tagging_modal.form}
             action_label={@tagging_form_action}
             error={@tagging_modal.error}
             form={@tagging_modal.form}
-            tag_id={@tagging_modal.tag_id}
             mode={@tagging_modal.mode}
             options={@available_tags}
-            tag_name={@tagging_modal.tag_name}
+            tag={@tagging_modal.tag}
             membership={@membership}
             tenant={@current_scope.tenant}
           />
@@ -175,14 +185,14 @@ defmodule WikWeb.MemberProfileLive do
        :tagging_modal,
        new_tagging_modal(:edit,
          form: init_tagging_form(tagging),
-         tag_id: tag_id,
-         tag_name: tagging && tagging.tag && tagging.tag.name
+         tag: tagging && tagging.tag,
+         tagging: tagging
        )
      )}
   end
 
   def handle_event("tagging_form_cancel", _params, socket) do
-    {:noreply, close_tagging_form(socket)}
+    {:noreply, cancel_tagging_modal(socket)}
   end
 
   def handle_event("tagging_validate", %{"form" => params}, socket) do
@@ -206,9 +216,7 @@ defmodule WikWeb.MemberProfileLive do
                  scope
                ) do
             :ok ->
-              socket
-              |> close_tagging_form()
-              |> try_reload_profile()
+              handle_saved_tagging(socket)
 
             {:error, error} ->
               Log.scoped_error(scope, error, "membership tagging submit failed")
@@ -232,7 +240,8 @@ defmodule WikWeb.MemberProfileLive do
         :ok ->
           socket
           |> close_tagging_form()
-          |> try_reload_profile()
+          |> refresh_taggings()
+          |> maybe_patch_to_profile()
 
         {:error, error} ->
           Log.scoped_error(scope, error, "membership tagging remove failed")
@@ -254,7 +263,7 @@ defmodule WikWeb.MemberProfileLive do
           else: []
 
     if topic in watched_topics and socket.assigns.membership do
-      {:noreply, try_reload_profile(socket)}
+      {:noreply, refresh_taggings(socket)}
     else
       {:noreply, socket}
     end
@@ -302,7 +311,8 @@ defmodule WikWeb.MemberProfileLive do
     current_membership =
       socket.assigns.tenant_context && socket.assigns.tenant_context.current_membership
 
-    profile_state = profile_state(membership, taggings, current_membership)
+    profile_state =
+      profile_state(membership, taggings, current_membership, socket.assigns.current_scope.actor)
 
     socket
     |> assign(:available_tags, available_tags)
@@ -334,6 +344,17 @@ defmodule WikWeb.MemberProfileLive do
   defp close_tagging_form(socket) do
     assign(socket, :tagging_modal, new_tagging_modal())
   end
+
+  defp cancel_tagging_modal(%{assigns: %{selected_tag_slug: tag_slug}} = socket)
+       when is_binary(tag_slug) and tag_slug != "" do
+    socket
+    |> close_tagging_form()
+    |> push_patch(
+      to: member_profile_path(socket.assigns.current_scope, socket.assigns.membership)
+    )
+  end
+
+  defp cancel_tagging_modal(socket), do: close_tagging_form(socket)
 
   defp normalize_tagging_form(params) do
     %{
@@ -393,9 +414,11 @@ defmodule WikWeb.MemberProfileLive do
     end)
   end
 
-  defp profile_state(membership, taggings, current_membership) do
+  defp profile_state(membership, taggings, current_membership, actor) do
     %{
-      editable?: current_membership && current_membership.id == membership.id,
+      editable?:
+        (current_membership && current_membership.id == membership.id) ||
+          actor_superadmin?(actor),
       subscribed_group_id: membership.group_id,
       subscribed_target_id: membership.id,
       tagging_count: length(taggings)
@@ -407,8 +430,8 @@ defmodule WikWeb.MemberProfileLive do
       error: Keyword.get(attrs, :error),
       form: Keyword.get(attrs, :form),
       mode: mode,
-      tag_id: Keyword.get(attrs, :tag_id),
-      tag_name: Keyword.get(attrs, :tag_name)
+      tag: Keyword.get(attrs, :tag),
+      tagging: Keyword.get(attrs, :tagging)
     }
   end
 
@@ -424,10 +447,79 @@ defmodule WikWeb.MemberProfileLive do
 
   defp dimension_level(_tagging, _key), do: nil
 
+  defp actor_superadmin?(%{role: :superadmin}), do: true
+  defp actor_superadmin?(_actor), do: false
+
   defp parse_level(params, key) do
     case Integer.parse(Map.get(params, key, "0")) do
       {level, ""} -> {:ok, level}
       _ -> :error
     end
+  end
+
+  defp sync_tagging_modal(%{assigns: %{selected_tag_slug: tag_slug}} = socket)
+       when is_binary(tag_slug) and tag_slug != "" do
+    case Enum.find(socket.assigns.taggings, &(&1.tag && &1.tag.slug == tag_slug)) do
+      %Tagging{} = tagging ->
+        assign(
+          socket,
+          :tagging_modal,
+          new_tagging_modal(:show,
+            tag: tagging.tag,
+            tagging: tagging
+          )
+        )
+
+      nil ->
+        socket
+        |> put_flash(:error, "Tagging not found")
+        |> push_patch(
+          to: member_profile_path(socket.assigns.current_scope, socket.assigns.membership)
+        )
+    end
+  end
+
+  defp sync_tagging_modal(%{assigns: %{selected_tag_slug: tag_slug, membership: nil}} = socket)
+       when is_binary(tag_slug) and tag_slug != "" do
+    close_tagging_form(socket)
+  end
+
+  defp sync_tagging_modal(socket) do
+    case socket.assigns.tagging_modal.mode do
+      mode when mode in [:show, :edit] -> close_tagging_form(socket)
+      _mode -> socket
+    end
+  end
+
+  defp handle_saved_tagging(%{assigns: %{selected_tag_slug: tag_slug}} = socket)
+       when is_binary(tag_slug) and tag_slug != "" do
+    socket
+    |> refresh_taggings()
+    |> sync_tagging_modal()
+  end
+
+  defp handle_saved_tagging(socket) do
+    socket
+    |> close_tagging_form()
+    |> refresh_taggings()
+  end
+
+  defp maybe_patch_to_profile(%{assigns: %{selected_tag_slug: tag_slug}} = socket)
+       when is_binary(tag_slug) and tag_slug != "" do
+    push_patch(socket,
+      to: member_profile_path(socket.assigns.current_scope, socket.assigns.membership)
+    )
+  end
+
+  defp maybe_patch_to_profile(socket), do: socket
+
+  defp refresh_taggings(socket) do
+    socket
+    |> try_reload_profile()
+    |> refresh_table("member-taggings")
+  end
+
+  defp member_profile_path(scope, membership) do
+    ~p"/#{scope.tenant.slug}/wiki/members/#{membership.username}"
   end
 end

@@ -61,6 +61,14 @@ defmodule Wik.TaggingsPolicyTest do
       assert Ash.can?({tagging, :destroy}, scope(superadmin, group))
 
       assert {:ok, _} =
+               Tags.upsert_membership_tagging(
+                 member_membership,
+                 tag.id,
+                 %{dimensions: %{"interest" => 3}, description: nil},
+                 scope: scope(superadmin, group)
+               )
+
+      assert {:ok, _} =
                Ash.create(
                  Tagging,
                  %{

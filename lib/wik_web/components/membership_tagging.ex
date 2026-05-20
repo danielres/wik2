@@ -5,15 +5,15 @@ defmodule WikWeb.Components.MembershipTagging do
 
   alias Wik.Tags.Dimensions
   alias Wik.Tags.Tagging
-  alias WikWeb.Cinder.Themes.Dense
+  alias WikWeb.Components.User
+  alias WikWeb.Cinder.Themes.DenseNoSortIcons
   alias WikWeb.Components.UI
 
-  attr :editable?, :boolean, required: true
+  attr :membership, :map, required: true
   attr :query, :any, required: true
   attr :scope, :map, required: true
-  attr :url_state, :any, default: false
 
-  def table(assigns) do
+  def list(assigns) do
     assigns =
       assign(assigns,
         interest_dimension: dimension("interest"),
@@ -23,80 +23,294 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div
       :if={@query != nil}
-      class="overflow-hidden rounded border border-base-300 bg-base-content/3"
+      class="overflow-hidden"
       data-testid="member-taggings-table"
     >
       <Cinder.collection
+        layout={:list}
         id="member-taggings"
         page_size={100}
         query={@query}
         scope={@scope}
-        show_filters={false}
+        show_filters={true}
         sort_mode="exclusive"
-        theme={Dense}
-        url_state={@url_state}
+        theme={DenseNoSortIcons}
       >
-        <:col :let={tagging} field="tag.name" label="Tag" sort>
-          <div class="" data-testid={"member-tagging-row-#{tagging.tag_id}"}>
-            <div data-testid={"member-tagging-name-#{tagging.tag_id}"}>
-              {tagging.tag.name}
+        <:col
+          field="tag.name"
+          label="Alphabetical"
+          sort={[cycle: [:asc_nils_last]]}
+        >
+        </:col>
+        <:col
+          field="interest_level"
+          label={@interest_dimension.label}
+          sort={[cycle: [:desc_nils_last]]}
+        >
+        </:col>
+        <:col
+          field="skill_level"
+          label={@skill_dimension.label}
+          sort={[cycle: [:desc_nils_last]]}
+        >
+        </:col>
+
+        <:item :let={tagging}>
+          <% interest_level = dimension_level(tagging, "interest") %>
+          <% skill_level = dimension_level(tagging, "skill") %>
+          <.link
+            patch={tagging_path(@scope, @membership, tagging)}
+            data-testid={"member-tagging-open-#{tagging.tag_id}"}
+            class="block px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+          >
+            <div class="grid grid-cols-[1fr_6rem] gap-2 items-start">
+              <div class="text-sm" data-testid={"member-tagging-row-#{tagging.tag_id}"}>
+                <div data-testid={"member-tagging-name-#{tagging.tag_id}"}>
+                  {tagging.tag.name}
+                </div>
+              </div>
+
+              <div>
+                <.level_meter
+                  :if={interest_level}
+                  dimension={@interest_dimension}
+                  label={@interest_dimension.label}
+                  level={interest_level}
+                  testid={"member-tagging-interest-#{tagging.tag_id}"}
+                />
+
+                <.level_meter
+                  :if={skill_level}
+                  dimension={@skill_dimension}
+                  label={@skill_dimension.label}
+                  level={skill_level}
+                  testid={"member-tagging-skill-#{tagging.tag_id}"}
+                />
+              </div>
             </div>
             <div
               :if={present?(tagging.description)}
-              class="mt-1 text-xs opacity-60 max-h-20 overflow-y-auto pr-2 text-balance"
+              class="text-xs/4 opacity-60 pr-2 space-y-2 max-w-prose-lg mt-3"
               data-testid={"member-tagging-description-#{tagging.tag_id}"}
             >
-              <div class="whitespace-pre-wrap">{tagging.description}</div>
+              <.description_chunks description={tagging.description} />
             </div>
-          </div>
-        </:col>
-
-        <:col
-          :let={tagging}
-          field="dimensions__interest"
-          label={@interest_dimension.label}
-          sort={[cycle: [:desc, :asc]]}
-          class="w-32"
-        >
-          <.level_meter
-            :if={dimension_level(tagging, "interest")}
-            dimension={@interest_dimension}
-            label={@interest_dimension.label}
-            level={dimension_level(tagging, "interest")}
-            testid={"member-tagging-interest-#{tagging.tag_id}"}
-          />
-        </:col>
-
-        <:col
-          :let={tagging}
-          field="dimensions__skill"
-          label={@skill_dimension.label}
-          sort={[cycle: [:desc, :asc]]}
-          class="w-32"
-        >
-          <.level_meter
-            :if={dimension_level(tagging, "skill")}
-            dimension={@skill_dimension}
-            label={@skill_dimension.label}
-            level={dimension_level(tagging, "skill")}
-            testid={"member-tagging-skill-#{tagging.tag_id}"}
-          />
-        </:col>
-
-        <:col :let={tagging} label="">
-          <div :if={@editable?} class="flex items-center gap-2 justify-end">
-            <button
-              class="btn btn-xs btn-soft btn-accent btn-circle"
-              data-testid={"member-tagging-edit-#{tagging.tag_id}"}
-              phx-click="tagging_edit_start"
-              phx-value-tag_id={tagging.tag_id}
-              type="button"
-            >
-              <.icon name="hero-pencil-mini" class="size-3" />
-            </button>
-          </div>
-        </:col>
+          </.link>
+        </:item>
       </Cinder.collection>
+    </div>
+    """
+  end
+
+  attr :query, :any, required: true
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def list_for_tag(assigns) do
+    assigns =
+      assign(assigns,
+        interest_dimension: dimension("interest"),
+        skill_dimension: dimension("skill")
+      )
+
+    ~H"""
+    <div
+      :if={@query != nil}
+      class="overflow-hidden"
+      data-testid="tag-member-taggings-table"
+    >
+      <Cinder.collection
+        layout={:list}
+        id="tag-member-taggings"
+        page_size={100}
+        query={@query}
+        scope={@scope}
+        show_filters={true}
+        sort_mode="exclusive"
+        theme={DenseNoSortIcons}
+      >
+        <:col
+          field="target_membership.username"
+          label="Alphabetical"
+          sort={[cycle: [:asc_nils_last]]}
+        >
+        </:col>
+        <:col
+          field="interest_level"
+          label={@interest_dimension.label}
+          sort={[cycle: [:desc_nils_last]]}
+        >
+        </:col>
+        <:col
+          field="skill_level"
+          label={@skill_dimension.label}
+          sort={[cycle: [:desc_nils_last]]}
+        >
+        </:col>
+
+        <:item :let={tagging}>
+          <% interest_level = dimension_level(tagging, "interest") %>
+          <% skill_level = dimension_level(tagging, "skill") %>
+          <.link
+            navigate={member_tagging_path(@scope, tagging, @tag)}
+            data-testid={"tag-member-tagging-open-#{tagging.id}"}
+            class="block px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+          >
+            <div class="grid grid-cols-[1fr_6rem] gap-2 items-start">
+              <div class="min-w-0 text-sm" data-testid={"tag-member-tagging-row-#{tagging.id}"}>
+                <div
+                  class="flex items-center gap-3"
+                  data-testid={"tag-member-tagging-member-#{tagging.id}"}
+                >
+                  <User.avatar
+                    membership={tagging.target_membership}
+                    size="sm"
+                    tenant={@scope.tenant}
+                  />
+                  <div class="min-w-0">
+                    <div class="truncate">{tagging.target_membership.username}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <.level_meter
+                  :if={interest_level}
+                  dimension={@interest_dimension}
+                  label={@interest_dimension.label}
+                  level={interest_level}
+                  testid={"tag-member-tagging-interest-#{tagging.id}"}
+                />
+
+                <.level_meter
+                  :if={skill_level}
+                  dimension={@skill_dimension}
+                  label={@skill_dimension.label}
+                  level={skill_level}
+                  testid={"tag-member-tagging-skill-#{tagging.id}"}
+                />
+              </div>
+            </div>
+            <div
+              :if={present?(tagging.description)}
+              class="text-xs/4 opacity-60 pr-2 space-y-2 max-w-prose-lg mt-3"
+              data-testid={"tag-member-tagging-description-#{tagging.id}"}
+            >
+              <.description_chunks description={tagging.description} />
+            </div>
+          </.link>
+        </:item>
+      </Cinder.collection>
+    </div>
+    """
+  end
+
+  attr :membership, :map, required: true
+  attr :tagging, :map, required: true
+  attr :tenant, :map, required: true
+  attr :link?, :boolean, default: true
+
+  def tagging_title(assigns) do
+    ~H"""
+    <div class="items-center gap-2 grid grid-cols-[1fr_auto_1fr]">
+      <div class="flex justify-end">
+        <User.avatar
+          link?={@link?}
+          membership={@membership}
+          size="lg"
+          tenant={@tenant}
+          tooltip?
+          tooltip_direction="left"
+        />
+      </div>
+
+      <.icon name="hero-arrows-right-left-micro" class="opacity-50" />
+
+      <UI.page_title class="text-lg flex justify-start">
+        <.link
+          :if={@link?}
+          navigate={~p"/#{@tenant.slug}/tags/#{@tagging.tag.slug}"}
+          class="underline decoration-dashed underline-offset-4 decoration-base-content/60 hover:decoration-solid"
+        >
+          {@tagging.tag.name}
+        </.link>
+        <span :if={!@link?}>{@tagging.tag.name}</span>
+      </UI.page_title>
+    </div>
+    """
+  end
+
+  attr :editable?, :boolean, required: true
+  attr :membership, :map, required: true
+  attr :tagging, :map, required: true
+  attr :tenant, :map, required: true
+
+  def details(assigns) do
+    assigns =
+      assign(assigns,
+        interest_dimension: dimension("interest"),
+        interest_level: dimension_level(assigns.tagging, "interest"),
+        skill_dimension: dimension("skill"),
+        skill_level: dimension_level(assigns.tagging, "skill")
+      )
+
+    ~H"""
+    <div class="space-y-6" data-testid="member-tagging-details">
+      <.tagging_title
+        membership={@membership}
+        tagging={@tagging}
+        tenant={@tenant}
+        link?={true}
+      />
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div class="space-y-1 rounded-box bg-base-200 px-4 py-3">
+          <div class="text-xs font-bold uppercase tracking-[0.14em] opacity-60">
+            {@interest_dimension.label}
+          </div>
+          <div :if={@interest_level} class="space-y-2">
+            <.level_meter
+              dimension={@interest_dimension}
+              label={@interest_dimension.label}
+              level={@interest_level}
+              testid={"member-tagging-interest-#{@tagging.tag_id}"}
+            />
+          </div>
+          <div :if={is_nil(@interest_level)} class="text-sm opacity-50">
+            No value
+          </div>
+        </div>
+
+        <div class="space-y-1 rounded-box bg-base-200 px-4 py-3">
+          <div class="text-xs font-bold uppercase tracking-[0.14em] opacity-60">
+            {@skill_dimension.label}
+          </div>
+          <div :if={@skill_level} class="space-y-2">
+            <.level_meter
+              dimension={@skill_dimension}
+              label={@skill_dimension.label}
+              level={@skill_level}
+              testid={"member-tagging-skill-#{@tagging.tag_id}"}
+            />
+          </div>
+          <div :if={is_nil(@skill_level)} class="text-sm opacity-50">No value</div>
+        </div>
+      </div>
+
+      <div :if={present?(@tagging.description)} class="space-y-2">
+        <div class="text-xs font-bold uppercase tracking-[0.14em] opacity-60">Description</div>
+        <div class="space-y-1 text-sm/6 opacity-80" data-testid="member-tagging-details-description">
+          <.description_chunks description={@tagging.description} />
+        </div>
+      </div>
+
+      <div :if={@editable?} class="flex justify-end">
+        <UI.button_edit
+          data-testid={"member-tagging-edit-#{@tagging.tag_id}"}
+          phx-click="tagging_edit_start"
+          phx-value-tag_id={@tagging.tag_id}
+        />
+      </div>
     </div>
     """
   end
@@ -107,15 +321,15 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :membership, :map, required: true
   attr :mode, :atom, required: true
   attr :options, :list, required: true
-  attr :tag_id, :string, default: nil
-  attr :tag_name, :string, default: nil
+  attr :tag, :map, default: nil
   attr :tenant, :map, required: true
 
   def form(assigns) do
     assigns =
       assign(assigns,
         interest_dimension: dimension("interest"),
-        skill_dimension: dimension("skill")
+        skill_dimension: dimension("skill"),
+        tagging_title_tagging: if(assigns.tag, do: %{tag: assigns.tag}, else: nil)
       )
 
     ~H"""
@@ -144,19 +358,13 @@ defmodule WikWeb.Components.MembershipTagging do
           />
 
           <div :if={@mode == :edit} class="space-y-1">
-            <div class="flex items-center gap-2">
-              <WikWeb.Components.User.avatar
-                membership={@membership}
-                size="md"
-                tenant={@tenant}
-                tooltip?
-                tooltip_direction="right"
-              />
-              <.icon name="hero-arrows-right-left-micro" />
-              <UI.page_title class="text-lg">
-                {@tag_name}
-              </UI.page_title>
-            </div>
+            <.tagging_title
+              :if={@tagging_title_tagging}
+              membership={@membership}
+              tagging={@tagging_title_tagging}
+              tenant={@tenant}
+              link?={false}
+            />
           </div>
 
           <.range_input
@@ -184,17 +392,17 @@ defmodule WikWeb.Components.MembershipTagging do
 
           <div class="flex items-center justify-between gap-2">
             <button
-              :if={@mode == :edit and @tag_id}
+              :if={@mode == :edit and @tag}
               class="btn btn-soft btn-error"
               data-testid="member-tagging-delete"
               phx-click="tagging_remove"
-              phx-value-tag_id={@tag_id}
+              phx-value-tag_id={@tag.id}
               type="button"
             >
               <.icon name="hero-trash-mini" class="size-4" /> Delete
             </button>
 
-            <.button class="btn btn-primary" data-testid="member-tagging-submit" type="submit">
+            <.button class="btn btn-accent btn-soft" data-testid="member-tagging-submit" type="submit">
               {@action_label}
             </.button>
           </div>
@@ -213,7 +421,7 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div class="min-w-0 flex items-center gap-1">
       <div
-        class="tooltip"
+        class="tooltip leading-none"
         style={"--tt-bg: color-mix(#{@dimension.color} 0%, var(--color-base-300))"}
       >
         <div class="tooltip-content">
@@ -244,7 +452,7 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div class="space-y-0">
       <div class="flex items-center justify-between gap-2">
-        <label for={@field.id} class="text-sm font-medium">{@label}</label>
+        <label for={@field.id} class="label font-bold">{@label}</label>
         <span class="badge badge-sm bg-base-100">{@field.value || "0"}</span>
       </div>
 
@@ -278,6 +486,30 @@ defmodule WikWeb.Components.MembershipTagging do
 
   defp meter_value(_level, _max_level), do: 0
 
+  attr :description, :string, required: true
+
+  defp description_chunks(assigns) do
+    assigns = assign(assigns, :chunks, split_description(assigns.description))
+
+    ~H"""
+    <div :for={chunk <- @chunks}>{chunk}</div>
+    """
+  end
+
   defp present?(value) when is_binary(value), do: String.trim(value) != ""
   defp present?(_value), do: false
+
+  defp split_description(description) when is_binary(description) do
+    description
+    |> String.trim()
+    |> String.split(~r/\n+/, trim: true)
+  end
+
+  defp tagging_path(scope, membership, tagging) do
+    ~p"/#{scope.tenant.slug}/wiki/members/#{membership.username}/tag/#{tagging.tag.slug}"
+  end
+
+  defp member_tagging_path(scope, tagging, tag) do
+    ~p"/#{scope.tenant.slug}/wiki/members/#{tagging.target_membership.username}/tag/#{tag.slug}"
+  end
 end

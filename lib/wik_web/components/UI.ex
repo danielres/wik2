@@ -123,7 +123,7 @@ defmodule WikWeb.Components.UI do
   def button_add(assigns) do
     ~H"""
     <button
-      class="btn btn-sm btn-circle btn-accent"
+      class="btn btn-xs btn-circle btn-accent btn-soft"
       {@rest}
     >
       <.icon name="hero-plus-micro" />
@@ -136,7 +136,7 @@ defmodule WikWeb.Components.UI do
   def button_ok(assigns) do
     ~H"""
     <button
-      class="btn btn-sm btn-circle btn-accent"
+      class="btn btn-xs btn-circle btn-accent btn-soft"
       {@rest}
     >
       <.icon name="hero-check-micro" />
@@ -149,7 +149,7 @@ defmodule WikWeb.Components.UI do
   def button_edit(assigns) do
     ~H"""
     <button
-      class="btn btn-sm btn-circle btn-accent"
+      class="btn btn-xs btn-circle btn-accent btn-soft"
       {@rest}
     >
       <.icon name="hero-pencil-solid" />
@@ -171,6 +171,16 @@ defmodule WikWeb.Components.UI do
   end
 
   # modal ======================================================================
+  attr :class, :string, default: ""
+  slot :inner_block, required: true
+
+  def modal_title(assigns) do
+    ~H"""
+    <h1 class={["text-xl", @class]}>
+      {render_slot(@inner_block)}
+    </h1>
+    """
+  end
 
   def modal_open(js \\ %JS{}, id), do: js |> JS.add_class("modal-open", to: "##{id}_modal")
   def modal_close(js \\ %JS{}, id), do: js |> JS.remove_class("modal-open", to: "##{id}_modal")

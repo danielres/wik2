@@ -54,6 +54,11 @@ defmodule WikWeb.MemberProfileLiveTest do
     assert has_element?(view, testid("member-tagging-interest-#{dance.id}"))
     refute has_element?(view, testid("member-tagging-skill-#{dance.id}"))
 
+    render_click(element(view, testid("member-tagging-open-#{dance.id}")))
+    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+    assert has_element?(view, testid("member-tagging-details"))
+    assert has_element?(view, testid("member-tagging-edit-#{dance.id}"))
+
     render_click(element(view, testid("member-tagging-edit-#{dance.id}")))
 
     render_submit(
@@ -79,7 +84,8 @@ defmodule WikWeb.MemberProfileLiveTest do
     assert has_element?(view, testid("member-tagging-skill-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-description-#{dance.id}"))
 
-    render_click(element(view, testid("member-tagging-edit-#{dance.id}")))
+    render_click(element(view, testid("member-tagging-open-#{dance.id}")))
+    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
     assert has_element?(view, testid("member-tagging-delete"))
     render_click(element(view, testid("member-tagging-delete")))
 
@@ -87,6 +93,7 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     assert {:ok, []} = Tags.list_membership_taggings(membership, scope: member_scope)
     assert has_element?(view, testid("member-tagging-empty"))
+    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}")
   end
 
   test "other group members can read but not edit another member's taggings", %{conn: conn} do
@@ -122,8 +129,52 @@ defmodule WikWeb.MemberProfileLiveTest do
     assert has_element?(view, testid("member-tagging-row-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-interest-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-skill-#{dance.id}"))
-    refute has_element?(view, testid("member-tagging-edit-#{dance.id}"))
     refute has_element?(view, testid("member-tagging-delete"))
+
+    render_click(element(view, testid("member-tagging-open-#{dance.id}")))
+
+    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+    assert has_element?(view, testid("member-tagging-details"))
+    refute has_element?(view, testid("member-tagging-edit-#{dance.id}"))
+  end
+
+  test "superadmin can add taggings to another member from the profile page", %{conn: conn} do
+    %{group: group, membership: membership, owner: owner} = member_fixture()
+    superadmin = generate(user(role: :superadmin))
+    owner_scope = scope(owner, group)
+    superadmin_scope = scope(superadmin, group)
+
+    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(superadmin)
+      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}")
+
+    render_async(view)
+
+    assert has_element?(view, testid("member-tagging-add"))
+
+    render_click(element(view, testid("member-tagging-add")))
+
+    render_submit(
+      form(view, testid("member-tagging-form-form"),
+        form: %{
+          "description" => "Observed by superadmin",
+          "tag_id" => dance.id,
+          "interest_level" => "4",
+          "skill_level" => "0"
+        }
+      )
+    )
+
+    render_async(view)
+
+    assert {:ok, taggings} = Tags.list_membership_taggings(membership, scope: superadmin_scope)
+
+    assert Enum.map(taggings, &{&1.dimensions, &1.description}) == [
+             {%{"interest" => 4}, "Observed by superadmin"}
+           ]
   end
 
   test "member profile table orders rows by highest interest first and shows blank missing sides",
@@ -185,6 +236,35 @@ defmodule WikWeb.MemberProfileLiveTest do
              index_of_testid(html, "member-tagging-name-#{dance.id}")
   end
 
+  test "tag route opens the tagging modal in read mode", %{conn: conn} do
+    %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
+    owner_scope = scope(owner, group)
+    member_scope = scope(user, group)
+
+    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+
+    assert {:ok, _} =
+             Tags.upsert_membership_tagging(
+               membership,
+               dance.id,
+               %{dimensions: %{"interest" => 7}, description: "Late-night social regular"},
+               scope: member_scope
+             )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+
+    render_async(view)
+
+    assert has_element?(view, testid("member-tagging-details"))
+    assert has_element?(view, testid("member-tagging-edit-#{dance.id}"))
+    assert has_element?(view, testid("member-tagging-interest-#{dance.id}"))
+    assert has_element?(view, testid("member-tagging-details-description"))
+    refute has_element?(view, testid("member-tagging-form-form"))
+  end
+
   defp member_fixture(opts \\ []) do
     owner = generate(user())
     user = generate(user())
@@ -242,7 +322,10 @@ defmodule WikWeb.MemberProfileLiveTest do
   end
 
   defp index_of_testid(html, testid) do
-    String.index(html, ~s(data-testid="#{testid}"))
+    case :binary.match(html, ~s(data-testid="#{testid}")) do
+      {index, _length} -> index
+      :nomatch -> nil
+    end
   end
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}

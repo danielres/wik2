@@ -137,6 +137,7 @@ defmodule WikWeb.Router do
         live "/members", GroupLive, :members
         live "/orphans", GroupLive, :orphans
         live "/tags", TagGraphLive, :index
+        live "/tags/:tag_slug", TagLive, :tag
         live "/events", EventsLive, :index
         live "/tree", PageTreeLive, :index
         live "/blog", BlogLive, :index
@@ -144,6 +145,7 @@ defmodule WikWeb.Router do
         scope "/wiki" do
           get "/", WikiRedirectController, :home
           live "/members/:username", MemberProfileLive, :show
+          live "/members/:username/tag/:tag_slug", MemberProfileLive, :tag
           live "/*path", PageLive, :index
         end
 

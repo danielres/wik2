@@ -6,8 +6,6 @@ defmodule Wik.Tags do
       AshPhoenix
     ]
 
-  import Ash.Expr
-
   alias Ash.Query
   alias Utils.Log
   alias Wik.Accounts.GroupUserRelation
@@ -232,6 +230,13 @@ defmodule Wik.Tags do
     taggings_query_for("group_user_relation", membership.id)
   end
 
+  def tag_taggings_query(%Tag{} = tag) do
+    Tagging
+    |> Query.filter(tag_id == ^tag.id and taggable_type == "group_user_relation")
+    |> Query.load([:tag, target_membership: [:avatar_url, :user]])
+    |> Query.sort(interest_level: :desc, skill_level: :desc)
+  end
+
   def list_group_tags(scope) do
     Tag
     |> Query.sort(name: :asc)
@@ -290,10 +295,6 @@ defmodule Wik.Tags do
     Tagging
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
     |> Query.load([:tag, :tagged_by_group_user_relation])
-    |> Query.sort([
-      {calc(get_path(^ref(:dimensions), ^[:interest])), :desc},
-      {calc(get_path(^ref(:dimensions), ^[:skill])), :desc},
-      {"tag.name", :asc}
-    ])
+    |> Query.sort(interest_level: :desc, skill_level: :desc)
   end
 end

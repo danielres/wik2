@@ -2,14 +2,14 @@ defmodule Wik.Tags.Dimensions do
   @definitions %{
     "group_user_relation" => %{
       "interest" => %{
-        color: "oklch(72% 0.18 358)",
+        color: "oklch(63% 0.13 358)",
         icon: "hero-heart-micro",
         key: "interest",
         label: "Interest",
         max: 10
       },
       "skill" => %{
-        color: "oklch(62% 0.12 255)",
+        color: "oklch(65% 0.15 255)",
         icon: "hero-academic-cap-micro",
         key: "skill",
         label: "Skill",

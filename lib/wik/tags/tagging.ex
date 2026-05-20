@@ -22,6 +22,10 @@ defmodule Wik.Tags.Tagging do
     references do
       reference :tag, on_delete: :delete, match_with: [group_id: :group_id]
 
+      reference :target_membership,
+        on_delete: :delete,
+        match_with: [group_id: :group_id]
+
       reference :tagged_by_group_user_relation,
         on_delete: :delete,
         match_with: [group_id: :group_id]
@@ -132,9 +136,32 @@ defmodule Wik.Tags.Tagging do
       allow_nil? false
     end
 
+    belongs_to :target_membership, GroupUserRelation do
+      source_attribute :taggable_id
+      destination_attribute :id
+      allow_nil? false
+      attribute_writable? false
+    end
+
     belongs_to :tagged_by_group_user_relation, GroupUserRelation do
       destination_attribute :id
       allow_nil? false
+    end
+  end
+
+  calculations do
+    calculate :interest_level,
+              :integer,
+              expr(fragment("coalesce((?->>'interest')::int, 0)", dimensions)) do
+      public? true
+      filterable? false
+    end
+
+    calculate :skill_level,
+              :integer,
+              expr(fragment("coalesce((?->>'skill')::int, 0)", dimensions)) do
+      public? true
+      filterable? false
     end
   end
 

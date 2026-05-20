@@ -72,6 +72,7 @@ defmodule WikWeb.TagGraphLiveTest do
 
     render_click(element(view, testid("tag-select-tag-path-#{alpha.id}__#{child.id}")))
     assert_patch(view, ~p"/#{group.slug}/tags?#{%{tag: child.id}}")
+    assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
     assert has_element?(view, testid("tag-detail-jump-#{alpha.id}"))
     assert has_element?(view, testid("tag-detail-jump-#{beta.id}"))
@@ -97,12 +98,13 @@ defmodule WikWeb.TagGraphLiveTest do
       |> log_in(owner)
       |> live(~p"/#{group.slug}/tags?#{%{tag: child.id}}")
 
+    assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
 
     render_click(element(view, testid("tag-delete-tag-path-#{root.id}__#{child.id}")))
 
     refute has_element?(view, testid("tag-branch-tag-path-#{root.id}__#{child.id}"))
-    assert has_element?(view, testid("tag-detail-empty"))
+    refute has_element?(view, testid("tag-detail-#{child.id}"))
   end
 
   defp add_membership(group, user, type) do

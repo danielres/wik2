@@ -260,24 +260,20 @@ defmodule WikWeb.TagGraphLive do
 
     case Form.submit(socket.assigns.tag_form, params: params) do
       {:ok, %Tag{} = tag} ->
-        case maybe_link_new_tag(
-               socket.assigns.tag_form_mode,
-               socket.assigns.tag_form_parent_id,
-               tag,
-               scope
-             ) do
-          :ok ->
-            {:noreply,
-             socket
-             |> close_tag_form()
-             |> refresh_graph(socket.assigns.selected_tag_id)}
+        link_result =
+          maybe_link_new_tag(
+            socket.assigns.tag_form_mode,
+            socket.assigns.tag_form_parent_id,
+            tag,
+            scope
+          )
 
-          {:error, error} ->
-            Log.scoped_error(scope, error, "tag link after create failed")
-
-            {:noreply,
-             socket |> close_tag_form() |> refresh_graph(socket.assigns.selected_tag_id)}
+        if match?({:error, _error}, link_result) do
+          {:error, error} = link_result
+          Log.scoped_error(scope, error, "tag link after create failed")
         end
+
+        {:noreply, socket |> close_tag_form() |> refresh_graph(socket.assigns.selected_tag_id)}
 
       {:error, form} ->
         {:noreply, assign(socket, tag_form: form)}
@@ -452,7 +448,6 @@ defmodule WikWeb.TagGraphLive do
   defp maybe_link_new_tag(:create, parent_tag_id, tag, scope) do
     case Tags.link_tags(parent_tag_id, tag.id, scope: scope) do
       {:ok, _edge} -> :ok
-      :ok -> :ok
       {:error, error} -> {:error, error}
     end
   end

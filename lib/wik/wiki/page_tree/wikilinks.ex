@@ -6,6 +6,7 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
 
   @visible_wikilink_regex ~r/\[\[([^\]\n]+)\]\]/
   @node_wikilink_regex ~r/\[\[node:(\d+)\]\]/
+  @member_wikilink_regex ~r/\[\[member:([^\]\n]+)\]\]/
 
   @spec replace_visible(String.t(), (String.t(), String.t() -> String.t())) :: String.t()
   def replace_visible(markdown, replacement)
@@ -34,6 +35,37 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
       case TreeQueries.get_node(nodes, node_id) do
         nil -> wikilink
         node -> "[[#{TreeQueries.get_node_title_path(nodes, node.id)}]]"
+      end
+    end)
+  end
+
+  @spec usernames_to_memberships(String.t(), %{String.t() => String.t()}) :: String.t()
+  def usernames_to_memberships(markdown, username_to_membership_id_map)
+      when is_binary(markdown) and is_map(username_to_membership_id_map) do
+    replace_visible(markdown, fn wikilink, path ->
+      username =
+        path
+        |> String.trim()
+        |> String.trim_leading("@")
+
+      if username == path do
+        wikilink
+      else
+        case Map.get(username_to_membership_id_map, username) do
+          nil -> wikilink
+          membership_id -> "[[member:#{membership_id}]]"
+        end
+      end
+    end)
+  end
+
+  @spec memberships_to_usernames(String.t(), %{String.t() => String.t()}) :: String.t()
+  def memberships_to_usernames(markdown, membership_id_to_username_map)
+      when is_binary(markdown) and is_map(membership_id_to_username_map) do
+    Regex.replace(@member_wikilink_regex, markdown, fn wikilink, membership_id ->
+      case Map.get(membership_id_to_username_map, membership_id) do
+        nil -> wikilink
+        username -> "[[@#{username}]]"
       end
     end)
   end

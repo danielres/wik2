@@ -24,6 +24,20 @@ defmodule Wik.Wiki.PageTree.WikilinksTest do
            ) == "[[Soups]] and [[Soups/Vegetable Soup]]"
   end
 
+  test "converts visible member wikilinks to canonical membership wikilinks" do
+    assert Wikilinks.usernames_to_memberships(
+             "[[@alice]] and [[Soups]]",
+             %{"alice" => "membership-1"}
+           ) == "[[member:membership-1]] and [[Soups]]"
+  end
+
+  test "converts canonical membership wikilinks back to visible member wikilinks" do
+    assert Wikilinks.memberships_to_usernames(
+             "[[member:membership-1]] and [[node:1]]",
+             %{"membership-1" => "alice"}
+           ) == "[[@alice]] and [[node:1]]"
+  end
+
   test "slugifies title paths for unresolved wikilinks" do
     assert Wikilinks.slug_path_from_title_path("Soups/Vegetable Soup") == "soups/vegetable-soup"
   end

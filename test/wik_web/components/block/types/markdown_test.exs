@@ -3,8 +3,10 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
   import Phoenix.Component, only: [to_form: 2]
   import Phoenix.LiveViewTest, only: [render_component: 2]
+  import Wik.TestGenerators
 
   alias Wik.Scope
+  alias Wik.Accounts.GroupUserRelation
   alias WikWeb.Components.Block.Types.Markdown
   alias Wik.Wiki.PageTree
   alias Wik.Wiki.PageTree.Node
@@ -45,6 +47,30 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
     assert html =~ ">Soups<"
     assert html =~ ">Soups/Vegetable Soup<"
+  end
+
+  test "render converts canonical member wikilinks to member profile links" do
+    group = generate(group())
+    user = generate(user())
+    membership = add_membership(group, user, "alice")
+    scope = %Scope{tenant: %{id: group.id, name: group.name, slug: group.slug}}
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[member:#{membership.id}]]"}},
+        page_tree: page_tree_fixture(group.id),
+        scope: scope
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(
+             ~s(a[href="/#{scope.tenant.slug}/wiki/members/alice"][data-phx-link="patch"][data-phx-link-state="push"])
+           )
+           |> Enum.any?()
+
+    assert html =~ ">@alice<"
   end
 
   test "render patches canonical wikilinks through the current LiveView" do
@@ -143,26 +169,59 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
   end
 
   test "form_fields keeps the markdown source editable" do
+    group = generate(group())
+    user = generate(user())
+    membership = add_membership(group, user, "alice")
     wikilink_map = Jason.encode!(%{"Soups" => 1, "Soups/Vegetable Soup" => 2})
 
     html =
       render_component(&Markdown.form_fields/1, %{
         block: %{id: "block-1", data: %{"text" => "## Title"}},
-        form: to_form(%{"text" => "## Title", "wikilink_map" => wikilink_map}, as: :block),
-        page_tree: page_tree_fixture()
+        form:
+          to_form(
+            %{
+              "text" => "## Title",
+              "wikilink_map" => wikilink_map,
+              "wikilink_member_map" => Jason.encode!(%{"alice" => membership.id})
+            },
+            as: :block
+          ),
+        page_tree: page_tree_fixture(group.id),
+        scope: %Scope{tenant: group}
       })
 
     assert html =~ ~s(id="edit-block-markdown-textarea-block-1")
     assert html =~ ~s(name="block[text]")
     assert html =~ ~s(name="block[wikilink_map]")
+    assert html =~ ~s(name="block[wikilink_member_map]")
     assert html =~ ~s(data-wikilink-paths=)
+    assert html =~ ~s(data-member-wikilink-usernames=)
     assert html =~ "## Title"
     assert html =~ "&quot;Soups&quot;:1"
     assert html =~ "&quot;Soups/Vegetable Soup&quot;:2"
+    assert html =~ "&quot;alice&quot;"
   end
 
-  defp page_tree_fixture do
+  defp add_membership(group, user, username) do
+    membership =
+      Ash.create!(
+        GroupUserRelation,
+        %{group_id: group.id, type: :member, user_id: user.id},
+        authorize?: false,
+        domain: Wik.Accounts
+      )
+
+    Ash.update!(
+      membership,
+      %{username: username},
+      action: :set_username,
+      scope: %Scope{actor: user, tenant: group}
+    )
+  end
+
+  defp page_tree_fixture(group_id \\ nil) do
     %PageTree{
+      group_id: group_id,
       nodes: [
         %Node{
           id: 1,

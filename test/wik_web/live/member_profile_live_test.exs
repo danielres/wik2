@@ -138,6 +138,45 @@ defmodule WikWeb.MemberProfileLiveTest do
     refute has_element?(view, testid("member-tagging-edit-#{dance.id}"))
   end
 
+  test "superadmin can add taggings to another member from the profile page", %{conn: conn} do
+    %{group: group, membership: membership, owner: owner} = member_fixture()
+    superadmin = generate(user(role: :superadmin))
+    owner_scope = scope(owner, group)
+    superadmin_scope = scope(superadmin, group)
+
+    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(superadmin)
+      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}")
+
+    render_async(view)
+
+    assert has_element?(view, testid("member-tagging-add"))
+
+    render_click(element(view, testid("member-tagging-add")))
+
+    render_submit(
+      form(view, testid("member-tagging-form-form"),
+        form: %{
+          "description" => "Observed by superadmin",
+          "tag_id" => dance.id,
+          "interest_level" => "4",
+          "skill_level" => "0"
+        }
+      )
+    )
+
+    render_async(view)
+
+    assert {:ok, taggings} = Tags.list_membership_taggings(membership, scope: superadmin_scope)
+
+    assert Enum.map(taggings, &{&1.dimensions, &1.description}) == [
+             {%{"interest" => 4}, "Observed by superadmin"}
+           ]
+  end
+
   test "member profile table orders rows by highest interest first and shows blank missing sides",
        %{conn: conn} do
     %{group: group, membership: membership, owner: owner, user: user} = member_fixture()

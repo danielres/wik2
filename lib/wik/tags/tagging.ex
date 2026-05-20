@@ -138,6 +138,22 @@ defmodule Wik.Tags.Tagging do
     end
   end
 
+  calculations do
+    calculate :interest_level,
+              :integer,
+              expr(fragment("coalesce((?->>'interest')::int, 0)", dimensions)) do
+      public? true
+      filterable? false
+    end
+
+    calculate :skill_level,
+              :integer,
+              expr(fragment("coalesce((?->>'skill')::int, 0)", dimensions)) do
+      public? true
+      filterable? false
+    end
+  end
+
   identities do
     identity :unique_group_target_author_tag,
              [

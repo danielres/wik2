@@ -53,9 +53,9 @@ defmodule WikWeb.Components.MembershipTagging do
 
         <:col
           :let={tagging}
-          field="dimensions__interest"
+          field="interest_level"
           label={@interest_dimension.label}
-          sort={[cycle: [:desc, :asc]]}
+          sort={[cycle: [:desc_nils_last]]}
           class="w-32"
         >
           <.level_meter
@@ -69,9 +69,9 @@ defmodule WikWeb.Components.MembershipTagging do
 
         <:col
           :let={tagging}
-          field="dimensions__skill"
+          field="skill_level"
           label={@skill_dimension.label}
-          sort={[cycle: [:desc, :asc]]}
+          sort={[cycle: [:desc_nils_last]]}
           class="w-32"
         >
           <.level_meter

@@ -6,8 +6,6 @@ defmodule Wik.Tags do
       AshPhoenix
     ]
 
-  import Ash.Expr
-
   alias Ash.Query
   alias Utils.Log
   alias Wik.Accounts.GroupUserRelation
@@ -291,9 +289,8 @@ defmodule Wik.Tags do
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
     |> Query.load([:tag, :tagged_by_group_user_relation])
     |> Query.sort([
-      {calc(get_path(^ref(:dimensions), ^[:interest])), :desc},
-      {calc(get_path(^ref(:dimensions), ^[:skill])), :desc},
-      {"tag.name", :asc}
+      {"tag.name", :asc},
+      {:interest_level, :desc_nils_last}
     ])
   end
 end

@@ -5,7 +5,7 @@ defmodule WikWeb.Components.MembershipTagging do
 
   alias Wik.Tags.Dimensions
   alias Wik.Tags.Tagging
-  alias WikWeb.Cinder.Themes.Dense
+  alias WikWeb.Cinder.Themes.DenseNoSortIcons
   alias WikWeb.Components.UI
 
   attr :editable?, :boolean, required: true
@@ -23,20 +23,63 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div
       :if={@query != nil}
-      class="overflow-hidden rounded border border-base-300 bg-base-content/3"
+      class="overflow-hidden"
       data-testid="member-taggings-table"
     >
       <Cinder.collection
+        layout={:list}
         id="member-taggings"
         page_size={100}
         query={@query}
         scope={@scope}
-        show_filters={false}
+        show_filters={true}
         sort_mode="exclusive"
-        theme={Dense}
+        theme={DenseNoSortIcons}
         url_state={@url_state}
       >
-        <:col :let={tagging} field="tag.name" label="Tag" sort>
+        <:item :let={tagging}>
+          <div
+            data-testid={"member-tagging-edit-#{tagging.tag_id}"}
+            phx-click={@editable? && "tagging_edit_start"}
+            phx-value-tag_id={tagging.tag_id}
+            class="px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+          >
+            <div class="grid grid-cols-[1fr_6rem] gap-2 items-start">
+              <div class="text-sm" data-testid={"member-tagging-row-#{tagging.tag_id}"}>
+                <div data-testid={"member-tagging-name-#{tagging.tag_id}"}>
+                  {tagging.tag.name}
+                </div>
+              </div>
+
+              <div>
+                <.level_meter
+                  :if={dimension_level(tagging, "interest")}
+                  dimension={@interest_dimension}
+                  label={@interest_dimension.label}
+                  level={dimension_level(tagging, "interest")}
+                  testid={"member-tagging-interest-#{tagging.tag_id}"}
+                />
+
+                <.level_meter
+                  :if={dimension_level(tagging, "skill")}
+                  dimension={@skill_dimension}
+                  label={@skill_dimension.label}
+                  level={dimension_level(tagging, "skill")}
+                  testid={"member-tagging-skill-#{tagging.tag_id}"}
+                />
+              </div>
+            </div>
+            <div
+              :if={present?(tagging.description)}
+              class="text-xs/4 opacity-60 pr-2 space-y-2 max-w-prose-lg"
+              data-testid={"member-tagging-description-#{tagging.tag_id}"}
+            >
+              <.description_chunks description={tagging.description} />
+            </div>
+          </div>
+        </:item>
+
+        <:col :let={tagging} field="tag.name" label="Alphabetical" sort={[cycle: [:asc_nils_last]]}>
           <div class="" data-testid={"member-tagging-row-#{tagging.tag_id}"}>
             <div data-testid={"member-tagging-name-#{tagging.tag_id}"}>
               {tagging.tag.name}
@@ -46,7 +89,7 @@ defmodule WikWeb.Components.MembershipTagging do
               class="mt-1 text-xs opacity-60 max-h-20 overflow-y-auto pr-2 text-balance"
               data-testid={"member-tagging-description-#{tagging.tag_id}"}
             >
-              <div class="whitespace-pre-wrap">{tagging.description}</div>
+              <.description_chunks description={tagging.description} />
             </div>
           </div>
         </:col>
@@ -194,7 +237,7 @@ defmodule WikWeb.Components.MembershipTagging do
               <.icon name="hero-trash-mini" class="size-4" /> Delete
             </button>
 
-            <.button class="btn btn-primary" data-testid="member-tagging-submit" type="submit">
+            <.button class="btn btn-accent btn-soft" data-testid="member-tagging-submit" type="submit">
               {@action_label}
             </.button>
           </div>
@@ -213,7 +256,7 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div class="min-w-0 flex items-center gap-1">
       <div
-        class="tooltip"
+        class="tooltip leading-none"
         style={"--tt-bg: color-mix(#{@dimension.color} 0%, var(--color-base-300))"}
       >
         <div class="tooltip-content">
@@ -244,7 +287,7 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div class="space-y-0">
       <div class="flex items-center justify-between gap-2">
-        <label for={@field.id} class="text-sm font-medium">{@label}</label>
+        <label for={@field.id} class="label font-bold">{@label}</label>
         <span class="badge badge-sm bg-base-100">{@field.value || "0"}</span>
       </div>
 
@@ -278,6 +321,22 @@ defmodule WikWeb.Components.MembershipTagging do
 
   defp meter_value(_level, _max_level), do: 0
 
+  attr :description, :string, required: true
+
+  defp description_chunks(assigns) do
+    assigns = assign(assigns, :chunks, split_description(assigns.description))
+
+    ~H"""
+    <div :for={chunk <- @chunks}>{chunk}</div>
+    """
+  end
+
   defp present?(value) when is_binary(value), do: String.trim(value) != ""
   defp present?(_value), do: false
+
+  defp split_description(description) when is_binary(description) do
+    description
+    |> String.trim()
+    |> String.split(~r/\n+/, trim: true)
+  end
 end

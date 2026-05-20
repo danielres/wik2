@@ -108,6 +108,26 @@ defmodule Wik.Blocks.Types.MarkdownTest do
       assert updated_block.data == %{"text" => "[[node:1]]"}
     end
 
+    test "canonicalizes visible member wikilinks to canonical membership wikilinks", %{
+      scope: scope
+    } do
+      {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
+      wikilink_member_map = Jason.encode!(%{"alice" => "membership-1"})
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(
+                 block,
+                 %{
+                   "text" => "[[@alice]]",
+                   "wikilink_map" => Jason.encode!(%{}),
+                   "wikilink_member_map" => wikilink_member_map
+                 },
+                 scope: scope
+               )
+
+      assert updated_block.data == %{"text" => "[[member:membership-1]]"}
+    end
+
     test "raises when the submitted wikilink map is invalid", %{scope: scope} do
       {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
 
@@ -118,6 +138,20 @@ defmodule Wik.Blocks.Types.MarkdownTest do
           scope: scope
         )
       end
+    end
+
+    test "keeps canonical member wikilinks visible when building form params", %{scope: _scope} do
+      group = generate(group())
+      user = generate(user())
+      membership = add_membership(group, user, "alice")
+      block = %Block{data: %{"text" => "[[member:#{membership.id}]]"}, type: :markdown}
+
+      assert %{
+               "text" => "[[@alice]]",
+               "wikilink_member_map" => wikilink_member_map
+             } = Blocks.block_to_form_params(block, %{}, page_tree_fixture(group.id))
+
+      assert Jason.decode!(wikilink_member_map) == %{"alice" => membership.id}
     end
 
     test "keeps canonical wikilinks visible when building form params", %{scope: _scope} do
@@ -132,8 +166,26 @@ defmodule Wik.Blocks.Types.MarkdownTest do
     %Scope{actor: actor, tenant: tenant}
   end
 
-  defp page_tree_fixture do
+  defp add_membership(group, user, username) do
+    membership =
+      Ash.create!(
+        Wik.Accounts.GroupUserRelation,
+        %{group_id: group.id, type: :member, user_id: user.id},
+        authorize?: false,
+        domain: Wik.Accounts
+      )
+
+    Ash.update!(
+      membership,
+      %{username: username},
+      action: :set_username,
+      scope: scope(user, group)
+    )
+  end
+
+  defp page_tree_fixture(group_id \\ nil) do
     %PageTree{
+      group_id: group_id,
       nodes: [
         %Node{
           id: 1,

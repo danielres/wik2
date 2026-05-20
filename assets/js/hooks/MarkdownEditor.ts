@@ -14,6 +14,7 @@ import { markdownSelectionToolbar } from "./MarkdownEditor/selectionToolbar";
 
 type MarkdownEditorHook = {
   el: HTMLElement;
+  wikilinkMemberCompletions?: readonly Completion[];
   textarea?: HTMLTextAreaElement;
   view?: EditorView;
   wikilinkCompletions?: readonly Completion[];
@@ -39,18 +40,44 @@ function wikilinkCompletionsFor(editor: HTMLElement): readonly Completion[] {
   }));
 }
 
+function wikilinkMemberCompletionsFor(editor: HTMLElement): readonly Completion[] {
+  const usernames = JSON.parse(editor.dataset.memberWikilinkUsernames || "[]") as string[];
+
+  return usernames.map((username) => ({
+    label: `@${username}`,
+    apply: `@${username}]]`,
+    type: "text",
+  }));
+}
+
 function wikilinkCompletionSource(
   completions: readonly Completion[],
 ): (context: CompletionContext) => CompletionResult | null {
   return (context: CompletionContext): CompletionResult | null => {
     const before = context.matchBefore(/\[\[[^\]\n]*$/);
-    if (!before) return null;
+    if (!before || before.text.startsWith("[[@")) return null;
 
     return {
       from: before.from + 2,
       to: context.pos,
       options: completions,
       validFor: /^[^\]\n]*$/,
+    };
+  };
+}
+
+function memberWikilinkCompletionSource(
+  completions: readonly Completion[],
+): (context: CompletionContext) => CompletionResult | null {
+  return (context: CompletionContext): CompletionResult | null => {
+    const before = context.matchBefore(/\[\[@[^\]\n]*$/);
+    if (!before) return null;
+
+    return {
+      from: before.from + 2,
+      to: context.pos,
+      options: completions,
+      validFor: /^@[^\]\n]*$/,
     };
   };
 }
@@ -101,6 +128,7 @@ const markdownHighlightStyle = HighlightStyle.define([
 export const MarkdownEditor = {
   mounted(this: MarkdownEditorHook) {
     this.textarea = textareaFor(this.el);
+    this.wikilinkMemberCompletions = wikilinkMemberCompletionsFor(this.el);
     this.wikilinkCompletions = wikilinkCompletionsFor(this.el);
 
     this.view = new EditorView({
@@ -114,7 +142,10 @@ export const MarkdownEditor = {
         pasteHtmlAsMarkdown(),
         markdownSelectionToolbar(),
         autocompletion({
-          override: [wikilinkCompletionSource(this.wikilinkCompletions)],
+          override: [
+            memberWikilinkCompletionSource(this.wikilinkMemberCompletions),
+            wikilinkCompletionSource(this.wikilinkCompletions),
+          ],
           icons: false,
           closeOnBlur: false,
         }),

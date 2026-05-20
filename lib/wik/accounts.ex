@@ -117,6 +117,22 @@ defmodule Wik.Accounts do
     end
   end
 
+  def membership_id_to_username_map(group_id) when is_binary(group_id) do
+    group_id
+    |> memberships_with_usernames()
+    |> Map.new(&{&1.id, &1.username})
+  end
+
+  def membership_id_to_username_map(_group_id), do: %{}
+
+  def username_to_membership_id_map(group_id) when is_binary(group_id) do
+    group_id
+    |> memberships_with_usernames()
+    |> Map.new(&{&1.username, &1.id})
+  end
+
+  def username_to_membership_id_map(_group_id), do: %{}
+
   def present_membership(%GroupUserRelation{} = membership) do
     user = membership.user
     username = membership.username
@@ -139,4 +155,11 @@ defmodule Wik.Accounts do
 
   defp present_membership_display_name(_username, %User{} = user), do: to_string(user)
   defp present_membership_display_name(_username, _user), do: nil
+
+  defp memberships_with_usernames(group_id) do
+    GroupUserRelation
+    |> Ash.Query.filter(group_id == ^group_id and not is_nil(username))
+    |> Ash.Query.sort(username: :asc)
+    |> Ash.read!(authorize?: false, domain: __MODULE__)
+  end
 end

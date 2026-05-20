@@ -1,6 +1,7 @@
 defmodule Wik.Blocks.Types.Markdown do
   @behaviour Wik.Blocks.Types.Behaviour
 
+  alias Wik.Accounts
   alias Wik.Blocks.Versioning
   alias Wik.Wiki.PageTree.Wikilinks
 
@@ -20,19 +21,25 @@ defmodule Wik.Blocks.Types.Markdown do
     %{"text" => text} = block.data
 
     wikilink_map = page_tree.nodes |> Wikilinks.title_paths_to_node_id_map() |> Jason.encode!()
+    wikilink_member_map = page_tree |> wikilink_member_map() |> Jason.encode!()
 
     %{
-      "text" => Wikilinks.nodes_to_title_paths(text, page_tree),
-      "wikilink_map" => wikilink_map
+      "text" =>
+        text
+        |> Wikilinks.nodes_to_title_paths(page_tree)
+        |> Wikilinks.memberships_to_usernames(member_id_to_username_map(page_tree)),
+      "wikilink_map" => wikilink_map,
+      "wikilink_member_map" => wikilink_member_map
     }
   end
 
-  def block_to_form_params(
-        _block,
-        %{"text" => _text, "wikilink_map" => _wikilink_map} = params,
-        _page_tree
-      ) do
+  def block_to_form_params(_block, %{"text" => _text} = params, page_tree) do
     params
+    |> Map.put_new(
+      "wikilink_map",
+      page_tree.nodes |> Wikilinks.title_paths_to_node_id_map() |> Jason.encode!()
+    )
+    |> Map.put_new("wikilink_member_map", page_tree |> wikilink_member_map() |> Jason.encode!())
   end
 
   def update_block(block, params, opts) do
@@ -78,11 +85,13 @@ defmodule Wik.Blocks.Types.Markdown do
         _ -> nil
       end
 
-    text |> canonicalize_text(params["wikilink_map"])
+    text |> canonicalize_text(params["wikilink_map"], params["wikilink_member_map"])
   end
 
-  defp canonicalize_text(text, wikilink_map_json) when is_binary(text) do
-    {:ok, %{} = wikilink_map} = Jason.decode(wikilink_map_json)
+  defp canonicalize_text(text, wikilink_map_json, wikilink_member_map_json)
+       when is_binary(text) do
+    {:ok, %{} = wikilink_map} = Jason.decode(wikilink_map_json || "{}")
+    {:ok, %{} = wikilink_member_map} = Jason.decode(wikilink_member_map_json || "{}")
 
     text
     |> String.replace(~r/\r\n?/, "\n")
@@ -92,7 +101,18 @@ defmodule Wik.Blocks.Types.Markdown do
     |> String.trim()
     |> String.replace(~r/\n{3,}/, "\n\n")
     |> Wikilinks.title_paths_to_nodes(wikilink_map)
+    |> Wikilinks.usernames_to_memberships(wikilink_member_map)
   end
 
-  defp canonicalize_text(_text, _wikilink_map_json), do: ""
+  defp canonicalize_text(_text, _wikilink_map_json, _wikilink_member_map_json), do: ""
+
+  defp member_id_to_username_map(%{group_id: group_id}) when is_binary(group_id),
+    do: Accounts.membership_id_to_username_map(group_id)
+
+  defp member_id_to_username_map(_page_tree), do: %{}
+
+  defp wikilink_member_map(%{group_id: group_id}) when is_binary(group_id),
+    do: Accounts.username_to_membership_id_map(group_id)
+
+  defp wikilink_member_map(_page_tree), do: %{}
 end

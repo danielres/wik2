@@ -2,6 +2,8 @@ defmodule WikWeb.MemberProfileLive do
   use WikWeb, :live_view
   use WikWeb.Presence.Handlers
 
+  import Cinder.Refresh
+
   alias Utils.Log
   alias Wik.Accounts
   alias Wik.Tags
@@ -236,7 +238,7 @@ defmodule WikWeb.MemberProfileLive do
         :ok ->
           socket
           |> close_tagging_form()
-          |> try_reload_profile()
+          |> refresh_taggings()
           |> maybe_patch_to_profile()
 
         {:error, error} ->
@@ -259,7 +261,7 @@ defmodule WikWeb.MemberProfileLive do
           else: []
 
     if topic in watched_topics and socket.assigns.membership do
-      {:noreply, try_reload_profile(socket)}
+      {:noreply, refresh_taggings(socket)}
     else
       {:noreply, socket}
     end
@@ -485,14 +487,14 @@ defmodule WikWeb.MemberProfileLive do
   defp handle_saved_tagging(%{assigns: %{selected_tag_slug: tag_slug}} = socket)
        when is_binary(tag_slug) and tag_slug != "" do
     socket
-    |> try_reload_profile()
+    |> refresh_taggings()
     |> sync_tagging_modal()
   end
 
   defp handle_saved_tagging(socket) do
     socket
     |> close_tagging_form()
-    |> try_reload_profile()
+    |> refresh_taggings()
   end
 
   defp maybe_patch_to_profile(%{assigns: %{selected_tag_slug: tag_slug}} = socket)
@@ -503,6 +505,12 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   defp maybe_patch_to_profile(socket), do: socket
+
+  defp refresh_taggings(socket) do
+    socket
+    |> try_reload_profile()
+    |> refresh_table("member-taggings")
+  end
 
   defp member_profile_path(scope, membership) do
     ~p"/#{scope.tenant.slug}/wiki/members/#{membership.username}"

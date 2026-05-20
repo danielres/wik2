@@ -101,6 +101,41 @@ defmodule WikWeb.Components.MembershipTagging do
     """
   end
 
+  attr :membership, :map, required: true
+  attr :tagging, :map, required: true
+  attr :tenant, :map, required: true
+  attr :link?, :boolean, default: true
+
+  def tagging_title(assigns) do
+    ~H"""
+    <div class="items-center gap-2 grid grid-cols-[1fr_auto_1fr]">
+      <div class="flex justify-end">
+        <WikWeb.Components.User.avatar
+          link?={@links?}
+          membership={@membership}
+          size="lg"
+          tenant={@tenant}
+          tooltip?
+          tooltip_direction="left"
+        />
+      </div>
+
+      <.icon name="hero-arrows-right-left-micro" class="opacity-50" />
+
+      <UI.page_title class="text-lg flex justify-start">
+        <.link
+          :if={@links?}
+          navigate={@links? and ~p"/#{@tenant.slug}/tags/#{@tagging.tag.slug}"}
+          class="underline decoration-dashed underline-offset-4 decoration-base-content/60 hover:decoration-solid"
+        >
+          {@tagging.tag.name}
+        </.link>
+        <span :if={!@links?}>{@tagging.tag.name}</span>
+      </UI.page_title>
+    </div>
+    """
+  end
+
   attr :editable?, :boolean, required: true
   attr :membership, :map, required: true
   attr :tagging, :map, required: true
@@ -117,19 +152,12 @@ defmodule WikWeb.Components.MembershipTagging do
 
     ~H"""
     <div class="space-y-6" data-testid="member-tagging-details">
-      <div class="flex items-center gap-2">
-        <WikWeb.Components.User.avatar
-          membership={@membership}
-          size="md"
-          tenant={@tenant}
-          tooltip?
-          tooltip_direction="right"
-        />
-        <.icon name="hero-arrows-right-left-micro" />
-        <UI.page_title class="text-lg">
-          {@tagging.tag.name}
-        </UI.page_title>
-      </div>
+      <.tagging_title
+        membership={@membership}
+        tagging={@tagging}
+        tenant={@tenant}
+        links?={true}
+      />
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="space-y-1 rounded-box bg-base-200 px-4 py-3">
@@ -173,15 +201,11 @@ defmodule WikWeb.Components.MembershipTagging do
       </div>
 
       <div :if={@editable?} class="flex justify-end">
-        <button
-          class="btn btn-accent btn-soft"
+        <UI.button_edit
           data-testid={"member-tagging-edit-#{@tagging.tag_id}"}
           phx-click="tagging_edit_start"
           phx-value-tag_id={@tagging.tag_id}
-          type="button"
-        >
-          <.icon name="hero-pencil-mini" class="size-4" /> Edit
-        </button>
+        />
       </div>
     </div>
     """
@@ -193,15 +217,15 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :membership, :map, required: true
   attr :mode, :atom, required: true
   attr :options, :list, required: true
-  attr :tag_id, :string, default: nil
-  attr :tag_name, :string, default: nil
+  attr :tag, :map, default: nil
   attr :tenant, :map, required: true
 
   def form(assigns) do
     assigns =
       assign(assigns,
         interest_dimension: dimension("interest"),
-        skill_dimension: dimension("skill")
+        skill_dimension: dimension("skill"),
+        tagging_title_tagging: if(assigns.tag, do: %{tag: assigns.tag}, else: nil)
       )
 
     ~H"""
@@ -230,19 +254,13 @@ defmodule WikWeb.Components.MembershipTagging do
           />
 
           <div :if={@mode == :edit} class="space-y-1">
-            <div class="flex items-center gap-2">
-              <WikWeb.Components.User.avatar
-                membership={@membership}
-                size="md"
-                tenant={@tenant}
-                tooltip?
-                tooltip_direction="right"
-              />
-              <.icon name="hero-arrows-right-left-micro" />
-              <UI.page_title class="text-lg">
-                {@tag_name}
-              </UI.page_title>
-            </div>
+            <.tagging_title
+              :if={@tagging_title_tagging}
+              membership={@membership}
+              tagging={@tagging_title_tagging}
+              tenant={@tenant}
+              links?={false}
+            />
           </div>
 
           <.range_input
@@ -270,11 +288,11 @@ defmodule WikWeb.Components.MembershipTagging do
 
           <div class="flex items-center justify-between gap-2">
             <button
-              :if={@mode == :edit and @tag_id}
+              :if={@mode == :edit and @tag}
               class="btn btn-soft btn-error"
               data-testid="member-tagging-delete"
               phx-click="tagging_remove"
-              phx-value-tag_id={@tag_id}
+              phx-value-tag_id={@tag.id}
               type="button"
             >
               <.icon name="hero-trash-mini" class="size-4" /> Delete

@@ -132,6 +132,13 @@ defmodule Wik.Tags.Tagging do
       allow_nil? false
     end
 
+    belongs_to :target_membership, GroupUserRelation do
+      source_attribute :taggable_id
+      destination_attribute :id
+      allow_nil? false
+      attribute_writable? false
+    end
+
     belongs_to :tagged_by_group_user_relation, GroupUserRelation do
       destination_attribute :id
       allow_nil? false

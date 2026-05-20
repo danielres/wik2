@@ -6,6 +6,7 @@ defmodule WikWeb.TagLive do
   alias Utils.Log
   alias Wik.Tags
   alias Wik.Tags.Tag
+  alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Tag, as: TagComponent
   alias WikWeb.Components.UI
 
@@ -21,7 +22,8 @@ defmodule WikWeb.TagLive do
      |> assign(editable?: editable?)
      |> assign(editing?: false)
      |> assign(tag: nil)
-     |> assign(tag_form: nil)}
+     |> assign(tag_form: nil)
+     |> assign(taggings_query: nil)}
   end
 
   @impl true
@@ -31,6 +33,7 @@ defmodule WikWeb.TagLive do
         {:ok, tag} when not is_nil(tag) ->
           socket
           |> assign(:tag, tag)
+          |> assign(:taggings_query, Tags.tag_taggings_query(tag))
           |> maybe_sync_tag_form()
 
         {:ok, nil} ->
@@ -131,6 +134,12 @@ defmodule WikWeb.TagLive do
               </div>
             </div>
           </section>
+
+          <MembershipTagging.list_for_tag
+            query={@taggings_query}
+            scope={@current_scope}
+            tag={@tag}
+          />
         </div>
       </Layouts.group>
     </Layouts.app>

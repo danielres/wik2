@@ -5,6 +5,7 @@ defmodule WikWeb.Components.MembershipTagging do
 
   alias Wik.Tags.Dimensions
   alias Wik.Tags.Tagging
+  alias WikWeb.Components.User
   alias WikWeb.Cinder.Themes.DenseNoSortIcons
   alias WikWeb.Components.UI
 
@@ -101,6 +102,109 @@ defmodule WikWeb.Components.MembershipTagging do
     """
   end
 
+  attr :query, :any, required: true
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def list_for_tag(assigns) do
+    assigns =
+      assign(assigns,
+        interest_dimension: dimension("interest"),
+        skill_dimension: dimension("skill")
+      )
+
+    ~H"""
+    <div
+      :if={@query != nil}
+      class="overflow-hidden"
+      data-testid="tag-member-taggings-table"
+    >
+      <Cinder.collection
+        layout={:list}
+        id="tag-member-taggings"
+        page_size={100}
+        query={@query}
+        scope={@scope}
+        show_filters={true}
+        sort_mode="exclusive"
+        theme={DenseNoSortIcons}
+      >
+        <:col
+          field="target_membership.username"
+          label="Alphabetical"
+          sort={[cycle: [:asc_nils_last]]}
+        >
+        </:col>
+        <:col
+          field="interest_level"
+          label={@interest_dimension.label}
+          sort={[cycle: [:desc_nils_last]]}
+        >
+        </:col>
+        <:col
+          field="skill_level"
+          label={@skill_dimension.label}
+          sort={[cycle: [:desc_nils_last]]}
+        >
+        </:col>
+
+        <:item :let={tagging}>
+          <% interest_level = dimension_level(tagging, "interest") %>
+          <% skill_level = dimension_level(tagging, "skill") %>
+          <.link
+            navigate={member_tagging_path(@scope, tagging, @tag)}
+            data-testid={"tag-member-tagging-open-#{tagging.id}"}
+            class="block px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+          >
+            <div class="grid grid-cols-[1fr_6rem] gap-2 items-start">
+              <div class="min-w-0 text-sm" data-testid={"tag-member-tagging-row-#{tagging.id}"}>
+                <div
+                  class="flex items-center gap-3"
+                  data-testid={"tag-member-tagging-member-#{tagging.id}"}
+                >
+                  <User.avatar
+                    membership={tagging.target_membership}
+                    size="sm"
+                    tenant={@scope.tenant}
+                  />
+                  <div class="min-w-0">
+                    <div class="truncate">{tagging.target_membership.username}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <.level_meter
+                  :if={interest_level}
+                  dimension={@interest_dimension}
+                  label={@interest_dimension.label}
+                  level={interest_level}
+                  testid={"tag-member-tagging-interest-#{tagging.id}"}
+                />
+
+                <.level_meter
+                  :if={skill_level}
+                  dimension={@skill_dimension}
+                  label={@skill_dimension.label}
+                  level={skill_level}
+                  testid={"tag-member-tagging-skill-#{tagging.id}"}
+                />
+              </div>
+            </div>
+            <div
+              :if={present?(tagging.description)}
+              class="text-xs/4 opacity-60 pr-2 space-y-2 max-w-prose-lg mt-3"
+              data-testid={"tag-member-tagging-description-#{tagging.id}"}
+            >
+              <.description_chunks description={tagging.description} />
+            </div>
+          </.link>
+        </:item>
+      </Cinder.collection>
+    </div>
+    """
+  end
+
   attr :membership, :map, required: true
   attr :tagging, :map, required: true
   attr :tenant, :map, required: true
@@ -110,8 +214,8 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div class="items-center gap-2 grid grid-cols-[1fr_auto_1fr]">
       <div class="flex justify-end">
-        <WikWeb.Components.User.avatar
-          link?={@links?}
+        <User.avatar
+          link?={@link?}
           membership={@membership}
           size="lg"
           tenant={@tenant}
@@ -124,13 +228,13 @@ defmodule WikWeb.Components.MembershipTagging do
 
       <UI.page_title class="text-lg flex justify-start">
         <.link
-          :if={@links?}
-          navigate={@links? and ~p"/#{@tenant.slug}/tags/#{@tagging.tag.slug}"}
+          :if={@link?}
+          navigate={~p"/#{@tenant.slug}/tags/#{@tagging.tag.slug}"}
           class="underline decoration-dashed underline-offset-4 decoration-base-content/60 hover:decoration-solid"
         >
           {@tagging.tag.name}
         </.link>
-        <span :if={!@links?}>{@tagging.tag.name}</span>
+        <span :if={!@link?}>{@tagging.tag.name}</span>
       </UI.page_title>
     </div>
     """
@@ -156,7 +260,7 @@ defmodule WikWeb.Components.MembershipTagging do
         membership={@membership}
         tagging={@tagging}
         tenant={@tenant}
-        links?={true}
+        link?={true}
       />
 
       <div class="grid gap-3 sm:grid-cols-2">
@@ -259,7 +363,7 @@ defmodule WikWeb.Components.MembershipTagging do
               membership={@membership}
               tagging={@tagging_title_tagging}
               tenant={@tenant}
-              links?={false}
+              link?={false}
             />
           </div>
 
@@ -403,5 +507,9 @@ defmodule WikWeb.Components.MembershipTagging do
 
   defp tagging_path(scope, membership, tagging) do
     ~p"/#{scope.tenant.slug}/wiki/members/#{membership.username}/tag/#{tagging.tag.slug}"
+  end
+
+  defp member_tagging_path(scope, tagging, tag) do
+    ~p"/#{scope.tenant.slug}/wiki/members/#{tagging.target_membership.username}/tag/#{tag.slug}"
   end
 end

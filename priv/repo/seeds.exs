@@ -68,7 +68,8 @@ group =
         Group,
         %{
           description: "Seed group with two members",
-          name: "seed-group-two-members"
+          name: "Seed Group 2 members",
+          slug: "seed-group-2-members"
         },
         action: :create,
         actor: owner,

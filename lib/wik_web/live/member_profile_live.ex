@@ -1,6 +1,6 @@
 defmodule WikWeb.MemberProfileLive do
   use WikWeb, :live_view
-  use Cinder.UrlSync
+  # use Cinder.UrlSync
   use WikWeb.Presence.Handlers
 
   alias Utils.Log
@@ -32,8 +32,8 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   @impl true
-  def handle_params(%{"username" => username} = params, url, socket) do
-    socket = Cinder.UrlSync.handle_params(params, url, socket)
+  def handle_params(%{"username" => username}, url, socket) do
+    # socket = Cinder.UrlSync.handle_params(params, url, socket)
 
     socket =
       case if(socket.assigns.membership && socket.assigns.membership.username == username,
@@ -131,7 +131,6 @@ defmodule WikWeb.MemberProfileLive do
               editable?={@editable?}
               query={@taggings_query}
               scope={@current_scope}
-              url_state={@url_state}
             />
           </section>
         </div>

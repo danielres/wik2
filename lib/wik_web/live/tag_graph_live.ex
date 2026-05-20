@@ -56,10 +56,7 @@ defmodule WikWeb.TagGraphLive do
       <Layouts.group presences={@presences} scope={@current_scope} view="tags">
         <UI.page_title>Tags</UI.page_title>
 
-        <div
-          class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.8fr)]"
-          data-testid="tag-graph-page"
-        >
+        <div class="space-y-4" data-testid="tag-graph-page">
           <section class="space-y-4">
             <div class="mb-2 flex items-center justify-end gap-3 ">
               <ActionButtons.button
@@ -77,104 +74,25 @@ defmodule WikWeb.TagGraphLive do
               selected_tag_id={@selected_tag_id}
             />
           </section>
-
-          <aside class="space-y-4 mt-8">
-            <div class="card bg-base-200/60 shadow-sm">
-              <div class="card-body">
-                <%= if @selected_tag do %>
-                  <div class="" data-testid={"tag-detail-#{@selected_tag.id}"}>
-                    <div class="min-w-0">
-                      <UI.page_title class="text-lg font-[300]">
-                        {@selected_tag.name}
-                      </UI.page_title>
-
-                      <div class="mb-4 text-xs font-mono opacity-50">
-                        /{@selected_tag.slug}
-                      </div>
-
-                      <%= if @selected_tag.description in [nil, ""] do %>
-                        <span class="italic opacity-50">
-                          No description yet.
-                        </span>
-                      <% else %>
-                        <div class={[
-                          "max-h-30 overflow-y-auto rounded-box bg-base-100/70 p-3",
-                          "text-sm text-base-content/60 leading-tight"
-                        ]}>
-                          <div class="whitespace-pre-wrap">{@selected_tag.description}</div>
-                        </div>
-                      <% end %>
-                    </div>
-
-                    <div :if={@editable?} class="flex [&>*]:flex-grow gap-2 mt-4">
-                      <button
-                        class="btn btn-xs btn-soft btn-accent"
-                        data-testid="tag-detail-add-child"
-                        phx-click="create_child_start"
-                        phx-value-parent_tag_id={@selected_tag.id}
-                      >
-                        <.icon name="hero-plus-mini" class="size-3" /> Add child
-                      </button>
-
-                      <button
-                        :if={@eligible_children != []}
-                        class="btn btn-xs btn-soft btn-accent"
-                        data-testid="tag-link-child-start"
-                        phx-click="link_child_start"
-                        phx-value-tag_id={@selected_tag.id}
-                      >
-                        <.icon name="hero-link-mini" class="size-3" /> Link child
-                      </button>
-
-                      <button
-                        :if={@eligible_parents != []}
-                        class="btn btn-xs btn-soft btn-accent"
-                        data-testid="tag-link-parent-start"
-                        phx-click="link_parent_start"
-                        phx-value-tag_id={@selected_tag.id}
-                      >
-                        <.icon name="hero-link-mini" class="size-3" /> Link parent
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="mt-4 grid gap-1 md:grid-cols-2">
-                    <.detail_list
-                      title="Parents"
-                      empty="No parents."
-                      items={GraphQueries.parents_for(@graph, @selected_tag)}
-                      target_tag_id={@selected_tag.id}
-                    />
-
-                    <.detail_list
-                      title="Children"
-                      empty="No children."
-                      items={GraphQueries.children_for(@graph, @selected_tag)}
-                      target_tag_id={@selected_tag.id}
-                    />
-                  </div>
-
-                  <div
-                    :if={GraphQueries.children_for(@graph, @selected_tag) |> length() > 0}
-                    class="mt-4 space-y-2"
-                  >
-                    <h3 class="text-sm uppercase tracking-[0.18em] opacity-50">Descendants</h3>
-                    <TagTree.render
-                      editable?={false}
-                      nodes={@selected_descendants}
-                      selected_tag_id={@selected_tag_id}
-                    />
-                  </div>
-                <% else %>
-                  <UI.page_title class="mb-1 text-lg font-[300]">Tag details</UI.page_title>
-                  <p class="text-sm opacity-60" data-testid="tag-detail-empty">
-                    Select a tag to inspect its parents, children, and repeated descendant branches.
-                  </p>
-                <% end %>
-              </div>
-            </div>
-          </aside>
         </div>
+
+        <Modal.render
+          cancel="tag_detail_close"
+          cancel_testid="tag-detail-cancel"
+          open?={@selected_tag != nil}
+          testid="tag-detail-dialog"
+        >
+          <.tag_detail
+            :if={@selected_tag}
+            editable?={@editable?}
+            eligible_children={@eligible_children}
+            eligible_parents={@eligible_parents}
+            graph={@graph}
+            selected_descendants={@selected_descendants}
+            selected_tag={@selected_tag}
+            selected_tag_id={@selected_tag_id}
+          />
+        </Modal.render>
 
         <Modal.render
           cancel="tag_form_cancel"
@@ -238,6 +156,105 @@ defmodule WikWeb.TagGraphLive do
         >
           {tag.name}
         </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :editable?, :boolean, required: true
+  attr :eligible_children, :list, required: true
+  attr :eligible_parents, :list, required: true
+  attr :graph, :map, required: true
+  attr :selected_descendants, :list, required: true
+  attr :selected_tag, :map, required: true
+  attr :selected_tag_id, :string, required: true
+
+  defp tag_detail(assigns) do
+    assigns =
+      assign(assigns,
+        parents: GraphQueries.parents_for(assigns.graph, assigns.selected_tag),
+        children: GraphQueries.children_for(assigns.graph, assigns.selected_tag)
+      )
+
+    ~H"""
+    <div class="space-y-4" data-testid={"tag-detail-#{@selected_tag.id}"}>
+      <div class="min-w-0">
+        <UI.page_title class="text-lg font-[300]">
+          {@selected_tag.name}
+        </UI.page_title>
+
+        <div class="mb-4 text-xs font-mono opacity-50">
+          /{@selected_tag.slug}
+        </div>
+
+        <%= if @selected_tag.description in [nil, ""] do %>
+          <span class="italic opacity-50">
+            No description yet.
+          </span>
+        <% else %>
+          <div class={[
+            "max-h-30 overflow-y-auto rounded-box bg-base-100/70 p-3",
+            "text-sm text-base-content/60 leading-tight"
+          ]}>
+            <div class="whitespace-pre-wrap">{@selected_tag.description}</div>
+          </div>
+        <% end %>
+      </div>
+
+      <div :if={@editable?} class="flex flex-wrap gap-2 [&>*]:flex-grow">
+        <button
+          class="btn btn-xs btn-soft btn-accent"
+          data-testid="tag-detail-add-child"
+          phx-click="create_child_start"
+          phx-value-parent_tag_id={@selected_tag.id}
+        >
+          <.icon name="hero-plus-mini" class="size-3" /> Add child
+        </button>
+
+        <button
+          :if={@eligible_children != []}
+          class="btn btn-xs btn-soft btn-accent"
+          data-testid="tag-link-child-start"
+          phx-click="link_child_start"
+          phx-value-tag_id={@selected_tag.id}
+        >
+          <.icon name="hero-link-mini" class="size-3" /> Link child
+        </button>
+
+        <button
+          :if={@eligible_parents != []}
+          class="btn btn-xs btn-soft btn-accent"
+          data-testid="tag-link-parent-start"
+          phx-click="link_parent_start"
+          phx-value-tag_id={@selected_tag.id}
+        >
+          <.icon name="hero-link-mini" class="size-3" /> Link parent
+        </button>
+      </div>
+
+      <div class="grid gap-2 md:grid-cols-2">
+        <.detail_list
+          title="Parents"
+          empty="No parents."
+          items={@parents}
+          target_tag_id={@selected_tag.id}
+        />
+
+        <.detail_list
+          title="Children"
+          empty="No children."
+          items={@children}
+          target_tag_id={@selected_tag.id}
+        />
+      </div>
+
+      <div :if={@children != []} class="space-y-2">
+        <h3 class="text-sm uppercase tracking-[0.18em] opacity-50">Descendants</h3>
+        <TagTree.render
+          editable?={false}
+          nodes={@selected_descendants}
+          selected_tag_id={@selected_tag_id}
+        />
       </div>
     </div>
     """
@@ -330,6 +347,10 @@ defmodule WikWeb.TagGraphLive do
   @impl true
   def handle_event("select_tag", %{"tag_id" => tag_id}, socket) do
     {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.group.slug}/tags?#{%{tag: tag_id}}")}
+  end
+
+  def handle_event("tag_detail_close", _params, socket) do
+    {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.group.slug}/tags")}
   end
 
   def handle_event("create_root_start", _params, socket) do

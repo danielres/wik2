@@ -39,7 +39,7 @@ defmodule WikWeb.Cinder.Themes.Dense do
 
   # Table
   set :container_class, "card"
-  set :controls_class, "mb-2"
+  set :controls_class, "mb-1"
   set :table_wrapper_class, "overflow-x-auto bg-base-200 rounded-box"
   set :table_class, "table table-zebra w-full"
   set :thead_class, ""

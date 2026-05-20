@@ -171,6 +171,16 @@ defmodule WikWeb.Components.UI do
   end
 
   # modal ======================================================================
+  attr :class, :string, default: ""
+  slot :inner_block, required: true
+
+  def modal_title(assigns) do
+    ~H"""
+    <h1 class={["text-xl", @class]}>
+      {render_slot(@inner_block)}
+    </h1>
+    """
+  end
 
   def modal_open(js \\ %JS{}, id), do: js |> JS.add_class("modal-open", to: "##{id}_modal")
   def modal_close(js \\ %JS{}, id), do: js |> JS.remove_class("modal-open", to: "##{id}_modal")

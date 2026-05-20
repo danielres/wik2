@@ -58,7 +58,7 @@ member =
 
 group =
   case Group
-       |> Query.filter(name == "seed-group-two-members")
+       |> Query.filter(name == "Seed Group 2 members")
        |> Ash.read_one(authorize?: false, domain: Accounts) do
     {:ok, %Group{} = group} ->
       group
@@ -193,4 +193,99 @@ case Grant
       authorize?: false,
       domain: Access
     )
+end
+
+many_members_group =
+  case Group
+       |> Query.filter(name == "Seed Group 25 members")
+       |> Ash.read_one(authorize?: false, domain: Accounts) do
+    {:ok, %Group{} = group} ->
+      group
+
+    {:ok, nil} ->
+      Ash.create!(
+        Group,
+        %{
+          description: "Seed group with twenty-five members",
+          name: "Seed Group 25 members",
+          slug: "seed-group-25-members"
+        },
+        action: :create,
+        actor: owner,
+        authorize?: false,
+        domain: Accounts
+      )
+  end
+
+many_members_owner_membership =
+  case GroupUserRelation
+       |> Query.filter(group_id == ^many_members_group.id and user_id == ^owner.id)
+       |> Ash.read_one(authorize?: false, domain: Accounts) do
+    {:ok, %GroupUserRelation{} = membership} ->
+      membership
+
+    {:ok, nil} ->
+      raise "Expected owner membership to exist for 25-member seeded group"
+  end
+
+if many_members_owner_membership.username != "owner" do
+  Ash.update!(
+    many_members_owner_membership,
+    %{username: "owner"},
+    action: :set_username,
+    authorize?: false,
+    domain: Accounts
+  )
+end
+
+for index <- 1..25 do
+  username = "m#{index}"
+  email = "seed-#{username}@example.com"
+
+  user =
+    case User
+         |> Query.filter(email == ^email)
+         |> Ash.read_one(authorize?: false, domain: Accounts) do
+      {:ok, %User{} = user} ->
+        user
+
+      {:ok, nil} ->
+        Ash.create!(
+          User,
+          %{email: email, role: :user},
+          action: :create_dev_user,
+          authorize?: false,
+          domain: Accounts
+        )
+    end
+
+  membership =
+    case GroupUserRelation
+         |> Query.filter(group_id == ^many_members_group.id and user_id == ^user.id)
+         |> Ash.read_one(authorize?: false, domain: Accounts) do
+      {:ok, %GroupUserRelation{} = membership} ->
+        membership
+
+      {:ok, nil} ->
+        Ash.create!(
+          GroupUserRelation,
+          %{
+            group_id: many_members_group.id,
+            type: :member,
+            user_id: user.id
+          },
+          authorize?: false,
+          domain: Accounts
+        )
+    end
+
+  if membership.username != username do
+    Ash.update!(
+      membership,
+      %{username: username},
+      action: :set_username,
+      authorize?: false,
+      domain: Accounts
+    )
+  end
 end

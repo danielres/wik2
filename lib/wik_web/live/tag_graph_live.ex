@@ -9,6 +9,7 @@ defmodule WikWeb.TagGraphLive do
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
   alias WikWeb.Components.Modal
+  alias WikWeb.Components.Tag, as: TagComponent
   alias WikWeb.Components.UI
   alias WikWeb.TagGraphLive.Components.TagTree
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
@@ -111,9 +112,11 @@ defmodule WikWeb.TagGraphLive do
           open?={@tag_form != nil}
           testid="tag-form-dialog"
         >
-          <.tag_form
+          <TagComponent.form
             :if={@tag_form != nil}
             action_label={tag_form_action_label(@tag_form_mode)}
+            event_submit="tag_submit"
+            event_validate="tag_validate"
             form={@tag_form}
           />
         </Modal.render>
@@ -269,47 +272,6 @@ defmodule WikWeb.TagGraphLive do
           selected_tag_id={@selected_tag_id}
         />
       </div>
-    </div>
-    """
-  end
-
-  attr :action_label, :string, required: true
-  attr :form, :any, required: true
-
-  defp tag_form(assigns) do
-    auto_slug = assigns.form[:name].value |> Utils.Slugify.generate()
-    form_errors = AshPhoenix.Form.errors(assigns.form)
-    assigns = assign(assigns, auto_slug: auto_slug, form_errors: form_errors)
-
-    ~H"""
-    <div data-testid="tag-form">
-      <.form
-        autocomplete="off"
-        data-testid="tag-form-form"
-        for={@form}
-        phx-change="tag_validate"
-        phx-submit="tag_submit"
-      >
-        <div class="space-y-3 rounded-box bg-base-100 p-4">
-          <.input field={@form[:name]} label="Name" phx-hook="CapitalizeFirstLetter" />
-          <.input hidden field={@form[:slug]} value={@auto_slug} />
-
-          <UI.Forms.autoslug_preview
-            source_value={@form[:name].value}
-            data-testid={tag_autoslug_testid(@auto_slug)}
-          />
-
-          <.error :for={{field, _message} <- @form_errors} :if={field == :slug and @auto_slug != ""}>
-            This tag name is not available.
-          </.error>
-
-          <.input field={@form[:description]} label="Description" type="textarea" />
-
-          <.button class="btn btn-primary" data-testid="tag-form-submit" type="submit">
-            {@action_label}
-          </.button>
-        </div>
-      </.form>
     </div>
     """
   end
@@ -625,9 +587,6 @@ defmodule WikWeb.TagGraphLive do
 
   defp tag_form_action_label(:edit), do: "Update tag"
   defp tag_form_action_label(_mode), do: "Create tag"
-
-  defp tag_autoslug_testid(""), do: "tag-autoslug-empty"
-  defp tag_autoslug_testid(auto_slug), do: "tag-autoslug-#{auto_slug}"
 
   defp nil_if_selected(selected_tag_id, selected_tag_id), do: nil
   defp nil_if_selected(selected_tag_id, _deleted_tag_id), do: selected_tag_id

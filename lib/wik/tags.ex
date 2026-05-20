@@ -234,7 +234,7 @@ defmodule Wik.Tags do
     Tagging
     |> Query.filter(tag_id == ^tag.id and taggable_type == "group_user_relation")
     |> Query.load([:tag, target_membership: [:avatar_url, :user]])
-    |> Query.sort(interest_level: :desc)
+    |> Query.sort(interest_level: :desc, skill_level: :desc)
   end
 
   def list_group_tags(scope) do
@@ -295,6 +295,6 @@ defmodule Wik.Tags do
     Tagging
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
     |> Query.load([:tag, :tagged_by_group_user_relation])
-    |> Query.sort(interest_level: :desc)
+    |> Query.sort(interest_level: :desc, skill_level: :desc)
   end
 end

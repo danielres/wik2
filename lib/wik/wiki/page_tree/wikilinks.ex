@@ -1,4 +1,5 @@
 defmodule Wik.Wiki.PageTree.Wikilinks do
+  alias Wik.Tags.Tag
   alias Wik.Wiki.PageTree
   alias Wik.Wiki.PageTree.Node
   alias Wik.Wiki.PageTree.TreeQueries
@@ -7,6 +8,7 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
   @visible_wikilink_regex ~r/\[\[([^\]\n]+)\]\]/
   @node_wikilink_regex ~r/\[\[node:(\d+)\]\]/
   @member_wikilink_regex ~r/\[\[member:([^\]\n]+)\]\]/
+  @tag_wikilink_regex ~r/\[\[tag:([^\]\n]+)\]\]/
 
   @spec replace_visible(String.t(), (String.t(), String.t() -> String.t())) :: String.t()
   def replace_visible(markdown, replacement)
@@ -70,6 +72,40 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
     end)
   end
 
+  @spec tag_names_to_tags(String.t(), %{String.t() => String.t()}) :: String.t()
+  def tag_names_to_tags(markdown, tag_name_to_tag_id_map)
+      when is_binary(markdown) and is_map(tag_name_to_tag_id_map) do
+    replace_visible(markdown, fn wikilink, path ->
+      path = String.trim(path)
+      tag_name = path |> String.trim_leading("#") |> String.trim()
+
+      cond do
+        tag_name == "" ->
+          wikilink
+
+        tag_name == path ->
+          wikilink
+
+        tag_id = Map.get(tag_name_to_tag_id_map, tag_name) ->
+          "[[tag:#{tag_id}]]"
+
+        true ->
+          wikilink
+      end
+    end)
+  end
+
+  @spec tags_to_tag_names(String.t(), %{String.t() => String.t()}) :: String.t()
+  def tags_to_tag_names(markdown, tag_id_to_tag_name_map)
+      when is_binary(markdown) and is_map(tag_id_to_tag_name_map) do
+    Regex.replace(@tag_wikilink_regex, markdown, fn wikilink, tag_id ->
+      case Map.get(tag_id_to_tag_name_map, tag_id) do
+        nil -> wikilink
+        tag_name -> "[[#{"#" <> tag_name}]]"
+      end
+    end)
+  end
+
   @spec title_paths_to_node_id_map([Node.t()]) :: %{String.t() => integer()}
   def title_paths_to_node_id_map(nodes) when is_list(nodes) do
     nodes
@@ -86,6 +122,25 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
     |> Map.new(fn node ->
       {TreeQueries.get_node_title_path(nodes, node.id), TreeQueries.get_node_path(nodes, node.id)}
     end)
+  end
+
+  @spec tag_names_to_tag_id_map([Tag.t()]) :: %{String.t() => String.t()}
+  def tag_names_to_tag_id_map(tags) when is_list(tags) do
+    tags
+    |> unique_tags_by_name()
+    |> Map.new(&{&1.name, &1.id})
+  end
+
+  @spec tag_names_to_slug_map([Tag.t()]) :: %{String.t() => String.t()}
+  def tag_names_to_slug_map(tags) when is_list(tags) do
+    tags
+    |> unique_tags_by_name()
+    |> Map.new(&{&1.name, &1.slug})
+  end
+
+  @spec tag_ids_to_tag_names_map([Tag.t()]) :: %{String.t() => String.t()}
+  def tag_ids_to_tag_names_map(tags) when is_list(tags) do
+    Map.new(tags, &{&1.id, &1.name})
   end
 
   @spec slug_path_from_title_path(String.t()) :: String.t() | nil
@@ -110,6 +165,16 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
       {"", _nodes} -> []
       {_title_path, [node]} -> [node]
       {_title_path, _nodes} -> []
+    end)
+  end
+
+  defp unique_tags_by_name(tags) do
+    tags
+    |> Enum.filter(&(is_binary(&1.name) and &1.name != ""))
+    |> Enum.group_by(& &1.name)
+    |> Enum.flat_map(fn
+      {_name, [%Tag{} = tag]} -> [tag]
+      _other -> []
     end)
   end
 end

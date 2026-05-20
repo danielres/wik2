@@ -128,6 +128,46 @@ defmodule Wik.Blocks.Types.MarkdownTest do
       assert updated_block.data == %{"text" => "[[member:membership-1]]"}
     end
 
+    test "canonicalizes visible tag wikilinks to canonical tag wikilinks", %{scope: scope} do
+      {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
+      wikilink_tag_map = Jason.encode!(%{"Dance" => "tag-1"})
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(
+                 block,
+                 %{
+                   "text" => "[[#Dance]]",
+                   "wikilink_map" => Jason.encode!(%{}),
+                   "wikilink_tag_map" => wikilink_tag_map
+                 },
+                 scope: scope
+               )
+
+      assert updated_block.data == %{"text" => "[[tag:tag-1]]"}
+    end
+
+    test "canonicalizes mixed page, member, and tag wikilinks in one markdown document", %{
+      scope: scope
+    } do
+      {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(
+                 block,
+                 %{
+                   "text" => "[[Soups]] [[@alice]] [[#Dance]]",
+                   "wikilink_map" => Jason.encode!(%{"Soups" => 1}),
+                   "wikilink_member_map" => Jason.encode!(%{"alice" => "membership-1"}),
+                   "wikilink_tag_map" => Jason.encode!(%{"Dance" => "tag-1"})
+                 },
+                 scope: scope
+               )
+
+      assert updated_block.data == %{
+               "text" => "[[node:1]] [[member:membership-1]] [[tag:tag-1]]"
+             }
+    end
+
     test "raises when the submitted wikilink map is invalid", %{scope: scope} do
       {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
 
@@ -135,6 +175,18 @@ defmodule Wik.Blocks.Types.MarkdownTest do
         Blocks.update_block(
           block,
           %{"text" => "[[Soups]]", "wikilink_map" => "not-json"},
+          scope: scope
+        )
+      end
+    end
+
+    test "raises when the submitted tag wikilink map is invalid", %{scope: scope} do
+      {:ok, block} = Blocks.create_user_owned_block(%{type: :markdown}, scope: scope)
+
+      assert_raise MatchError, fn ->
+        Blocks.update_block(
+          block,
+          %{"text" => "[[#Dance]]", "wikilink_tag_map" => "not-json"},
           scope: scope
         )
       end
@@ -152,6 +204,21 @@ defmodule Wik.Blocks.Types.MarkdownTest do
              } = Blocks.block_to_form_params(block, %{}, page_tree_fixture(group.id))
 
       assert Jason.decode!(wikilink_member_map) == %{"alice" => membership.id}
+    end
+
+    test "keeps canonical tag wikilinks visible when building form params", %{scope: _scope} do
+      owner = generate(user())
+      group = generate(group(author: owner))
+      add_owner_membership(group, owner)
+      {:ok, tag} = Wik.Tags.create_tag("dance", "Dance", nil, scope: scope(owner, group))
+      block = %Block{data: %{"text" => "[[tag:#{tag.id}]]"}, type: :markdown}
+
+      assert %{
+               "text" => "[[#Dance]]",
+               "wikilink_tag_map" => wikilink_tag_map
+             } = Blocks.block_to_form_params(block, %{}, page_tree_fixture(group.id))
+
+      assert Jason.decode!(wikilink_tag_map) == %{"Dance" => tag.id}
     end
 
     test "keeps canonical wikilinks visible when building form params", %{scope: _scope} do
@@ -180,6 +247,15 @@ defmodule Wik.Blocks.Types.MarkdownTest do
       %{username: username},
       action: :set_username,
       scope: scope(user, group)
+    )
+  end
+
+  defp add_owner_membership(group, user) do
+    Ash.create!(
+      Wik.Accounts.GroupUserRelation,
+      %{group_id: group.id, type: :owner, user_id: user.id},
+      authorize?: false,
+      domain: Wik.Accounts
     )
   end
 

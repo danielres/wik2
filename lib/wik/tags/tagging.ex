@@ -22,6 +22,10 @@ defmodule Wik.Tags.Tagging do
     references do
       reference :tag, on_delete: :delete, match_with: [group_id: :group_id]
 
+      reference :target_membership,
+        on_delete: :delete,
+        match_with: [group_id: :group_id]
+
       reference :tagged_by_group_user_relation,
         on_delete: :delete,
         match_with: [group_id: :group_id]

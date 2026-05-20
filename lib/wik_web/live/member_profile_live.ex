@@ -307,7 +307,8 @@ defmodule WikWeb.MemberProfileLive do
     current_membership =
       socket.assigns.tenant_context && socket.assigns.tenant_context.current_membership
 
-    profile_state = profile_state(membership, taggings, current_membership)
+    profile_state =
+      profile_state(membership, taggings, current_membership, socket.assigns.current_scope.actor)
 
     socket
     |> assign(:available_tags, available_tags)
@@ -409,9 +410,11 @@ defmodule WikWeb.MemberProfileLive do
     end)
   end
 
-  defp profile_state(membership, taggings, current_membership) do
+  defp profile_state(membership, taggings, current_membership, actor) do
     %{
-      editable?: current_membership && current_membership.id == membership.id,
+      editable?:
+        (current_membership && current_membership.id == membership.id) ||
+          actor_superadmin?(actor),
       subscribed_group_id: membership.group_id,
       subscribed_target_id: membership.id,
       tagging_count: length(taggings)
@@ -439,6 +442,9 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   defp dimension_level(_tagging, _key), do: nil
+
+  defp actor_superadmin?(%{role: :superadmin}), do: true
+  defp actor_superadmin?(_actor), do: false
 
   defp parse_level(params, key) do
     case Integer.parse(Map.get(params, key, "0")) do

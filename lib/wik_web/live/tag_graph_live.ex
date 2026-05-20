@@ -79,6 +79,7 @@ defmodule WikWeb.TagGraphLive do
 
             <TagTree.render
               editing?={@editing?}
+              group_slug={@group.slug}
               nodes={@graph.root_tree}
               selected_tag_id={@selected_tag_id}
             />
@@ -97,6 +98,7 @@ defmodule WikWeb.TagGraphLive do
             eligible_children={@eligible_children}
             eligible_parents={@eligible_parents}
             graph={@graph}
+            group_slug={@group.slug}
             selected_descendants={@selected_descendants}
             selected_tag={@selected_tag}
             selected_tag_id={@selected_tag_id}
@@ -174,6 +176,7 @@ defmodule WikWeb.TagGraphLive do
   attr :eligible_children, :list, required: true
   attr :eligible_parents, :list, required: true
   attr :graph, :map, required: true
+  attr :group_slug, :string, required: true
   attr :selected_descendants, :list, required: true
   attr :selected_tag, :map, required: true
   attr :selected_tag_id, :string, required: true
@@ -261,6 +264,7 @@ defmodule WikWeb.TagGraphLive do
         <h3 class="text-sm uppercase tracking-[0.18em] opacity-50">Descendants</h3>
         <TagTree.render
           editing?={false}
+          group_slug={@group_slug}
           nodes={@selected_descendants}
           selected_tag_id={@selected_tag_id}
         />

@@ -126,7 +126,7 @@ defmodule WikWeb.TagLive do
                 class="rounded-box opacity-80"
                 data-testid="tag-page-description"
               >
-                <div class="whitespace-pre-wrapt">{@tag.description}</div>
+                <div class="whitespace-pre-wrap">{@tag.description}</div>
               </div>
 
               <div :if={@tag.description in [nil, ""]} class="italic opacity-50">

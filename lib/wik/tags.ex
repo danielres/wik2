@@ -288,9 +288,6 @@ defmodule Wik.Tags do
     Tagging
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
     |> Query.load([:tag, :tagged_by_group_user_relation])
-    |> Query.sort([
-      {"tag.name", :asc},
-      {:interest_level, :desc_nils_last}
-    ])
+    |> Query.sort(interest_level: :desc)
   end
 end

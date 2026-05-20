@@ -8,7 +8,9 @@ defmodule Wik.Tags do
 
   alias Ash.Query
   alias Utils.Log
+  alias Wik.Accounts.Group
   alias Wik.Accounts.GroupUserRelation
+  alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
@@ -243,6 +245,30 @@ defmodule Wik.Tags do
     |> Ash.read(scope: scope)
   end
 
+  def tag_id_to_name_map(group_id) when is_binary(group_id) do
+    group_id
+    |> tags_with_names()
+    |> Wikilinks.tag_ids_to_tag_names_map()
+  end
+
+  def tag_id_to_name_map(_group_id), do: %{}
+
+  def tag_name_to_id_map(group_id) when is_binary(group_id) do
+    group_id
+    |> tags_with_names()
+    |> Wikilinks.tag_names_to_tag_id_map()
+  end
+
+  def tag_name_to_id_map(_group_id), do: %{}
+
+  def tag_name_to_slug_map(group_id) when is_binary(group_id) do
+    group_id
+    |> tags_with_names()
+    |> Wikilinks.tag_names_to_slug_map()
+  end
+
+  def tag_name_to_slug_map(_group_id), do: %{}
+
   def upsert_membership_tagging(%GroupUserRelation{} = membership, tag_id, attrs, opts \\ []) do
     upsert_tagging(
       "group_user_relation",
@@ -296,5 +322,17 @@ defmodule Wik.Tags do
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
     |> Query.load([:tag, :tagged_by_group_user_relation])
     |> Query.sort(interest_level: :desc, skill_level: :desc)
+  end
+
+  defp tags_with_names(group_id) do
+    group =
+      Group
+      |> Query.filter(id == ^group_id)
+      |> Ash.read_one!(authorize?: false, domain: Wik.Accounts)
+
+    Tag
+    |> Query.filter(group_id == ^group_id and not is_nil(name))
+    |> Query.sort(name: :asc)
+    |> Ash.read!(authorize?: false, domain: __MODULE__, tenant: group)
   end
 end

@@ -148,7 +148,8 @@ defmodule WikWeb.Components.Tag do
   attr :form, :any, required: true
 
   def form(assigns) do
-    auto_slug = assigns.form[:name].value |> Utils.Slugify.generate()
+    name_value = assigns.form[:name].value || ""
+    auto_slug = Utils.Slugify.generate(name_value)
     form_errors = AshPhoenix.Form.errors(assigns.form)
     assigns = assign(assigns, auto_slug: auto_slug, form_errors: form_errors)
 

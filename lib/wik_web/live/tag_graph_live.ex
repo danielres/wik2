@@ -270,11 +270,13 @@ defmodule WikWeb.TagGraphLive do
             {:noreply,
              socket
              |> close_tag_form()
-             |> refresh_graph(tag.id)}
+             |> refresh_graph(socket.assigns.selected_tag_id)}
 
           {:error, error} ->
             Log.scoped_error(scope, error, "tag link after create failed")
-            {:noreply, socket |> close_tag_form() |> refresh_graph(tag.id)}
+
+            {:noreply,
+             socket |> close_tag_form() |> refresh_graph(socket.assigns.selected_tag_id)}
         end
 
       {:error, form} ->

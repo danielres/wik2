@@ -154,6 +154,13 @@ defmodule WikWeb.Components.Content do
               name="hero-exclamation-triangle-micro"
               class="mt-0.5 size-4 text-base-content/40 shrink-0"
             />
+            <span>You must be 18 years of age or older to access this platform.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <.icon
+              name="hero-exclamation-triangle-micro"
+              class="mt-0.5 size-4 text-base-content/40 shrink-0"
+            />
             <span>No political content, campaigning, or activism on this hosted instance.</span>
           </li>
           <li class="flex items-start gap-2">
@@ -161,10 +168,7 @@ defmodule WikWeb.Components.Content do
               name="hero-exclamation-triangle-micro"
               class="mt-0.5 size-4 text-base-content/40 shrink-0"
             />
-            <div>
-              <div>Harassment, intimidation, or abuse is not allowed.</div>
-              <div>Treat other users respectfully.</div>
-            </div>
+            <span>Harassment, intimidation, or abuse are not allowed.</span>
           </li>
           <li class="flex items-start gap-2">
             <.icon
@@ -174,6 +178,13 @@ defmodule WikWeb.Components.Content do
             <span>
               You are responsible for the content you post, publish, upload, or relay through the service.
             </span>
+          </li>
+          <li class="flex items-start gap-2">
+            <.icon
+              name="hero-check-badge-micro"
+              class="mt-0.5 size-4 text-base-content/40 shrink-0"
+            />
+            <span>Treat other users respectfully.</span>
           </li>
         </ul>
 

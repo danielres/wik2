@@ -46,6 +46,7 @@ defmodule WikWeb.TagGraphLiveTest do
 
     {:ok, child} = Tags.get_tag_by_slug("partner-dance", scope: scope)
     assert has_element?(view, testid("tag-branch-tag-path-#{child.id}"))
+    refute has_element?(view, testid("tag-detail-#{child.id}"))
 
     render_click(element(view, testid("tag-edit-tag-path-#{child.id}")))
 

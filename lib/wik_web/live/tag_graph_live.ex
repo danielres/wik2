@@ -337,24 +337,21 @@ defmodule WikWeb.TagGraphLive do
 
   def handle_event("link_submit", %{"link" => %{"target_tag_id" => target_tag_id}}, socket) do
     scope = socket.assigns.current_scope
-    current_tag = socket.assigns.selected_tag
-
-    {parent_tag_id, child_tag_id} =
-      case socket.assigns.link_form_mode do
-        :child -> {current_tag.id, target_tag_id}
-        :parent -> {target_tag_id, current_tag.id}
-      end
+    current_tag = link_form_tag(socket)
 
     socket =
-      case Tags.link_tags(parent_tag_id, child_tag_id, scope: scope) do
-        {:ok, _edge} ->
-          socket
-          |> close_link_form()
-          |> refresh_graph(current_tag.id)
+      case {current_tag, socket.assigns.link_form_mode, target_tag_id} do
+        {nil, _mode, _target_tag_id} ->
+          assign(socket, link_form_error: "The selected tag is no longer available.")
 
-        {:error, error} ->
-          Log.scoped_error(scope, error, "tag link failed")
-          assign(socket, link_form_error: "Could not link those tags.")
+        {_tag, _mode, ""} ->
+          assign(socket, link_form_error: "Please select a tag.")
+
+        {%Tag{} = current_tag, :child, target_tag_id} ->
+          submit_link(socket, current_tag.id, target_tag_id, current_tag.id, scope)
+
+        {%Tag{} = current_tag, :parent, target_tag_id} ->
+          submit_link(socket, target_tag_id, current_tag.id, current_tag.id, scope)
       end
 
     {:noreply, socket}
@@ -408,6 +405,24 @@ defmodule WikWeb.TagGraphLive do
     |> assign(link_form_tag_id: tag_id)
     |> assign(link_form_error: nil)
     |> refresh_graph(tag_id)
+  end
+
+  defp link_form_tag(socket) do
+    socket.assigns.link_form_tag_id &&
+      Map.get(socket.assigns.graph.tags_by_id, socket.assigns.link_form_tag_id)
+  end
+
+  defp submit_link(socket, parent_tag_id, child_tag_id, selected_tag_id, scope) do
+    case Tags.link_tags(parent_tag_id, child_tag_id, scope: scope) do
+      {:ok, _edge} ->
+        socket
+        |> close_link_form()
+        |> refresh_graph(selected_tag_id)
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag link failed")
+        assign(socket, link_form_error: "Could not link those tags.")
+    end
   end
 
   defp close_link_form(socket) do

@@ -144,6 +144,7 @@ defmodule WikWeb.Router do
         scope "/wiki" do
           get "/", WikiRedirectController, :home
           live "/members/:username", MemberProfileLive, :show
+          live "/members/:username/tag/:tag_slug", MemberProfileLive, :tag
           live "/*path", PageLive, :index
         end
 

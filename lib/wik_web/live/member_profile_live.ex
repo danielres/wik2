@@ -154,10 +154,9 @@ defmodule WikWeb.MemberProfileLive do
             action_label={@tagging_form_action}
             error={@tagging_modal.error}
             form={@tagging_modal.form}
-            tag_id={@tagging_modal.tag_id}
             mode={@tagging_modal.mode}
             options={@available_tags}
-            tag_name={@tagging_modal.tag_name}
+            tag={@tagging_modal.tag}
             membership={@membership}
             tenant={@current_scope.tenant}
           />
@@ -182,8 +181,8 @@ defmodule WikWeb.MemberProfileLive do
        :tagging_modal,
        new_tagging_modal(:edit,
          form: init_tagging_form(tagging),
-         tag_id: tag_id,
-         tag_name: tagging && tagging.tag && tagging.tag.name
+         tag: tagging && tagging.tag,
+         tagging: tagging
        )
      )}
   end
@@ -424,8 +423,7 @@ defmodule WikWeb.MemberProfileLive do
       error: Keyword.get(attrs, :error),
       form: Keyword.get(attrs, :form),
       mode: mode,
-      tag_id: Keyword.get(attrs, :tag_id),
-      tag_name: Keyword.get(attrs, :tag_name),
+      tag: Keyword.get(attrs, :tag),
       tagging: Keyword.get(attrs, :tagging)
     }
   end
@@ -457,8 +455,7 @@ defmodule WikWeb.MemberProfileLive do
           socket,
           :tagging_modal,
           new_tagging_modal(:show,
-            tag_id: tagging.tag_id,
-            tag_name: tagging.tag.name,
+            tag: tagging.tag,
             tagging: tagging
           )
         )

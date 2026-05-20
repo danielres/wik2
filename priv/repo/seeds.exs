@@ -78,23 +78,50 @@ group =
       )
   end
 
-case GroupUserRelation
-     |> Query.filter(group_id == ^group.id and user_id == ^member.id)
-     |> Ash.read_one(authorize?: false, domain: Accounts) do
-  {:ok, %GroupUserRelation{}} ->
-    :ok
+owner_membership =
+  case GroupUserRelation
+       |> Query.filter(group_id == ^group.id and user_id == ^owner.id)
+       |> Ash.read_one(authorize?: false, domain: Accounts) do
+    {:ok, %GroupUserRelation{} = membership} ->
+      membership
 
-  {:ok, nil} ->
-    Ash.create!(
-      GroupUserRelation,
-      %{
-        group_id: group.id,
-        type: :member,
-        user_id: member.id
-      },
+    {:ok, nil} ->
+      raise "Expected owner membership to exist for seeded group"
+  end
+
+member_membership =
+  case GroupUserRelation
+       |> Query.filter(group_id == ^group.id and user_id == ^member.id)
+       |> Ash.read_one(authorize?: false, domain: Accounts) do
+    {:ok, %GroupUserRelation{} = membership} ->
+      membership
+
+    {:ok, nil} ->
+      Ash.create!(
+        GroupUserRelation,
+        %{
+          group_id: group.id,
+          type: :member,
+          user_id: member.id
+        },
+        authorize?: false,
+        domain: Accounts
+      )
+  end
+
+for {membership, username} <- [
+      {owner_membership, "owner"},
+      {member_membership, "member"}
+    ] do
+  if membership.username != username do
+    Ash.update!(
+      membership,
+      %{username: username},
+      action: :set_username,
       authorize?: false,
       domain: Accounts
     )
+  end
 end
 
 source =

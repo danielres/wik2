@@ -2,9 +2,55 @@ defmodule WikWeb.Components.Tag do
   use Phoenix.Component
   use WikWeb, :live_view
 
+  alias Wik.Tags
   alias Wik.Tags.GraphQueries
+  alias Wik.Tags.Tag
   alias WikWeb.Components.UI
   alias WikWeb.TagGraphLive.Components.TagTree
+
+  attr :class, :any, default: ""
+  attr :render_root?, :boolean, default: false
+  attr :render_self?, :boolean, default: false
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def breadcrumbs(assigns) do
+    graph = Tags.load_tag_graph(assigns.scope)
+
+    assigns =
+      assigns
+      |> assign(:group_slug, assigns.scope.tenant.slug)
+      |> assign(:paths, breadcrumb_paths(graph, assigns.tag, assigns.render_self?))
+
+    ~H"""
+    <div :if={@paths != []} class={["space-y-1", @class]} data-testid="tag-breadcrumbs">
+      <nav
+        :for={{path, index} <- Enum.with_index(@paths)}
+        class="breadcrumbs p-0 text-sm opacity-60"
+        data-testid={"tag-breadcrumbs-path-#{index}"}
+      >
+        <ul>
+          <li :if={@render_root?}>
+            <.link navigate={~p"/#{@group_slug}/tags"} class="hover:opacity-100 transition-opacity">
+              Tags
+            </.link>
+          </li>
+
+          <li :for={tag <- path}>
+            <.link
+              navigate={~p"/#{@group_slug}/tags/#{tag.slug}"}
+              class="hover:opacity-100 transition-opacity"
+            >
+              {tag.name}
+            </.link>
+          </li>
+
+          <li></li>
+        </ul>
+      </nav>
+    </div>
+    """
+  end
 
   attr :editing?, :boolean, required: true
   attr :eligible_children, :list, required: true
@@ -192,4 +238,34 @@ defmodule WikWeb.Components.Tag do
 
   defp tag_autoslug_testid(""), do: "tag-autoslug-empty"
   defp tag_autoslug_testid(auto_slug), do: "tag-autoslug-#{auto_slug}"
+
+  defp breadcrumb_paths(graph, %Tag{} = tag, render_self?) do
+    graph
+    |> breadcrumb_paths_for_tag(tag, MapSet.new())
+    |> Enum.map(fn path ->
+      if render_self?, do: path, else: Enum.drop(path, -1)
+    end)
+    |> Enum.reject(&(&1 == []))
+    |> Enum.uniq_by(fn path -> Enum.map(path, & &1.id) end)
+  end
+
+  defp breadcrumb_paths_for_tag(graph, %Tag{} = tag, seen) do
+    if MapSet.member?(seen, tag.id) do
+      [[tag]]
+    else
+      case GraphQueries.parents_for(graph, tag) do
+        [] ->
+          [[tag]]
+
+        parents ->
+          seen = MapSet.put(seen, tag.id)
+
+          Enum.flat_map(parents, fn parent ->
+            graph
+            |> breadcrumb_paths_for_tag(parent, seen)
+            |> Enum.map(&(&1 ++ [tag]))
+          end)
+      end
+    end
+  end
 end

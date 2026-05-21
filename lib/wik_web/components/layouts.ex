@@ -100,7 +100,7 @@ defmodule WikWeb.Layouts do
   attr :view, :string, default: nil, doc: "the current view for active menu state"
   slot :inner_block, required: true
 
-  def group(assigns) do
+  def space(assigns) do
     ~H"""
     <div class={[
       "sticky top-0 z-50"
@@ -143,7 +143,7 @@ defmodule WikWeb.Layouts do
         </.link>
 
         <.link patch={"/#{@scope.tenant.slug}/members"} class={@view == "members" and "active"}>
-          <.icon name="hero-user-group-solid" />
+          <.icon name="hero-user-space-solid" />
           <span class="dock-label">Members</span>
         </.link>
       </div>
@@ -382,7 +382,7 @@ defmodule WikWeb.Layouts do
             </.link>.
             <% else %>
               Privacy and moderation requests are handled in-app for logged-in users. If you cannot
-              access your account, use the recovery path shared with your group operator.
+              access your account, use the recovery path shared with your space operator.
             <% end %>
           </div>
 
@@ -411,12 +411,12 @@ defmodule WikWeb.Layouts do
               href="https://github.com/danielres/wik2"
               target="_blank"
               rel="noopener"
-              class="group"
+              class="space"
             >
-              <.icon name="hero-code-bracket-micro" class="group-hover:hidden" />
+              <.icon name="hero-code-bracket-micro" class="space-hover:hidden" />
               <.icon
                 name="hero-arrow-top-right-on-square-micro"
-                class="hidden group-hover:inline-block"
+                class="hidden space-hover:inline-block"
               />
               <span>github</span>
             </.link>
@@ -432,7 +432,7 @@ defmodule WikWeb.Layouts do
     >
       <Components.Membership.steps
         form={@tenant_context[:membership_username_form]}
-        group={@scope.tenant}
+        space={@scope.tenant}
       />
     </Components.Modal.render>
 

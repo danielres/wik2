@@ -1,6 +1,6 @@
 defmodule WikWeb.Presence.Handlers do
   @moduledoc """
-  Shared handlers for group-scoped presence updates in LiveViews.
+  Shared handlers for space-scoped presence updates in LiveViews.
   """
 
   import Phoenix.Component, only: [assign: 3]
@@ -11,8 +11,8 @@ defmodule WikWeb.Presence.Handlers do
 
   def handle_presence_change(socket) do
     case socket.assigns[:current_scope] do
-      %{tenant: %{id: group_id}} ->
-        presences = Presence.list_online_users_in_group(group_id)
+      %{tenant: %{id: space_id}} ->
+        presences = Presence.list_online_users_in_space(space_id)
         stale_presences = socket.assigns[:stale_presences] || %{}
 
         socket

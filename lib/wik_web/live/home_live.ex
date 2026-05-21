@@ -3,7 +3,7 @@ defmodule WikWeb.HomeLive do
 
   alias AshPhoenix.Form
   alias Wik.Accounts
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Events
   alias WikWeb.Components
   alias WikWeb.Components.UI
@@ -15,8 +15,8 @@ defmodule WikWeb.HomeLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:create_group_modal_open?, false)
-     |> assign_groups_and_form()}
+     |> assign(:create_space_modal_open?, false)
+     |> assign_spaces_and_form()}
   end
 
   @impl true
@@ -26,30 +26,30 @@ defmodule WikWeb.HomeLive do
       <Layouts.container>
         <div class="grid sm:grid-cols-2 gap-8">
           <UI.page_blocks>
-            <:title>Your groups</:title>
+            <:title>Your spaces</:title>
 
             <:actions>
               <UI.button_plus
-                :if={Ash.can?({Group, :create}, @current_scope)}
-                data-testid="create-group-start"
-                phx-click="create_group_start"
+                :if={Ash.can?({Space, :create}, @current_scope)}
+                data-testid="create-space-start"
+                phx-click="create_space_start"
               />
             </:actions>
 
             <:body>
-              <Components.Group.list groups={@groups} />
+              <Components.Space.list spaces={@spaces} />
 
               <Components.Modal.render
-                :if={@create_group_modal_open?}
-                cancel="create_group_cancel"
-                cancel_testid="create-group-cancel"
+                :if={@create_space_modal_open?}
+                cancel="create_space_cancel"
+                cancel_testid="create-space-cancel"
                 open?={true}
-                testid="create-group-dialog"
+                testid="create-space-dialog"
               >
-                <:title>Create group</:title>
+                <:title>Create space</:title>
 
-                <Components.Group.form
-                  :if={Ash.can?({Group, :create}, @current_scope)}
+                <Components.Space.form
+                  :if={Ash.can?({Space, :create}, @current_scope)}
                   class="flex-1"
                   event_validate="validate"
                   event_submit="submit"
@@ -81,38 +81,38 @@ defmodule WikWeb.HomeLive do
 
   @impl true
   def handle_event("validate", %{"form" => params}, socket) do
-    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(group_params(params)))}
+    {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(space_params(params)))}
   end
 
-  def handle_event("create_group_start", _params, socket) do
+  def handle_event("create_space_start", _params, socket) do
     current_scope = socket.assigns.current_scope
 
     socket =
       socket
-      |> assign(:create_group_modal_open?, true)
+      |> assign(:create_space_modal_open?, true)
       |> assign(:form, init_form(current_scope))
 
     {:noreply, socket}
   end
 
-  def handle_event("create_group_cancel", _params, socket) do
+  def handle_event("create_space_cancel", _params, socket) do
     current_scope = socket.assigns.current_scope
 
     socket =
       socket
-      |> assign(:create_group_modal_open?, false)
+      |> assign(:create_space_modal_open?, false)
       |> assign(:form, init_form(current_scope))
 
     {:noreply, socket}
   end
 
   def handle_event("submit", %{"form" => params}, socket) do
-    case socket.assigns.form |> Form.submit(params: group_params(params)) do
-      {:ok, _group} ->
+    case socket.assigns.form |> Form.submit(params: space_params(params)) do
+      {:ok, _space} ->
         socket =
           socket
-          |> assign_groups_and_form()
-          |> assign(:create_group_modal_open?, false)
+          |> assign_spaces_and_form()
+          |> assign(:create_space_modal_open?, false)
 
         {:noreply, socket}
 
@@ -124,33 +124,33 @@ defmodule WikWeb.HomeLive do
     end
   end
 
-  defp assign_groups_and_form(socket) do
+  defp assign_spaces_and_form(socket) do
     scope = socket.assigns.current_scope
 
     socket
     |> assign(event_publications: list_aggregate_event_publications(scope))
-    |> assign(groups: scope |> list_groups())
+    |> assign(spaces: scope |> list_spaces())
     |> assign(form: scope |> init_form())
   end
 
   defp init_form(scope) do
-    Group |> Form.for_create(:create, scope: scope) |> to_form()
+    Space |> Form.for_create(:create, scope: scope) |> to_form()
   end
 
-  defp group_params(%{"name" => name} = params) do
+  defp space_params(%{"name" => name} = params) do
     Map.put(params, "slug", Utils.Slugify.generate(name))
   end
 
-  defp group_params(params), do: params
+  defp space_params(params), do: params
 
-  defp list_groups(nil), do: []
+  defp list_spaces(nil), do: []
 
-  defp list_groups(scope) do
-    with {:ok, groups} <- Accounts.list_groups(scope: scope) do
-      groups
+  defp list_spaces(scope) do
+    with {:ok, spaces} <- Accounts.list_spaces(scope: scope) do
+      spaces
     else
       err ->
-        Log.scoped_error(scope, err, "list_groups failed")
+        Log.scoped_error(scope, err, "list_spaces failed")
         []
     end
   end

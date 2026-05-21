@@ -2,7 +2,7 @@ defmodule Wik.Events.Feeds.Token do
   import Ash.Expr
 
   require Ash.Query
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Accounts.Token, as: StoredToken
   alias Wik.Accounts.User
   alias WikWeb.Endpoint
@@ -11,7 +11,7 @@ defmodule Wik.Events.Feeds.Token do
   @max_age 60 * 60 * 24 * 365 * 20
 
   defp aggregate_purpose, do: "calendar_feed:aggregate"
-  defp group_purpose(group_id), do: "calendar_feed:group:#{group_id}"
+  defp space_purpose(space_id), do: "calendar_feed:space:#{space_id}"
   defp feed_subject(user_id), do: "user?id=#{user_id}"
 
   def issue_for_aggregate(%User{id: user_id}) do
@@ -22,11 +22,11 @@ defmodule Wik.Events.Feeds.Token do
     )
   end
 
-  def issue_for_group(%User{id: user_id}, %Group{id: group_id}) do
+  def issue_for_space(%User{id: user_id}, %Space{id: space_id}) do
     issue_token(
-      %{feed_kind: :group, group_id: group_id, user_id: user_id},
+      %{feed_kind: :space, space_id: space_id, user_id: user_id},
       feed_subject(user_id),
-      group_purpose(group_id)
+      space_purpose(space_id)
     )
   end
 
@@ -46,8 +46,8 @@ defmodule Wik.Events.Feeds.Token do
   end
 
   # TODO: implement UI
-  def revoke_for_group(%User{id: user_id}, %Group{id: group_id}) do
-    revoke_tokens_for_subject_and_purpose(feed_subject(user_id), group_purpose(group_id))
+  def revoke_for_space(%User{id: user_id}, %Space{id: space_id}) do
+    revoke_tokens_for_subject_and_purpose(feed_subject(user_id), space_purpose(space_id))
   end
 
   defp decode_payload(token) do
@@ -56,8 +56,8 @@ defmodule Wik.Events.Feeds.Token do
       when is_binary(jti) and is_binary(user_id) ->
         {:ok, payload}
 
-      {:ok, %{feed_kind: :group, group_id: group_id, jti: jti, user_id: user_id} = payload}
-      when is_binary(group_id) and is_binary(jti) and is_binary(user_id) ->
+      {:ok, %{feed_kind: :space, space_id: space_id, jti: jti, user_id: user_id} = payload}
+      when is_binary(space_id) and is_binary(jti) and is_binary(user_id) ->
         {:ok, payload}
 
       {:ok, _payload} ->

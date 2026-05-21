@@ -3,7 +3,7 @@ defmodule Wik.Wiki.BacklinksTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Blocks
   alias Wik.Scope
   alias Wik.Wiki.Backlinks
@@ -11,9 +11,9 @@ defmodule Wik.Wiki.BacklinksTest do
 
   test "lists unique markdown backlinking pages for the current node" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :owner)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = scope(actor, space)
 
     {:ok, target_page} = Page.create(scope: scope)
     {:ok, source_page} = Page.create(scope: scope)
@@ -23,7 +23,7 @@ defmodule Wik.Wiki.BacklinksTest do
     page_tree =
       generate(
         page_tree(
-          group: group,
+          space: space,
           nodes: [
             %{id: 1, page_id: target_page.id, parent_id: nil, slug: "target", title: "Target"},
             %{id: 2, page_id: source_page.id, parent_id: nil, slug: "source", title: "Source"},
@@ -83,9 +83,9 @@ defmodule Wik.Wiki.BacklinksTest do
 
   test "ignores linking pages that are missing from the page tree" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :owner)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = scope(actor, space)
 
     {:ok, target_page} = Page.create(scope: scope)
     {:ok, source_page} = Page.create(scope: scope)
@@ -93,7 +93,7 @@ defmodule Wik.Wiki.BacklinksTest do
     page_tree =
       generate(
         page_tree(
-          group: group,
+          space: space,
           nodes: [
             %{id: 1, page_id: target_page.id, parent_id: nil, slug: "target", title: "Target"}
           ]
@@ -112,10 +112,10 @@ defmodule Wik.Wiki.BacklinksTest do
     assert {:ok, []} = Backlinks.list_pages_linking_to_node(scope, target_node, page_tree)
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

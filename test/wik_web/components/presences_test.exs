@@ -8,7 +8,7 @@ defmodule WikWeb.Components.PresencesTest do
 
   test "avatars renders without membership data" do
     user = generate(user())
-    group = generate(group(author: user))
+    space = generate(space(author: user))
 
     html =
       render_component(&Presences.avatars/1, %{
@@ -19,10 +19,10 @@ defmodule WikWeb.Components.PresencesTest do
             user: user
           }
         ],
-        tenant: group
+        tenant: space
       })
 
     assert html =~ ~s(id="online-user-#{user.id}")
-    refute html =~ ~s(href="/#{group.slug}/wiki/members/)
+    refute html =~ ~s(href="/#{space.slug}/wiki/members/)
   end
 end

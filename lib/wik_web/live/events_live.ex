@@ -34,10 +34,10 @@ defmodule WikWeb.EventsLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope} view="events">
+      <Layouts.space presences={@presences} scope={@current_scope} view="events">
         <div class="space-y-6" data-testid="events-page">
           <div class="flex flex-wrap items-start gap-4 justify-between">
-            <Components.CalendarFeed.group_subscribe_button scope={@current_scope} />
+            <Components.CalendarFeed.space_subscribe_button scope={@current_scope} />
 
             <UI.button_plus
               :if={Ash.can?({Event, :create}, @current_scope)}
@@ -84,7 +84,7 @@ defmodule WikWeb.EventsLive do
             user_tz={@active_tz}
           />
         </Components.Modal.render>
-      </Layouts.group>
+      </Layouts.space>
     </Layouts.app>
     """
   end
@@ -210,16 +210,16 @@ defmodule WikWeb.EventsLive do
     publications_query =
       EventPublication
       |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
-      |> Query.load([:published_by, event: [:author, :group]])
+      |> Query.load([:published_by, event: [:author, :space]])
 
-    with {:ok, group} <-
+    with {:ok, space} <-
            Ash.load(
              scope.tenant,
              [event_publications: publications_query],
              scope: scope
            ) do
       socket
-      |> assign(:event_publications, group.event_publications)
+      |> assign(:event_publications, space.event_publications)
     else
       {:error, error} ->
         Log.scoped_error(scope, error, "refresh_timeline failed")

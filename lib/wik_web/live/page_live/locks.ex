@@ -17,12 +17,12 @@ defmodule WikWeb.PageLive.Locks do
   def sync_presence(socket) do
     case {Phoenix.LiveView.connected?(socket), socket.assigns[:presence_path],
           socket.assigns[:current_scope]} do
-      {true, path, %{actor: user, tenant: group}} when is_binary(path) ->
+      {true, path, %{actor: user, tenant: space}} when is_binary(path) ->
         _ =
           Presence.track_user_presence(
             user,
             path,
-            group.id,
+            space.id,
             editing_block_id: socket.assigns.editing_block_id,
             tab_id: socket.assigns.tab_id
           )

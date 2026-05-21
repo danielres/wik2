@@ -6,7 +6,7 @@ defmodule WikWeb.ErrorTrackerContext do
 
   alias Wik.Access
   alias Wik.Accounts
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Accounts.User
   alias Wik.Scope
 
@@ -81,10 +81,10 @@ defmodule WikWeb.ErrorTrackerContext do
     }
   end
 
-  defp tenant_context(group_slug) when is_binary(group_slug) do
+  defp tenant_context(space_slug) when is_binary(space_slug) do
     %{
-      id: Accounts.group_slug_to_id(group_slug),
-      slug: group_slug
+      id: Accounts.space_slug_to_id(space_slug),
+      slug: space_slug
     }
   end
 
@@ -106,13 +106,13 @@ defmodule WikWeb.ErrorTrackerContext do
   defp membership_type_for(_user_id, nil), do: nil
 
   defp membership_type_for(user_id, tenant) do
-    case Accounts.tenant_to_group_id(tenant) do
+    case Accounts.tenant_to_space_id(tenant) do
       nil ->
         nil
 
-      group_id ->
-        GroupUserRelation
-        |> Ash.Query.filter(expr(user_id == ^user_id and group_id == ^group_id))
+      space_id ->
+        Membership
+        |> Ash.Query.filter(expr(user_id == ^user_id and space_id == ^space_id))
         |> Ash.Query.set_context(%{private?: true})
         |> Ash.read_one(authorize?: false, domain: Accounts)
         |> case do

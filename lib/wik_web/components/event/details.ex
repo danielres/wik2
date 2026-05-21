@@ -47,7 +47,7 @@ defmodule WikWeb.Components.Event.Details do
         publication={@publication}
         relay_error={@relay_error}
         relay_form={@relay_form}
-        relay_target_groups={@relay_target_groups}
+        relay_target_spaces={@relay_target_spaces}
         target={@myself}
       />
     </div>
@@ -121,18 +121,18 @@ defmodule WikWeb.Components.Event.Details do
   def handle_event("event_relay_submit", %{"relay" => params}, socket) do
     relay_form = to_form(params, as: :relay)
     relay_note = params["relay_note"]
-    target_group_id = params["target_group_id"]
+    target_space_id = params["target_space_id"]
 
     socket =
-      case Enum.find(socket.assigns.relay_target_groups, &(&1.id == target_group_id)) do
-        nil when target_group_id in [nil, ""] ->
-          assign(socket, :relay_error, "Select a target group")
+      case Enum.find(socket.assigns.relay_target_spaces, &(&1.id == target_space_id)) do
+        nil when target_space_id in [nil, ""] ->
+          assign(socket, :relay_error, "Select a target space")
 
         nil ->
           assign(socket, :relay_error, "Could not relay event")
 
-        target_group ->
-          case Events.relay_to_group(socket.assigns.publication.event, target_group,
+        target_space ->
+          case Events.relay_to_space(socket.assigns.publication.event, target_space,
                  scope: socket.assigns.current_scope,
                  relay_note: relay_note
                ) do
@@ -160,7 +160,7 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:mode, :show)
     |> assign(:relay_error, nil)
     |> assign(:relay_form, nil)
-    |> assign(:relay_target_groups, [])
+    |> assign(:relay_target_spaces, [])
   end
 
   defp maybe_reset_state(socket, false), do: socket
@@ -172,7 +172,7 @@ defmodule WikWeb.Components.Event.Details do
   defp maybe_load_relay_eligibility(socket, false), do: socket
 
   defp load_relay_eligibility(socket) do
-    case Events.can_relay_event_to_any_group?(
+    case Events.can_relay_event_to_any_space?(
            socket.assigns.publication.event,
            socket.assigns.current_scope
          ) do
@@ -185,26 +185,26 @@ defmodule WikWeb.Components.Event.Details do
   end
 
   defp load_relay_state(socket) do
-    case Events.list_relay_target_groups(
+    case Events.list_relay_target_spaces(
            socket.assigns.publication.event,
            socket.assigns.current_scope
          ) do
-      {:ok, relay_target_groups} ->
+      {:ok, relay_target_spaces} ->
         socket
         |> assign(:relay_error, nil)
         |> assign(
           :relay_form,
-          to_form(%{"relay_note" => "", "target_group_id" => ""}, as: :relay)
+          to_form(%{"relay_note" => "", "target_space_id" => ""}, as: :relay)
         )
-        |> assign(:relay_target_groups, relay_target_groups)
+        |> assign(:relay_target_spaces, relay_target_spaces)
 
       {:error, _error} ->
         socket
         |> assign(
           :relay_form,
-          to_form(%{"relay_note" => "", "target_group_id" => ""}, as: :relay)
+          to_form(%{"relay_note" => "", "target_space_id" => ""}, as: :relay)
         )
-        |> assign(:relay_target_groups, [])
+        |> assign(:relay_target_spaces, [])
         |> assign(:relay_error, "Could not load relay targets")
     end
   end

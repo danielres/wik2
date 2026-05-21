@@ -67,13 +67,13 @@ defmodule Wik.Access do
     to: Telegram,
     as: :list_claimable_sources
 
-  defdelegate telegram_claim_source_with_new_group(source_id, group_attrs, user),
+  defdelegate telegram_claim_source_with_new_space(source_id, space_attrs, user),
     to: Telegram,
-    as: :claim_source_with_new_group
+    as: :claim_source_with_new_space
 
-  defdelegate telegram_claim_source_with_existing_group(source_id, group_id, user),
+  defdelegate telegram_claim_source_with_existing_space(source_id, space_id, user),
     to: Telegram,
-    as: :claim_source_with_existing_group
+    as: :claim_source_with_existing_space
 
   defdelegate telegram_refresh_grants(user),
     to: Telegram,
@@ -113,19 +113,19 @@ defmodule Wik.Access do
     |> Ash.read(
       authorize?: false,
       domain: __MODULE__,
-      load: [:external_identity, source: [group: [:memberships]]]
+      load: [:external_identity, source: [space: [:memberships]]]
     )
   end
 
-  def get_user_group_avatar_url(%User{id: user_id}, %{id: group_id}) do
-    case list_group_avatar_urls(group_id, [user_id]) do
+  def get_user_space_avatar_url(%User{id: user_id}, %{id: space_id}) do
+    case list_space_avatar_urls(space_id, [user_id]) do
       {:ok, avatar_urls} -> {:ok, Map.get(avatar_urls, user_id)}
       {:error, error} -> {:error, error}
     end
   end
 
-  def get_user_group_username_suggestion(%User{id: user_id}, %{id: group_id}) do
-    case list_group_grants_for_users(group_id, [user_id]) do
+  def get_user_space_username_suggestion(%User{id: user_id}, %{id: space_id}) do
+    case list_space_grants_for_users(space_id, [user_id]) do
       {:ok, grants} ->
         {:ok, grants_to_username_suggestion(grants, user_id)}
 
@@ -134,24 +134,24 @@ defmodule Wik.Access do
     end
   end
 
-  def list_group_avatar_urls(group_id, user_ids) when is_list(user_ids) do
+  def list_space_avatar_urls(space_id, user_ids) when is_list(user_ids) do
     normalized_user_ids = user_ids |> Enum.uniq()
 
     cond do
-      is_nil(group_id) ->
+      is_nil(space_id) ->
         {:ok, %{}}
 
       normalized_user_ids == [] ->
         {:ok, %{}}
 
       true ->
-        do_list_group_avatar_urls(group_id, normalized_user_ids)
+        do_list_space_avatar_urls(space_id, normalized_user_ids)
     end
   end
 
-  defp do_list_group_avatar_urls(group_id, user_ids) do
+  defp do_list_space_avatar_urls(space_id, user_ids) do
     Grant
-    |> Ash.Query.filter(user_id in ^user_ids and source.group_id == ^group_id)
+    |> Ash.Query.filter(user_id in ^user_ids and source.space_id == ^space_id)
     |> Ash.Query.sort(last_verified_at: :desc)
     |> Ash.read(
       authorize?: false,
@@ -179,9 +179,9 @@ defmodule Wik.Access do
     end)
   end
 
-  def list_group_grants_for_users(group_id, user_ids) do
+  def list_space_grants_for_users(space_id, user_ids) do
     Grant
-    |> Ash.Query.filter(source.group_id == ^group_id and user_id in ^user_ids)
+    |> Ash.Query.filter(source.space_id == ^space_id and user_id in ^user_ids)
     |> Ash.Query.sort(last_verified_at: :desc)
     |> Ash.read(
       authorize?: false,

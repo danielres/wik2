@@ -3,28 +3,28 @@ defmodule Wik.Blocks.BlockPlacementPolicyTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Blocks.Block
   alias Wik.Blocks.BlockPlacement
   alias Wik.Scope
   alias Wik.Wiki.Page
 
   describe "block placement access" do
-    test "group owner can read and manage page placements" do
-      %{group: group, owner: owner, placement: placement} = access_fixture()
+    test "space owner can read and manage page placements" do
+      %{space: space, owner: owner, placement: placement} = access_fixture()
 
-      assert Ash.can?({placement, :read}, scope(owner, group))
-      assert Ash.can?({placement, :update_order}, scope(owner, group))
-      assert Ash.can?({placement, :update_area}, scope(owner, group))
-      assert Ash.can?({placement, :destroy}, scope(owner, group))
+      assert Ash.can?({placement, :read}, scope(owner, space))
+      assert Ash.can?({placement, :update_order}, scope(owner, space))
+      assert Ash.can?({placement, :update_area}, scope(owner, space))
+      assert Ash.can?({placement, :destroy}, scope(owner, space))
     end
 
-    test "group admin can create and manage a placement for their own user owned block" do
+    test "space admin can create and manage a placement for their own user owned block" do
       %{
         admin: admin,
         admin_page: page,
         admin_user_owned_block: block,
-        group: group,
+        space: space,
         placement: placement
       } =
         access_fixture()
@@ -38,25 +38,25 @@ defmodule Wik.Blocks.BlockPlacementPolicyTest do
                   order_key: "z1",
                   area: nil
                 }},
-               scope(admin, group)
+               scope(admin, space)
              )
 
-      assert Ash.can?({placement, :update_order}, scope(admin, group))
-      assert Ash.can?({placement, :update_area}, scope(admin, group))
-      assert Ash.can?({placement, :destroy}, scope(admin, group))
+      assert Ash.can?({placement, :update_order}, scope(admin, space))
+      assert Ash.can?({placement, :update_area}, scope(admin, space))
+      assert Ash.can?({placement, :destroy}, scope(admin, space))
     end
 
     test "plain member can read placements but cannot manage them" do
-      %{group: group, member: member, placement: placement} = access_fixture()
+      %{space: space, member: member, placement: placement} = access_fixture()
 
-      assert Ash.can?({placement, :read}, scope(member, group))
-      refute Ash.can?({placement, :update_order}, scope(member, group))
-      refute Ash.can?({placement, :update_area}, scope(member, group))
-      refute Ash.can?({placement, :destroy}, scope(member, group))
+      assert Ash.can?({placement, :read}, scope(member, space))
+      refute Ash.can?({placement, :update_order}, scope(member, space))
+      refute Ash.can?({placement, :update_area}, scope(member, space))
+      refute Ash.can?({placement, :destroy}, scope(member, space))
     end
 
     test "plain member cannot create a page placement even for their own block" do
-      %{group: group, member: member, member_page: page, member_user_owned_block: block} =
+      %{space: space, member: member, member_page: page, member_user_owned_block: block} =
         access_fixture()
 
       refute Ash.can?(
@@ -68,12 +68,12 @@ defmodule Wik.Blocks.BlockPlacementPolicyTest do
                   order_key: "z2",
                   area: nil
                 }},
-               scope(member, group)
+               scope(member, space)
              )
     end
 
-    test "group admin cannot create a placement for another user's private block" do
-      %{admin: admin, admin_page: page, foreign_user_owned_block: block, group: group} =
+    test "space admin cannot create a placement for another user's private block" do
+      %{admin: admin, admin_page: page, foreign_user_owned_block: block, space: space} =
         access_fixture()
 
       refute Ash.can?(
@@ -85,46 +85,46 @@ defmodule Wik.Blocks.BlockPlacementPolicyTest do
                   order_key: "z3",
                   area: nil
                 }},
-               scope(admin, group)
+               scope(admin, space)
              )
     end
 
-    test "outsider cannot read or manage another group's placement" do
-      %{group: group, outsider: outsider, placement: placement} = access_fixture()
+    test "outsider cannot read or manage another space's placement" do
+      %{space: space, outsider: outsider, placement: placement} = access_fixture()
 
-      refute Ash.can?({placement, :read}, scope(outsider, group))
-      refute Ash.can?({placement, :update_order}, scope(outsider, group))
-      refute Ash.can?({placement, :update_area}, scope(outsider, group))
-      refute Ash.can?({placement, :destroy}, scope(outsider, group))
+      refute Ash.can?({placement, :read}, scope(outsider, space))
+      refute Ash.can?({placement, :update_order}, scope(outsider, space))
+      refute Ash.can?({placement, :update_area}, scope(outsider, space))
+      refute Ash.can?({placement, :destroy}, scope(outsider, space))
     end
   end
 
   defp access_fixture do
-    group = generate(group())
+    space = generate(space())
     owner = generate(user())
     admin = generate(user())
     member = generate(user())
     outsider = generate(user())
     foreign_user = generate(user())
 
-    add_membership(group, owner, :owner)
-    add_membership(group, admin, :admin)
-    add_membership(group, member, :member)
-    grant_active_telegram_access(group, admin)
-    grant_active_telegram_access(group, member)
+    add_membership(space, owner, :owner)
+    add_membership(space, admin, :admin)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, admin)
+    grant_active_telegram_access(space, member)
 
-    owner_scope = scope(owner, group)
+    owner_scope = scope(owner, space)
     {:ok, page} = Page.create(authorize?: false, scope: owner_scope)
 
-    admin_scope = scope(admin, group)
+    admin_scope = scope(admin, space)
     {:ok, admin_page} = Page.create(authorize?: false, scope: admin_scope)
 
-    member_scope = scope(member, group)
+    member_scope = scope(member, space)
     {:ok, member_page} = Page.create(authorize?: false, scope: member_scope)
 
-    group_owned_block =
+    space_owned_block =
       create_block(
-        %{data: %{"text" => "group"}, owner_group_id: group.id, type: :text},
+        %{data: %{"text" => "space"}, owner_space_id: space.id, type: :text},
         owner_scope
       )
 
@@ -146,14 +146,14 @@ defmodule Wik.Blocks.BlockPlacementPolicyTest do
         scope(foreign_user)
       )
 
-    placement = create_placement(page, group_owned_block, owner_scope)
+    placement = create_placement(page, space_owned_block, owner_scope)
 
     %{
       admin: admin,
       admin_page: admin_page,
       admin_user_owned_block: admin_user_owned_block,
       foreign_user_owned_block: foreign_user_owned_block,
-      group: group,
+      space: space,
       member: member,
       member_page: member_page,
       member_user_owned_block: member_user_owned_block,
@@ -163,10 +163,10 @@ defmodule Wik.Blocks.BlockPlacementPolicyTest do
     }
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

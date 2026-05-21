@@ -3,7 +3,7 @@ defmodule Wik.BlocksTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Blocks
   alias Wik.Blocks.Block
   alias Wik.Blocks.BlockPlacement
@@ -13,45 +13,45 @@ defmodule Wik.BlocksTest do
   require Ash.Query
 
   describe "create_user_owned_block/2" do
-    test "sets author and user owner and clears group owner" do
+    test "sets author and user owner and clears space owner" do
       actor = generate(user())
-      group = generate(group())
+      space = generate(space())
 
       assert {:ok, block} =
                Blocks.create_user_owned_block(
                  %{
                    data: %{"text" => "Hello"},
-                   owner_group_id: group.id,
+                   owner_space_id: space.id,
                    type: :text
                  },
                  scope: scope(actor)
                )
 
       assert block.author_id == actor.id
-      assert block.owner_group_id == nil
+      assert block.owner_space_id == nil
       assert block.owner_user_id == actor.id
     end
   end
 
-  describe "create_group_owned_block/3" do
-    test "sets author and group owner and clears user owner" do
+  describe "create_space_owned_block/3" do
+    test "sets author and space owner and clears user owner" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
 
       assert {:ok, block} =
-               Blocks.create_group_owned_block(
-                 group,
+               Blocks.create_space_owned_block(
+                 space,
                  %{
                    data: %{"text" => "Hello"},
                    owner_user_id: actor.id,
                    type: :text
                  },
-                 scope: scope(actor, group)
+                 scope: scope(actor, space)
                )
 
       assert block.author_id == actor.id
-      assert block.owner_group_id == group.id
+      assert block.owner_space_id == space.id
       assert block.owner_user_id == nil
     end
   end
@@ -59,9 +59,9 @@ defmodule Wik.BlocksTest do
   describe "create_user_owned_block_on_page/3" do
     test "creates a user-owned block and places it on the page" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       assert {:ok, block} =
@@ -80,24 +80,24 @@ defmodule Wik.BlocksTest do
 
       assert block.author_id == actor.id
       assert block.owner_user_id == actor.id
-      assert block.owner_group_id == nil
+      assert block.owner_space_id == nil
       assert placement.block_id == block.id
-      assert placement.group_id == group.id
+      assert placement.space_id == space.id
       assert placement.area == nil
     end
   end
 
-  describe "create_group_owned_block_on_page/4" do
-    test "creates a group-owned block and places it on the page" do
+  describe "create_space_owned_block_on_page/4" do
+    test "creates a space-owned block and places it on the page" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       assert {:ok, block} =
-               Blocks.create_group_owned_block_on_page(
-                 group,
+               Blocks.create_space_owned_block_on_page(
+                 space,
                  page,
                  %{data: %{"text" => "Hello"}, type: :text},
                  scope: scope
@@ -111,31 +111,31 @@ defmodule Wik.BlocksTest do
         |> Ash.read_one!(scope: scope)
 
       assert block.author_id == actor.id
-      assert block.owner_group_id == group.id
+      assert block.owner_space_id == space.id
       assert block.owner_user_id == nil
       assert placement.block_id == block.id
-      assert placement.group_id == group.id
+      assert placement.space_id == space.id
       assert placement.area == nil
     end
 
     test "can place the new block before existing placements" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       assert {:ok, block1} =
-               Blocks.create_group_owned_block_on_page(
-                 group,
+               Blocks.create_space_owned_block_on_page(
+                 space,
                  page,
                  %{data: %{"text" => "First"}, type: :text},
                  scope: scope
                )
 
       assert {:ok, block2} =
-               Blocks.create_group_owned_block_on_page(
-                 group,
+               Blocks.create_space_owned_block_on_page(
+                 space,
                  page,
                  %{data: %{"text" => "Second"}, type: :text},
                  position: :top,
@@ -163,9 +163,9 @@ defmodule Wik.BlocksTest do
   describe "place_block_on_page/3" do
     test "creates a placement for the parent" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block} =
@@ -176,15 +176,15 @@ defmodule Wik.BlocksTest do
       assert placement.attachable_id == page.id
       assert placement.attachable_type == "page"
       assert placement.block_id == block.id
-      assert placement.group_id == group.id
+      assert placement.space_id == space.id
       assert is_binary(placement.order_key)
     end
 
     test "assigns later order keys after earlier placements" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
@@ -201,9 +201,9 @@ defmodule Wik.BlocksTest do
 
     test "can place a block before existing placements" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
@@ -222,9 +222,9 @@ defmodule Wik.BlocksTest do
   describe "move_placed_block_down/2" do
     test "moves a placement after the next placement" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
@@ -242,9 +242,9 @@ defmodule Wik.BlocksTest do
 
     test "moves a placement only within its current area" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
@@ -274,9 +274,9 @@ defmodule Wik.BlocksTest do
   describe "move_placed_block_up/2" do
     test "moves a placement before the previous placement" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
@@ -294,9 +294,9 @@ defmodule Wik.BlocksTest do
 
     test "moves a placement up only within its current area" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
@@ -326,9 +326,9 @@ defmodule Wik.BlocksTest do
   describe "toggle_placed_block_aside/2" do
     test "toggles a placement between main and aside" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block} =
@@ -353,14 +353,14 @@ defmodule Wik.BlocksTest do
   describe "destroy_placed_block/2" do
     test "removes the placement and keeps the block" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block} =
-        Blocks.create_group_owned_block_on_page(
-          group,
+        Blocks.create_space_owned_block_on_page(
+          space,
           page,
           %{data: %{"text" => "Hello"}, type: :text},
           scope: scope
@@ -392,125 +392,125 @@ defmodule Wik.BlocksTest do
     end
   end
 
-  describe "list_orphan_group_owned_blocks/2" do
-    test "returns only group-owned blocks with no placements" do
+  describe "list_orphan_space_owned_blocks/2" do
+    test "returns only space-owned blocks with no placements" do
       actor = generate(user())
       other_actor = generate(user())
-      group = generate(group(author: actor))
-      other_group = generate(group(author: other_actor))
-      add_membership(group, actor, :owner)
-      add_membership(other_group, other_actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      other_space = generate(space(author: other_actor))
+      add_membership(space, actor, :owner)
+      add_membership(other_space, other_actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, orphan_block} =
-        Blocks.create_group_owned_block(
-          group,
+        Blocks.create_space_owned_block(
+          space,
           %{data: %{"text" => "Orphan"}, type: :text},
           scope: scope
         )
 
       {:ok, placed_block} =
-        Blocks.create_group_owned_block_on_page(
-          group,
+        Blocks.create_space_owned_block_on_page(
+          space,
           page,
           %{data: %{"text" => "Placed"}, type: :text},
           scope: scope
         )
 
-      {:ok, _other_group_block} =
-        Blocks.create_group_owned_block(
-          other_group,
-          %{data: %{"text" => "Other group"}, type: :text},
-          scope: scope(other_actor, other_group)
+      {:ok, _other_space_block} =
+        Blocks.create_space_owned_block(
+          other_space,
+          %{data: %{"text" => "Other space"}, type: :text},
+          scope: scope(other_actor, other_space)
         )
 
-      orphan_blocks = Blocks.list_orphan_group_owned_blocks(group, scope: scope)
+      orphan_blocks = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
 
       assert Enum.map(orphan_blocks, & &1.id) == [orphan_block.id]
       refute Enum.any?(orphan_blocks, &(&1.id == placed_block.id))
     end
   end
 
-  describe "place_group_owned_block_on_page/4" do
-    test "places an existing group-owned block on a page" do
+  describe "place_space_owned_block_on_page/4" do
+    test "places an existing space-owned block on a page" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block} =
-        Blocks.create_group_owned_block(
-          group,
+        Blocks.create_space_owned_block(
+          space,
           %{data: %{"text" => "Reusable"}, type: :text},
           scope: scope
         )
 
       assert {:ok, placement} =
-               Blocks.place_group_owned_block_on_page(group, block.id, page, scope: scope)
+               Blocks.place_space_owned_block_on_page(space, block.id, page, scope: scope)
 
       assert placement.block_id == block.id
       assert placement.attachable_id == page.id
       assert placement.attachable_type == "page"
     end
 
-    test "rejects blocks owned by another group" do
+    test "rejects blocks owned by another space" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      other_group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      add_membership(other_group, actor, :owner)
-      scope = scope(actor, group)
-      other_scope = scope(actor, other_group)
+      space = generate(space(author: actor))
+      other_space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      add_membership(other_space, actor, :owner)
+      scope = scope(actor, space)
+      other_scope = scope(actor, other_space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, other_block} =
-        Blocks.create_group_owned_block(
-          other_group,
+        Blocks.create_space_owned_block(
+          other_space,
           %{data: %{"text" => "Other"}, type: :text},
           scope: other_scope
         )
 
       assert {:error, :not_found} =
-               Blocks.place_group_owned_block_on_page(group, other_block.id, page, scope: scope)
+               Blocks.place_space_owned_block_on_page(space, other_block.id, page, scope: scope)
     end
 
     test "rejects a block that is already placed on the page" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block} =
-        Blocks.create_group_owned_block_on_page(
-          group,
+        Blocks.create_space_owned_block_on_page(
+          space,
           page,
           %{data: %{"text" => "Reusable"}, type: :text},
           scope: scope
         )
 
       assert {:error, :already_placed} =
-               Blocks.place_group_owned_block_on_page(group, block.id, page, scope: scope)
+               Blocks.place_space_owned_block_on_page(space, block.id, page, scope: scope)
     end
   end
 
-  describe "destroy_orphan_group_owned_block/3" do
-    test "destroys a group-owned orphan block" do
+  describe "destroy_orphan_space_owned_block/3" do
+    test "destroys a space-owned orphan block" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
 
       {:ok, orphan_block} =
-        Blocks.create_group_owned_block(
-          group,
+        Blocks.create_space_owned_block(
+          space,
           %{data: %{"text" => "Orphan"}, type: :text},
           scope: scope
         )
 
-      assert :ok = Blocks.destroy_orphan_group_owned_block(group, orphan_block.id, scope: scope)
+      assert :ok = Blocks.destroy_orphan_space_owned_block(space, orphan_block.id, scope: scope)
 
       persisted_block =
         Block
@@ -522,21 +522,21 @@ defmodule Wik.BlocksTest do
 
     test "does not destroy placed blocks" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, placed_block} =
-        Blocks.create_group_owned_block_on_page(
-          group,
+        Blocks.create_space_owned_block_on_page(
+          space,
           page,
           %{data: %{"text" => "Placed"}, type: :text},
           scope: scope
         )
 
       assert {:error, :not_found} =
-               Blocks.destroy_orphan_group_owned_block(group, placed_block.id, scope: scope)
+               Blocks.destroy_orphan_space_owned_block(space, placed_block.id, scope: scope)
 
       assert {:ok, persisted_block} = Ash.get(Block, placed_block.id, scope: scope)
       assert persisted_block.id == placed_block.id
@@ -547,10 +547,10 @@ defmodule Wik.BlocksTest do
     %Scope{actor: actor, tenant: tenant}
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

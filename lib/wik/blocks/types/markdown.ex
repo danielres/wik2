@@ -124,23 +124,23 @@ defmodule Wik.Blocks.Types.Markdown do
        ),
        do: ""
 
-  defp member_id_to_username_map(%{group_id: group_id}) when is_binary(group_id),
-    do: Accounts.membership_id_to_username_map(group_id)
+  defp member_id_to_username_map(%{space_id: space_id}) when is_binary(space_id),
+    do: Accounts.membership_id_to_username_map(space_id)
 
   defp member_id_to_username_map(_page_tree), do: %{}
 
-  defp wikilink_member_map(%{group_id: group_id}) when is_binary(group_id),
-    do: Accounts.username_to_membership_id_map(group_id)
+  defp wikilink_member_map(%{space_id: space_id}) when is_binary(space_id),
+    do: Accounts.username_to_membership_id_map(space_id)
 
   defp wikilink_member_map(_page_tree), do: %{}
 
-  defp tag_id_to_tag_name_map(%{group_id: group_id}) when is_binary(group_id),
-    do: Tags.tag_id_to_name_map(group_id)
+  defp tag_id_to_tag_name_map(%{space_id: space_id}) when is_binary(space_id),
+    do: Tags.tag_id_to_name_map(space_id)
 
   defp tag_id_to_tag_name_map(_page_tree), do: %{}
 
-  defp wikilink_tag_map(%{group_id: group_id}) when is_binary(group_id),
-    do: Tags.tag_name_to_id_map(group_id)
+  defp wikilink_tag_map(%{space_id: space_id}) when is_binary(space_id),
+    do: Tags.tag_name_to_id_map(space_id)
 
   defp wikilink_tag_map(_page_tree), do: %{}
 end

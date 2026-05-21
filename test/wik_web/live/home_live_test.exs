@@ -7,63 +7,63 @@ defmodule WikWeb.HomeLiveTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
 
-  test "create group modal closes on successful submit", %{conn: conn} do
+  test "create space modal closes on successful submit", %{conn: conn} do
     user = generate(user())
-    existing_group = generate(group(author: user))
-    add_membership(existing_group, user, :owner)
+    existing_space = generate(space(author: user))
+    add_membership(existing_space, user, :owner)
 
     {:ok, view, _html} =
       conn
       |> log_in(user)
       |> live(~p"/")
 
-    refute has_element?(view, testid("create-group-dialog"))
+    refute has_element?(view, testid("create-space-dialog"))
 
     view
-    |> element(testid("create-group-start"))
+    |> element(testid("create-space-start"))
     |> render_click()
 
-    assert has_element?(view, testid("create-group-dialog"))
+    assert has_element?(view, testid("create-space-dialog"))
 
     view
-    |> form(testid("create-group-dialog") <> " form",
-      form: %{"name" => "fresh-group", "description" => "A new group"}
+    |> form(testid("create-space-dialog") <> " form",
+      form: %{"name" => "fresh-space", "description" => "A new space"}
     )
     |> render_submit()
 
-    refute has_element?(view, testid("create-group-dialog"))
-    assert render(view) =~ "fresh-group"
+    refute has_element?(view, testid("create-space-dialog"))
+    assert render(view) =~ "fresh-space"
 
-    assert {:ok, groups} = Accounts.list_groups(actor: user)
-    assert Enum.any?(groups, &(&1.name == "fresh-group" and &1.slug == "fresh-group"))
+    assert {:ok, spaces} = Accounts.list_spaces(actor: user)
+    assert Enum.any?(spaces, &(&1.name == "fresh-space" and &1.slug == "fresh-space"))
   end
 
   test "lists the user's aggregate feed events on the home page", %{conn: conn} do
     owner = generate(user())
     relay_owner = generate(user())
     member = generate(user())
-    first_group = generate(group(author: owner))
-    second_group = generate(group(author: relay_owner))
+    first_space = generate(space(author: owner))
+    second_space = generate(space(author: relay_owner))
 
-    add_membership(first_group, owner, :owner)
-    add_membership(second_group, relay_owner, :owner)
-    add_membership(first_group, member, :member)
-    add_membership(second_group, member, :member)
-    add_membership(first_group, relay_owner, :admin)
-    grant_active_telegram_access(first_group, member)
-    grant_active_telegram_access(second_group, member)
-    grant_active_telegram_access(first_group, relay_owner)
+    add_membership(first_space, owner, :owner)
+    add_membership(second_space, relay_owner, :owner)
+    add_membership(first_space, member, :member)
+    add_membership(second_space, member, :member)
+    add_membership(first_space, relay_owner, :admin)
+    grant_active_telegram_access(first_space, member)
+    grant_active_telegram_access(second_space, member)
+    grant_active_telegram_access(first_space, relay_owner)
 
     {:ok, _first_event} =
       Ash.create(
         Event,
         event_attrs(title: "Shared dinner"),
         action: :create,
-        scope: scope(owner, first_group)
+        scope: scope(owner, first_space)
       )
 
     {:ok, second_event} =
@@ -71,17 +71,17 @@ defmodule WikWeb.HomeLiveTest do
         Event,
         event_attrs(
           title: "Relay event",
-          relay_policy: :admins_only_groups,
+          relay_policy: :admins_only_spaces,
           starts_on: "2026-05-11",
           ends_on: "2026-05-11"
         ),
         action: :create,
-        scope: scope(relay_owner, second_group)
+        scope: scope(relay_owner, second_space)
       )
 
     {:ok, _relay_publication} =
-      Events.relay_to_group(second_event, first_group,
-        scope: scope(relay_owner, second_group),
+      Events.relay_to_space(second_event, first_space,
+        scope: scope(relay_owner, second_space),
         relay_note: "Worth sharing"
       )
 
@@ -95,10 +95,10 @@ defmodule WikWeb.HomeLiveTest do
     assert render(view) =~ "Relay event"
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false
     )
   end

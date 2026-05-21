@@ -1,6 +1,6 @@
 defmodule WikWeb.Components.Presences do
   @moduledoc """
-  Renders the list of online users for the current group.
+  Renders the list of online users for the current space.
   """
   alias WikWeb.Components
   use WikWeb, :html

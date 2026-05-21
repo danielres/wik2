@@ -5,7 +5,7 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
   import Phoenix.LiveViewTest, only: [render_component: 2]
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Wiki
   alias Wik.Wiki.Page
@@ -13,10 +13,10 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
 
   test "form_fields renders selectable source pages and keeps the selected source" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
     {:ok, source_page} = Page.create(authorize?: false, scope: scope)
     {:ok, child_page} = Page.create(authorize?: false, scope: scope)
     {:ok, other_source_page} = Page.create(authorize?: false, scope: scope)
@@ -24,7 +24,7 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: source_page.id, parent_id: nil, slug: "docs", title: "Docs"},
           %{id: 2, page_id: child_page.id, parent_id: 1, slug: "guide", title: "Guide"},
@@ -68,10 +68,10 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
 
   test "render shows the selected parent page title as a clickable heading" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
     {:ok, home_page} = Page.create(authorize?: false, scope: scope)
     {:ok, members_page} = Page.create(authorize?: false, scope: scope)
     {:ok, alice_page} = Page.create(authorize?: false, scope: scope)
@@ -79,7 +79,7 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: home_page.id, parent_id: nil, slug: "home", title: "Home"},
           %{id: 2, page_id: members_page.id, parent_id: nil, slug: "members", title: "Members"},
@@ -99,23 +99,23 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
         scope: scope
       })
 
-    assert html =~ ~s(href="/#{group.slug}/wiki/members")
+    assert html =~ ~s(href="/#{space.slug}/wiki/members")
     assert html =~ ~r|>\s*Members\s*</a>|
-    assert html =~ ~s(href="/#{group.slug}/wiki/members/alice")
-    assert html =~ ~s(href="/#{group.slug}/wiki/members/bob")
+    assert html =~ ~s(href="/#{space.slug}/wiki/members/alice")
+    assert html =~ ~s(href="/#{space.slug}/wiki/members/bob")
   end
 
   test "render shows a missing-node message when the configured source node no longer exists" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
     {:ok, home_page} = Page.create(authorize?: false, scope: scope)
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: home_page.id, parent_id: nil, slug: "home", title: "Home"}
         ]
@@ -138,10 +138,10 @@ defmodule WikWeb.Components.Block.Types.ChildPagesTest do
            |> Enum.any?()
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

@@ -7,7 +7,7 @@ defmodule Wik.Access.Source do
     extensions: [AshAdmin.Resource]
 
   alias Wik.Access.Grant
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Accounts.User
 
   postgres do
@@ -28,7 +28,7 @@ defmodule Wik.Access.Source do
       accept [
         :claimed_at,
         :claimed_by_user_id,
-        :group_id,
+        :space_id,
         :metadata,
         :provider,
         :provider_source_id,
@@ -41,7 +41,7 @@ defmodule Wik.Access.Source do
       accept [
         :claimed_at,
         :claimed_by_user_id,
-        :group_id,
+        :space_id,
         :metadata,
         :provider,
         :provider_source_id,
@@ -51,7 +51,7 @@ defmodule Wik.Access.Source do
 
       upsert? true
       upsert_identity :unique_provider_source
-      upsert_fields [:claimed_at, :claimed_by_user_id, :group_id, :metadata, :status, :title]
+      upsert_fields [:claimed_at, :claimed_by_user_id, :space_id, :metadata, :status, :title]
     end
 
     create :upsert_pending_from_provider do
@@ -68,7 +68,7 @@ defmodule Wik.Access.Source do
     end
 
     update :update do
-      accept [:claimed_at, :claimed_by_user_id, :group_id, :metadata, :status, :title]
+      accept [:claimed_at, :claimed_by_user_id, :space_id, :metadata, :status, :title]
       require_atomic? false
     end
   end
@@ -79,7 +79,7 @@ defmodule Wik.Access.Source do
     end
 
     policy action_type(:read) do
-      authorize_if relates_to_actor_via([:group, :users])
+      authorize_if relates_to_actor_via([:space, :users])
       authorize_if relates_to_actor_via(:claimed_by_user)
     end
   end
@@ -127,7 +127,7 @@ defmodule Wik.Access.Source do
       allow_nil? true
     end
 
-    belongs_to :group, Group do
+    belongs_to :space, Space do
       allow_nil? true
     end
 

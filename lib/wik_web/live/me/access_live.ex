@@ -11,17 +11,17 @@ defmodule WikWeb.Me.AccessLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     current_user = socket.assigns.current_user
-    groups = scope |> list_groups()
+    spaces = scope |> list_spaces()
     identities = current_user |> list_user_external_identities()
     grants = current_user |> list_user_grants()
-    owned_groups = current_user |> list_owned_groups()
+    owned_spaces = current_user |> list_owned_spaces()
 
     {:ok,
      socket
      |> assign(grants: grants)
-     |> assign(groups: groups)
+     |> assign(spaces: spaces)
      |> assign(identities: identities)
-     |> assign(owned_groups: owned_groups)}
+     |> assign(owned_spaces: owned_spaces)}
   end
 
   @impl true
@@ -48,12 +48,12 @@ defmodule WikWeb.Me.AccessLive do
             <h2 class="text-lg mb-1">Access grants</h2>
 
             <div
-              :if={grant_bypass_messages?(@current_user, @owned_groups)}
+              :if={grant_bypass_messages?(@current_user, @owned_spaces)}
               class="space-y-2 mb-2"
               data-testid="me-access-bypasses"
             >
               <.superadmin_bypass_message :if={@current_user.role == :superadmin} />
-              <.owner_bypass_message :if={@owned_groups != []} groups={@owned_groups} />
+              <.owner_bypass_message :if={@owned_spaces != []} spaces={@owned_spaces} />
             </div>
 
             <div :if={@grants == []} class="card bg-base-200 h-min">
@@ -151,14 +151,14 @@ defmodule WikWeb.Me.AccessLive do
             class={[
               "font-bold flex items-center gap-1",
               "opacity-90 hover:opacity-100 transition",
-              "group"
+              "space"
             ]}
-            navigate={~p"/#{@grant.source.group.slug}/wiki"}
+            navigate={~p"/#{@grant.source.space.slug}/wiki"}
           >
-            <span>{@grant.source.group.name}</span>
+            <span>{@grant.source.space.name}</span>
             <.icon
               name="hero-arrow-up-right-micro"
-              class="opacity-50 group-hover:opacity-100 transition"
+              class="opacity-50 space-hover:opacity-100 transition"
             />
           </.link>
 
@@ -192,7 +192,7 @@ defmodule WikWeb.Me.AccessLive do
     """
   end
 
-  attr :groups, :list, required: true
+  attr :spaces, :list, required: true
 
   def owner_bypass_message(assigns) do
     ~H"""
@@ -208,14 +208,14 @@ defmodule WikWeb.Me.AccessLive do
 
         <div class="flex flex-wrap gap-2 mt-2">
           <.link
-            :for={group <- @groups}
+            :for={space <- @spaces}
             class={[
               "badge badge-sm badge-neutral",
               "opacity-90 hover:opacity-100 transition"
             ]}
-            navigate={~p"/#{group.slug}/wiki"}
+            navigate={~p"/#{space.slug}/wiki"}
           >
-            {group.name}
+            {space.name}
           </.link>
         </div>
       </div>
@@ -223,26 +223,26 @@ defmodule WikWeb.Me.AccessLive do
     """
   end
 
-  defp list_groups(nil), do: []
+  defp list_spaces(nil), do: []
 
-  defp list_groups(scope) do
-    with {:ok, groups} <- Accounts.list_groups(scope: scope) do
-      groups
+  defp list_spaces(scope) do
+    with {:ok, spaces} <- Accounts.list_spaces(scope: scope) do
+      spaces
     else
       err ->
-        Log.scoped_error(scope, err, "list_groups failed")
+        Log.scoped_error(scope, err, "list_spaces failed")
         []
     end
   end
 
-  defp list_owned_groups(nil), do: []
+  defp list_owned_spaces(nil), do: []
 
-  defp list_owned_groups(user) do
-    with {:ok, groups} <- Accounts.list_owned_groups(user) do
-      groups
+  defp list_owned_spaces(user) do
+    with {:ok, spaces} <- Accounts.list_owned_spaces(user) do
+      spaces
     else
       err ->
-        Log.scoped_error(nil, err, "list_owned_groups failed")
+        Log.scoped_error(nil, err, "list_owned_spaces failed")
         []
     end
   end
@@ -274,10 +274,10 @@ defmodule WikWeb.Me.AccessLive do
   defp grant_status_class(%{status: :active}), do: "badge badge-sm badge-success"
   defp grant_status_class(_grant), do: "badge badge-sm badge-neutral"
 
-  defp grant_bypass_messages?(%{role: :superadmin}, _owned_groups), do: true
-  defp grant_bypass_messages?(_user, owned_groups), do: owned_groups != []
+  defp grant_bypass_messages?(%{role: :superadmin}, _owned_spaces), do: true
+  defp grant_bypass_messages?(_user, owned_spaces), do: owned_spaces != []
 
-  defp get_grant_membership(%{source: %{group: %{memberships: memberships}}}, %{id: user_id}) do
+  defp get_grant_membership(%{source: %{space: %{memberships: memberships}}}, %{id: user_id}) do
     Enum.find(memberships, &(&1.user_id == user_id))
   end
 

@@ -3,7 +3,7 @@ defmodule Wik.Accounts.ProfileTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Accounts.Profile
   alias Wik.Scope
 
@@ -14,12 +14,12 @@ defmodule Wik.Accounts.ProfileTest do
       assert {:ok, profile} =
                Ash.create(
                  Profile,
-                 %{group_user_relation_id: membership.id},
+                 %{membership_id: membership.id},
                  authorize?: false,
                  domain: Wik.Accounts
                )
 
-      assert profile.group_user_relation_id == membership.id
+      assert profile.membership_id == membership.id
 
       assert {:ok, membership_with_profile} =
                Ash.load(
@@ -38,7 +38,7 @@ defmodule Wik.Accounts.ProfileTest do
       assert {:ok, _profile} =
                Ash.create(
                  Profile,
-                 %{group_user_relation_id: membership.id},
+                 %{membership_id: membership.id},
                  authorize?: false,
                  domain: Wik.Accounts
                )
@@ -46,7 +46,7 @@ defmodule Wik.Accounts.ProfileTest do
       assert {:error, _error} =
                Ash.create(
                  Profile,
-                 %{group_user_relation_id: membership.id},
+                 %{membership_id: membership.id},
                  authorize?: false,
                  domain: Wik.Accounts
                )
@@ -54,26 +54,26 @@ defmodule Wik.Accounts.ProfileTest do
   end
 
   describe "read policy" do
-    test "allows members of the same group to read a profile" do
-      group = generate(group())
+    test "allows members of the same space to read a profile" do
+      space = generate(space())
       profile_owner = generate(user())
       peer = generate(user())
 
-      membership = add_membership(group, profile_owner, :member)
-      add_membership(group, peer, :member)
-      grant_active_telegram_access(group, peer)
+      membership = add_membership(space, profile_owner, :member)
+      add_membership(space, peer, :member)
+      grant_active_telegram_access(space, peer)
       profile = create_profile(membership)
 
-      assert Ash.can?({profile, :read}, scope(peer, group))
+      assert Ash.can?({profile, :read}, scope(peer, space))
     end
 
-    test "forbids users outside the group from reading a profile" do
-      group = generate(group())
+    test "forbids users outside the space from reading a profile" do
+      space = generate(space())
       outsider = generate(user())
-      membership = add_membership(group, generate(user()), :member)
+      membership = add_membership(space, generate(user()), :member)
       profile = create_profile(membership)
 
-      refute Ash.can?({profile, :read}, scope(outsider, group))
+      refute Ash.can?({profile, :read}, scope(outsider, space))
     end
 
     test "allows a superadmin to read any profile" do
@@ -81,23 +81,23 @@ defmodule Wik.Accounts.ProfileTest do
       membership = membership_fixture(:member)
       profile = create_profile(membership)
 
-      assert Ash.can?({profile, :read}, scope(superadmin, membership.group_id))
+      assert Ash.can?({profile, :read}, scope(superadmin, membership.space_id))
     end
   end
 
   defp membership_fixture(type) do
-    group = generate(group())
+    space = generate(space())
     user = generate(user())
 
-    add_membership(group, user, type)
+    add_membership(space, user, type)
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     {:ok, membership} =
       Ash.create(
-        GroupUserRelation,
+        Membership,
         %{
-          group_id: group.id,
+          space_id: space.id,
           type: type,
           user_id: user.id
         },
@@ -112,7 +112,7 @@ defmodule Wik.Accounts.ProfileTest do
     {:ok, profile} =
       Ash.create(
         Profile,
-        %{group_user_relation_id: membership.id},
+        %{membership_id: membership.id},
         authorize?: false,
         domain: Wik.Accounts
       )

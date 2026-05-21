@@ -9,7 +9,7 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
   alias Wik.Access.Source
   alias Wik.Access.Telegram
   alias Wik.Accounts
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
 
   require Ash.Query
@@ -25,8 +25,8 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
   describe "refresh_grants/2" do
     test "activates grants and creates plain member relations for Telegram members" do
       user = create_telegram_user()
-      group = generate(group())
-      source = create_active_source(group, "-1001")
+      space = generate(space())
+      source = create_active_source(space, "-1001")
 
       assert {:ok, [grant]} = Telegram.refresh_grants(user, MemberTelegramProvider)
 
@@ -35,8 +35,8 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
       assert grant.user_id == user.id
 
       assert {:ok, membership} =
-               GroupUserRelation
-               |> Ash.Query.filter(group_id == ^group.id and user_id == ^user.id)
+               Membership
+               |> Ash.Query.filter(space_id == ^space.id and user_id == ^user.id)
                |> Ash.read_one(authorize?: false, domain: Wik.Accounts)
 
       assert membership.type == :member
@@ -44,8 +44,8 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
 
     test "deactivates grants when Telegram no longer reports membership" do
       user = create_telegram_user()
-      group = generate(group())
-      source = create_active_source(group, "-1001")
+      space = generate(space())
+      source = create_active_source(space, "-1001")
       create_active_grant(source, user)
 
       assert {:ok, [grant]} = Telegram.refresh_grants(user, LeftTelegramProvider)
@@ -53,58 +53,58 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
       assert grant.status == :inactive
 
       assert {:ok, nil} =
-               GroupUserRelation
-               |> Ash.Query.filter(group_id == ^group.id and user_id == ^user.id)
+               Membership
+               |> Ash.Query.filter(space_id == ^space.id and user_id == ^user.id)
                |> Ash.read_one(authorize?: false, domain: Wik.Accounts)
     end
 
     test "keeps existing local app roles unchanged" do
       user = create_telegram_user()
-      group = generate(group())
-      create_active_source(group, "-1001")
-      create_membership(group, user, :admin)
+      space = generate(space())
+      create_active_source(space, "-1001")
+      create_membership(space, user, :admin)
 
       assert {:ok, [_grant]} = Telegram.refresh_grants(user, MemberTelegramProvider)
 
       assert {:ok, membership} =
-               GroupUserRelation
-               |> Ash.Query.filter(group_id == ^group.id and user_id == ^user.id)
+               Membership
+               |> Ash.Query.filter(space_id == ^space.id and user_id == ^user.id)
                |> Ash.read_one(authorize?: false, domain: Wik.Accounts)
 
       assert membership.type == :admin
     end
 
-    test "active Telegram grants make the group visible" do
+    test "active Telegram grants make the space visible" do
       user = create_telegram_user()
-      group = generate(group())
-      create_active_source(group, "-1001")
+      space = generate(space())
+      create_active_source(space, "-1001")
 
       assert {:ok, [_grant]} = Telegram.refresh_grants(user, MemberTelegramProvider)
 
-      assert Ash.can?({group, :read}, scope(user, group))
-      assert {:ok, groups} = Accounts.list_groups(scope: scope(user, group))
-      assert Enum.any?(groups, &(&1.id == group.id))
+      assert Ash.can?({space, :read}, scope(user, space))
+      assert {:ok, spaces} = Accounts.list_spaces(scope: scope(user, space))
+      assert Enum.any?(spaces, &(&1.id == space.id))
     end
 
-    test "inactive Telegram grants hide the group but keep the local role row" do
+    test "inactive Telegram grants hide the space but keep the local role row" do
       user = create_telegram_user()
-      group = generate(group())
-      source = create_active_source(group, "-1001")
-      create_membership(group, user, :admin)
+      space = generate(space())
+      source = create_active_source(space, "-1001")
+      create_membership(space, user, :admin)
       create_active_grant(source, user)
 
       assert {:ok, [grant]} = Telegram.refresh_grants(user, LeftTelegramProvider)
 
       assert grant.status == :inactive
-      refute Ash.can?({group, :read}, scope(user, group))
-      refute Ash.can?({group, :update}, scope(user, group))
+      refute Ash.can?({space, :read}, scope(user, space))
+      refute Ash.can?({space, :update}, scope(user, space))
 
-      assert {:ok, groups} = Accounts.list_groups(scope: scope(user, group))
-      refute Enum.any?(groups, &(&1.id == group.id))
+      assert {:ok, spaces} = Accounts.list_spaces(scope: scope(user, space))
+      refute Enum.any?(spaces, &(&1.id == space.id))
 
       assert {:ok, membership} =
-               GroupUserRelation
-               |> Ash.Query.filter(group_id == ^group.id and user_id == ^user.id)
+               Membership
+               |> Ash.Query.filter(space_id == ^space.id and user_id == ^user.id)
                |> Ash.read_one(authorize?: false, domain: Wik.Accounts)
 
       assert membership.type == :admin
@@ -112,19 +112,19 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
 
     test "inactive Telegram grants do not affect owner access" do
       user = create_telegram_user()
-      group = generate(group(author: user))
-      source = create_active_source(group, "-1001")
-      create_membership(group, user, :owner)
+      space = generate(space(author: user))
+      source = create_active_source(space, "-1001")
+      create_membership(space, user, :owner)
       create_active_grant(source, user)
 
       assert {:ok, [grant]} = Telegram.refresh_grants(user, LeftTelegramProvider)
 
       assert grant.status == :inactive
-      assert Ash.can?({group, :read}, scope(user, group))
-      assert Ash.can?({group, :update}, scope(user, group))
+      assert Ash.can?({space, :read}, scope(user, space))
+      assert Ash.can?({space, :update}, scope(user, space))
 
-      assert {:ok, groups} = Accounts.list_groups(scope: scope(user, group))
-      assert Enum.any?(groups, &(&1.id == group.id))
+      assert {:ok, spaces} = Accounts.list_spaces(scope: scope(user, space))
+      assert Enum.any?(spaces, &(&1.id == space.id))
     end
   end
 
@@ -142,17 +142,17 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
     identity.user
   end
 
-  defp create_active_source(group, provider_source_id) do
+  defp create_active_source(space, provider_source_id) do
     {:ok, source} =
       Ash.create(
         Source,
         %{
-          group_id: group.id,
+          space_id: space.id,
           metadata: %{"kind" => "telegram_chat"},
           provider: :telegram,
           provider_source_id: provider_source_id,
           status: :active,
-          title: "Telegram Group"
+          title: "Telegram Space"
         },
         authorize?: false
       )
@@ -182,10 +182,10 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
     grant
   end
 
-  defp create_membership(group, user, type) do
+  defp create_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

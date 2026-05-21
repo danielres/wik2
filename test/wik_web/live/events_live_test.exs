@@ -6,7 +6,7 @@ defmodule WikWeb.EventsLiveTest do
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
 
@@ -23,34 +23,34 @@ defmodule WikWeb.EventsLiveTest do
     :ok
   end
 
-  test "group members can view the compact timeline and open event detail by query param", %{
+  test "space members can view the compact timeline and open event detail by query param", %{
     conn: conn
   } do
     owner = generate(user())
     member = generate(user())
-    group = generate(group(author: owner))
+    space = generate(space(author: owner))
 
-    add_membership(group, owner, :owner)
-    add_membership(group, member, :member)
-    grant_active_telegram_access(group, member)
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
 
     {:ok, _event} =
       Ash.create(Event, event_attrs(title: "Shared dinner"),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     [publication] =
       Ash.read!(
         Wik.Events.EventPublication,
         authorize?: false,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     {:ok, view, _html} =
       conn
       |> log_in(member)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     assert has_element?(view, testid("events-page"))
     assert has_element?(view, testid("event-publication-#{publication.id}"))
@@ -59,7 +59,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{publication.id}")))
 
-    assert_patch(view, ~p"/#{group.slug}/events?#{%{event: publication.id}}")
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id}}")
     assert has_element?(view, testid("event-detail"))
     assert render(view) =~ "An event description"
     assert render(view) =~ "Community Hall, 123 Example Street"
@@ -69,32 +69,32 @@ defmodule WikWeb.EventsLiveTest do
     assert render(view) =~ "Community+Hall%2C+123+Example+Street"
   end
 
-  test "relay button appears only when there is an eligible target group", %{conn: conn} do
+  test "relay button appears only when there is an eligible target space", %{conn: conn} do
     owner = generate(user())
     target_owner = generate(user())
-    origin_group = generate(group(author: owner))
-    target_group = generate(group(author: target_owner))
+    origin_space = generate(space(author: owner))
+    target_space = generate(space(author: target_owner))
 
-    add_membership(origin_group, owner, :owner)
-    add_membership(target_group, owner, :owner)
+    add_membership(origin_space, owner, :owner)
+    add_membership(target_space, owner, :owner)
 
     {:ok, event} =
       Ash.create(
         Event,
-        event_attrs(relay_policy: :admins_only_groups),
+        event_attrs(relay_policy: :admins_only_spaces),
         action: :create,
-        scope: scope(owner, origin_group)
+        scope: scope(owner, origin_space)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^origin_space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_space))
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
 
     assert has_element?(view, testid("event-detail-relay-#{publication.id}"))
 
@@ -108,18 +108,18 @@ defmodule WikWeb.EventsLiveTest do
           title: "Internal event"
         ),
         action: :create,
-        scope: scope(owner, origin_group)
+        scope: scope(owner, origin_space)
       )
 
     {:ok, internal_publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^internal_event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
+      |> Ash.Query.filter(event_id == ^internal_event.id and target_space_id == ^origin_space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_space))
 
     {:ok, internal_view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.slug}/events?#{%{event: internal_publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: internal_publication.id}}")
 
     refute has_element?(internal_view, testid("event-detail-relay-#{internal_publication.id}"))
   end
@@ -127,29 +127,29 @@ defmodule WikWeb.EventsLiveTest do
   test "relay mode replaces details and successful relay returns to details", %{conn: conn} do
     owner = generate(user())
     target_owner = generate(user())
-    origin_group = generate(group(author: owner))
-    target_group = generate(group(author: target_owner))
+    origin_space = generate(space(author: owner))
+    target_space = generate(space(author: target_owner))
 
-    add_membership(origin_group, owner, :owner)
-    add_membership(target_group, owner, :owner)
+    add_membership(origin_space, owner, :owner)
+    add_membership(target_space, owner, :owner)
 
     {:ok, event} =
       Ash.create(
         Event,
-        event_attrs(relay_policy: :admins_only_groups),
+        event_attrs(relay_policy: :admins_only_spaces),
         action: :create,
-        scope: scope(owner, origin_group)
+        scope: scope(owner, origin_space)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^origin_space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_space))
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
 
@@ -160,7 +160,7 @@ defmodule WikWeb.EventsLiveTest do
       form(view, testid("event-relay-form"),
         relay: %{
           "relay_note" => "Worth sharing",
-          "target_group_id" => target_group.id
+          "target_space_id" => target_space.id
         }
       )
     )
@@ -171,10 +171,10 @@ defmodule WikWeb.EventsLiveTest do
 
     assert {:ok, relay_publication} =
              Wik.Events.EventPublication
-             |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^target_group.id)
+             |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^target_space.id)
              |> Ash.read_first(
                authorize?: false,
-               scope: scope(owner, target_group)
+               scope: scope(owner, target_space)
              )
 
     assert relay_publication.relay_note == "Worth sharing"
@@ -183,29 +183,29 @@ defmodule WikWeb.EventsLiveTest do
   test "relay mode can be cancelled back to details", %{conn: conn} do
     owner = generate(user())
     target_owner = generate(user())
-    origin_group = generate(group(author: owner))
-    target_group = generate(group(author: target_owner))
+    origin_space = generate(space(author: owner))
+    target_space = generate(space(author: target_owner))
 
-    add_membership(origin_group, owner, :owner)
-    add_membership(target_group, owner, :owner)
+    add_membership(origin_space, owner, :owner)
+    add_membership(target_space, owner, :owner)
 
     {:ok, event} =
       Ash.create(
         Event,
-        event_attrs(relay_policy: :admins_only_groups),
+        event_attrs(relay_policy: :admins_only_spaces),
         action: :create,
-        scope: scope(owner, origin_group)
+        scope: scope(owner, origin_space)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^origin_group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_group))
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^origin_space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, origin_space))
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_group.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
     assert has_element?(view, testid("event-relay-form"))
@@ -218,13 +218,13 @@ defmodule WikWeb.EventsLiveTest do
 
   test "owner can create an event from the modal", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
 
@@ -244,14 +244,14 @@ defmodule WikWeb.EventsLiveTest do
           "starts_at_time" => "18:00",
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:00",
-          "relay_policy" => "admins_only_groups",
+          "relay_policy" => "admins_only_spaces",
           "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
     )
 
-    assert_patch(view, ~p"/#{group.slug}/events")
+    assert_patch(view, ~p"/#{space.slug}/events")
     assert has_element?(view, testid("events-timeline"))
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
@@ -259,18 +259,18 @@ defmodule WikWeb.EventsLiveTest do
     assert %Wik.Events.Event{} =
              Wik.Events.Event
              |> Ash.Query.filter(title == "Community dinner")
-             |> Ash.read_one!(authorize?: false, scope: scope(owner, group))
+             |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
   end
 
   test "create submit shows field errors without a flash", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
 
@@ -285,7 +285,7 @@ defmodule WikWeb.EventsLiveTest do
           "starts_at_time" => "18:00",
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:00",
-          "relay_policy" => "admins_only_groups",
+          "relay_policy" => "admins_only_spaces",
           "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
@@ -304,32 +304,32 @@ defmodule WikWeb.EventsLiveTest do
     conn: conn
   } do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, event} =
       Ash.create(
         Event,
-        event_attrs(title: "Community dinner", relay_policy: :admins_only_groups),
+        event_attrs(title: "Community dinner", relay_policy: :admins_only_spaces),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     assert has_element?(view, testid("event-publication-#{publication.id}"))
     refute render(view) =~ ~s(name="form[status]")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
-    assert_patch(view, ~p"/#{group.slug}/events?#{%{event: publication.id}}")
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id}}")
     assert has_element?(view, testid("event-detail"))
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -347,7 +347,7 @@ defmodule WikWeb.EventsLiveTest do
           "starts_at_time" => "18:30",
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:30",
-          "relay_policy" => "admins_only_groups",
+          "relay_policy" => "admins_only_spaces",
           "provenance_policy" => "visible",
           "status" => "cancelled",
           "tz" => "Etc/UTC"
@@ -355,7 +355,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{group.slug}/events")
+    assert_patch(view, ~p"/#{space.slug}/events")
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
     assert render(view) =~ "Community dinner updated"
@@ -364,26 +364,26 @@ defmodule WikWeb.EventsLiveTest do
 
   test "edit submit shows field errors without a flash", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, event} =
       Ash.create(
         Event,
-        event_attrs(title: "Community dinner", relay_policy: :admins_only_groups),
+        event_attrs(title: "Community dinner", relay_policy: :admins_only_spaces),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -399,7 +399,7 @@ defmodule WikWeb.EventsLiveTest do
           "starts_at_time" => "18:30",
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:30",
-          "relay_policy" => "admins_only_groups",
+          "relay_policy" => "admins_only_spaces",
           "provenance_policy" => "visible",
           "status" => "published",
           "tz" => "Etc/UTC"
@@ -417,8 +417,8 @@ defmodule WikWeb.EventsLiveTest do
 
   test "edit form preloads timed event schedule values", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, event} =
       Ash.create(
@@ -430,18 +430,18 @@ defmodule WikWeb.EventsLiveTest do
           ends_at_time: "20:45"
         ),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -456,8 +456,8 @@ defmodule WikWeb.EventsLiveTest do
 
   test "edit form preloads all-day event schedule values", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, event} =
       Ash.create(
@@ -468,18 +468,18 @@ defmodule WikWeb.EventsLiveTest do
           ends_on: "2026-05-13"
         ),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     {:ok, publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^event.id and target_group_id == ^group.id)
-      |> Ash.read_first(authorize?: false, scope: scope(owner, group))
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -495,13 +495,13 @@ defmodule WikWeb.EventsLiveTest do
   } do
     owner = generate(user())
     relay_owner = generate(user())
-    origin_group = generate(group(author: owner))
-    target_group = generate(group(author: relay_owner))
+    origin_space = generate(space(author: owner))
+    target_space = generate(space(author: relay_owner))
 
-    add_membership(origin_group, owner, :owner)
-    add_membership(origin_group, relay_owner, :admin)
-    add_membership(target_group, relay_owner, :owner)
-    grant_active_telegram_access(origin_group, relay_owner)
+    add_membership(origin_space, owner, :owner)
+    add_membership(origin_space, relay_owner, :admin)
+    add_membership(target_space, relay_owner, :owner)
+    grant_active_telegram_access(origin_space, relay_owner)
 
     {:ok, event} =
       Ash.create(
@@ -509,26 +509,26 @@ defmodule WikWeb.EventsLiveTest do
         event_attrs(
           title: "Quiet walk",
           provenance_policy: :hidden,
-          relay_policy: :admins_only_groups
+          relay_policy: :admins_only_spaces
         ),
         action: :create,
-        scope: scope(owner, origin_group)
+        scope: scope(owner, origin_space)
       )
 
     {:ok, _publication} =
-      Events.relay_to_group(event, target_group,
+      Events.relay_to_space(event, target_space,
         action: :create,
-        scope: scope(relay_owner, origin_group),
-        relay_note: "Good fit for your group"
+        scope: scope(relay_owner, origin_space),
+        relay_note: "Good fit for your space"
       )
 
     {:ok, view, _html} =
       conn
       |> log_in(relay_owner)
-      |> live(~p"/#{target_group.slug}/events")
+      |> live(~p"/#{target_space.slug}/events")
 
-    refute render(view) =~ "Good fit for your group"
-    refute render(view) =~ origin_group.name
+    refute render(view) =~ "Good fit for your space"
+    refute render(view) =~ origin_space.name
 
     render_click(element(view, testid("events-create-button")))
 
@@ -594,13 +594,13 @@ defmodule WikWeb.EventsLiveTest do
     conn: conn
   } do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
 
@@ -704,11 +704,11 @@ defmodule WikWeb.EventsLiveTest do
   test "renders both event tz and user tz when they differ", %{conn: conn} do
     owner = generate(user())
     member = generate(user())
-    group = generate(group(author: owner))
+    space = generate(space(author: owner))
 
-    add_membership(group, owner, :owner)
-    add_membership(group, member, :member)
-    grant_active_telegram_access(group, member)
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
 
     {:ok, _event} =
       Ash.create(
@@ -722,13 +722,13 @@ defmodule WikWeb.EventsLiveTest do
           tz: "Europe/Berlin"
         ),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     {:ok, view, _html} =
       conn
       |> log_in(member)
-      |> live(~p"/#{group.slug}/events")
+      |> live(~p"/#{space.slug}/events")
 
     html = render(view)
     assert html =~ "Europe/Berlin"
@@ -737,8 +737,8 @@ defmodule WikWeb.EventsLiveTest do
 
   test "edit form timezone picker reflects the event timezone", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     {:ok, _event} =
       Ash.create(
@@ -750,20 +750,20 @@ defmodule WikWeb.EventsLiveTest do
           title: "Berlin event"
         ),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     [publication] =
       Ash.read!(
         Wik.Events.EventPublication,
         authorize?: false,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{space.slug}/events?#{%{event: publication.id}}")
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 
@@ -775,10 +775,10 @@ defmodule WikWeb.EventsLiveTest do
            )
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false
     )
   end

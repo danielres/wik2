@@ -4,7 +4,7 @@
   tenant_context={@tenant_context}
   scope={@current_scope}
 >
-  <Layouts.group presences={@presences} scope={@current_scope} view="wiki/home">
+  <Layouts.space presences={@presences} scope={@current_scope} view="wiki/home">
     <%= if assigns[:not_found_path] do %>
       <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
         <div>Ooops...</div>
@@ -145,5 +145,5 @@
         />
       </section>
     <% end %>
-  </Layouts.group>
+  </Layouts.space>
 </Layouts.app>

@@ -1,7 +1,7 @@
 defmodule Wik.Events.EventPublication do
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Events.EventPublication.Checks.ActorCanRelayEvent
-  alias Wik.Events.EventPublication.Validations.GroupMatchesEvent
+  alias Wik.Events.EventPublication.Validations.SpaceMatchesEvent
 
   use Ash.Resource,
     otp_app: :wik,
@@ -17,20 +17,20 @@ defmodule Wik.Events.EventPublication do
   end
 
   code_interface do
-    define :publish_to_origin_group, action: :publish_to_origin_group
-    define :relay_to_group, action: :relay_to_group
+    define :publish_to_origin_space, action: :publish_to_origin_space
+    define :relay_to_space, action: :relay_to_space
   end
 
   actions do
     defaults [:read]
 
-    create :publish_to_origin_group do
+    create :publish_to_origin_space do
       accept [:event_id]
       change relate_actor(:published_by, allow_nil?: false)
       change set_attribute(:publication_type, :origin)
     end
 
-    create :relay_to_group do
+    create :relay_to_space do
       accept [:event_id, :relay_note]
       change relate_actor(:published_by, allow_nil?: false)
       change set_attribute(:publication_type, :relay)
@@ -43,14 +43,14 @@ defmodule Wik.Events.EventPublication do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
     end
 
-    policy action(:publish_to_origin_group) do
-      authorize_if Group.Checks.ActorCanManageCurrentTenantGroup
+    policy action(:publish_to_origin_space) do
+      authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
     end
 
-    policy action(:relay_to_group) do
+    policy action(:relay_to_space) do
       authorize_if ActorCanRelayEvent
     end
   end
@@ -58,18 +58,18 @@ defmodule Wik.Events.EventPublication do
   pub_sub do
     module WikWeb.Endpoint
     prefix "event_publication"
-    publish :publish_to_origin_group, ["group", :target_group_id]
-    publish :relay_to_group, ["group", :target_group_id]
+    publish :publish_to_origin_space, ["space", :target_space_id]
+    publish :relay_to_space, ["space", :target_space_id]
   end
 
   validations do
-    validate GroupMatchesEvent
+    validate SpaceMatchesEvent
   end
 
   multitenancy do
     strategy :attribute
-    attribute :target_group_id
-    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
+    attribute :target_space_id
+    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
   end
 
   attributes do
@@ -94,8 +94,8 @@ defmodule Wik.Events.EventPublication do
       allow_nil? false
     end
 
-    belongs_to :group, Wik.Accounts.Group do
-      source_attribute :target_group_id
+    belongs_to :space, Wik.Accounts.Space do
+      source_attribute :target_space_id
       destination_attribute :id
       allow_nil? false
     end
@@ -107,6 +107,6 @@ defmodule Wik.Events.EventPublication do
   end
 
   identities do
-    identity :unique_event_publication, [:event_id, :target_group_id]
+    identity :unique_event_publication, [:event_id, :target_space_id]
   end
 end

@@ -3,16 +3,16 @@ defmodule Wik.TaggingsPolicyTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Tags.Tagging
 
   describe "membership tagging access" do
-    test "group members can read, only the membership owner can manage, and superadmin bypasses" do
+    test "space members can read, only the membership owner can manage, and superadmin bypasses" do
       %{
         admin: admin,
-        group: group,
+        space: space,
         member: member,
         member_membership: member_membership,
         other_member: other_member,
@@ -22,16 +22,16 @@ defmodule Wik.TaggingsPolicyTest do
         tagging: tagging
       } = access_fixture()
 
-      assert Ash.can?({tagging, :read}, scope(owner, group))
-      assert Ash.can?({tagging, :read}, scope(admin, group))
-      assert Ash.can?({tagging, :read}, scope(other_member, group))
+      assert Ash.can?({tagging, :read}, scope(owner, space))
+      assert Ash.can?({tagging, :read}, scope(admin, space))
+      assert Ash.can?({tagging, :read}, scope(other_member, space))
 
       assert {:ok, _} =
                Tags.upsert_membership_tagging(
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 4}, description: nil},
-                 scope: scope(member, group)
+                 scope: scope(member, space)
                )
 
       assert {:error, _} =
@@ -39,7 +39,7 @@ defmodule Wik.TaggingsPolicyTest do
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
-                 scope: scope(owner, group)
+                 scope: scope(owner, space)
                )
 
       assert {:error, _} =
@@ -47,7 +47,7 @@ defmodule Wik.TaggingsPolicyTest do
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
-                 scope: scope(admin, group)
+                 scope: scope(admin, space)
                )
 
       assert {:error, _} =
@@ -55,17 +55,17 @@ defmodule Wik.TaggingsPolicyTest do
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
-                 scope: scope(other_member, group)
+                 scope: scope(other_member, space)
                )
 
-      assert Ash.can?({tagging, :destroy}, scope(superadmin, group))
+      assert Ash.can?({tagging, :destroy}, scope(superadmin, space))
 
       assert {:ok, _} =
                Tags.upsert_membership_tagging(
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
-                 scope: scope(superadmin, group)
+                 scope: scope(superadmin, space)
                )
 
       assert {:ok, _} =
@@ -75,19 +75,19 @@ defmodule Wik.TaggingsPolicyTest do
                    description: nil,
                    dimensions: %{"skill" => 1},
                    tag_id: tag.id,
-                   tagged_by_group_user_relation_id: member_membership.id,
+                   tagged_by_membership_id: member_membership.id,
                    taggable_id: member_membership.id,
-                   taggable_type: "group_user_relation"
+                   taggable_type: "membership"
                  },
                  action: :create,
                  domain: Wik.Tags,
-                 scope: scope(superadmin, group)
+                 scope: scope(superadmin, space)
                )
     end
 
-    test "outsiders cannot read another group's member taggings" do
-      %{group: group, outsider: outsider, tagging: tagging} = access_fixture()
-      refute Ash.can?({tagging, :read}, scope(outsider, group))
+    test "outsiders cannot read another space's member taggings" do
+      %{space: space, outsider: outsider, tagging: tagging} = access_fixture()
+      refute Ash.can?({tagging, :read}, scope(outsider, space))
     end
   end
 
@@ -98,30 +98,30 @@ defmodule Wik.TaggingsPolicyTest do
     other_member = generate(user())
     outsider = generate(user())
     superadmin = generate(user(role: :superadmin))
-    group = generate(group(author: owner))
+    space = generate(space(author: owner))
 
-    add_membership(group, owner, :owner)
-    add_membership(group, admin, :admin)
-    member_membership = add_membership(group, member, :member)
-    add_membership(group, other_member, :member)
+    add_membership(space, owner, :owner)
+    add_membership(space, admin, :admin)
+    member_membership = add_membership(space, member, :member)
+    add_membership(space, other_member, :member)
 
-    grant_active_telegram_access(group, admin)
-    grant_active_telegram_access(group, member)
-    grant_active_telegram_access(group, other_member)
+    grant_active_telegram_access(space, admin)
+    grant_active_telegram_access(space, member)
+    grant_active_telegram_access(space, other_member)
 
-    {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, group))
+    {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
 
     {:ok, tagging} =
       Tags.upsert_membership_tagging(
         member_membership,
         tag.id,
         %{dimensions: %{"interest" => 5}, description: nil},
-        scope: scope(member, group)
+        scope: scope(member, space)
       )
 
     %{
       admin: admin,
-      group: group,
+      space: space,
       member: member,
       member_membership: member_membership,
       other_member: other_member,
@@ -133,10 +133,10 @@ defmodule Wik.TaggingsPolicyTest do
     }
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

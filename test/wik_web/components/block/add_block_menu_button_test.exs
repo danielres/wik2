@@ -4,23 +4,23 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
   import Phoenix.LiveViewTest, only: [render_component: 2]
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Wiki.Page
   alias WikWeb.Components.Block.AddBlockMenuButton
 
   test "shows the child pages option when child pages are available" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
     {:ok, source_page} = Page.create(authorize?: false, scope: scope)
     {:ok, child_page} = Page.create(authorize?: false, scope: scope)
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: source_page.id, parent_id: nil, slug: "members", title: "Members"},
           %{id: 2, page_id: child_page.id, parent_id: 1, slug: "alice", title: "Alice"}
@@ -59,15 +59,15 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
 
   test "hides the child pages option when no source pages are available" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
     {:ok, leaf_page} = Page.create(authorize?: false, scope: scope)
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: leaf_page.id, parent_id: nil, slug: "faq", title: "FAQ"}
         ]
@@ -99,10 +99,10 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
     refute html =~ "Child pages"
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

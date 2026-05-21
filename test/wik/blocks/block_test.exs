@@ -24,14 +24,14 @@ defmodule Wik.Blocks.BlockTest do
 
     test "fails when both owners are set" do
       actor = generate(user())
-      group = generate(group())
+      space = generate(space())
 
       assert {:error, _error} =
                Ash.create(
                  Block,
                  %{
                    data: %{"text" => "Hello"},
-                   owner_group_id: group.id,
+                   owner_space_id: space.id,
                    owner_user_id: actor.id,
                    type: :text
                  },

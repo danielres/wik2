@@ -5,7 +5,7 @@ defmodule WikWeb.LiveUserAuth do
   @dev_routes? Application.compile_env(:wik, :dev_routes, false)
 
   alias Wik.Accounts
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias WikWeb.Context
   alias WikWeb.ErrorTrackerContext
   alias WikWeb.TenantContext
@@ -83,12 +83,12 @@ defmodule WikWeb.LiveUserAuth do
     current_user = socket.assigns[:current_user] |> current_user_for_dev()
 
     if current_user do
-      group_slug = params["group_slug"]
+      space_slug = params["space_slug"]
 
-      case group_slug |> Accounts.get_group_by_slug(actor: current_user) do
-        {:ok, group} ->
-          current_scope = %Wik.Scope{actor: current_user, tenant: group}
-          tenant_context = TenantContext.build(current_user, group)
+      case space_slug |> Accounts.get_space_by_slug(actor: current_user) do
+        {:ok, space} ->
+          current_scope = %Wik.Scope{actor: current_user, tenant: space}
+          tenant_context = TenantContext.build(current_user, space)
 
           socket =
             socket
@@ -103,7 +103,7 @@ defmodule WikWeb.LiveUserAuth do
           {:cont, socket}
 
         _ ->
-          socket = Phoenix.LiveView.put_flash(socket, :error, ~s(Group "#{group_slug}" not found))
+          socket = Phoenix.LiveView.put_flash(socket, :error, ~s(Space "#{space_slug}" not found))
           {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
       end
     else
@@ -135,9 +135,9 @@ defmodule WikWeb.LiveUserAuth do
 
     socket =
       case {Phoenix.LiveView.connected?(socket), socket.assigns[:current_scope]} do
-        {true, %{tenant: %{id: group_id}}} ->
-          :ok = WikWeb.Presence.subscribe_to_group(group_id)
-          assign(socket, :presences, WikWeb.Presence.list_online_users_in_group(group_id))
+        {true, %{tenant: %{id: space_id}}} ->
+          :ok = WikWeb.Presence.subscribe_to_space(space_id)
+          assign(socket, :presences, WikWeb.Presence.list_online_users_in_space(space_id))
 
         _ ->
           assign(socket, :presences, [])
@@ -186,7 +186,7 @@ defmodule WikWeb.LiveUserAuth do
 
   defp attach_context_hook(socket) do
     current_user = socket.assigns[:current_user]
-    user_pub_sub_topic = current_user && GroupUserRelation.user_pub_sub_topic(current_user.id)
+    user_pub_sub_topic = current_user && Membership.user_pub_sub_topic(current_user.id)
 
     if Phoenix.LiveView.connected?(socket) do
       :ok = Context.subscribe(current_user)
@@ -263,7 +263,7 @@ defmodule WikWeb.LiveUserAuth do
   defp subscribe_to_membership_updates(nil), do: :ok
 
   defp subscribe_to_membership_updates(%{id: user_id}) do
-    WikWeb.Endpoint.subscribe(GroupUserRelation.user_pub_sub_topic(user_id))
+    WikWeb.Endpoint.subscribe(Membership.user_pub_sub_topic(user_id))
   end
 
   defp current_user_for_dev(%{role: :superadmin} = user) do
@@ -286,10 +286,10 @@ defmodule WikWeb.LiveUserAuth do
   defp refresh_current_scope(%{assigns: %{current_scope: %{tenant: tenant}}} = socket) do
     current_user = socket.assigns.current_user
 
-    case Accounts.get_group_by_slug(tenant.slug, actor: current_user) do
-      {:ok, group} ->
-        current_scope = %Wik.Scope{actor: current_user, tenant: group}
-        tenant_context = TenantContext.build(current_user, group)
+    case Accounts.get_space_by_slug(tenant.slug, actor: current_user) do
+      {:ok, space} ->
+        current_scope = %Wik.Scope{actor: current_user, tenant: space}
+        tenant_context = TenantContext.build(current_user, space)
 
         socket
         |> assign(:current_scope, current_scope)

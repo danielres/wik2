@@ -6,7 +6,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
 
   attr :editing?, :boolean, default: false
-  attr :group_slug, :string, required: true
+  attr :space_slug, :string, required: true
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -21,7 +21,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
     <% else %>
       <.tag_nodes
         editing?={@editing?}
-        group_slug={@group_slug}
+        space_slug={@space_slug}
         nodes={@nodes}
         selected_tag_id={@selected_tag_id}
         depth={0}
@@ -32,7 +32,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   attr :depth, :integer, required: true
   attr :editing?, :boolean, default: false
-  attr :group_slug, :string, required: true
+  attr :space_slug, :string, required: true
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -43,7 +43,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         <.tag_node
           depth={@depth + 1}
           editing?={@editing?}
-          group_slug={@group_slug}
+          space_slug={@space_slug}
           node={node}
           selected_tag_id={@selected_tag_id}
         />
@@ -54,7 +54,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   attr :depth, :integer, required: true
   attr :editing?, :boolean, default: false
-  attr :group_slug, :string, required: true
+  attr :space_slug, :string, required: true
   attr :node, :map, required: true
   attr :selected_tag_id, :string, default: nil
 
@@ -72,7 +72,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       data-testid={"tag-branch-#{@node.dom_id}"}
       style="--size-field: 0.22rem;"
     >
-      <div class="group flex justify-between gap-2">
+      <div class="space flex justify-between gap-2">
         <button
           :if={@editing?}
           class={[
@@ -90,7 +90,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             class={[
               "opacity-30 transition",
               @selected? && "rotate-0 opacity-100",
-              !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
+              !@selected? && "rotate-135 space-hover:rotate-0 space-hover:opacity-100"
             ]}
           />
 
@@ -103,7 +103,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
         <.link
           :if={not @editing?}
-          navigate={~p"/#{@group_slug}/tags/#{@node.tag.slug}"}
+          navigate={~p"/#{@space_slug}/tags/#{@node.tag.slug}"}
           class={[
             "flex min-w-0 flex-1 items-center gap-0 text-left transition",
             "cursor-pointer",
@@ -117,7 +117,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             class={[
               "opacity-30 transition",
               @selected? && "rotate-0 opacity-100",
-              !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
+              !@selected? && "rotate-135 space-hover:rotate-0 space-hover:opacity-100"
             ]}
           />
 
@@ -171,7 +171,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         :if={@node.children != []}
         depth={@depth}
         editing?={@editing?}
-        group_slug={@group_slug}
+        space_slug={@space_slug}
         nodes={@node.children}
         selected_tag_id={@selected_tag_id}
       />

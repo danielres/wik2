@@ -1,5 +1,5 @@
 defmodule Wik.Blocks.Block do
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Accounts.User
   alias Wik.Blocks.Block.Checks
   alias Wik.Blocks.Block.Validations.DataMatchesType
@@ -36,12 +36,12 @@ defmodule Wik.Blocks.Block do
     ]
 
     create :create do
-      accept [:data, :owner_group_id, :owner_user_id, :type]
+      accept [:data, :owner_space_id, :owner_user_id, :type]
       change relate_actor(:author, allow_nil?: false)
     end
 
     update :update do
-      accept [:data, :owner_group_id, :owner_user_id, :type]
+      accept [:data, :owner_space_id, :owner_user_id, :type]
       require_atomic? false
     end
   end
@@ -54,13 +54,13 @@ defmodule Wik.Blocks.Block do
 
       # TODO: is there a way to simplify?
       authorize_if expr(
-                     exists(owner_group.memberships, user_id == ^actor(:id) and type == :owner) or
+                     exists(owner_space.memberships, user_id == ^actor(:id) and type == :owner) or
                        (exists(
-                          owner_group.memberships,
+                          owner_space.memberships,
                           user_id == ^actor(:id) and type in [:admin, :member]
                         ) and
                           exists(
-                            owner_group.access_sources,
+                            owner_space.access_sources,
                             status == :active and
                               exists(grants, user_id == ^actor(:id) and status == :active)
                           ))
@@ -70,13 +70,13 @@ defmodule Wik.Blocks.Block do
       authorize_if expr(
                      exists(
                        placements,
-                       exists(group.memberships, user_id == ^actor(:id) and type == :owner) or
+                       exists(space.memberships, user_id == ^actor(:id) and type == :owner) or
                          (exists(
-                            group.memberships,
+                            space.memberships,
                             user_id == ^actor(:id) and type in [:admin, :member]
                           ) and
                             exists(
-                              group.access_sources,
+                              space.access_sources,
                               status == :active and
                                 exists(grants, user_id == ^actor(:id) and status == :active)
                             ))
@@ -86,20 +86,20 @@ defmodule Wik.Blocks.Block do
 
     policy action_type(:create) do
       authorize_if relating_to_actor(:owner_user)
-      authorize_if Checks.ActorCanCreateCurrentTenantGroupOwnedBlock
+      authorize_if Checks.ActorCanCreateCurrentTenantSpaceOwnedBlock
     end
 
     policy_group expr(
                    exists(
-                     owner_group.memberships,
+                     owner_space.memberships,
                      user_id == ^actor(:id) and type == :owner
                    ) or
                      (exists(
-                        owner_group.memberships,
+                        owner_space.memberships,
                         user_id == ^actor(:id) and type == :admin
                       ) and
                         exists(
-                          owner_group.access_sources,
+                          owner_space.access_sources,
                           status == :active and
                             exists(grants, user_id == ^actor(:id) and status == :active)
                         ))
@@ -148,7 +148,7 @@ defmodule Wik.Blocks.Block do
       allow_nil? false
     end
 
-    belongs_to :owner_group, Group do
+    belongs_to :owner_space, Space do
       destination_attribute :id
       allow_nil? true
     end

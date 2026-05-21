@@ -1,5 +1,5 @@
 defmodule Wik.Blocks.BlockPlacement do
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Blocks.BlockPlacement.Checks
   alias Wik.Blocks.BlockPlacement.Changes
 
@@ -21,7 +21,7 @@ defmodule Wik.Blocks.BlockPlacement do
 
     create :create do
       accept [:area, :attachable_id, :attachable_type, :block_id, :order_key]
-      change Changes.SetGroupFromAttachable
+      change Changes.SetSpaceFromAttachable
     end
 
     update :update_order, do: accept([:order_key])
@@ -34,7 +34,7 @@ defmodule Wik.Blocks.BlockPlacement do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
     end
 
     policy action_type(:create) do
@@ -42,15 +42,15 @@ defmodule Wik.Blocks.BlockPlacement do
     end
 
     policy action_type(:destroy) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
 
     policy action(:update_order) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
 
     policy action(:update_area) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
   end
 
@@ -90,7 +90,7 @@ defmodule Wik.Blocks.BlockPlacement do
 
   relationships do
     belongs_to :block, Wik.Blocks.Block, do: allow_nil?(false)
-    belongs_to :group, Group, do: allow_nil?(false)
+    belongs_to :space, Space, do: allow_nil?(false)
   end
 
   identities do

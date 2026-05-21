@@ -18,7 +18,7 @@ defmodule WikWeb.Components.UserTest do
   test "avatar renders a generic user icon with tenant context when initials are blank" do
     html =
       render_component(&User.avatar/1, %{
-        tenant: generate(group()),
+        tenant: generate(space()),
         user: generate(user(email: nil))
       })
 
@@ -29,7 +29,7 @@ defmodule WikWeb.Components.UserTest do
     html =
       render_component(&User.avatar/1, %{
         avatar_url: "https://telegram.example/avatar.png",
-        tenant: generate(group()),
+        tenant: generate(space()),
         user: generate(user(email: nil))
       })
 
@@ -55,7 +55,7 @@ defmodule WikWeb.Components.UserTest do
   test "avatar initials prefer the provided username" do
     html =
       render_component(&User.avatar/1, %{
-        tenant: generate(group()),
+        tenant: generate(space()),
         username: "danirez",
         user: generate(user(email: "zz@example.com"))
       })
@@ -74,7 +74,7 @@ defmodule WikWeb.Components.UserTest do
           user: user,
           username: "danirez"
         },
-        tenant: generate(group())
+        tenant: generate(space())
       })
 
     assert html =~ ~s(src="https://telegram.example/membership.png")
@@ -82,7 +82,7 @@ defmodule WikWeb.Components.UserTest do
   end
 
   test "avatar derives the profile path from membership and tenant when linking" do
-    group = generate(group())
+    space = generate(space())
     user = generate(user(email: "ada@example.com"))
 
     html =
@@ -93,9 +93,9 @@ defmodule WikWeb.Components.UserTest do
           user: user,
           username: "ada"
         },
-        tenant: group
+        tenant: space
       })
 
-    assert html =~ ~s(href="/#{group.slug}/wiki/members/ada")
+    assert html =~ ~s(href="/#{space.slug}/wiki/members/ada")
   end
 end

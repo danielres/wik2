@@ -25,7 +25,7 @@ defmodule WikWeb.PageTreeLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope} view="tree">
+      <Layouts.space presences={@presences} scope={@current_scope} view="tree">
         <div class="flex items-center gap-4 mb-4">
           <h1 class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
             <div>
@@ -52,7 +52,7 @@ defmodule WikWeb.PageTreeLive do
           module={PageTreeEditor}
           page_tree={@page_tree}
         />
-      </Layouts.group>
+      </Layouts.space>
     </Layouts.app>
     """
   end

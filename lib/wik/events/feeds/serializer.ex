@@ -102,7 +102,7 @@ defmodule Wik.Events.Feeds.Serializer do
   end
 
   defp publication_context_lines(event, publication) do
-    lines = ["Visible in: #{publication.group.name}"]
+    lines = ["Visible in: #{publication.space.name}"]
 
     if event.provenance_policy == :visible do
       lines
@@ -116,10 +116,10 @@ defmodule Wik.Events.Feeds.Serializer do
 
   defp maybe_append_origin_line(
          lines,
-         %{publication_type: publication_type, event: %{group: group}}
+         %{publication_type: publication_type, event: %{space: space}}
        )
        when publication_type in [:origin, :relay] do
-    lines ++ ["From: #{group.name}"]
+    lines ++ ["From: #{space.name}"]
   end
 
   defp maybe_append_relayed_by_line(lines, %{publication_type: :relay, published_by: published_by}) do

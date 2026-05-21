@@ -6,8 +6,8 @@ defmodule Wik.Accounts.User do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAuthentication, AshAdmin.Resource]
 
-  alias Wik.Accounts.Group
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Space
+  alias Wik.Accounts.Membership
   alias Wik.Accounts.User.Changes
   alias Wik.Accounts.User.Senders
   alias Wik.Accounts.User.Validations
@@ -166,10 +166,10 @@ defmodule Wik.Accounts.User do
       destination_attribute :submitted_by_id
     end
 
-    many_to_many :groups, Group do
-      through GroupUserRelation
+    many_to_many :spaces, Space do
+      through Membership
       source_attribute_on_join_resource :user_id
-      destination_attribute_on_join_resource :group_id
+      destination_attribute_on_join_resource :space_id
     end
   end
 

@@ -4,7 +4,7 @@ defmodule Wik.EventsTest do
   import Wik.TestGenerators
 
   alias Ash.Query
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
@@ -13,13 +13,13 @@ defmodule Wik.EventsTest do
   describe "create/2" do
     test "creates the event and origin publication for an owner" do
       owner = generate(user())
-      group = generate(group(author: owner))
-      add_membership(group, owner, :owner)
+      space = generate(space(author: owner))
+      add_membership(space, owner, :owner)
 
       assert {:ok, event} =
-               Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+               Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, space))
 
-      assert event.group_id == group.id
+      assert event.space_id == space.id
       assert event.author_id == owner.id
       assert event.status == :published
 
@@ -28,29 +28,29 @@ defmodule Wik.EventsTest do
                  EventPublication,
                  authorize?: false,
                  load: [:event],
-                 scope: scope(owner, group)
+                 scope: scope(owner, space)
                )
 
       assert publication.event_id == event.id
       assert publication.publication_type == :origin
-      assert publication.target_group_id == group.id
+      assert publication.target_space_id == space.id
     end
 
     test "preserves the configured provenance policy" do
       owner = generate(user())
-      group = generate(group(author: owner))
-      add_membership(group, owner, :owner)
+      space = generate(space(author: owner))
+      add_membership(space, owner, :owner)
 
       attrs = event_attrs(provenance_policy: :hidden)
 
-      assert {:ok, event} = Ash.create(Event, attrs, action: :create, scope: scope(owner, group))
+      assert {:ok, event} = Ash.create(Event, attrs, action: :create, scope: scope(owner, space))
       assert event.provenance_policy == :hidden
     end
 
     test "allows all-day events to preserve an end time" do
       owner = generate(user())
-      group = generate(group(author: owner))
-      add_membership(group, owner, :owner)
+      space = generate(space(author: owner))
+      add_membership(space, owner, :owner)
 
       attrs =
         event_attrs(
@@ -59,287 +59,287 @@ defmodule Wik.EventsTest do
           starts_on: "2026-05-15"
         )
 
-      assert {:ok, event} = Ash.create(Event, attrs, action: :create, scope: scope(owner, group))
+      assert {:ok, event} = Ash.create(Event, attrs, action: :create, scope: scope(owner, space))
       assert event.all_day
       assert event.ends_at == ~U[2026-05-15 23:59:59Z]
     end
   end
 
-  describe "relay_to_group/3" do
+  describe "relay_to_space/3" do
     test "blocks relay when the event is internal only" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      target_group = generate(group())
+      origin_space = generate(space(author: actor))
+      target_space = generate(space())
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(Event, event_attrs(relay_policy: :internal_only),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
       assert {:error, _error} =
-               Events.relay_to_group(event, target_group, scope: scope(actor, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(actor, origin_space))
     end
 
     test "allows admins to relay when the policy is admins only" do
       admin = generate(user())
       origin_owner = generate(user())
-      origin_group = generate(group())
-      target_group = generate(group(author: admin))
+      origin_space = generate(space())
+      target_space = generate(space(author: admin))
 
-      add_membership(origin_group, origin_owner, :owner)
-      add_membership(origin_group, admin, :admin)
-      add_membership(target_group, admin, :owner)
-      grant_active_telegram_access(origin_group, admin)
+      add_membership(origin_space, origin_owner, :owner)
+      add_membership(origin_space, admin, :admin)
+      add_membership(target_space, admin, :owner)
+      grant_active_telegram_access(origin_space, admin)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(origin_owner, origin_group)
+          scope: scope(origin_owner, origin_space)
         )
 
       assert {:ok, publication} =
-               Events.relay_to_group(event, target_group, scope: scope(admin, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(admin, origin_space))
 
       assert publication.publication_type == :relay
-      assert publication.target_group_id == target_group.id
+      assert publication.target_space_id == target_space.id
     end
 
     test "blocks members from relaying when the policy is admins only" do
       member = generate(user())
       origin_owner = generate(user())
-      origin_group = generate(group(author: origin_owner))
-      target_group = generate(group(author: member))
+      origin_space = generate(space(author: origin_owner))
+      target_space = generate(space(author: member))
 
-      add_membership(origin_group, origin_owner, :owner)
-      add_membership(origin_group, member, :member)
-      add_membership(target_group, member, :owner)
-      grant_active_telegram_access(origin_group, member)
+      add_membership(origin_space, origin_owner, :owner)
+      add_membership(origin_space, member, :member)
+      add_membership(target_space, member, :owner)
+      grant_active_telegram_access(origin_space, member)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(origin_owner, origin_group)
+          scope: scope(origin_owner, origin_space)
         )
 
       assert {:error, _error} =
-               Events.relay_to_group(event, target_group, scope: scope(member, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(member, origin_space))
     end
 
     test "allows members to relay when the policy allows members" do
       member = generate(user())
       origin_owner = generate(user())
-      origin_group = generate(group(author: origin_owner))
-      target_group = generate(group(author: member))
+      origin_space = generate(space(author: origin_owner))
+      target_space = generate(space(author: member))
 
-      add_membership(origin_group, origin_owner, :owner)
-      add_membership(origin_group, member, :member)
-      add_membership(target_group, member, :owner)
-      grant_active_telegram_access(origin_group, member)
+      add_membership(origin_space, origin_owner, :owner)
+      add_membership(origin_space, member, :member)
+      add_membership(target_space, member, :owner)
+      grant_active_telegram_access(origin_space, member)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :members_to_groups),
+          event_attrs(relay_policy: :members_to_spaces),
           action: :create,
-          scope: scope(origin_owner, origin_group)
+          scope: scope(origin_owner, origin_space)
         )
 
       assert {:ok, publication} =
-               Events.relay_to_group(event, target_group, scope: scope(member, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(member, origin_space))
 
       assert publication.publication_type == :relay
-      assert publication.target_group_id == target_group.id
+      assert publication.target_space_id == target_space.id
     end
 
-    test "rejects duplicate relay into the same target group" do
+    test "rejects duplicate relay into the same target space" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      target_group = generate(group(author: actor))
+      origin_space = generate(space(author: actor))
+      target_space = generate(space(author: actor))
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
       assert {:ok, _publication} =
-               Events.relay_to_group(event, target_group, scope: scope(actor, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(actor, origin_space))
 
       assert {:error, _error} =
-               Events.relay_to_group(event, target_group, scope: scope(actor, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(actor, origin_space))
     end
   end
 
-  describe "list_relay_target_groups/2" do
-    test "excludes the origin group and groups where the event is already published" do
+  describe "list_relay_target_spaces/2" do
+    test "excludes the origin space and spaces where the event is already published" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      first_target_group = generate(group(author: actor))
-      second_target_group = generate(group(author: actor))
+      origin_space = generate(space(author: actor))
+      first_target_space = generate(space(author: actor))
+      second_target_space = generate(space(author: actor))
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(first_target_group, actor, :owner)
-      add_membership(second_target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(first_target_space, actor, :owner)
+      add_membership(second_target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
       assert {:ok, _publication} =
-               Events.relay_to_group(event, first_target_group, scope: scope(actor, origin_group))
+               Events.relay_to_space(event, first_target_space, scope: scope(actor, origin_space))
 
-      assert {:ok, [group]} = Events.list_relay_target_groups(event, scope(actor, origin_group))
-      assert group.id == second_target_group.id
+      assert {:ok, [space]} = Events.list_relay_target_spaces(event, scope(actor, origin_space))
+      assert space.id == second_target_space.id
     end
 
     test "returns no targets for internal-only events" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      target_group = generate(group(author: actor))
+      origin_space = generate(space(author: actor))
+      target_space = generate(space(author: actor))
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(
           Event,
           event_attrs(relay_policy: :internal_only),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
-      assert {:ok, []} = Events.list_relay_target_groups(event, scope(actor, origin_group))
+      assert {:ok, []} = Events.list_relay_target_spaces(event, scope(actor, origin_space))
     end
 
-    test "allows members to see target groups only when the policy allows members" do
+    test "allows members to see target spaces only when the policy allows members" do
       owner = generate(user())
       member = generate(user())
-      origin_group = generate(group(author: owner))
-      target_group = generate(group(author: member))
+      origin_space = generate(space(author: owner))
+      target_space = generate(space(author: member))
 
-      add_membership(origin_group, owner, :owner)
-      add_membership(origin_group, member, :member)
-      add_membership(target_group, member, :owner)
-      grant_active_telegram_access(origin_group, member)
+      add_membership(origin_space, owner, :owner)
+      add_membership(origin_space, member, :member)
+      add_membership(target_space, member, :owner)
+      grant_active_telegram_access(origin_space, member)
 
       {:ok, admin_only_event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(owner, origin_group)
+          scope: scope(owner, origin_space)
         )
 
       {:ok, members_event} =
         Ash.create(
           Event,
           event_attrs(
-            relay_policy: :members_to_groups,
+            relay_policy: :members_to_spaces,
             starts_on: "2026-05-11",
             ends_on: "2026-05-11",
             title: "Members event"
           ),
           action: :create,
-          scope: scope(owner, origin_group)
+          scope: scope(owner, origin_space)
         )
 
       assert {:ok, []} =
-               Events.list_relay_target_groups(admin_only_event, scope(member, origin_group))
+               Events.list_relay_target_spaces(admin_only_event, scope(member, origin_space))
 
-      assert {:ok, [group]} =
-               Events.list_relay_target_groups(members_event, scope(member, origin_group))
+      assert {:ok, [space]} =
+               Events.list_relay_target_spaces(members_event, scope(member, origin_space))
 
-      assert group.id == target_group.id
+      assert space.id == target_space.id
     end
   end
 
-  describe "can_relay_event_to_any_group?/2" do
+  describe "can_relay_event_to_any_space?/2" do
     test "returns false for internal-only events" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      target_group = generate(group(author: actor))
+      origin_space = generate(space(author: actor))
+      target_space = generate(space(author: actor))
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(
           Event,
           event_attrs(relay_policy: :internal_only),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
       assert {:ok, false} =
-               Events.can_relay_event_to_any_group?(event, scope(actor, origin_group))
+               Events.can_relay_event_to_any_space?(event, scope(actor, origin_space))
     end
 
     test "returns false when no eligible targets remain" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      target_group = generate(group(author: actor))
+      origin_space = generate(space(author: actor))
+      target_space = generate(space(author: actor))
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
       assert {:ok, _publication} =
-               Events.relay_to_group(event, target_group, scope: scope(actor, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(actor, origin_space))
 
       assert {:ok, false} =
-               Events.can_relay_event_to_any_group?(event, scope(actor, origin_group))
+               Events.can_relay_event_to_any_space?(event, scope(actor, origin_space))
     end
 
     test "returns true when at least one eligible target exists" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      target_group = generate(group(author: actor))
+      origin_space = generate(space(author: actor))
+      target_space = generate(space(author: actor))
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
-      assert {:ok, true} = Events.can_relay_event_to_any_group?(event, scope(actor, origin_group))
+      assert {:ok, true} = Events.can_relay_event_to_any_space?(event, scope(actor, origin_space))
     end
   end
 
-  describe "group event publications timeline load" do
-    test "returns only upcoming publications visible in the current group ordered by start time" do
+  describe "space event publications timeline load" do
+    test "returns only upcoming publications visible in the current space ordered by start time" do
       actor = generate(user())
-      group = generate(group(author: actor))
+      space = generate(space(author: actor))
 
-      add_membership(group, actor, :owner)
+      add_membership(space, actor, :owner)
 
       {:ok, later_event} =
         Ash.create(
@@ -352,7 +352,7 @@ defmodule Wik.EventsTest do
             ends_at_time: "20:00"
           ),
           action: :create,
-          scope: scope(actor, group)
+          scope: scope(actor, space)
         )
 
       {:ok, earlier_event} =
@@ -366,93 +366,93 @@ defmodule Wik.EventsTest do
             ends_at_time: "20:00"
           ),
           action: :create,
-          scope: scope(actor, group)
+          scope: scope(actor, space)
         )
 
-      {:ok, group} =
-        Ash.load(group, [event_publications: timeline_query()], scope: scope(actor, group))
+      {:ok, space} =
+        Ash.load(space, [event_publications: timeline_query()], scope: scope(actor, space))
 
-      assert Enum.map(group.event_publications, & &1.event_id) == [
+      assert Enum.map(space.event_publications, & &1.event_id) == [
                earlier_event.id,
                later_event.id
              ]
     end
 
-    test "includes relayed events in the target group's timeline" do
+    test "includes relayed events in the target space's timeline" do
       actor = generate(user())
-      origin_group = generate(group(author: actor))
-      target_group = generate(group(author: actor))
+      origin_space = generate(space(author: actor))
+      target_space = generate(space(author: actor))
 
-      add_membership(origin_group, actor, :owner)
-      add_membership(target_group, actor, :owner)
+      add_membership(origin_space, actor, :owner)
+      add_membership(target_space, actor, :owner)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :admins_only_groups),
+          event_attrs(relay_policy: :admins_only_spaces),
           action: :create,
-          scope: scope(actor, origin_group)
+          scope: scope(actor, origin_space)
         )
 
       {:ok, _publication} =
-        Events.relay_to_group(event, target_group, scope: scope(actor, origin_group))
+        Events.relay_to_space(event, target_space, scope: scope(actor, origin_space))
 
-      {:ok, target_group} =
+      {:ok, target_space} =
         Ash.load(
-          target_group,
+          target_space,
           [event_publications: timeline_query()],
-          scope: scope(actor, target_group)
+          scope: scope(actor, target_space)
         )
 
       assert Enum.any?(
-               target_group.event_publications,
+               target_space.event_publications,
                &(&1.event_id == event.id and &1.publication_type == :relay)
              )
     end
 
-    test "keeps cancelled events visible in the group timeline" do
+    test "keeps cancelled events visible in the space timeline" do
       actor = generate(user())
-      group = generate(group(author: actor))
+      space = generate(space(author: actor))
 
-      add_membership(group, actor, :owner)
+      add_membership(space, actor, :owner)
 
-      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(actor, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(actor, space))
 
       assert {:ok, _cancelled} =
                Ash.update(
                  event,
                  %{status: :cancelled},
                  action: :update,
-                 scope: scope(actor, group)
+                 scope: scope(actor, space)
                )
 
-      {:ok, group} =
-        Ash.load(group, [event_publications: timeline_query()], scope: scope(actor, group))
+      {:ok, space} =
+        Ash.load(space, [event_publications: timeline_query()], scope: scope(actor, space))
 
-      assert [%{event: %{status: :cancelled}}] = group.event_publications
+      assert [%{event: %{status: :cancelled}}] = space.event_publications
     end
   end
 
   describe "calendar feeds" do
-    test "aggregate feed returns events visible across accessible groups" do
+    test "aggregate feed returns events visible across accessible spaces" do
       owner = generate(user())
       member = generate(user())
-      first_group = generate(group(author: owner))
-      second_group = generate(group(author: owner))
+      first_space = generate(space(author: owner))
+      second_space = generate(space(author: owner))
 
-      add_membership(first_group, owner, :owner)
-      add_membership(second_group, owner, :owner)
-      add_membership(first_group, member, :member)
-      add_membership(second_group, member, :member)
-      grant_active_telegram_access(first_group, member)
-      grant_active_telegram_access(second_group, member)
+      add_membership(first_space, owner, :owner)
+      add_membership(second_space, owner, :owner)
+      add_membership(first_space, member, :member)
+      add_membership(second_space, member, :member)
+      grant_active_telegram_access(first_space, member)
+      grant_active_telegram_access(second_space, member)
 
       {:ok, first_event} =
         Ash.create(
           Event,
           event_attrs(title: "First event"),
           action: :create,
-          scope: scope(owner, first_group)
+          scope: scope(owner, first_space)
         )
 
       {:ok, second_event} =
@@ -464,7 +464,7 @@ defmodule Wik.EventsTest do
             title: "Second event"
           ),
           action: :create,
-          scope: scope(owner, second_group)
+          scope: scope(owner, second_space)
         )
 
       assert {:ok, entries} = Events.list_aggregate_feed_events(member)
@@ -474,18 +474,18 @@ defmodule Wik.EventsTest do
     test "aggregate feed excludes drafts and keeps cancelled events" do
       owner = generate(user())
       member = generate(user())
-      group = generate(group(author: owner))
+      space = generate(space(author: owner))
 
-      add_membership(group, owner, :owner)
-      add_membership(group, member, :member)
-      grant_active_telegram_access(group, member)
+      add_membership(space, owner, :owner)
+      add_membership(space, member, :member)
+      grant_active_telegram_access(space, member)
 
       {:ok, cancelled_event} =
         Ash.create(
           Event,
           event_attrs(title: "Cancelled event"),
           action: :create,
-          scope: scope(owner, group)
+          scope: scope(owner, space)
         )
 
       {:ok, draft_event} =
@@ -497,7 +497,7 @@ defmodule Wik.EventsTest do
             title: "Draft event"
           ),
           action: :create,
-          scope: scope(owner, group)
+          scope: scope(owner, space)
         )
 
       assert {:ok, _cancelled} =
@@ -505,7 +505,7 @@ defmodule Wik.EventsTest do
                  cancelled_event,
                  %{status: :cancelled},
                  action: :update,
-                 scope: scope(owner, group)
+                 scope: scope(owner, space)
                )
 
       assert {:ok, _draft} =
@@ -513,7 +513,7 @@ defmodule Wik.EventsTest do
                  draft_event,
                  %{status: :draft},
                  action: :update,
-                 scope: scope(owner, group)
+                 scope: scope(owner, space)
                )
 
       assert {:ok, entries} = Events.list_aggregate_feed_events(member)
@@ -521,25 +521,25 @@ defmodule Wik.EventsTest do
       assert hd(entries).event.status == :cancelled
     end
 
-    test "group feed returns only events visible in the selected group" do
+    test "space feed returns only events visible in the selected space" do
       owner = generate(user())
       member = generate(user())
-      first_group = generate(group(author: owner))
-      second_group = generate(group(author: owner))
+      first_space = generate(space(author: owner))
+      second_space = generate(space(author: owner))
 
-      add_membership(first_group, owner, :owner)
-      add_membership(second_group, owner, :owner)
-      add_membership(first_group, member, :member)
-      add_membership(second_group, member, :member)
-      grant_active_telegram_access(first_group, member)
-      grant_active_telegram_access(second_group, member)
+      add_membership(first_space, owner, :owner)
+      add_membership(second_space, owner, :owner)
+      add_membership(first_space, member, :member)
+      add_membership(second_space, member, :member)
+      grant_active_telegram_access(first_space, member)
+      grant_active_telegram_access(second_space, member)
 
       {:ok, first_event} =
         Ash.create(
           Event,
           event_attrs(title: "First event"),
           action: :create,
-          scope: scope(owner, first_group)
+          scope: scope(owner, first_space)
         )
 
       {:ok, _second_event} =
@@ -551,52 +551,52 @@ defmodule Wik.EventsTest do
             title: "Second event"
           ),
           action: :create,
-          scope: scope(owner, second_group)
+          scope: scope(owner, second_space)
         )
 
-      assert {:ok, %{events: events, group: group}} =
-               Events.get_group_feed(member, first_group.id)
+      assert {:ok, %{events: events, space: space}} =
+               Events.get_space_feed(member, first_space.id)
 
-      assert group.id == first_group.id
+      assert space.id == first_space.id
       assert Enum.map(events, & &1.id) == [first_event.id]
     end
 
-    test "group feed becomes unavailable after access is lost" do
+    test "space feed becomes unavailable after access is lost" do
       owner = generate(user())
       member = generate(user())
-      group = generate(group(author: owner))
+      space = generate(space(author: owner))
 
-      add_membership(group, owner, :owner)
-      add_membership(group, member, :member)
-      %{grant: grant} = grant_active_telegram_access(group, member)
+      add_membership(space, owner, :owner)
+      add_membership(space, member, :member)
+      %{grant: grant} = grant_active_telegram_access(space, member)
 
       {:ok, _event} =
         Ash.create(
           Event,
           event_attrs(title: "Shared dinner"),
           action: :create,
-          scope: scope(owner, group)
+          scope: scope(owner, space)
         )
 
-      assert {:ok, %{events: [_event], group: loaded_group}} =
-               Events.get_group_feed(member, group.id)
+      assert {:ok, %{events: [_event], space: loaded_space}} =
+               Events.get_space_feed(member, space.id)
 
-      assert loaded_group.id == group.id
+      assert loaded_space.id == space.id
 
       Ash.update!(grant, %{status: :inactive},
         action: :update,
         authorize?: false
       )
 
-      assert {:error, _error} = Events.get_group_feed(member, group.id)
+      assert {:error, _error} = Events.get_space_feed(member, space.id)
     end
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     {:ok, membership} =
       Ash.create(
-        GroupUserRelation,
-        %{group_id: group.id, type: type, user_id: user.id},
+        Membership,
+        %{space_id: space.id, type: type, user_id: user.id},
         authorize?: false
       )
 
@@ -629,6 +629,6 @@ defmodule Wik.EventsTest do
   defp timeline_query do
     EventPublication
     |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
-    |> Query.load([:published_by, event: [:author, :group]])
+    |> Query.load([:published_by, event: [:author, :space]])
   end
 end

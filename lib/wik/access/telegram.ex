@@ -5,8 +5,8 @@ defmodule Wik.Access.Telegram do
   alias Wik.Access.Providers.Telegram, as: TelegramProvider
   alias Wik.Access.Source
   alias Wik.Access.Telegram.Bot.Update, as: BotUpdate
-  alias Wik.Accounts.Group
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Space
+  alias Wik.Accounts.Membership
   alias Wik.Accounts.User
   alias Wik.Repo
 
@@ -52,9 +52,9 @@ defmodule Wik.Access.Telegram do
     end
   end
 
-  def claim_source_with_new_group(
+  def claim_source_with_new_space(
         source_id,
-        group_attrs,
+        space_attrs,
         %User{} = user,
         telegram_provider \\ TelegramProvider
       ) do
@@ -62,23 +62,23 @@ defmodule Wik.Access.Telegram do
          :ok <- authorize_pending_source(source),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_source_claim(source, identity, telegram_provider) do
-      create_group_and_claim_source(source, group_attrs, identity, user)
+      create_space_and_claim_source(source, space_attrs, identity, user)
     end
   end
 
-  def claim_source_with_existing_group(
+  def claim_source_with_existing_space(
         source_id,
-        group_id,
+        space_id,
         %User{} = user,
         telegram_provider \\ TelegramProvider
       ) do
     with {:ok, source} <- Ash.get(Source, source_id, authorize?: false),
          :ok <- authorize_pending_source(source),
-         {:ok, group} <- Ash.get(Group, group_id, authorize?: false),
-         :ok <- authorize_owned_group(group, user),
+         {:ok, space} <- Ash.get(Space, space_id, authorize?: false),
+         :ok <- authorize_owned_space(space, user),
          {:ok, identity} <- load_telegram_identity(user),
          :ok <- authorize_source_claim(source, identity, telegram_provider) do
-      claim_existing_group_source(source, group, identity, user)
+      claim_existing_space_source(source, space, identity, user)
     end
   end
 
@@ -178,7 +178,7 @@ defmodule Wik.Access.Telegram do
     case upsert_grant(source, identity, user, status) do
       {:ok, grant} ->
         if status == :active do
-          with :ok <- ensure_group_member(source, user), do: {:ok, grant}
+          with :ok <- ensure_space_member(source, user), do: {:ok, grant}
         else
           {:ok, grant}
         end
@@ -230,21 +230,21 @@ defmodule Wik.Access.Telegram do
     )
   end
 
-  defp ensure_group_member(%{group_id: group_id}, %{id: user_id}) do
-    GroupUserRelation
-    |> Query.filter(group_id == ^group_id and user_id == ^user_id)
+  defp ensure_space_member(%{space_id: space_id}, %{id: user_id}) do
+    Membership
+    |> Query.filter(space_id == ^space_id and user_id == ^user_id)
     |> Ash.read_one(authorize?: false)
     |> case do
-      {:ok, nil} -> create_member_relation(group_id, user_id)
+      {:ok, nil} -> create_member_relation(space_id, user_id)
       {:ok, _membership} -> :ok
       {:error, error} -> {:error, error}
     end
   end
 
-  defp create_member_relation(group_id, user_id) do
+  defp create_member_relation(space_id, user_id) do
     case Ash.create(
-           GroupUserRelation,
-           %{group_id: group_id, type: :member, user_id: user_id},
+           Membership,
+           %{space_id: space_id, type: :member, user_id: user_id},
            authorize?: false
          ) do
       {:ok, _membership} -> :ok
@@ -276,20 +276,20 @@ defmodule Wik.Access.Telegram do
   defp authorize_pending_source(%{status: :pending}), do: :ok
   defp authorize_pending_source(_source), do: {:error, :pending_source_required}
 
-  defp authorize_owned_group(%{id: group_id}, %{id: user_id}) do
-    GroupUserRelation
-    |> Query.filter(group_id == ^group_id and user_id == ^user_id and type == :owner)
+  defp authorize_owned_space(%{id: space_id}, %{id: user_id}) do
+    Membership
+    |> Query.filter(space_id == ^space_id and user_id == ^user_id and type == :owner)
     |> Ash.exists(authorize?: false)
     |> case do
       {:ok, true} -> :ok
-      {:ok, false} -> {:error, :group_owner_required}
+      {:ok, false} -> {:error, :space_owner_required}
       {:error, error} -> {:error, error}
     end
   end
 
-  defp claim_existing_group_source(source, group, identity, user) do
+  defp claim_existing_space_source(source, space, identity, user) do
     case Repo.transaction(fn ->
-           with {:ok, source, source_notifications} <- claim_source(source, group, user),
+           with {:ok, source, source_notifications} <- claim_source(source, space, user),
                 {:ok, _grant, grant_notifications} <- create_owner_grant(source, identity, user) do
              {source, source_notifications ++ grant_notifications}
            else
@@ -298,36 +298,36 @@ defmodule Wik.Access.Telegram do
          end) do
       {:ok, {source, notifications}} ->
         Ash.Notifier.notify(notifications)
-        {:ok, {group, source}}
+        {:ok, {space, source}}
 
       {:error, error} ->
         {:error, error}
     end
   end
 
-  defp create_group_and_claim_source(source, group_attrs, identity, user) do
+  defp create_space_and_claim_source(source, space_attrs, identity, user) do
     case Repo.transaction(fn ->
-           with {:ok, group, group_notifications} <- create_group(group_attrs, user),
-                {:ok, source, source_notifications} <- claim_source(source, group, user),
+           with {:ok, space, space_notifications} <- create_space(space_attrs, user),
+                {:ok, source, source_notifications} <- claim_source(source, space, user),
                 {:ok, _grant, grant_notifications} <- create_owner_grant(source, identity, user) do
-             {group, source, group_notifications ++ source_notifications ++ grant_notifications}
+             {space, source, space_notifications ++ source_notifications ++ grant_notifications}
            else
              {:error, error} -> Repo.rollback(error)
            end
          end) do
-      {:ok, {group, source, notifications}} ->
+      {:ok, {space, source, notifications}} ->
         Ash.Notifier.notify(notifications)
-        {:ok, {group, source}}
+        {:ok, {space, source}}
 
       {:error, error} ->
         {:error, error}
     end
   end
 
-  defp create_group(group_attrs, user) do
+  defp create_space(space_attrs, user) do
     Ash.create(
-      Group,
-      group_attrs,
+      Space,
+      space_attrs,
       action: :create,
       actor: user,
       authorize?: false,
@@ -335,7 +335,7 @@ defmodule Wik.Access.Telegram do
     )
   end
 
-  defp claim_source(source, group, user) do
+  defp claim_source(source, space, user) do
     source
     |> Ash.Changeset.for_update(
       :update,
@@ -349,7 +349,7 @@ defmodule Wik.Access.Telegram do
       type: :append_and_remove,
       authorize?: false
     )
-    |> Ash.Changeset.manage_relationship(:group, group,
+    |> Ash.Changeset.manage_relationship(:space, space,
       type: :append_and_remove,
       authorize?: false
     )

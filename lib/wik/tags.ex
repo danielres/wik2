@@ -8,8 +8,8 @@ defmodule Wik.Tags do
 
   alias Ash.Query
   alias Utils.Log
-  alias Wik.Accounts.Group
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Space
+  alias Wik.Accounts.Membership
   alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
@@ -157,7 +157,7 @@ defmodule Wik.Tags do
   def upsert_tagging(
         taggable_type,
         taggable_id,
-        tagged_by_group_user_relation_id,
+        tagged_by_membership_id,
         tag_id,
         attrs,
         opts \\ []
@@ -168,7 +168,7 @@ defmodule Wik.Tags do
       tagging_identity_attrs(
         taggable_type,
         taggable_id,
-        tagged_by_group_user_relation_id,
+        tagged_by_membership_id,
         tag_id
       )
       |> Map.merge(attrs)
@@ -196,7 +196,7 @@ defmodule Wik.Tags do
   def remove_tagging(
         taggable_type,
         taggable_id,
-        tagged_by_group_user_relation_id,
+        tagged_by_membership_id,
         tag_id,
         opts \\ []
       ) do
@@ -206,7 +206,7 @@ defmodule Wik.Tags do
       tagging_identity_attrs(
         taggable_type,
         taggable_id,
-        tagged_by_group_user_relation_id,
+        tagged_by_membership_id,
         tag_id
       )
 
@@ -224,54 +224,54 @@ defmodule Wik.Tags do
     end
   end
 
-  def list_membership_taggings(%GroupUserRelation{} = membership, opts \\ []) do
-    list_taggings_for("group_user_relation", membership.id, opts)
+  def list_membership_taggings(%Membership{} = membership, opts \\ []) do
+    list_taggings_for("membership", membership.id, opts)
   end
 
-  def membership_taggings_query(%GroupUserRelation{} = membership) do
-    taggings_query_for("group_user_relation", membership.id)
+  def membership_taggings_query(%Membership{} = membership) do
+    taggings_query_for("membership", membership.id)
   end
 
   def tag_taggings_query(%Tag{} = tag) do
     Tagging
-    |> Query.filter(tag_id == ^tag.id and taggable_type == "group_user_relation")
+    |> Query.filter(tag_id == ^tag.id and taggable_type == "membership")
     |> Query.load([:tag, target_membership: [:avatar_url, :user]])
     |> Query.sort(interest_level: :desc)
   end
 
-  def list_group_tags(scope) do
+  def list_space_tags(scope) do
     Tag
     |> Query.sort(name: :asc)
     |> Ash.read(scope: scope)
   end
 
-  def tag_id_to_name_map(group_id) when is_binary(group_id) do
-    group_id
+  def tag_id_to_name_map(space_id) when is_binary(space_id) do
+    space_id
     |> tags_with_names()
     |> Wikilinks.tag_ids_to_tag_names_map()
   end
 
-  def tag_id_to_name_map(_group_id), do: %{}
+  def tag_id_to_name_map(_space_id), do: %{}
 
-  def tag_name_to_id_map(group_id) when is_binary(group_id) do
-    group_id
+  def tag_name_to_id_map(space_id) when is_binary(space_id) do
+    space_id
     |> tags_with_names()
     |> Wikilinks.tag_names_to_tag_id_map()
   end
 
-  def tag_name_to_id_map(_group_id), do: %{}
+  def tag_name_to_id_map(_space_id), do: %{}
 
-  def tag_name_to_slug_map(group_id) when is_binary(group_id) do
-    group_id
+  def tag_name_to_slug_map(space_id) when is_binary(space_id) do
+    space_id
     |> tags_with_names()
     |> Wikilinks.tag_names_to_slug_map()
   end
 
-  def tag_name_to_slug_map(_group_id), do: %{}
+  def tag_name_to_slug_map(_space_id), do: %{}
 
-  def upsert_membership_tagging(%GroupUserRelation{} = membership, tag_id, attrs, opts \\ []) do
+  def upsert_membership_tagging(%Membership{} = membership, tag_id, attrs, opts \\ []) do
     upsert_tagging(
-      "group_user_relation",
+      "membership",
       membership.id,
       membership.id,
       tag_id,
@@ -280,9 +280,9 @@ defmodule Wik.Tags do
     )
   end
 
-  def remove_membership_tagging(%GroupUserRelation{} = membership, tag_id, opts \\ []) do
+  def remove_membership_tagging(%Membership{} = membership, tag_id, opts \\ []) do
     remove_tagging(
-      "group_user_relation",
+      "membership",
       membership.id,
       membership.id,
       tag_id,
@@ -291,13 +291,13 @@ defmodule Wik.Tags do
   end
 
   defp get_tagging_by_identity(attrs, scope) do
-    %{tag_id: tag_id, tagged_by_group_user_relation_id: author_id} = attrs
+    %{tag_id: tag_id, tagged_by_membership_id: author_id} = attrs
 
     Tagging
     |> Query.filter(
       taggable_type == ^attrs.taggable_type and
         taggable_id == ^attrs.taggable_id and
-        tagged_by_group_user_relation_id == ^author_id and
+        tagged_by_membership_id == ^author_id and
         tag_id == ^tag_id
     )
     |> Ash.read_one(scope: scope)
@@ -306,33 +306,33 @@ defmodule Wik.Tags do
   defp tagging_identity_attrs(
          taggable_type,
          taggable_id,
-         tagged_by_group_user_relation_id,
+         tagged_by_membership_id,
          tag_id
        ) do
     %{
       tag_id: tag_id,
       taggable_id: taggable_id,
       taggable_type: taggable_type,
-      tagged_by_group_user_relation_id: tagged_by_group_user_relation_id
+      tagged_by_membership_id: tagged_by_membership_id
     }
   end
 
   defp taggings_query_for(taggable_type, taggable_id) do
     Tagging
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
-    |> Query.load([:tag, :tagged_by_group_user_relation])
+    |> Query.load([:tag, :tagged_by_membership])
     |> Query.sort(interest_level: :desc)
   end
 
-  defp tags_with_names(group_id) do
-    group =
-      Group
-      |> Query.filter(id == ^group_id)
+  defp tags_with_names(space_id) do
+    space =
+      Space
+      |> Query.filter(id == ^space_id)
       |> Ash.read_one!(authorize?: false, domain: Wik.Accounts)
 
     Tag
-    |> Query.filter(group_id == ^group_id and not is_nil(name))
+    |> Query.filter(space_id == ^space_id and not is_nil(name))
     |> Query.sort(name: :asc)
-    |> Ash.read!(authorize?: false, domain: __MODULE__, tenant: group)
+    |> Ash.read!(authorize?: false, domain: __MODULE__, tenant: space)
   end
 end

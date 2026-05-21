@@ -1,6 +1,6 @@
 defmodule Wik.Tags.Dimensions do
   @definitions %{
-    "group_user_relation" => %{
+    "membership" => %{
       "interest" => %{
         color: "oklch(63% 0.13 358)",
         icon: "hero-heart-micro",

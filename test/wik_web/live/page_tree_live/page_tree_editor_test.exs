@@ -4,15 +4,15 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
   import Wik.TestGenerators
   import Phoenix.LiveViewTest
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Wiki.PageTree
   alias WikWeb.PageTreeEditorTestLive
 
   test "add child flow resets on cancel and persists a valid submission", %{conn: conn} do
-    group = generate(group())
+    space = generate(space())
     superadmin = generate(user(role: :superadmin))
-    generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
+    generate(page_tree(space: space, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, space.slug, superadmin.id)
 
     render_click(element(view, testid("page-tree-editor-node-2-add-child")))
 
@@ -55,16 +55,16 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     assert has_element?(view, testid("page-tree-node-5"))
 
     assert Enum.any?(
-             page_tree_for(group.slug, superadmin.id).nodes,
+             page_tree_for(space.slug, superadmin.id).nodes,
              &(&1.parent_id == 2 and &1.slug == "guide")
            )
   end
 
   test "move node flow can be canceled and persists the selected parent", %{conn: conn} do
-    group = generate(group())
+    space = generate(space())
     superadmin = generate(user(role: :superadmin))
-    generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
+    generate(page_tree(space: space, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, space.slug, superadmin.id)
 
     render_click(element(view, testid("page-tree-editor-node-3-move")))
 
@@ -84,18 +84,18 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     refute has_element?(view, testid("move-node-modal"))
 
     assert Enum.any?(
-             page_tree_for(group.slug, superadmin.id).nodes,
+             page_tree_for(space.slug, superadmin.id).nodes,
              &(&1.id == 3 and &1.parent_id == 1)
            )
   end
 
   test "move button stays visible when top level is the only valid destination", %{conn: conn} do
-    group = generate(group())
+    space = generate(space())
     superadmin = generate(user(role: :superadmin))
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: nil, parent_id: nil, slug: "home", title: "Home"},
           %{id: 2, page_id: nil, parent_id: 1, slug: "docs", title: "Docs"}
@@ -103,7 +103,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
       )
     )
 
-    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
+    {:ok, view, _html} = mount_editor(conn, space.slug, superadmin.id)
 
     assert has_element?(view, testid("page-tree-editor-node-2-move"))
 
@@ -113,26 +113,26 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
   end
 
   test "remove node deletes a leaf node from the rendered tree and persisted state", %{conn: conn} do
-    group = generate(group())
+    space = generate(space())
     superadmin = generate(user(role: :superadmin))
-    generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.slug, superadmin.id)
+    generate(page_tree(space: space, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, space.slug, superadmin.id)
 
     assert has_element?(view, testid("page-tree-node-3"))
 
     render_click(element(view, testid("page-tree-editor-node-3-remove")))
 
     refute has_element?(view, testid("page-tree-node-3"))
-    refute Enum.any?(page_tree_for(group.slug, superadmin.id).nodes, &(&1.id == 3))
+    refute Enum.any?(page_tree_for(space.slug, superadmin.id).nodes, &(&1.id == 3))
   end
 
   test "read-only mode hides all action buttons", %{conn: conn} do
-    group = generate(group())
+    space = generate(space())
     member = generate(user())
-    add_membership(group, member, :member)
-    grant_active_telegram_access(group, member)
-    generate(page_tree(group: group, nodes: base_nodes()))
-    {:ok, view, _html} = mount_editor(conn, group.slug, member.id, editable?: false)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+    generate(page_tree(space: space, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, space.slug, member.id, editable?: false)
 
     refute has_element?(view, testid("page-tree-editor-add-root"))
     refute has_element?(view, testid("page-tree-editor-node-2-add-child"))
@@ -158,11 +158,11 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     page_tree
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     {:ok, membership} =
       Ash.create(
-        GroupUserRelation,
-        %{group_id: group.id, type: type, user_id: user.id},
+        Membership,
+        %{space_id: space.id, type: type, user_id: user.id},
         authorize?: false,
         domain: Wik.Accounts
       )

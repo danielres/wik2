@@ -7,7 +7,7 @@ defmodule Wik.Access.TelegramSourceClaimTest do
   alias Wik.Access.Grant
   alias Wik.Access.Source
   alias Wik.Access.Telegram
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
 
   require Ash.Query
 
@@ -23,8 +23,8 @@ defmodule Wik.Access.TelegramSourceClaimTest do
   describe "list_claimable_sources/2" do
     test "returns pending sources where the Telegram identity is the chat creator" do
       user = create_telegram_user()
-      source = create_pending_source("-1001", "Wiktest Local Group 1")
-      create_pending_source("-1002", "Wiktest Local Group 2")
+      source = create_pending_source("-1001", "Wiktest Local Space 1")
+      create_pending_source("-1002", "Wiktest Local Space 2")
 
       assert [claimable_source] =
                Telegram.list_claimable_sources(user, CreatorTelegramProvider)
@@ -33,33 +33,33 @@ defmodule Wik.Access.TelegramSourceClaimTest do
     end
   end
 
-  describe "claim_source_with_new_group/3" do
-    test "creates a group and activates the source for Telegram chat creators" do
+  describe "claim_source_with_new_space/3" do
+    test "creates a space and activates the source for Telegram chat creators" do
       user = create_telegram_user()
-      source = create_pending_source("-1001", "Wiktest Local Group 1")
+      source = create_pending_source("-1001", "Wiktest Local Space 1")
 
-      assert {:ok, {group, source}} =
-               Telegram.claim_source_with_new_group(
+      assert {:ok, {space, source}} =
+               Telegram.claim_source_with_new_space(
                  source.id,
                  %{
-                   "description" => "Created from Telegram group #{source.title}",
+                   "description" => "Created from Telegram space #{source.title}",
                    "name" => source.title,
-                   "slug" => "wiktest-local-group-1"
+                   "slug" => "wiktest-local-space-1"
                  },
                  user,
                  CreatorTelegramProvider
                )
 
-      assert group.name == "Wiktest Local Group 1"
-      assert group.slug == "wiktest-local-group-1"
+      assert space.name == "Wiktest Local Space 1"
+      assert space.slug == "wiktest-local-space-1"
       assert source.status == :active
-      assert source.group_id == group.id
+      assert source.space_id == space.id
       assert source.claimed_by_user_id == user.id
       assert source.claimed_at != nil
 
       assert {:ok, membership} =
-               GroupUserRelation
-               |> Ash.Query.filter(group_id == ^group.id and user_id == ^user.id)
+               Membership
+               |> Ash.Query.filter(space_id == ^space.id and user_id == ^user.id)
                |> Ash.read_one(authorize?: false)
 
       assert membership.type == :owner
@@ -69,15 +69,15 @@ defmodule Wik.Access.TelegramSourceClaimTest do
 
     test "rejects non-creator Telegram members" do
       user = create_telegram_user()
-      source = create_pending_source("-1001", "Wiktest Local Group 1")
+      source = create_pending_source("-1001", "Wiktest Local Space 1")
 
       assert {:error, :telegram_source_claim_requires_creator} =
-               Telegram.claim_source_with_new_group(
+               Telegram.claim_source_with_new_space(
                  source.id,
                  %{
-                   "description" => "Created from Telegram group #{source.title}",
+                   "description" => "Created from Telegram space #{source.title}",
                    "name" => source.title,
-                   "slug" => "wiktest-local-group-1"
+                   "slug" => "wiktest-local-space-1"
                  },
                  user,
                  MemberTelegramProvider
@@ -85,30 +85,30 @@ defmodule Wik.Access.TelegramSourceClaimTest do
 
       assert {:ok, source} = Ash.get(Source, source.id, authorize?: false)
       assert source.status == :pending
-      assert source.group_id == nil
+      assert source.space_id == nil
     end
 
     test "rejects already claimed sources" do
       user = create_telegram_user()
-      group = generate(group(author: user))
-      source = create_pending_source("-1001", "Wiktest Local Group 1")
-      create_membership(group, user, :owner)
+      space = generate(space(author: user))
+      source = create_pending_source("-1001", "Wiktest Local Space 1")
+      create_membership(space, user, :owner)
 
-      assert {:ok, {_group, _source}} =
-               Telegram.claim_source_with_existing_group(
+      assert {:ok, {_space, _source}} =
+               Telegram.claim_source_with_existing_space(
                  source.id,
-                 group.id,
+                 space.id,
                  user,
                  CreatorTelegramProvider
                )
 
       assert {:error, :pending_source_required} =
-               Telegram.claim_source_with_new_group(
+               Telegram.claim_source_with_new_space(
                  source.id,
                  %{
-                   "description" => "Created from Telegram group #{source.title}",
+                   "description" => "Created from Telegram space #{source.title}",
                    "name" => source.title,
-                   "slug" => "wiktest-local-group-1"
+                   "slug" => "wiktest-local-space-1"
                  },
                  user,
                  CreatorTelegramProvider
@@ -116,47 +116,47 @@ defmodule Wik.Access.TelegramSourceClaimTest do
     end
   end
 
-  describe "claim_source_with_existing_group/4" do
-    test "activates the source for an existing group owned by the Telegram creator" do
+  describe "claim_source_with_existing_space/4" do
+    test "activates the source for an existing space owned by the Telegram creator" do
       user = create_telegram_user()
-      group = generate(group(author: user))
-      source = create_pending_source("-1001", "Wiktest Local Group 1")
-      create_membership(group, user, :owner)
+      space = generate(space(author: user))
+      source = create_pending_source("-1001", "Wiktest Local Space 1")
+      create_membership(space, user, :owner)
 
-      assert {:ok, {claimed_group, source}} =
-               Telegram.claim_source_with_existing_group(
+      assert {:ok, {claimed_space, source}} =
+               Telegram.claim_source_with_existing_space(
                  source.id,
-                 group.id,
+                 space.id,
                  user,
                  CreatorTelegramProvider
                )
 
-      assert claimed_group.id == group.id
+      assert claimed_space.id == space.id
       assert source.status == :active
-      assert source.group_id == group.id
+      assert source.space_id == space.id
       assert source.claimed_by_user_id == user.id
       assert source.claimed_at != nil
 
       assert_owner_grant(source, user)
     end
 
-    test "rejects groups not owned by the Telegram creator" do
+    test "rejects spaces not owned by the Telegram creator" do
       user = create_telegram_user()
-      group = generate(group())
-      source = create_pending_source("-1001", "Wiktest Local Group 1")
-      create_membership(group, user, :admin)
+      space = generate(space())
+      source = create_pending_source("-1001", "Wiktest Local Space 1")
+      create_membership(space, user, :admin)
 
-      assert {:error, :group_owner_required} =
-               Telegram.claim_source_with_existing_group(
+      assert {:error, :space_owner_required} =
+               Telegram.claim_source_with_existing_space(
                  source.id,
-                 group.id,
+                 space.id,
                  user,
                  CreatorTelegramProvider
                )
 
       assert {:ok, source} = Ash.get(Source, source.id, authorize?: false)
       assert source.status == :pending
-      assert source.group_id == nil
+      assert source.space_id == nil
     end
   end
 
@@ -181,7 +181,7 @@ defmodule Wik.Access.TelegramSourceClaimTest do
           "chat" => %{
             "id" => provider_source_id,
             "title" => title,
-            "type" => "group"
+            "type" => "space"
           },
           "kind" => "telegram_chat"
         },
@@ -192,10 +192,10 @@ defmodule Wik.Access.TelegramSourceClaimTest do
     source
   end
 
-  defp create_membership(group, user, type) do
+  defp create_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

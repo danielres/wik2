@@ -39,7 +39,7 @@ For more on the mission, see [MISSION.md](https://github.com/danielres/wik2/blob
 
 ## Access and Identity
 
-A person can prove who they are through an external identity, a group can define trusted access sources, and Wik turns that into grants and memberships inside the space.
+A person can prove who they are through an external identity, a space can define trusted access sources, and Wik turns that into grants and memberships inside the space.
 
 The result is access that feels lighter than traditional account admin, but still gives groups clear control over who belongs and what role they hold. 
 
@@ -54,7 +54,7 @@ The conceptual model:
 - External Identity = how a person shows up in an external system (Telegram group, Discord server, SSO provider, etc)
 - Access source = a group-controlled place or channel that Wik can trust
 - Grant = the connection that says “this person has verified access here”
-- Membership = what role they hold inside the group once access exists
+- Membership = what role they hold inside the space once access exists
 
 So instead of:
 
@@ -76,16 +76,16 @@ Wik v2 is built with:
 
 ## What Wik Includes
 
-Wik is organized around the **group** as the main unit. 
+Wik is organized around the **space** as the main unit. 
 
-Each group is a private space for shared knowledge and calm coordination.
+Each space is a private space for shared knowledge and calm coordination.
 
 Right now, that includes:
 
-- A group wiki 
+- A space wiki 
 - Modular content blocks
-- Group events, with relay and calendar subscriptions
-- Group memberships with owner/admin/member roles
+- Space events, with relay and calendar subscriptions
+- Space memberships with owner/admin/member roles
 - Pluggable access and identity flows
 - Admin and maintenance tooling
 
@@ -96,7 +96,7 @@ Post an event once. Share it with the people who should actually see it. Relay i
 
 Members can follow events in Wik or subscribe in their own calendar app (Google Calendar, ...)
 
-The relay system allows groups to share events with other groups in a way that respects the boundaries of each group.
+The relay system allows spaces to share events with other spaces in a way that respects the boundaries of each space.
 
 The result: less chat noise, fewer notifications, less duplication, better turnout.
 
@@ -177,11 +177,11 @@ The superadmin shortcut uses `Wik.DevAuth` and creates the local dev superadmin 
 
 - user `seed-owner@example.com`
 - user `seed-member@example.com`
-- group `seed-group-two-members`
+- space `seed-space-two-members`
 
 The seeds also create Telegram-backed demo access data so you can exercise:
 
-- group membership flows
+- space membership flows
 - the currently implemented Telegram-based access flow
 - identity / source relationships
 
@@ -189,7 +189,7 @@ So after `devenv up` and `mix setup`, you can usually:
 
 1. open `http://localhost:4000/sign-in`
 2. sign in as superadmin or one of the seeded users
-3. start exploring the seeded group immediately
+3. start exploring the seeded space immediately
 
 ## Optional Telegram Integration
 

@@ -6,22 +6,22 @@ defmodule WikWeb.TagLiveTest do
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
 
   test "tag page defaults to view mode and can be edited", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    scope = scope(owner, group)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
 
     {:ok, tag} = Tags.create_tag("alpha", "Alpha", "Foundational rhythm", scope: scope)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/tags/#{tag.slug}")
+      |> live(~p"/#{space.slug}/tags/#{tag.slug}")
 
     assert has_element?(view, testid("tag-page"))
     assert has_element?(view, testid("tag-edit-mode-toggle"))
@@ -39,7 +39,7 @@ defmodule WikWeb.TagLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{group.slug}/tags/social-dance")
+    assert_patch(view, ~p"/#{space.slug}/tags/social-dance")
     assert has_element?(view, testid("tag-page"))
     refute has_element?(view, testid("tag-form-form"))
 
@@ -54,36 +54,36 @@ defmodule WikWeb.TagLiveTest do
     first_user = generate(user())
     second_user = generate(user())
     third_user = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
 
     first_membership =
-      group
+      space
       |> add_membership(first_user, :member)
       |> then(&set_username(&1, "ada"))
       |> reload_membership()
 
     second_membership =
-      group
+      space
       |> add_membership(second_user, :member)
       |> then(&set_username(&1, "bea"))
       |> reload_membership()
 
     third_membership =
-      group
+      space
       |> add_membership(third_user, :member)
       |> then(&set_username(&1, "cy"))
       |> reload_membership()
 
-    grant_active_telegram_access(group, owner)
-    grant_active_telegram_access(group, first_user)
-    grant_active_telegram_access(group, second_user)
-    grant_active_telegram_access(group, third_user)
+    grant_active_telegram_access(space, owner)
+    grant_active_telegram_access(space, first_user)
+    grant_active_telegram_access(space, second_user)
+    grant_active_telegram_access(space, third_user)
 
-    owner_scope = scope(owner, group)
-    first_scope = scope(first_user, group)
-    second_scope = scope(second_user, group)
-    third_scope = scope(third_user, group)
+    owner_scope = scope(owner, space)
+    first_scope = scope(first_user, space)
+    second_scope = scope(second_user, space)
+    third_scope = scope(third_user, space)
 
     {:ok, tag} = Tags.create_tag("fusion", "Fusion", "Late-night socials", scope: owner_scope)
 
@@ -114,7 +114,7 @@ defmodule WikWeb.TagLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/tags/#{tag.slug}")
+      |> live(~p"/#{space.slug}/tags/#{tag.slug}")
 
     assert has_element?(view, testid("tag-page"))
     assert has_element?(view, testid("tag-member-taggings-table"))
@@ -137,14 +137,14 @@ defmodule WikWeb.TagLiveTest do
 
     assert_redirect(
       view,
-      ~p"/#{group.slug}/wiki/members/#{first_membership.username}/tag/#{tag.slug}"
+      ~p"/#{space.slug}/wiki/members/#{first_membership.username}/tag/#{tag.slug}"
     )
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )
@@ -170,7 +170,7 @@ defmodule WikWeb.TagLiveTest do
   end
 
   defp reload_membership(membership) do
-    membership.group_id
+    membership.space_id
     |> Wik.Accounts.get_membership(membership.user_id)
     |> elem(1)
   end

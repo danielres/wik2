@@ -48,16 +48,16 @@ defmodule Wik.Events.Feeds.SerializerTest do
   test "serializes aggregate visibility context in the description" do
     ics =
       %{
-        event: timed_event_with_group(),
+        event: timed_event_with_space(),
         publications: [
           %EventPublication{
-            event: timed_event_with_group(),
-            group: %Wik.Accounts.Group{name: "berlin-hackers"},
+            event: timed_event_with_space(),
+            space: %Wik.Accounts.Space{name: "berlin-hackers"},
             publication_type: :origin
           },
           %EventPublication{
-            event: timed_event_with_group(),
-            group: %Wik.Accounts.Group{name: "community-kitchen"},
+            event: timed_event_with_space(),
+            space: %Wik.Accounts.Space{name: "community-kitchen"},
             publication_type: :relay,
             published_by: %Wik.Accounts.User{email: "ada@example.com"},
             relay_note: "Worth sharing"
@@ -88,8 +88,8 @@ defmodule Wik.Events.Feeds.SerializerTest do
     }
   end
 
-  defp timed_event_with_group do
-    %{timed_event() | group: %Wik.Accounts.Group{name: "origin-group"}}
+  defp timed_event_with_space do
+    %{timed_event() | space: %Wik.Accounts.Space{name: "origin-space"}}
   end
 
   defp all_day_event do

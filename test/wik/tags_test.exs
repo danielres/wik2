@@ -3,70 +3,70 @@ defmodule Wik.TagsTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
 
   describe "tag management" do
-    test "creates a tag within the current group and loads it by slug" do
-      %{group: group, owner: owner} = owner_fixture()
+    test "creates a tag within the current space and loads it by slug" do
+      %{space: space, owner: owner} = owner_fixture()
 
       assert {:ok, tag} =
                Tags.create_tag("partner-dance", "Partner dance", "Moves together",
-                 scope: scope(owner, group)
+                 scope: scope(owner, space)
                )
 
-      assert tag.group_id == group.id
+      assert tag.space_id == space.id
 
-      assert {:ok, loaded_tag} = Tags.get_tag_by_slug("partner-dance", scope: scope(owner, group))
+      assert {:ok, loaded_tag} = Tags.get_tag_by_slug("partner-dance", scope: scope(owner, space))
       assert loaded_tag.id == tag.id
     end
 
-    test "rejects duplicate slugs within the same group" do
-      %{group: group, owner: owner} = owner_fixture()
+    test "rejects duplicate slugs within the same space" do
+      %{space: space, owner: owner} = owner_fixture()
 
       assert {:ok, _tag} =
-               Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope(owner, group))
+               Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope(owner, space))
 
       assert {:error, _error} =
                Tags.create_tag("partner-dance", "Partner dance again", nil,
-                 scope: scope(owner, group)
+                 scope: scope(owner, space)
                )
     end
 
-    test "links tags within the same group and rejects duplicate, self, cross-group, and cycle edges" do
-      %{group: group, owner: owner} = owner_fixture()
-      other_group = generate(group())
+    test "links tags within the same space and rejects duplicate, self, cross-space, and cycle edges" do
+      %{space: space, owner: owner} = owner_fixture()
+      other_space = generate(space())
       other_owner = generate(user())
-      add_membership(other_group, other_owner, :owner)
+      add_membership(other_space, other_owner, :owner)
 
-      {:ok, root} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, group))
+      {:ok, root} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
 
       {:ok, child} =
-        Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope(owner, group))
+        Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope(owner, space))
 
-      {:ok, grandchild} = Tags.create_tag("tango", "Tango", nil, scope: scope(owner, group))
+      {:ok, grandchild} = Tags.create_tag("tango", "Tango", nil, scope: scope(owner, space))
 
       {:ok, outsider_tag} =
-        Tags.create_tag("other", "Other", nil, scope: scope(other_owner, other_group))
+        Tags.create_tag("other", "Other", nil, scope: scope(other_owner, other_space))
 
-      assert {:ok, _edge} = Tags.link_tags(root.id, child.id, scope: scope(owner, group))
-      assert {:ok, _edge} = Tags.link_tags(child.id, grandchild.id, scope: scope(owner, group))
+      assert {:ok, _edge} = Tags.link_tags(root.id, child.id, scope: scope(owner, space))
+      assert {:ok, _edge} = Tags.link_tags(child.id, grandchild.id, scope: scope(owner, space))
 
-      assert {:error, _error} = Tags.link_tags(root.id, child.id, scope: scope(owner, group))
-      assert {:error, _error} = Tags.link_tags(root.id, root.id, scope: scope(owner, group))
+      assert {:error, _error} = Tags.link_tags(root.id, child.id, scope: scope(owner, space))
+      assert {:error, _error} = Tags.link_tags(root.id, root.id, scope: scope(owner, space))
 
       assert {:error, _error} =
-               Tags.link_tags(root.id, outsider_tag.id, scope: scope(owner, group))
+               Tags.link_tags(root.id, outsider_tag.id, scope: scope(owner, space))
 
-      assert {:error, _error} = Tags.link_tags(grandchild.id, root.id, scope: scope(owner, group))
+      assert {:error, _error} = Tags.link_tags(grandchild.id, root.id, scope: scope(owner, space))
     end
 
     test "destroying a tag removes incident edges and unlinking preserves both tags" do
-      %{group: group, owner: owner} = owner_fixture()
-      scope = scope(owner, group)
+      %{space: space, owner: owner} = owner_fixture()
+      scope = scope(owner, space)
 
       {:ok, root} = Tags.create_tag("dance", "Dance", nil, scope: scope)
       {:ok, child} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
@@ -97,15 +97,15 @@ defmodule Wik.TagsTest do
 
   defp owner_fixture do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    %{group: group, owner: owner}
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    %{space: space, owner: owner}
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

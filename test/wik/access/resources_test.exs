@@ -44,22 +44,22 @@ defmodule Wik.Access.ResourcesTest do
       assert {:error, _error} = Ash.create(Source, telegram_source_attrs(), authorize?: false)
     end
 
-    test "can belong to a group and a claiming user" do
-      group = generate(group())
+    test "can belong to a space and a claiming user" do
+      space = generate(space())
       user = generate(user())
-      source = create_source(group, user)
+      source = create_source(space, user)
 
-      assert {:ok, source} = Ash.load(source, [:claimed_by_user, :group], authorize?: false)
+      assert {:ok, source} = Ash.load(source, [:claimed_by_user, :space], authorize?: false)
 
       assert source.claimed_by_user.id == user.id
-      assert source.group.id == group.id
+      assert source.space.id == space.id
     end
   end
 
   describe "grants" do
     test "are unique per source and user" do
       user = generate(user())
-      source = create_source(generate(group()), user)
+      source = create_source(generate(space()), user)
       identity = create_external_identity(user)
       attrs = telegram_grant_attrs(source, identity, user)
 
@@ -69,7 +69,7 @@ defmodule Wik.Access.ResourcesTest do
 
     test "belong to source, external identity, and user" do
       user = generate(user())
-      source = create_source(generate(group()), user)
+      source = create_source(generate(space()), user)
       identity = create_external_identity(user)
 
       assert {:ok, grant} =
@@ -91,11 +91,11 @@ defmodule Wik.Access.ResourcesTest do
     identity
   end
 
-  defp create_source(group, user) do
+  defp create_source(space, user) do
     {:ok, source} =
       Ash.create(
         Source,
-        telegram_source_attrs(group_id: group.id, claimed_by_user_id: user.id, status: :active),
+        telegram_source_attrs(space_id: space.id, claimed_by_user_id: user.id, status: :active),
         authorize?: false
       )
 
@@ -128,12 +128,12 @@ defmodule Wik.Access.ResourcesTest do
     %{
       claimed_at: Keyword.get(overrides, :claimed_at),
       claimed_by_user_id: Keyword.get(overrides, :claimed_by_user_id),
-      group_id: Keyword.get(overrides, :group_id),
-      metadata: %{"kind" => "group"},
+      space_id: Keyword.get(overrides, :space_id),
+      metadata: %{"kind" => "space"},
       provider: :telegram,
       provider_source_id: "telegram-chat-1",
       status: Keyword.get(overrides, :status, :pending),
-      title: "Telegram Group"
+      title: "Telegram Space"
     }
   end
 end

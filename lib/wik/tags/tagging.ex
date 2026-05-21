@@ -1,7 +1,7 @@
 defmodule Wik.Tags.Tagging do
-  alias Wik.Accounts.Group
-  alias Wik.Accounts.GroupUserRelation
-  alias Wik.Changes.SetGroupFromCurrentTenant
+  alias Wik.Accounts.Space
+  alias Wik.Accounts.Membership
+  alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Tags.Tag
   alias Wik.Tags.Tagging.Checks.ActorCanManageOwnMembershipTagging
   alias Wik.Tags.Tagging.Changes.NormalizeMembershipFields
@@ -20,15 +20,15 @@ defmodule Wik.Tags.Tagging do
     repo Wik.Repo
 
     references do
-      reference :tag, on_delete: :delete, match_with: [group_id: :group_id]
+      reference :tag, on_delete: :delete, match_with: [space_id: :space_id]
 
       reference :target_membership,
         on_delete: :delete,
-        match_with: [group_id: :group_id]
+        match_with: [space_id: :space_id]
 
-      reference :tagged_by_group_user_relation,
+      reference :tagged_by_membership,
         on_delete: :delete,
-        match_with: [group_id: :group_id]
+        match_with: [space_id: :space_id]
     end
   end
 
@@ -42,12 +42,12 @@ defmodule Wik.Tags.Tagging do
         :tag_id,
         :taggable_type,
         :taggable_id,
-        :tagged_by_group_user_relation_id,
+        :tagged_by_membership_id,
         :dimensions,
         :description
       ]
 
-      change SetGroupFromCurrentTenant
+      change SetSpaceFromCurrentTenant
       change ValidateTarget
       change NormalizeMembershipFields
     end
@@ -66,7 +66,7 @@ defmodule Wik.Tags.Tagging do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
     end
 
     policy action(:create) do
@@ -88,15 +88,15 @@ defmodule Wik.Tags.Tagging do
     publish :create, [:taggable_type, :taggable_id]
     publish :update_details, [:taggable_type, :taggable_id]
     publish :destroy, [:taggable_type, :taggable_id]
-    publish :create, ["group", :group_id]
-    publish :update_details, ["group", :group_id]
-    publish :destroy, ["group", :group_id]
+    publish :create, ["space", :space_id]
+    publish :update_details, ["space", :space_id]
+    publish :destroy, ["space", :space_id]
   end
 
   multitenancy do
     strategy :attribute
-    attribute :group_id
-    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
+    attribute :space_id
+    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
   end
 
   attributes do
@@ -126,7 +126,7 @@ defmodule Wik.Tags.Tagging do
   end
 
   relationships do
-    belongs_to :group, Wik.Accounts.Group do
+    belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
     end
@@ -136,14 +136,14 @@ defmodule Wik.Tags.Tagging do
       allow_nil? false
     end
 
-    belongs_to :target_membership, GroupUserRelation do
+    belongs_to :target_membership, Membership do
       source_attribute :taggable_id
       destination_attribute :id
       allow_nil? false
       attribute_writable? false
     end
 
-    belongs_to :tagged_by_group_user_relation, GroupUserRelation do
+    belongs_to :tagged_by_membership, Membership do
       destination_attribute :id
       allow_nil? false
     end
@@ -166,17 +166,17 @@ defmodule Wik.Tags.Tagging do
   end
 
   identities do
-    identity :unique_group_target_author_tag,
+    identity :unique_space_target_author_tag,
              [
-               :group_id,
+               :space_id,
                :taggable_type,
                :taggable_id,
-               :tagged_by_group_user_relation_id,
+               :tagged_by_membership_id,
                :tag_id
              ]
   end
 
-  def group_pub_sub_topic(group_id), do: "tagging:group:#{group_id}"
+  def space_pub_sub_topic(space_id), do: "tagging:space:#{space_id}"
 
   def target_pub_sub_topic(taggable_type, taggable_id),
     do: "tagging:#{taggable_type}:#{taggable_id}"

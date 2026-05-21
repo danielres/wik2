@@ -15,7 +15,7 @@ defmodule WikWeb.PageLive.Components.Details do
 
   def render(assigns) do
     ~H"""
-    <details class="group" open={@open?}>
+    <details class="space" open={@open?}>
       <summary class={[
         "list-none cursor-pointer mr-12",
         "flex items-center gap-1"
@@ -24,8 +24,8 @@ defmodule WikWeb.PageLive.Components.Details do
         <.icon
           name="hero-chevron-down-micro"
           class={[
-            "opacity-20 group-hover:opacity-60 transition-transform duration-200",
-            "group-open:-scale-y-100"
+            "opacity-20 space-hover:opacity-60 transition-transform duration-200",
+            "space-open:-scale-y-100"
           ]}
         />
       </summary>

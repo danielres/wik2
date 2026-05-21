@@ -3,22 +3,22 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Wiki
   alias Wik.Wiki.Page
 
   test "loads the existing node and linked page" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
     {:ok, page} = Page.create(authorize?: false, scope: scope)
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: page.id, parent_id: nil, slug: "home", title: "Home"}
         ]
@@ -34,14 +34,14 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
 
   test "loads an existing node without creating a page for it" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: nil, parent_id: nil, slug: "draft", title: "Draft"}
         ]
@@ -57,10 +57,10 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
 
   test "returns nils for a missing path without creating anything" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :member)
-    grant_active_telegram_access(group, actor)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :member)
+    grant_active_telegram_access(space, actor)
+    scope = scope(actor, space)
 
     {node, page} = Wiki.load_page_and_node_by_path("missing/path", scope: scope)
 
@@ -71,9 +71,9 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
 
   test "ensure_page_and_node_at_path creates a missing page and node for a manager" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :owner)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = scope(actor, space)
 
     assert {:ok, node, page} =
              Wiki.ensure_page_and_node_at_path("docs/guide", scope: scope, load: [:author])
@@ -90,13 +90,13 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
 
   test "ensure_page_and_node_at_path creates a page for an existing node without one" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :owner)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = scope(actor, space)
 
     generate(
       page_tree(
-        group: group,
+        space: space,
         nodes: [
           %{id: 1, page_id: nil, parent_id: nil, slug: "draft", title: "Draft"}
         ]
@@ -118,9 +118,9 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
 
   test "ensure_page_and_node_at_path uses title_path titles for missing nodes" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :owner)
-    scope = scope(actor, group)
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = scope(actor, space)
 
     assert {:ok, node, _page} =
              Wiki.ensure_page_and_node_at_path(
@@ -141,10 +141,10 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
     assert soups_node.title == "Soups"
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

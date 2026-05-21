@@ -12,7 +12,7 @@ defmodule Wik.Accounts.Profile do
   end
 
   admin do
-    table_columns [:group_user_relation, :inserted_at]
+    table_columns [:membership, :inserted_at]
 
     format_fields inserted_at: {Calendar, :strftime, ["%Y-%m-%d %H:%M"]}
   end
@@ -22,7 +22,7 @@ defmodule Wik.Accounts.Profile do
 
     create :create do
       primary? true
-      accept [:group_user_relation_id]
+      accept [:membership_id]
     end
   end
 
@@ -33,15 +33,15 @@ defmodule Wik.Accounts.Profile do
       # TODO: is there a way to simplify?
       authorize_if expr(
                      exists(
-                       group_user_relation.group.memberships,
+                       membership.space.memberships,
                        user_id == ^actor(:id) and type == :owner
                      ) or
                        (exists(
-                          group_user_relation.group.memberships,
+                          membership.space.memberships,
                           user_id == ^actor(:id) and type in [:admin, :member]
                         ) and
                           exists(
-                            group_user_relation.group.access_sources,
+                            membership.space.access_sources,
                             status == :active and
                               exists(grants, user_id == ^actor(:id) and status == :active)
                           ))
@@ -63,7 +63,7 @@ defmodule Wik.Accounts.Profile do
   end
 
   relationships do
-    belongs_to :group_user_relation, Wik.Accounts.GroupUserRelation do
+    belongs_to :membership, Wik.Accounts.Membership do
       allow_nil? false
     end
 
@@ -83,6 +83,6 @@ defmodule Wik.Accounts.Profile do
   end
 
   identities do
-    identity :unique_group_user_relation_profile, [:group_user_relation_id]
+    identity :unique_membership_profile, [:membership_id]
   end
 end

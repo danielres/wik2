@@ -64,12 +64,12 @@ defmodule WikWeb.PageTreeLive.Components.PageTree do
     ~H"""
     <.node_wrapper depth={@depth} has_children?={has_children?(@node)}>
       <div class={[
-        "group",
+        "space",
         "flex items-center justify-between gap-3"
       ]}>
         <div class={[
           "flex gap-2",
-          "opacity-80 group-has-[button:hover]:opacity-100",
+          "opacity-80 space-has-[button:hover]:opacity-100",
           "transition"
         ]}>
           <div class="flex">
@@ -107,9 +107,9 @@ defmodule WikWeb.PageTreeLive.Components.PageTree do
       name="hero-chevron-right-mini"
       class={[
         "rotate-135",
-        "group-has-[button:hover]:rotate-0",
+        "space-has-[button:hover]:rotate-0",
         "opacity-30",
-        "group-has-[button:hover]:opacity-100",
+        "space-has-[button:hover]:opacity-100",
         "transition"
       ]}
     />

@@ -12,16 +12,16 @@ defmodule WikWeb.PresenceTest do
     anna = generate(user(email: "anna@example.com"))
 
     presences = %{
-      zoe.id => %{metas: [%{group_id: "group-1", path: "/group-1/wiki/home"}]},
-      anna.id => %{metas: [%{group_id: "group-1", path: "/group-1/blog"}]}
+      zoe.id => %{metas: [%{space_id: "space-1", path: "/space-1/wiki/home"}]},
+      anna.id => %{metas: [%{space_id: "space-1", path: "/space-1/blog"}]}
     }
 
-    fetched_presences = WikWeb.Presence.fetch("group:group-1:users", presences)
+    fetched_presences = WikWeb.Presence.fetch("space:space-1:users", presences)
 
-    assert %{id: zoe_user_id, metas: [%{path: "/group-1/wiki/home"}], user: fetched_zoe} =
+    assert %{id: zoe_user_id, metas: [%{path: "/space-1/wiki/home"}], user: fetched_zoe} =
              Map.fetch!(fetched_presences, zoe.id)
 
-    assert %{id: anna_user_id, metas: [%{path: "/group-1/blog"}], user: fetched_anna} =
+    assert %{id: anna_user_id, metas: [%{path: "/space-1/blog"}], user: fetched_anna} =
              Map.fetch!(fetched_presences, anna.id)
 
     assert zoe_user_id == zoe.id
@@ -32,15 +32,15 @@ defmodule WikWeb.PresenceTest do
 
   test "fetch enriches presence entries with grant avatar urls" do
     user = generate(user(email: "zoe@example.com"))
-    group = generate(group())
-    add_membership(group, user, :member)
-    create_telegram_access(group, user)
+    space = generate(space())
+    add_membership(space, user, :member)
+    create_telegram_access(space, user)
 
     presences = %{
-      user.id => %{metas: [%{group_id: group.id, path: "/#{group.slug}/wiki/home"}]}
+      user.id => %{metas: [%{space_id: space.id, path: "/#{space.slug}/wiki/home"}]}
     }
 
-    fetched_presences = WikWeb.Presence.fetch("group:#{group.id}:users", presences)
+    fetched_presences = WikWeb.Presence.fetch("space:#{space.id}:users", presences)
 
     assert %{membership: %{avatar_url: "https://telegram.example/avatar.png"}} =
              Map.fetch!(fetched_presences, user.id)
@@ -48,16 +48,16 @@ defmodule WikWeb.PresenceTest do
 
   test "fetch enriches presence entries with membership usernames" do
     user = generate(user(email: "zoe@example.com"))
-    group = generate(group())
-    add_membership(group, user, :member, username: "zoe-group")
+    space = generate(space())
+    add_membership(space, user, :member, username: "zoe-space")
 
     presences = %{
-      user.id => %{metas: [%{group_id: group.id, path: "/#{group.slug}/wiki/home"}]}
+      user.id => %{metas: [%{space_id: space.id, path: "/#{space.slug}/wiki/home"}]}
     }
 
-    fetched_presences = WikWeb.Presence.fetch("group:#{group.id}:users", presences)
+    fetched_presences = WikWeb.Presence.fetch("space:#{space.id}:users", presences)
 
-    assert %{membership: %{username: "zoe-group"}} = Map.fetch!(fetched_presences, user.id)
+    assert %{membership: %{username: "zoe-space"}} = Map.fetch!(fetched_presences, user.id)
   end
 
   test "users_at_path returns the usernames for a given path" do
@@ -66,24 +66,24 @@ defmodule WikWeb.PresenceTest do
 
     presences = [
       %{
-        display_name: "home-group",
+        display_name: "home-space",
         id: home_user.id,
-        membership: %{display_name: "home-group", user: home_user, username: "home-group"},
-        metas: [%{path: "/group-1/wiki/home"}],
+        membership: %{display_name: "home-space", user: home_user, username: "home-space"},
+        metas: [%{path: "/space-1/wiki/home"}],
         user: home_user,
-        username: "home-group"
+        username: "home-space"
       },
       %{
-        display_name: "tree-group",
+        display_name: "tree-space",
         id: tree_user.id,
-        membership: %{display_name: "tree-group", user: tree_user, username: "tree-group"},
-        metas: [%{path: "/group-1/tree"}],
+        membership: %{display_name: "tree-space", user: tree_user, username: "tree-space"},
+        metas: [%{path: "/space-1/tree"}],
         user: tree_user,
-        username: "tree-group"
+        username: "tree-space"
       }
     ]
 
-    assert ["tree-group"] = WikWeb.Presence.users_at_path(presences, "/group-1/tree")
+    assert ["tree-space"] = WikWeb.Presence.users_at_path(presences, "/space-1/tree")
   end
 
   test "presences_to_locks ignores the current tab and keeps locks from other tabs" do
@@ -97,17 +97,17 @@ defmodule WikWeb.PresenceTest do
         id: current_user.id,
         membership: %{
           avatar_url: "https://telegram.example/current.png",
-          display_name: "current-group",
+          display_name: "current-space",
           user: current_user,
-          username: "current-group"
+          username: "current-space"
         },
         metas: [
           %{
             editing_block_id: "block-a",
-            path: "/group-1/wiki/home",
+            path: "/space-1/wiki/home",
             tab_id: "tab-1"
           },
-          %{editing_block_id: "block-c", path: "/group-1/blog", tab_id: "tab-2"}
+          %{editing_block_id: "block-c", path: "/space-1/blog", tab_id: "tab-2"}
         ],
         user: current_user
       },
@@ -115,13 +115,13 @@ defmodule WikWeb.PresenceTest do
         id: other_user.id,
         membership: %{
           avatar_url: "https://telegram.example/other.png",
-          display_name: "other-group",
+          display_name: "other-space",
           user: other_user,
-          username: "other-group"
+          username: "other-space"
         },
         metas: [
-          %{editing_block_id: "block-a", path: "/group-1/wiki/home", tab_id: "tab-3"},
-          %{editing_block_id: "block-b", path: "/group-1/tree", tab_id: "tab-4"}
+          %{editing_block_id: "block-a", path: "/space-1/wiki/home", tab_id: "tab-3"},
+          %{editing_block_id: "block-b", path: "/space-1/tree", tab_id: "tab-4"}
         ],
         user: other_user
       }
@@ -132,9 +132,9 @@ defmodule WikWeb.PresenceTest do
                block_id: "block-a",
                membership: %{
                  avatar_url: "https://telegram.example/other.png",
-                 display_name: "other-group",
+                 display_name: "other-space",
                  user: ^other_user,
-                 username: "other-group"
+                 username: "other-space"
                },
                user: ^other_user,
                user_id: ^other_user_id
@@ -143,9 +143,9 @@ defmodule WikWeb.PresenceTest do
                block_id: "block-b",
                membership: %{
                  avatar_url: "https://telegram.example/other.png",
-                 display_name: "other-group",
+                 display_name: "other-space",
                  user: ^other_user,
-                 username: "other-group"
+                 username: "other-space"
                },
                user: ^other_user,
                user_id: ^other_user_id
@@ -154,9 +154,9 @@ defmodule WikWeb.PresenceTest do
                block_id: "block-c",
                membership: %{
                  avatar_url: "https://telegram.example/current.png",
-                 display_name: "current-group",
+                 display_name: "current-space",
                  user: ^current_user,
-                 username: "current-group"
+                 username: "current-space"
                },
                user: ^current_user,
                user_id: ^current_user_id
@@ -164,12 +164,12 @@ defmodule WikWeb.PresenceTest do
            } = WikWeb.Presence.presences_to_locks(presences, current_user.id, "tab-1")
   end
 
-  defp add_membership(group, user, type, opts \\ []) do
+  defp add_membership(space, user, type, opts \\ []) do
     membership =
       Ash.create!(
-        Wik.Accounts.GroupUserRelation,
+        Wik.Accounts.Membership,
         %{
-          group_id: group.id,
+          space_id: space.id,
           type: type,
           user_id: user.id
         },
@@ -186,23 +186,23 @@ defmodule WikWeb.PresenceTest do
           membership,
           %{username: username},
           action: :set_username,
-          scope: %Wik.Scope{actor: user, tenant: group}
+          scope: %Wik.Scope{actor: user, tenant: space}
         )
     end
   end
 
-  defp create_telegram_access(group, user) do
+  defp create_telegram_access(space, user) do
     source =
       Ash.create!(
         Source,
         %{
           claimed_at: DateTime.utc_now(),
           claimed_by_user_id: user.id,
-          group_id: group.id,
+          space_id: space.id,
           provider: :telegram,
           provider_source_id: "telegram-source-#{System.unique_integer([:positive])}",
           status: :active,
-          title: "Telegram Group"
+          title: "Telegram Space"
         },
         authorize?: false,
         domain: Wik.Access

@@ -6,7 +6,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
   import Wik.TestGenerators
 
   alias Wik.Scope
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias WikWeb.Components.Block.Types.Markdown
   alias Wik.Wiki.PageTree
   alias Wik.Wiki.PageTree.Node
@@ -50,15 +50,15 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
   end
 
   test "render converts canonical member wikilinks to member profile links" do
-    group = generate(group())
+    space = generate(space())
     user = generate(user())
-    membership = add_membership(group, user, "alice")
-    scope = %Scope{tenant: %{id: group.id, name: group.name, slug: group.slug}}
+    membership = add_membership(space, user, "alice")
+    scope = %Scope{tenant: %{id: space.id, name: space.name, slug: space.slug}}
 
     html =
       render_component(&Markdown.render/1, %{
         block: %{id: "block-1", data: %{"text" => "[[member:#{membership.id}]]"}},
-        page_tree: page_tree_fixture(group.id),
+        page_tree: page_tree_fixture(space.id),
         scope: scope
       })
 
@@ -75,18 +75,18 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
   test "render converts canonical tag wikilinks to tag links" do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_owner_membership(group, owner)
+    space = generate(space(author: owner))
+    add_owner_membership(space, owner)
 
     {:ok, tag} =
-      Wik.Tags.create_tag("dance", "Dance", nil, scope: %Scope{actor: owner, tenant: group})
+      Wik.Tags.create_tag("dance", "Dance", nil, scope: %Scope{actor: owner, tenant: space})
 
-    scope = %Scope{tenant: %{id: group.id, name: group.name, slug: group.slug}}
+    scope = %Scope{tenant: %{id: space.id, name: space.name, slug: space.slug}}
 
     html =
       render_component(&Markdown.render/1, %{
         block: %{id: "block-1", data: %{"text" => "[[tag:#{tag.id}]]"}},
-        page_tree: page_tree_fixture(group.id),
+        page_tree: page_tree_fixture(space.id),
         scope: scope
       })
 
@@ -226,13 +226,13 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
   test "form_fields keeps the markdown source editable" do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_owner_membership(group, owner)
+    space = generate(space(author: owner))
+    add_owner_membership(space, owner)
     user = generate(user())
-    membership = add_membership(group, user, "alice")
+    membership = add_membership(space, user, "alice")
 
     {:ok, tag} =
-      Wik.Tags.create_tag("dance", "Dance", nil, scope: %Scope{actor: owner, tenant: group})
+      Wik.Tags.create_tag("dance", "Dance", nil, scope: %Scope{actor: owner, tenant: space})
 
     wikilink_map = Jason.encode!(%{"Soups" => 1, "Soups/Vegetable Soup" => 2})
 
@@ -249,8 +249,8 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
             },
             as: :block
           ),
-        page_tree: page_tree_fixture(group.id),
-        scope: %Scope{tenant: group}
+        page_tree: page_tree_fixture(space.id),
+        scope: %Scope{tenant: space}
       })
 
     assert html =~ ~s(id="edit-block-markdown-textarea-block-1")
@@ -268,11 +268,11 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     assert html =~ "&quot;Dance&quot;"
   end
 
-  defp add_membership(group, user, username) do
+  defp add_membership(space, user, username) do
     membership =
       Ash.create!(
-        GroupUserRelation,
-        %{group_id: group.id, type: :member, user_id: user.id},
+        Membership,
+        %{space_id: space.id, type: :member, user_id: user.id},
         authorize?: false,
         domain: Wik.Accounts
       )
@@ -281,22 +281,22 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
       membership,
       %{username: username},
       action: :set_username,
-      scope: %Scope{actor: user, tenant: group}
+      scope: %Scope{actor: user, tenant: space}
     )
   end
 
-  defp add_owner_membership(group, user) do
+  defp add_owner_membership(space, user) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: :owner, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: :owner, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )
   end
 
-  defp page_tree_fixture(group_id \\ nil) do
+  defp page_tree_fixture(space_id \\ nil) do
     %PageTree{
-      group_id: group_id,
+      space_id: space_id,
       nodes: [
         %Node{
           id: 1,

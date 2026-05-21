@@ -4,16 +4,16 @@ defmodule WikWeb.Components.TagTest do
   import Phoenix.LiveViewTest, only: [render_component: 2]
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
   alias WikWeb.Components.Tag
 
   test "breadcrumbs renders one clickable path per parent path" do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    scope = scope(owner, group)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
 
     {:ok, recipes} = Tags.create_tag("recipes", "Recipes", nil, scope: scope)
     {:ok, soups} = Tags.create_tag("soups", "Soups", nil, scope: scope)
@@ -35,18 +35,18 @@ defmodule WikWeb.Components.TagTest do
     assert html =~ ~s(data-testid="tag-breadcrumbs")
     assert html =~ ~s(data-testid="tag-breadcrumbs-path-0")
     assert html =~ ~s(data-testid="tag-breadcrumbs-path-1")
-    assert html =~ ~s(href="/#{group.slug}/tags")
-    assert html =~ ~s(href="/#{group.slug}/tags/recipes")
-    assert html =~ ~s(href="/#{group.slug}/tags/soups")
-    assert html =~ ~s(href="/#{group.slug}/tags/healthy-ideas")
-    assert html =~ ~s(href="/#{group.slug}/tags/irish-stew")
+    assert html =~ ~s(href="/#{space.slug}/tags")
+    assert html =~ ~s(href="/#{space.slug}/tags/recipes")
+    assert html =~ ~s(href="/#{space.slug}/tags/soups")
+    assert html =~ ~s(href="/#{space.slug}/tags/healthy-ideas")
+    assert html =~ ~s(href="/#{space.slug}/tags/irish-stew")
   end
 
   test "breadcrumbs keeps a trailing separator when render_self? is false" do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    scope = scope(owner, group)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
 
     {:ok, recipes} = Tags.create_tag("recipes", "Recipes", nil, scope: scope)
     {:ok, soups} = Tags.create_tag("soups", "Soups", nil, scope: scope)
@@ -63,17 +63,17 @@ defmodule WikWeb.Components.TagTest do
         tag: stew
       })
 
-    assert html =~ ~s(href="/#{group.slug}/tags")
-    assert html =~ ~s(href="/#{group.slug}/tags/recipes")
-    assert html =~ ~s(href="/#{group.slug}/tags/soups")
-    refute html =~ ~s(href="/#{group.slug}/tags/irish-stew")
+    assert html =~ ~s(href="/#{space.slug}/tags")
+    assert html =~ ~s(href="/#{space.slug}/tags/recipes")
+    assert html =~ ~s(href="/#{space.slug}/tags/soups")
+    refute html =~ ~s(href="/#{space.slug}/tags/irish-stew")
     assert html =~ ">"
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

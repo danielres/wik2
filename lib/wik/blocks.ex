@@ -72,7 +72,7 @@ defmodule Wik.Blocks do
     |> Ash.read_one(load: [:author], scope: Keyword.fetch!(opts, :scope))
   end
 
-  def create_group_owned_block_on_page(%{} = group, %Page{} = page, block_attrs, opts) do
+  def create_space_owned_block_on_page(%{} = space, %Page{} = page, block_attrs, opts) do
     position = Keyword.get(opts, :position, :bottom)
 
     transaction_opts =
@@ -82,9 +82,9 @@ defmodule Wik.Blocks do
 
     case Repo.transaction(fn ->
            with {:ok, block, block_notifications} <-
-                  create_group_owned_block_in_transaction(
-                    group,
-                    group.id,
+                  create_space_owned_block_in_transaction(
+                    space,
+                    space.id,
                     block_attrs,
                     transaction_opts
                   ),
@@ -104,13 +104,13 @@ defmodule Wik.Blocks do
     end
   end
 
-  def create_group_owned_block(%{id: group_id} = group, block_attrs, opts) do
+  def create_space_owned_block(%{id: space_id} = space, block_attrs, opts) do
     transaction_opts = opts |> Keyword.put(:return_notifications?, true)
 
     case Repo.transaction(fn ->
-           case create_group_owned_block_in_transaction(
-                  group,
-                  group_id,
+           case create_space_owned_block_in_transaction(
+                  space,
+                  space_id,
                   block_attrs,
                   transaction_opts
                 ) do
@@ -189,13 +189,13 @@ defmodule Wik.Blocks do
     end
   end
 
-  def place_group_owned_block_on_page(%{id: group_id}, block_id, %Page{} = page, opts) do
+  def place_space_owned_block_on_page(%{id: space_id}, block_id, %Page{} = page, opts) do
     position = Keyword.get(opts, :position, :bottom)
     opts = Keyword.delete(opts, :position)
     scope = Keyword.fetch!(opts, :scope)
 
     Block
-    |> Query.filter(id == ^block_id and owner_group_id == ^group_id)
+    |> Query.filter(id == ^block_id and owner_space_id == ^space_id)
     |> Ash.read_one(scope: scope)
     |> case do
       {:ok, nil} -> {:error, :not_found}
@@ -218,21 +218,21 @@ defmodule Wik.Blocks do
     end
   end
 
-  def list_orphan_group_owned_blocks(%{id: group_id}, opts) do
+  def list_orphan_space_owned_blocks(%{id: space_id}, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
     Block
-    |> Ash.Query.filter(owner_group_id == ^group_id)
+    |> Ash.Query.filter(owner_space_id == ^space_id)
     |> Ash.read!(scope: scope, load: [:placements])
     |> Enum.filter(&Enum.empty?(&1.placements))
   end
 
-  def destroy_orphan_group_owned_block(group, block_id, opts) do
+  def destroy_orphan_space_owned_block(space, block_id, opts) do
     scope = Keyword.fetch!(opts, :scope)
     opts = opts |> Keyword.put(:return_notifications?, true)
 
-    group
-    |> list_orphan_group_owned_blocks(scope: scope)
+    space
+    |> list_orphan_space_owned_blocks(scope: scope)
     |> Enum.find(&(&1.id == block_id))
     |> case do
       nil ->
@@ -327,7 +327,7 @@ defmodule Wik.Blocks do
 
   # Internal  ==================================================================
 
-  defp create_group_owned_block_in_transaction(_group, group_id, block_attrs, opts) do
+  defp create_space_owned_block_in_transaction(_space, space_id, block_attrs, opts) do
     scope = Keyword.fetch!(opts, :scope)
     ash_opts = opts |> Keyword.put(:action, :create)
     default_data = block_attrs.type |> default_data()
@@ -336,7 +336,7 @@ defmodule Wik.Blocks do
       block_attrs
       |> Map.put_new(:data, default_data)
       |> Map.delete(:owner_user_id)
-      |> Map.put(:owner_group_id, group_id)
+      |> Map.put(:owner_space_id, space_id)
 
     case Ash.create(Block, attrs, ash_opts) do
       {:ok, block, notifications} ->
@@ -364,7 +364,7 @@ defmodule Wik.Blocks do
     attrs =
       block_attrs
       |> Map.put_new(:data, default_data)
-      |> Map.delete(:owner_group_id)
+      |> Map.delete(:owner_space_id)
       |> Map.put(:owner_user_id, scope.actor.id)
 
     case Ash.create(Block, attrs, ash_opts) do

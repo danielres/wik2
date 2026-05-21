@@ -4,7 +4,7 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
   import Phoenix.LiveViewTest, only: [render_component: 2]
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Blocks
   alias Wik.Scope
   alias Wik.Wiki.Page
@@ -12,9 +12,9 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
 
   test "render shows clickable breadcrumb pages" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :owner)
-    scope = %Scope{actor: actor, tenant: group}
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = %Scope{actor: actor, tenant: space}
 
     {:ok, target_page} = Page.create(scope: scope)
     {:ok, recipes_page} = Page.create(scope: scope)
@@ -24,7 +24,7 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
     page_tree =
       generate(
         page_tree(
-          group: group,
+          space: space,
           nodes: [
             %{id: 1, page_id: target_page.id, parent_id: nil, slug: "target", title: "Target"},
             %{id: 2, page_id: recipes_page.id, parent_id: nil, slug: "recipes", title: "Recipes"},
@@ -59,34 +59,34 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
 
     assert document
            |> LazyHTML.query(
-             ~s([data-testid="backlinks-list"] a[href="/#{group.slug}/wiki/recipes"])
+             ~s([data-testid="backlinks-list"] a[href="/#{space.slug}/wiki/recipes"])
            )
            |> Enum.any?()
 
     assert document
            |> LazyHTML.query(
-             ~s([data-testid="backlinks-list"] a[href="/#{group.slug}/wiki/recipes/cakes"])
+             ~s([data-testid="backlinks-list"] a[href="/#{space.slug}/wiki/recipes/cakes"])
            )
            |> Enum.any?()
 
     assert document
            |> LazyHTML.query(
-             ~s([data-testid="backlinks-list"] a[href="/#{group.slug}/wiki/recipes/cakes/cheesecake"])
+             ~s([data-testid="backlinks-list"] a[href="/#{space.slug}/wiki/recipes/cakes/cheesecake"])
            )
            |> Enum.any?()
   end
 
   test "render shows empty state when there are no backlinks" do
     actor = generate(user())
-    group = generate(group())
-    add_membership(group, actor, :owner)
-    scope = %Scope{actor: actor, tenant: group}
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = %Scope{actor: actor, tenant: space}
     {:ok, target_page} = Page.create(scope: scope)
 
     page_tree =
       generate(
         page_tree(
-          group: group,
+          space: space,
           nodes: [
             %{id: 1, page_id: target_page.id, parent_id: nil, slug: "target", title: "Target"}
           ]
@@ -122,10 +122,10 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
            |> Enum.any?()
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

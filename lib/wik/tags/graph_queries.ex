@@ -122,42 +122,42 @@ defmodule Wik.Tags.GraphQueries do
   end
 
   def list_ancestors(scope, tag_or_id) do
-    group_id = tenant_group_id!(scope)
+    space_id = tenant_space_id!(scope)
     tag_id = tag_id(tag_or_id)
 
     ancestor_ids =
-      group_id
+      space_id
       |> ancestor_rows(tag_id)
       |> Enum.map(fn %{id: id} -> id end)
 
-    fetch_tags_in_order(scope, group_id, ancestor_ids)
+    fetch_tags_in_order(scope, space_id, ancestor_ids)
   end
 
   def list_descendants(scope, tag_or_id) do
-    group_id = tenant_group_id!(scope)
+    space_id = tenant_space_id!(scope)
     tag_id = tag_id(tag_or_id)
 
     descendant_ids =
-      group_id
+      space_id
       |> descendant_rows(tag_id)
       |> Enum.map(fn %{id: id} -> id end)
 
-    fetch_tags_in_order(scope, group_id, descendant_ids)
+    fetch_tags_in_order(scope, space_id, descendant_ids)
   end
 
-  def path_exists?(group_id, source_tag_id, target_tag_id) do
+  def path_exists?(space_id, source_tag_id, target_tag_id) do
     sql = """
     WITH RECURSIVE reachable(tag_id) AS (
       SELECT child_tag_id
       FROM tag_edges
-      WHERE group_id = $1 AND parent_tag_id = $2
+      WHERE space_id = $1 AND parent_tag_id = $2
 
       UNION
 
       SELECT edge.child_tag_id
       FROM tag_edges AS edge
       JOIN reachable ON edge.parent_tag_id = reachable.tag_id
-      WHERE edge.group_id = $1
+      WHERE edge.space_id = $1
     )
     SELECT EXISTS(
       SELECT 1
@@ -168,7 +168,7 @@ defmodule Wik.Tags.GraphQueries do
 
     %{rows: [[exists?]]} =
       Repo.query!(sql, [
-        dump_uuid!(group_id),
+        dump_uuid!(space_id),
         dump_uuid!(source_tag_id),
         dump_uuid!(target_tag_id)
       ])
@@ -176,55 +176,55 @@ defmodule Wik.Tags.GraphQueries do
     exists?
   end
 
-  defp ancestor_rows(group_id, tag_id) do
+  defp ancestor_rows(space_id, tag_id) do
     sql = """
     WITH RECURSIVE ancestors(tag_id, depth) AS (
       SELECT parent_tag_id, 1
       FROM tag_edges
-      WHERE group_id = $1 AND child_tag_id = $2
+      WHERE space_id = $1 AND child_tag_id = $2
 
       UNION
 
       SELECT edge.parent_tag_id, ancestors.depth + 1
       FROM tag_edges AS edge
       JOIN ancestors ON edge.child_tag_id = ancestors.tag_id
-      WHERE edge.group_id = $1
+      WHERE edge.space_id = $1
     )
     SELECT tag.id, MIN(ancestors.depth) AS depth
     FROM ancestors
     JOIN tags AS tag ON tag.id = ancestors.tag_id
-    WHERE tag.group_id = $1
+    WHERE tag.space_id = $1
     GROUP BY tag.id, tag.name
     ORDER BY MIN(ancestors.depth), LOWER(tag.name), tag.id
     """
 
-    %{rows: rows} = Repo.query!(sql, [dump_uuid!(group_id), dump_uuid!(tag_id)])
+    %{rows: rows} = Repo.query!(sql, [dump_uuid!(space_id), dump_uuid!(tag_id)])
     Enum.map(rows, fn [id, _depth] -> %{id: load_uuid!(id)} end)
   end
 
-  defp descendant_rows(group_id, tag_id) do
+  defp descendant_rows(space_id, tag_id) do
     sql = """
     WITH RECURSIVE descendants(tag_id, depth) AS (
       SELECT child_tag_id, 1
       FROM tag_edges
-      WHERE group_id = $1 AND parent_tag_id = $2
+      WHERE space_id = $1 AND parent_tag_id = $2
 
       UNION
 
       SELECT edge.child_tag_id, descendants.depth + 1
       FROM tag_edges AS edge
       JOIN descendants ON edge.parent_tag_id = descendants.tag_id
-      WHERE edge.group_id = $1
+      WHERE edge.space_id = $1
     )
     SELECT tag.id, MIN(descendants.depth) AS depth
     FROM descendants
     JOIN tags AS tag ON tag.id = descendants.tag_id
-    WHERE tag.group_id = $1
+    WHERE tag.space_id = $1
     GROUP BY tag.id, tag.name
     ORDER BY MIN(descendants.depth), LOWER(tag.name), tag.id
     """
 
-    %{rows: rows} = Repo.query!(sql, [dump_uuid!(group_id), dump_uuid!(tag_id)])
+    %{rows: rows} = Repo.query!(sql, [dump_uuid!(space_id), dump_uuid!(tag_id)])
     Enum.map(rows, fn [id, _depth] -> %{id: load_uuid!(id)} end)
   end
 
@@ -283,16 +283,16 @@ defmodule Wik.Tags.GraphQueries do
     end)
   end
 
-  defp tenant_group_id!(scope) do
+  defp tenant_space_id!(scope) do
     scope
     |> Ash.Scope.ToOpts.get_tenant()
     |> case do
-      {:ok, tenant} -> Wik.Accounts.tenant_to_group_id(tenant)
+      {:ok, tenant} -> Wik.Accounts.tenant_to_space_id(tenant)
       _ -> nil
     end
     |> case do
       nil -> raise ArgumentError, "scope tenant is required"
-      group_id -> group_id
+      space_id -> space_id
     end
   end
 
@@ -303,12 +303,12 @@ defmodule Wik.Tags.GraphQueries do
   defp tag_id(%Tag{id: id}), do: id
   defp tag_id(tag_id) when is_binary(tag_id), do: tag_id
 
-  defp fetch_tags_in_order(_scope, _group_id, []), do: []
+  defp fetch_tags_in_order(_scope, _space_id, []), do: []
 
-  defp fetch_tags_in_order(scope, group_id, tag_ids) do
+  defp fetch_tags_in_order(scope, space_id, tag_ids) do
     tags_by_id =
       Tag
-      |> Query.filter(group_id == ^group_id and id in ^tag_ids)
+      |> Query.filter(space_id == ^space_id and id in ^tag_ids)
       |> Ash.read!(scope: scope, domain: Tags)
       |> Map.new(&{&1.id, &1})
 

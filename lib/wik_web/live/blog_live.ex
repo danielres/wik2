@@ -35,7 +35,7 @@ defmodule WikWeb.BlogLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope} view="blog">
+      <Layouts.space presences={@presences} scope={@current_scope} view="blog">
         <UI.page_title>Blog</UI.page_title>
         <div class="grid sm:grid-cols-2 gap-4">
           <ul class="space-y-2">
@@ -91,7 +91,7 @@ defmodule WikWeb.BlogLive do
             </div>
           </.form>
         </div>
-      </Layouts.group>
+      </Layouts.space>
     </Layouts.app>
     """
   end

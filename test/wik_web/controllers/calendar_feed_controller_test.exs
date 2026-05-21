@@ -3,7 +3,7 @@ defmodule WikWeb.CalendarFeedControllerTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
   alias Wik.Events.Feeds.Token
@@ -11,18 +11,18 @@ defmodule WikWeb.CalendarFeedControllerTest do
   test "returns an aggregate feed for a valid token", %{conn: conn} do
     owner = generate(user())
     member = generate(user())
-    group = generate(group(author: owner))
+    space = generate(space(author: owner))
 
-    add_membership(group, owner, :owner)
-    add_membership(group, member, :member)
-    grant_active_telegram_access(group, member)
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
 
     {:ok, _event} =
       Ash.create(
         Event,
         event_attrs(title: "Shared dinner"),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     token = Token.issue_for_aggregate(member)
@@ -30,8 +30,8 @@ defmodule WikWeb.CalendarFeedControllerTest do
 
     assert response(conn, 200) =~ "BEGIN:VCALENDAR"
     assert response(conn, 200) =~ "SUMMARY:Shared dinner"
-    assert response(conn, 200) =~ "Visible in: #{group.name}"
-    assert response(conn, 200) =~ "From: #{group.name}"
+    assert response(conn, 200) =~ "Visible in: #{space.name}"
+    assert response(conn, 200) =~ "From: #{space.name}"
     assert get_resp_header(conn, "content-type") == ["text/calendar; charset=utf-8"]
   end
 
@@ -39,59 +39,59 @@ defmodule WikWeb.CalendarFeedControllerTest do
     owner = generate(user())
     relay_owner = generate(user())
     member = generate(user())
-    origin_group = generate(group(author: owner))
-    target_group = generate(group(author: relay_owner))
+    origin_space = generate(space(author: owner))
+    target_space = generate(space(author: relay_owner))
 
-    add_membership(origin_group, owner, :owner)
-    add_membership(origin_group, member, :member)
-    add_membership(target_group, owner, :owner)
-    add_membership(target_group, member, :member)
-    grant_active_telegram_access(origin_group, member)
-    grant_active_telegram_access(target_group, member)
+    add_membership(origin_space, owner, :owner)
+    add_membership(origin_space, member, :member)
+    add_membership(target_space, owner, :owner)
+    add_membership(target_space, member, :member)
+    grant_active_telegram_access(origin_space, member)
+    grant_active_telegram_access(target_space, member)
 
     {:ok, event} =
       Ash.create(
         Event,
-        event_attrs(relay_policy: :admins_only_groups, title: "Shared dinner"),
+        event_attrs(relay_policy: :admins_only_spaces, title: "Shared dinner"),
         action: :create,
-        scope: scope(owner, origin_group)
+        scope: scope(owner, origin_space)
       )
 
     {:ok, _publication} =
-      Events.relay_to_group(event, target_group,
+      Events.relay_to_space(event, target_space,
         relay_note: "Worth sharing",
         action: :create,
-        scope: scope(owner, origin_group)
+        scope: scope(owner, origin_space)
       )
 
     token = Token.issue_for_aggregate(member)
     conn = get(conn, ~p"/calendar/#{token}")
 
-    assert response(conn, 200) =~ "Visible in: #{origin_group.name}"
-    assert response(conn, 200) =~ "Visible in: #{target_group.name}"
-    assert response(conn, 200) =~ "From: #{origin_group.name}"
+    assert response(conn, 200) =~ "Visible in: #{origin_space.name}"
+    assert response(conn, 200) =~ "Visible in: #{target_space.name}"
+    assert response(conn, 200) =~ "From: #{origin_space.name}"
     assert response(conn, 200) =~ "Relayed by: #{owner}"
     assert response(conn, 200) =~ "Relay note: Worth sharing"
   end
 
-  test "returns a group feed for a valid token", %{conn: conn} do
+  test "returns a space feed for a valid token", %{conn: conn} do
     owner = generate(user())
     member = generate(user())
-    group = generate(group(author: owner))
+    space = generate(space(author: owner))
 
-    add_membership(group, owner, :owner)
-    add_membership(group, member, :member)
-    grant_active_telegram_access(group, member)
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
 
     {:ok, _event} =
       Ash.create(
         Event,
         event_attrs(title: "Shared dinner"),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
-    token = Token.issue_for_group(member, group)
+    token = Token.issue_for_space(member, space)
     conn = get(conn, ~p"/calendar/#{token}")
 
     assert response(conn, 200) =~ "BEGIN:VCALENDAR"
@@ -115,24 +115,24 @@ defmodule WikWeb.CalendarFeedControllerTest do
     assert response(conn, 404) == "Not found"
   end
 
-  test "group feed stops working after group access is lost", %{conn: conn} do
+  test "space feed stops working after space access is lost", %{conn: conn} do
     owner = generate(user())
     member = generate(user())
-    group = generate(group(author: owner))
+    space = generate(space(author: owner))
 
-    add_membership(group, owner, :owner)
-    add_membership(group, member, :member)
-    %{grant: grant} = grant_active_telegram_access(group, member)
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    %{grant: grant} = grant_active_telegram_access(space, member)
 
     {:ok, _event} =
       Ash.create(
         Event,
         event_attrs(title: "Shared dinner"),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
-    token = Token.issue_for_group(member, group)
+    token = Token.issue_for_space(member, space)
 
     Ash.update!(grant, %{status: :inactive},
       action: :update,
@@ -144,21 +144,21 @@ defmodule WikWeb.CalendarFeedControllerTest do
     assert response(conn, 404) == "Not found"
   end
 
-  test "aggregate feed drops a group's events after group access is lost", %{conn: conn} do
+  test "aggregate feed drops a space's events after space access is lost", %{conn: conn} do
     owner = generate(user())
     member = generate(user())
-    group = generate(group(author: owner))
+    space = generate(space(author: owner))
 
-    add_membership(group, owner, :owner)
-    add_membership(group, member, :member)
-    %{grant: grant} = grant_active_telegram_access(group, member)
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    %{grant: grant} = grant_active_telegram_access(space, member)
 
     {:ok, _event} =
       Ash.create(
         Event,
         event_attrs(title: "Shared dinner"),
         action: :create,
-        scope: scope(owner, group)
+        scope: scope(owner, space)
       )
 
     token = Token.issue_for_aggregate(member)
@@ -174,10 +174,10 @@ defmodule WikWeb.CalendarFeedControllerTest do
     refute response(conn, 200) =~ "SUMMARY:Shared dinner"
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false
     )
   end

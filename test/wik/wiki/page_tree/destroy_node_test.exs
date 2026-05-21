@@ -3,22 +3,22 @@ defmodule Wik.Wiki.PageTree.DestroyNodeTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Wiki.Page
   alias Wik.Wiki.PageTree
 
   test "destroy_node keeps the associated page by default" do
     author = generate(user())
-    group = generate(group(author: author))
-    add_membership(group, author, :owner)
-    scope = %Scope{actor: author, tenant: group}
+    space = generate(space(author: author))
+    add_membership(space, author, :owner)
+    scope = %Scope{actor: author, tenant: space}
     {:ok, page} = Page.create(authorize?: false, scope: scope)
 
     page_tree =
       generate(
         page_tree(
-          group: group,
+          space: space,
           nodes: [
             %{id: 1, page_id: page.id, parent_id: nil, slug: "home", title: "Home"}
           ]
@@ -33,15 +33,15 @@ defmodule Wik.Wiki.PageTree.DestroyNodeTest do
 
   test "destroy_node destroys the associated page when destroy_page? is true" do
     author = generate(user())
-    group = generate(group(author: author))
-    add_membership(group, author, :owner)
-    scope = %Scope{actor: author, tenant: group}
+    space = generate(space(author: author))
+    add_membership(space, author, :owner)
+    scope = %Scope{actor: author, tenant: space}
     {:ok, page} = Page.create(authorize?: false, scope: scope)
 
     page_tree =
       generate(
         page_tree(
-          group: group,
+          space: space,
           nodes: [
             %{id: 1, page_id: page.id, parent_id: nil, slug: "home", title: "Home"}
           ]
@@ -55,10 +55,10 @@ defmodule Wik.Wiki.PageTree.DestroyNodeTest do
     assert {:error, _error} = Page.get_by_id(page.id, authorize?: false, scope: scope)
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

@@ -25,19 +25,19 @@ defmodule WikWeb.Components.CalendarFeed do
 
   attr :testid, :string, default: nil
   attr :scope, :map, required: true
-  attr :id, :string, default: "group-subscribe-button"
+  attr :id, :string, default: "space-subscribe-button"
 
-  def group_subscribe_button(assigns) do
+  def space_subscribe_button(assigns) do
     current_user = assigns.scope.actor
-    current_group = assigns.scope.tenant
-    group_feed_token = Token.issue_for_group(current_user, current_group)
-    url = url(~p"/calendar/#{group_feed_token}")
+    current_space = assigns.scope.tenant
+    space_feed_token = Token.issue_for_space(current_user, current_space)
+    url = url(~p"/calendar/#{space_feed_token}")
     assigns = assigns |> assign(url: url)
 
     ~H"""
     <.subscribe_button
       id={@id}
-      text="Paste the URL below in your personal calendar app to subscribe to this group's events."
+      text="Paste the URL below in your personal calendar app to subscribe to this space's events."
       url={@url}
     />
     """

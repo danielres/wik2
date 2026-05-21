@@ -1,6 +1,6 @@
 defmodule Wik.Tags.TagEdge do
-  alias Wik.Accounts.Group
-  alias Wik.Changes.SetGroupFromCurrentTenant
+  alias Wik.Accounts.Space
+  alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge.Changes.ValidateLink
 
@@ -17,8 +17,8 @@ defmodule Wik.Tags.TagEdge do
     repo Wik.Repo
 
     references do
-      reference :parent_tag, on_delete: :delete, match_with: [group_id: :group_id]
-      reference :child_tag, on_delete: :delete, match_with: [group_id: :group_id]
+      reference :parent_tag, on_delete: :delete, match_with: [space_id: :space_id]
+      reference :child_tag, on_delete: :delete, match_with: [space_id: :space_id]
     end
 
     check_constraints do
@@ -38,7 +38,7 @@ defmodule Wik.Tags.TagEdge do
     create :create do
       primary? true
       accept [:parent_tag_id, :child_tag_id]
-      change SetGroupFromCurrentTenant
+      change SetSpaceFromCurrentTenant
       change ValidateLink
     end
   end
@@ -49,29 +49,29 @@ defmodule Wik.Tags.TagEdge do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
     end
 
     policy action_type(:create) do
-      authorize_if Group.Checks.ActorCanManageCurrentTenantGroup
+      authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
     end
 
     policy action_type(:destroy) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
   end
 
   pub_sub do
     module WikWeb.Endpoint
     prefix "tag_edge"
-    publish :create, ["group", :group_id]
-    publish :destroy, ["group", :group_id]
+    publish :create, ["space", :space_id]
+    publish :destroy, ["space", :space_id]
   end
 
   multitenancy do
     strategy :attribute
-    attribute :group_id
-    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
+    attribute :space_id
+    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
   end
 
   attributes do
@@ -80,7 +80,7 @@ defmodule Wik.Tags.TagEdge do
   end
 
   relationships do
-    belongs_to :group, Wik.Accounts.Group do
+    belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
     end
@@ -97,8 +97,8 @@ defmodule Wik.Tags.TagEdge do
   end
 
   identities do
-    identity :unique_group_parent_child, [:group_id, :parent_tag_id, :child_tag_id]
+    identity :unique_space_parent_child, [:space_id, :parent_tag_id, :child_tag_id]
   end
 
-  def group_pub_sub_topic(group_id), do: "tag_edge:group:#{group_id}"
+  def space_pub_sub_topic(space_id), do: "tag_edge:space:#{space_id}"
 end

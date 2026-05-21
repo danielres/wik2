@@ -3,7 +3,7 @@ defmodule Wik.TaggingsTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Tags.Tagging
@@ -12,10 +12,10 @@ defmodule Wik.TaggingsTest do
 
   describe "membership taggings" do
     test "stores one row per self-authored membership tagging and normalizes zero dimensions and blank description" do
-      %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-      scope = scope(user, group)
+      %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+      scope = scope(user, space)
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, group))
+      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
 
       assert {:ok, _tagging} =
                Tags.upsert_membership_tagging(
@@ -32,10 +32,10 @@ defmodule Wik.TaggingsTest do
              ]
     end
 
-    test "upsert semantics replace the existing row for the same group, target, author, and tag" do
-      %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-      owner_scope = scope(owner, group)
-      member_scope = scope(user, group)
+    test "upsert semantics replace the existing row for the same space, target, author, and tag" do
+      %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+      owner_scope = scope(owner, space)
+      member_scope = scope(user, space)
 
       {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
@@ -63,9 +63,9 @@ defmodule Wik.TaggingsTest do
     end
 
     test "rejects unknown dimension keys, non-integer values, and out-of-range values" do
-      %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-      owner_scope = scope(owner, group)
-      member_scope = scope(user, group)
+      %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+      owner_scope = scope(owner, space)
+      member_scope = scope(user, space)
 
       {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
@@ -95,9 +95,9 @@ defmodule Wik.TaggingsTest do
     end
 
     test "rejects empty dimensions after normalization" do
-      %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-      owner_scope = scope(owner, group)
-      member_scope = scope(user, group)
+      %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+      owner_scope = scope(owner, space)
+      member_scope = scope(user, space)
 
       {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
@@ -110,13 +110,13 @@ defmodule Wik.TaggingsTest do
                )
     end
 
-    test "rejects duplicate direct rows, cross-group mismatches, unsupported targets, and deletes with tag or membership removal" do
-      %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-      scope = scope(user, group)
-      owner_scope = scope(owner, group)
-      other_group = generate(group(author: owner))
-      other_membership = add_membership(other_group, user, :member)
-      grant_active_telegram_access(other_group, user)
+    test "rejects duplicate direct rows, cross-space mismatches, unsupported targets, and deletes with tag or membership removal" do
+      %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+      scope = scope(user, space)
+      owner_scope = scope(owner, space)
+      other_space = generate(space(author: owner))
+      other_membership = add_membership(other_space, user, :member)
+      grant_active_telegram_access(other_space, user)
 
       {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
@@ -132,9 +132,9 @@ defmodule Wik.TaggingsTest do
         description: nil,
         dimensions: %{"interest" => 10},
         tag_id: dance.id,
-        tagged_by_group_user_relation_id: membership.id,
+        tagged_by_membership_id: membership.id,
         taggable_id: membership.id,
-        taggable_type: "group_user_relation"
+        taggable_type: "membership"
       }
 
       assert {:error, _error} =
@@ -178,9 +178,7 @@ defmodule Wik.TaggingsTest do
 
       query =
         Tagging
-        |> Ash.Query.filter(
-          taggable_type == "group_user_relation" and taggable_id == ^membership.id
-        )
+        |> Ash.Query.filter(taggable_type == "membership" and taggable_id == ^membership.id)
 
       refute Ash.exists?(query, authorize?: false, domain: Wik.Tags, scope: scope)
     end
@@ -189,17 +187,17 @@ defmodule Wik.TaggingsTest do
   defp member_fixture do
     owner = generate(user())
     user = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    membership = add_membership(group, user, :member)
-    grant_active_telegram_access(group, user)
-    %{group: group, membership: membership, owner: owner, user: user}
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    membership = add_membership(space, user, :member)
+    grant_active_telegram_access(space, user)
+    %{space: space, membership: membership, owner: owner, user: user}
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

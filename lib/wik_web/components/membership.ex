@@ -4,7 +4,7 @@ defmodule WikWeb.Components.Membership do
   alias WikWeb.Components
 
   attr :form, :map, required: true
-  attr :group, :map, required: true
+  attr :space, :map, required: true
 
   def steps(assigns) do
     ~H"""
@@ -15,11 +15,11 @@ defmodule WikWeb.Components.Membership do
       </:step>
 
       <:step label="Username">
-        <h1>Welcome to <span class="xfont-bold">{@group.name}</span> !</h1>
+        <h1>Welcome to <span class="xfont-bold">{@space.name}</span> !</h1>
 
-        <%= if @group.description do %>
-          <h3>Group description</h3>
-          <div class="whitespace-pre-wrap bg-base-200 p-4 rounded">{@group.description}</div>
+        <%= if @space.description do %>
+          <h3>Space description</h3>
+          <div class="whitespace-pre-wrap bg-base-200 p-4 rounded">{@space.description}</div>
         <% end %>
 
         <h2>Your username</h2>
@@ -31,7 +31,7 @@ defmodule WikWeb.Components.Membership do
           phx-submit="membership_username_submit"
           class="space-y-4"
         >
-          <p>How would you like to be called within this group?</p>
+          <p>How would you like to be called within this space?</p>
           <.input
             field={@form[:username]}
             placeholder="Username"

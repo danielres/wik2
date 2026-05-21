@@ -1,6 +1,6 @@
 defmodule Wik.Events.Event do
-  alias Wik.Accounts.Group
-  alias Wik.Changes.SetGroupFromCurrentTenant
+  alias Wik.Accounts.Space
+  alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Events.Event.Changes.CreateOriginPublication
   alias Wik.Events.Event.Changes.SetScheduleFromLocalFields
   alias Wik.Events.Event.Validations.Timing
@@ -50,7 +50,7 @@ defmodule Wik.Events.Event do
       end
 
       change relate_actor(:author, allow_nil?: false)
-      change SetGroupFromCurrentTenant
+      change SetSpaceFromCurrentTenant
       change SetScheduleFromLocalFields
       change CreateOriginPublication
     end
@@ -94,18 +94,18 @@ defmodule Wik.Events.Event do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
 
       authorize_if expr(
                      exists(
                        publications,
-                       exists(group.memberships, user_id == ^actor(:id) and type == :owner) or
+                       exists(space.memberships, user_id == ^actor(:id) and type == :owner) or
                          (exists(
-                            group.memberships,
+                            space.memberships,
                             user_id == ^actor(:id) and type in [:admin, :member]
                           ) and
                             exists(
-                              group.access_sources,
+                              space.access_sources,
                               status == :active and
                                 exists(grants, user_id == ^actor(:id) and status == :active)
                             ))
@@ -114,19 +114,19 @@ defmodule Wik.Events.Event do
     end
 
     policy action_type(:create) do
-      authorize_if Group.Checks.ActorCanManageCurrentTenantGroup
+      authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
     end
 
     policy action_type(:update) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
   end
 
   pub_sub do
     module WikWeb.Endpoint
     prefix "event"
-    publish :create, ["group", :group_id]
-    publish :update, ["group", :group_id]
+    publish :create, ["space", :space_id]
+    publish :update, ["space", :space_id]
   end
 
   validations do
@@ -167,7 +167,7 @@ defmodule Wik.Events.Event do
     end
 
     attribute :relay_policy, :atom do
-      constraints one_of: [:internal_only, :admins_only_groups, :members_to_groups]
+      constraints one_of: [:internal_only, :admins_only_spaces, :members_to_spaces]
       public? true
       allow_nil? false
       default :internal_only
@@ -202,7 +202,7 @@ defmodule Wik.Events.Event do
       allow_nil? false
     end
 
-    belongs_to :group, Wik.Accounts.Group do
+    belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
     end

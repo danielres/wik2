@@ -1,7 +1,7 @@
 defmodule WikWeb.Components.Block.Types.Members do
   use WikWeb, :html
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias WikWeb.Components
 
   require Ash.Query
@@ -19,7 +19,7 @@ defmodule WikWeb.Components.Block.Types.Members do
 
     ~H"""
     <div :if={@query == nil} class="text-sm opacity-60">
-      Members block needs a group context.
+      Members block needs a space context.
     </div>
 
     <Cinder.collection
@@ -100,7 +100,7 @@ defmodule WikWeb.Components.Block.Types.Members do
   def form_fields(assigns) do
     ~H"""
     <div class="text-sm opacity-70">
-      This block renders the current group members.
+      This block renders the current space members.
     </div>
     """
   end
@@ -108,9 +108,9 @@ defmodule WikWeb.Components.Block.Types.Members do
   defp members_query(nil), do: nil
   defp members_query(%{tenant: nil}), do: nil
 
-  defp members_query(%{tenant: %{id: group_id}}) do
-    GroupUserRelation
-    |> Ash.Query.filter(group_id == ^group_id)
+  defp members_query(%{tenant: %{id: space_id}}) do
+    Membership
+    |> Ash.Query.filter(space_id == ^space_id)
     |> Ash.Query.sort(type_sort: :asc, inserted_at: :asc)
   end
 end

@@ -9,7 +9,7 @@ defmodule WikWeb.PageTreeEditorTestLive do
   @impl true
   def mount(_params, %{"actor_id" => actor_id, "tenant" => tenant_slug} = session, socket) do
     {:ok, actor} = Ash.get(User, actor_id, authorize?: false, domain: Wik.Accounts)
-    {:ok, tenant} = Accounts.get_group_by_slug(tenant_slug, authorize?: false)
+    {:ok, tenant} = Accounts.get_space_by_slug(tenant_slug, authorize?: false)
     current_scope = %{actor: actor, tenant: tenant}
     {:ok, page_tree} = PageTree.ensure(scope: current_scope)
     editable? = Map.get(session, "editable?", Map.get(session, :editable?, true))

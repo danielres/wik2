@@ -17,8 +17,8 @@ defmodule WikWeb.Router do
     plug WikWeb.Plugs.SetErrorTrackerContext
   end
 
-  pipeline :group_tenant do
-    plug WikWeb.Plugs.SetTenantFromGroup
+  pipeline :space_tenant do
+    plug WikWeb.Plugs.SetTenantFromSpace
     plug WikWeb.Plugs.SetErrorTrackerContext
   end
 
@@ -131,11 +131,11 @@ defmodule WikWeb.Router do
       live "/me/tickets", Me.TicketsLive, :index
       live "/me/tickets/new", Me.NewTicketLive, :new
 
-      scope "/:group_slug" do
-        pipe_through [:group_tenant]
-        live "/", GroupLive, :members
-        live "/members", GroupLive, :members
-        live "/orphans", GroupLive, :orphans
+      scope "/:space_slug" do
+        pipe_through [:space_tenant]
+        live "/", SpaceLive, :members
+        live "/members", SpaceLive, :members
+        live "/orphans", SpaceLive, :orphans
         live "/tags", TagGraphLive, :index
         live "/tags/:tag_slug", TagLive, :tag
         live "/events", EventsLive, :index

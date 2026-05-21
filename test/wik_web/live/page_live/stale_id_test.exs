@@ -65,7 +65,7 @@ defmodule WikWeb.PageLive.StaleIdTest do
       block_info_placement: nil,
       current_scope: %Scope{
         actor: %{id: "user-1"},
-        tenant: %{id: "group-1", name: "group-1"}
+        tenant: %{id: "space-1", name: "space-1"}
       },
       editing?: false,
       editing_block_id: nil,

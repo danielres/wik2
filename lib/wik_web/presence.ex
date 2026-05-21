@@ -1,6 +1,6 @@
 defmodule WikWeb.Presence do
   @moduledoc """
-  Tracks online users in group-scoped LiveViews.
+  Tracks online users in space-scoped LiveViews.
   """
 
   use Phoenix.Presence,
@@ -20,10 +20,10 @@ defmodule WikWeb.Presence do
   @impl true
   def fetch(topic, presences) do
     user_ids = Map.keys(presences)
-    group_id = group_id_from_topic(topic)
+    space_id = space_id_from_topic(topic)
 
     memberships =
-      case Accounts.list_memberships_by_user_id(group_id, user_ids) do
+      case Accounts.list_memberships_by_user_id(space_id, user_ids) do
         {:ok, memberships} -> memberships
         {:error, _error} -> %{}
       end
@@ -71,19 +71,19 @@ defmodule WikWeb.Presence do
     {:ok, state}
   end
 
-  @spec list_online_users_in_group(String.t()) :: [map()]
-  def list_online_users_in_group(group_id) do
-    group_id
-    |> build_group_topic()
+  @spec list_online_users_in_space(String.t()) :: [map()]
+  def list_online_users_in_space(space_id) do
+    space_id
+    |> build_space_topic()
     |> list()
     |> Enum.map(fn {_id, presence} -> presence end)
     |> Enum.sort_by(&presence_sort_key/1)
   end
 
-  @spec subscribe_to_group(String.t()) :: :ok | {:error, term()}
-  def subscribe_to_group(group_id) do
-    group_id
-    |> build_group_topic()
+  @spec subscribe_to_space(String.t()) :: :ok | {:error, term()}
+  def subscribe_to_space(space_id) do
+    space_id
+    |> build_space_topic()
     |> build_proxy_topic()
     |> then(&Phoenix.PubSub.subscribe(Wik.PubSub, &1))
   end
@@ -92,11 +92,11 @@ defmodule WikWeb.Presence do
   def track_in_liveview(socket, url) do
     if Phoenix.LiveView.connected?(socket) do
       case socket.assigns[:current_scope] do
-        %{actor: user, tenant: group} when not is_nil(user) and not is_nil(group) ->
+        %{actor: user, tenant: space} when not is_nil(user) and not is_nil(space) ->
           path = url |> URI.parse() |> Map.get(:path, "/")
 
           _ =
-            track_user_presence(user, path, group.id,
+            track_user_presence(user, path, space.id,
               editing_block_id: socket.assigns[:editing_block_id],
               tab_id: socket.assigns[:tab_id]
             )
@@ -113,9 +113,9 @@ defmodule WikWeb.Presence do
 
   @spec track_user_presence(Wik.Accounts.User.t(), String.t(), String.t(), keyword()) ::
           {:ok, map()} | {:error, term()}
-  def track_user_presence(user, path, group_id, opts \\ []) do
-    meta = build_presence_meta(path, group_id, opts)
-    topic = build_group_topic(group_id)
+  def track_user_presence(user, path, space_id, opts \\ []) do
+    meta = build_presence_meta(path, space_id, opts)
+    topic = build_space_topic(space_id)
 
     case track(self(), topic, user.id, meta) do
       {:ok, _meta} = ok ->
@@ -229,24 +229,24 @@ defmodule WikWeb.Presence do
     end
   end
 
-  defp build_presence_meta(path, group_id, opts) do
+  defp build_presence_meta(path, space_id, opts) do
     %{
       editing_block_id: Keyword.get(opts, :editing_block_id),
-      group_id: group_id,
+      space_id: space_id,
       tab_id: Keyword.get(opts, :tab_id),
       path: path
     }
   end
 
-  defp build_group_topic(group_id), do: "group:#{group_id}:users"
+  defp build_space_topic(space_id), do: "space:#{space_id}:users"
 
   defp build_proxy_topic(topic), do: "proxy:#{topic}"
 
-  defp group_id_from_topic("group:" <> rest) do
+  defp space_id_from_topic("space:" <> rest) do
     rest |> String.replace_suffix(":users", "")
   end
 
-  defp group_id_from_topic(_topic), do: nil
+  defp space_id_from_topic(_topic), do: nil
 
   defp presence_sort_key(%{user: user}) when not is_nil(user), do: to_string(user)
   defp presence_sort_key(%{id: id}), do: id

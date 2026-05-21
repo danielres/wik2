@@ -122,10 +122,10 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     end)
   end
 
-  defp patch_internal_wiki_links(html, %{tenant: %{slug: group_slug}})
-       when is_binary(group_slug) do
+  defp patch_internal_wiki_links(html, %{tenant: %{slug: space_slug}})
+       when is_binary(space_slug) do
     Regex.replace(
-      ~r/<a href="\/#{Regex.escape(group_slug)}(?:\/wiki\/|\/tags\/)[^"]*"/,
+      ~r/<a href="\/#{Regex.escape(space_slug)}(?:\/wiki\/|\/tags\/)[^"]*"/,
       html,
       fn link ->
         link <> ~s( data-phx-link="patch" data-phx-link-state="push")
@@ -137,12 +137,12 @@ defmodule WikWeb.Components.Block.Types.Markdown do
 
   defp render_visible_wikilinks(
          markdown,
-         %{tenant: %{slug: group_slug}},
+         %{tenant: %{slug: space_slug}},
          %{nodes: nodes},
          member_id_to_username_map,
          tag_name_to_slug_map
        )
-       when is_binary(group_slug) do
+       when is_binary(space_slug) do
     title_path_to_slug_path = Wikilinks.title_paths_to_slug_path_map(nodes)
 
     member_username_to_membership_id_map =
@@ -161,23 +161,23 @@ defmodule WikWeb.Components.Block.Types.Markdown do
 
         tag_name != title_path and Map.has_key?(tag_name_to_slug_map, tag_name) ->
           slug = Map.fetch!(tag_name_to_slug_map, tag_name)
-          "[#{"#" <> tag_name}](/#{group_slug}/tags/#{slug})"
+          "[#{"#" <> tag_name}](/#{space_slug}/tags/#{slug})"
 
         tag_name != title_path ->
           wikilink
 
         username != title_path and Map.has_key?(member_username_to_membership_id_map, username) ->
-          "[#{title_path}](/#{group_slug}/wiki/members/#{username})"
+          "[#{title_path}](/#{space_slug}/wiki/members/#{username})"
 
         username != title_path ->
           wikilink
 
         slug_path = Map.get(title_path_to_slug_path, title_path) ->
-          "[#{title_path}](/#{group_slug}/wiki/#{slug_path})"
+          "[#{title_path}](/#{space_slug}/wiki/#{slug_path})"
 
         slug_path = Wikilinks.slug_path_from_title_path(title_path) ->
           query = URI.encode_query(%{"title_path" => title_path})
-          "[#{title_path}](/#{group_slug}/wiki/#{slug_path}?#{query})"
+          "[#{title_path}](/#{space_slug}/wiki/#{slug_path}?#{query})"
 
         true ->
           wikilink
@@ -212,8 +212,8 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     end)
   end
 
-  defp wikilink_member_map(%{scope: %{tenant: %{id: group_id}}}) when is_binary(group_id),
-    do: Accounts.username_to_membership_id_map(group_id)
+  defp wikilink_member_map(%{scope: %{tenant: %{id: space_id}}}) when is_binary(space_id),
+    do: Accounts.username_to_membership_id_map(space_id)
 
   defp wikilink_member_map(_assigns), do: %{}
 
@@ -223,8 +223,8 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> Map.keys()
   end
 
-  defp wikilink_tag_map(%{scope: %{tenant: %{id: group_id}}}) when is_binary(group_id),
-    do: Tags.tag_name_to_id_map(group_id)
+  defp wikilink_tag_map(%{scope: %{tenant: %{id: space_id}}}) when is_binary(space_id),
+    do: Tags.tag_name_to_id_map(space_id)
 
   defp wikilink_tag_map(_assigns), do: %{}
 
@@ -235,18 +235,18 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> Enum.sort()
   end
 
-  defp membership_id_to_username_map(%{tenant: %{id: group_id}}) when is_binary(group_id),
-    do: Accounts.membership_id_to_username_map(group_id)
+  defp membership_id_to_username_map(%{tenant: %{id: space_id}}) when is_binary(space_id),
+    do: Accounts.membership_id_to_username_map(space_id)
 
   defp membership_id_to_username_map(_scope), do: %{}
 
-  defp tag_id_to_name_map(%{tenant: %{id: group_id}}) when is_binary(group_id),
-    do: Tags.tag_id_to_name_map(group_id)
+  defp tag_id_to_name_map(%{tenant: %{id: space_id}}) when is_binary(space_id),
+    do: Tags.tag_id_to_name_map(space_id)
 
   defp tag_id_to_name_map(_scope), do: %{}
 
-  defp tag_name_to_slug_map(%{tenant: %{id: group_id}}) when is_binary(group_id),
-    do: Tags.tag_name_to_slug_map(group_id)
+  defp tag_name_to_slug_map(%{tenant: %{id: space_id}}) when is_binary(space_id),
+    do: Tags.tag_name_to_slug_map(space_id)
 
   defp tag_name_to_slug_map(_scope), do: %{}
 end

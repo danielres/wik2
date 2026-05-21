@@ -87,7 +87,7 @@ defmodule WikWeb.TagLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope} view="tags">
+      <Layouts.space presences={@presences} scope={@current_scope} view="tags">
         <div :if={@tag} class="space-y-6" data-testid="tag-page">
           <TagComponent.breadcrumbs
             render_root?={false}
@@ -140,7 +140,7 @@ defmodule WikWeb.TagLive do
             tag={@tag}
           />
         </div>
-      </Layouts.group>
+      </Layouts.space>
     </Layouts.app>
     """
   end

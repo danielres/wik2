@@ -24,7 +24,7 @@ defmodule WikWeb.MemberProfileLive do
        editable?: false,
        membership: nil,
        selected_tag_slug: nil,
-       subscribed_group_id: nil,
+       subscribed_space_id: nil,
        subscribed_target_id: nil,
        taggings: [],
        taggings_query: nil,
@@ -82,7 +82,7 @@ defmodule WikWeb.MemberProfileLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope} view="members">
+      <Layouts.space presences={@presences} scope={@current_scope} view="members">
         <div :if={@membership} class="space-y-4" data-testid="member-profile-page">
           <UI.page_title>
             <span class="flex flex-wrap items-center gap-2 font-[400] opacity-70">
@@ -165,7 +165,7 @@ defmodule WikWeb.MemberProfileLive do
             tenant={@current_scope.tenant}
           />
         </Modal.render>
-      </Layouts.group>
+      </Layouts.space>
     </Layouts.app>
     """
   end
@@ -253,13 +253,13 @@ defmodule WikWeb.MemberProfileLive do
 
   @impl true
   def handle_info(%{topic: topic}, socket) do
-    group_id = socket.assigns.current_scope.tenant.id
+    space_id = socket.assigns.current_scope.tenant.id
     membership_id = socket.assigns.membership && socket.assigns.membership.id
 
     watched_topics =
-      [Tag.group_pub_sub_topic(group_id)] ++
+      [Tag.space_pub_sub_topic(space_id)] ++
         if membership_id,
-          do: [Tagging.target_pub_sub_topic("group_user_relation", membership_id)],
+          do: [Tagging.target_pub_sub_topic("membership", membership_id)],
           else: []
 
     if topic in watched_topics and socket.assigns.membership do
@@ -278,16 +278,14 @@ defmodule WikWeb.MemberProfileLive do
 
       {:ok, membership} ->
         with {:ok, taggings} <- Tags.list_membership_taggings(membership, scope: scope),
-             {:ok, available_tags} <- Tags.list_group_tags(scope) do
-          if connected?(socket) and socket.assigns.subscribed_group_id != scope.tenant.id do
-            :ok = WikWeb.Endpoint.subscribe(Tag.group_pub_sub_topic(scope.tenant.id))
+             {:ok, available_tags} <- Tags.list_space_tags(scope) do
+          if connected?(socket) and socket.assigns.subscribed_space_id != scope.tenant.id do
+            :ok = WikWeb.Endpoint.subscribe(Tag.space_pub_sub_topic(scope.tenant.id))
           end
 
           if connected?(socket) and socket.assigns.subscribed_target_id != membership.id do
             :ok =
-              WikWeb.Endpoint.subscribe(
-                Tagging.target_pub_sub_topic("group_user_relation", membership.id)
-              )
+              WikWeb.Endpoint.subscribe(Tagging.target_pub_sub_topic("membership", membership.id))
           end
 
           {:ok, assign_profile_state(socket, membership, taggings, available_tags)}
@@ -419,7 +417,7 @@ defmodule WikWeb.MemberProfileLive do
       editable?:
         (current_membership && current_membership.id == membership.id) ||
           actor_superadmin?(actor),
-      subscribed_group_id: membership.group_id,
+      subscribed_space_id: membership.space_id,
       subscribed_target_id: membership.id,
       tagging_count: length(taggings)
     }

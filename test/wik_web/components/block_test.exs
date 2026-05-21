@@ -57,7 +57,7 @@ defmodule WikWeb.Components.BlockTest do
             type: :youtube
           }
         },
-        scope: %{tenant: %{name: "group"}}
+        scope: %{tenant: %{name: "space"}}
       })
 
     assert html =~ ~s(src="https://telegram.example/locker.png")

@@ -7,7 +7,7 @@ defmodule WikWeb.ErrorTrackerContextTest do
 
   test "does not include full email in error tracker user context" do
     user = %User{id: "user-1", email: "ada@example.com", role: :user}
-    scope = %Scope{tenant: %{id: "group-1", name: "Group One", slug: "group-one"}}
+    scope = %Scope{tenant: %{id: "space-1", name: "Space One", slug: "space-one"}}
 
     context =
       ErrorTrackerContext.build(%{

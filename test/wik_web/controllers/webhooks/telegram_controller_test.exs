@@ -20,7 +20,7 @@ defmodule WikWeb.Webhooks.TelegramControllerTest do
 
     assert source.title == "Hobbies"
     assert source.status == :pending
-    assert source.group_id == nil
+    assert source.space_id == nil
     assert source.claimed_by_user_id == nil
     assert source.metadata["kind"] == "telegram_chat"
 
@@ -66,7 +66,7 @@ defmodule WikWeb.Webhooks.TelegramControllerTest do
   end
 
   test "refreshes source metadata without resetting claimed state", %{conn: conn} do
-    group = Wik.TestGenerators.generate(Wik.TestGenerators.group())
+    space = Wik.TestGenerators.generate(Wik.TestGenerators.space())
     user = Wik.TestGenerators.generate(Wik.TestGenerators.user())
 
     assert {:ok, source} =
@@ -75,7 +75,7 @@ defmodule WikWeb.Webhooks.TelegramControllerTest do
                %{
                  claimed_at: DateTime.utc_now(),
                  claimed_by_user_id: user.id,
-                 group_id: group.id,
+                 space_id: space.id,
                  metadata: %{"kind" => "telegram_chat"},
                  provider: :telegram,
                  provider_source_id: "-100123",
@@ -93,7 +93,7 @@ defmodule WikWeb.Webhooks.TelegramControllerTest do
 
     assert source.title == "New title"
     assert source.status == :active
-    assert source.group_id == group.id
+    assert source.space_id == space.id
     assert source.claimed_by_user_id == user.id
   end
 
@@ -125,7 +125,7 @@ defmodule WikWeb.Webhooks.TelegramControllerTest do
         "chat" => %{
           "id" => -100_123,
           "title" => title,
-          "type" => "supergroup"
+          "type" => "superspace"
         },
         "from" => %{
           "id" => Keyword.get(opts, :from_id, 458_778_600)

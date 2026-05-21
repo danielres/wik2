@@ -41,13 +41,13 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
     ~H"""
     <div id={@id} data-testid="move-node-modal">
       <div class={[
-        "group",
+        "space",
         "flex items-center justify-between gap-3",
         "mb-2"
       ]}>
         <div class={[
           "opacity-80",
-          "group-has-[button:hover]:opacity-100",
+          "space-has-[button:hover]:opacity-100",
           "transition",
           "text-sm"
         ]}>

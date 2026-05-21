@@ -1,5 +1,5 @@
 defmodule Wik.Wiki.PageTree do
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Wiki.PageTree.Node
   alias Wik.Wiki.PageTree.TreeQueries
 
@@ -166,41 +166,41 @@ defmodule Wik.Wiki.PageTree do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
     end
 
     policy action_type(:create) do
-      authorize_if Group.Checks.ActorIsMemberOfCurrentTenantGroup
+      authorize_if Space.Checks.ActorIsMemberOfCurrentTenantSpace
     end
 
     policy action_type(:update) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
 
     policy action(:ensure) do
-      authorize_if Group.Checks.ActorIsMemberOfCurrentTenantGroup
+      authorize_if Space.Checks.ActorIsMemberOfCurrentTenantSpace
     end
 
     policy action(:manage_tree) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
   end
 
   pub_sub do
     module WikWeb.Endpoint
     prefix "page_tree"
-    publish :create, ["group", :group_id]
-    publish :add_child, ["group", :group_id]
-    publish :create_node_at_path, ["group", :group_id]
-    publish :link_page, ["group", :group_id]
-    publish :destroy_node, ["group", :group_id]
-    publish :move_node, ["group", :group_id]
+    publish :create, ["space", :space_id]
+    publish :add_child, ["space", :space_id]
+    publish :create_node_at_path, ["space", :space_id]
+    publish :link_page, ["space", :space_id]
+    publish :destroy_node, ["space", :space_id]
+    publish :move_node, ["space", :space_id]
   end
 
   multitenancy do
     strategy :attribute
-    attribute :group_id
-    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
+    attribute :space_id
+    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
   end
 
   attributes do
@@ -215,13 +215,13 @@ defmodule Wik.Wiki.PageTree do
   end
 
   relationships do
-    belongs_to :group, Wik.Accounts.Group do
+    belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
     end
   end
 
   identities do
-    identity :unique_group_page_tree, [:group_id]
+    identity :unique_space_page_tree, [:space_id]
   end
 end

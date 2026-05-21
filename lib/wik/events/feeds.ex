@@ -2,15 +2,15 @@ defmodule Wik.Events.Feeds do
   require Ash.Query
 
   alias Wik.Accounts
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
   alias Wik.Accounts.User
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
   alias Wik.Scope
 
   def list_aggregate_feed_events(%User{} = user) do
-    with {:ok, groups} <- Accounts.list_groups(actor: user),
-         {:ok, publications} <- load_aggregate_feed_publications(groups, user) do
+    with {:ok, spaces} <- Accounts.list_spaces(actor: user),
+         {:ok, publications} <- load_aggregate_feed_publications(spaces, user) do
       publications =
         Enum.sort_by(
           publications,
@@ -21,22 +21,22 @@ defmodule Wik.Events.Feeds do
     end
   end
 
-  def get_group_feed(%User{} = user, group_id) when is_binary(group_id) do
-    with {:ok, %Group{} = group} <- Ash.get(Group, group_id, actor: user),
-         {:ok, events} <- read_group_feed_events(group, user) do
-      {:ok, %{events: events, group: group}}
+  def get_space_feed(%User{} = user, space_id) when is_binary(space_id) do
+    with {:ok, %Space{} = space} <- Ash.get(Space, space_id, actor: user),
+         {:ok, events} <- read_space_feed_events(space, user) do
+      {:ok, %{events: events, space: space}}
     end
   end
 
-  defp group_feed_events_query do
+  defp space_feed_events_query do
     Event
     |> Ash.Query.filter(status != :draft)
     |> Ash.Query.sort(starts_at: :asc, inserted_at: :asc)
   end
 
-  defp read_group_feed_events(%Group{id: group_id}, %User{} = user) do
-    group_feed_events_query()
-    |> Ash.Query.filter(exists(publications, target_group_id == ^group_id))
+  defp read_space_feed_events(%Space{id: space_id}, %User{} = user) do
+    space_feed_events_query()
+    |> Ash.Query.filter(exists(publications, target_space_id == ^space_id))
     |> Ash.read(actor: user)
   end
 
@@ -48,19 +48,19 @@ defmodule Wik.Events.Feeds do
       {"event.inserted_at", :asc},
       {:inserted_at, :asc}
     ])
-    |> Ash.Query.load([:group, :published_by, event: [:author, :group]])
+    |> Ash.Query.load([:space, :published_by, event: [:author, :space]])
   end
 
-  defp load_aggregate_feed_publications(groups, user) do
-    groups
-    |> Enum.reduce_while({:ok, []}, fn group, {:ok, publication_chunks} ->
-      group_scope = %Scope{actor: user, tenant: group}
+  defp load_aggregate_feed_publications(spaces, user) do
+    spaces
+    |> Enum.reduce_while({:ok, []}, fn space, {:ok, publication_chunks} ->
+      space_scope = %Scope{actor: user, tenant: space}
 
-      case Ash.load(group, [event_publications: aggregate_feed_publications_query()],
-             scope: group_scope
+      case Ash.load(space, [event_publications: aggregate_feed_publications_query()],
+             scope: space_scope
            ) do
-        {:ok, group} ->
-          {:cont, {:ok, [group.event_publications | publication_chunks]}}
+        {:ok, space} ->
+          {:cont, {:ok, [space.event_publications | publication_chunks]}}
 
         {:error, error} ->
           {:halt, {:error, error}}
@@ -83,7 +83,7 @@ defmodule Wik.Events.Feeds do
 
       %{
         event: first.event,
-        publications: Enum.sort_by(publications, & &1.group.name)
+        publications: Enum.sort_by(publications, & &1.space.name)
       }
     end)
   end

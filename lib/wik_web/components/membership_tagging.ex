@@ -473,7 +473,7 @@ defmodule WikWeb.Components.MembershipTagging do
     """
   end
 
-  defp dimension(key), do: Dimensions.get!("group_user_relation", key)
+  defp dimension(key), do: Dimensions.get!("membership", key)
 
   defp dimension_level(%Tagging{dimensions: dimensions}, key) when is_map(dimensions) do
     Map.get(dimensions, key)

@@ -14,16 +14,16 @@ defmodule Wik.Events.Feeds.TokenTest do
     assert user_id == user.id
   end
 
-  test "decodes a group feed token" do
+  test "decodes a space feed token" do
     user = %Wik.Accounts.User{id: "user-1"}
-    group = %Wik.Accounts.Group{id: "group-1"}
+    space = %Wik.Accounts.Space{id: "space-1"}
 
-    token = Token.issue_for_group(user, group)
+    token = Token.issue_for_space(user, space)
 
-    assert {:ok, %{feed_kind: :group, group_id: group_id, user_id: user_id}} =
+    assert {:ok, %{feed_kind: :space, space_id: space_id, user_id: user_id}} =
              Token.decode(token)
 
-    assert group_id == group.id
+    assert space_id == space.id
     assert user_id == user.id
   end
 

@@ -11,13 +11,13 @@ defmodule WikWeb.PageLive.BlockActions do
   def add(socket, type_param) do
     socket = socket |> assign(add_block_modal_open?: false)
     scope = socket.assigns.current_scope
-    group = scope.tenant
+    space = scope.tenant
     page = socket.assigns.page
     position = socket |> add_block_position()
 
     case type_param do
       "embed" ->
-        socket |> add_block(group, page, Embed.default_type(), position, scope)
+        socket |> add_block(space, page, Embed.default_type(), position, scope)
 
       "linked_copy" ->
         socket |> start_linked_copy()
@@ -28,18 +28,18 @@ defmodule WikWeb.PageLive.BlockActions do
             socket |> Phoenix.LiveView.put_flash(:error, "Unknown block type")
 
           type ->
-            socket |> add_block(group, page, type, position, scope)
+            socket |> add_block(space, page, type, position, scope)
         end
     end
   end
 
   def add_linked_copy(socket, block_id, position) do
     scope = socket.assigns.current_scope
-    group = scope.tenant
+    space = scope.tenant
     page = socket.assigns.page
 
-    case Blocks.place_group_owned_block_on_page(
-           group,
+    case Blocks.place_space_owned_block_on_page(
+           space,
            block_id,
            page,
            position: position_param_to_atom(position),
@@ -49,7 +49,7 @@ defmodule WikWeb.PageLive.BlockActions do
         socket |> assign(linked_copy_form: nil, linked_copy_error: nil)
 
       {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "place_group_owned_block_on_page failed")
+        Utils.Log.scoped_error(scope, error, "place_space_owned_block_on_page failed")
 
         socket
         |> assign(
@@ -184,9 +184,9 @@ defmodule WikWeb.PageLive.BlockActions do
     end
   end
 
-  defp add_block(socket, group, page, type, position, scope) do
-    case group
-         |> Blocks.create_group_owned_block_on_page(
+  defp add_block(socket, space, page, type, position, scope) do
+    case space
+         |> Blocks.create_space_owned_block_on_page(
            page,
            %{type: type},
            position: position,
@@ -196,7 +196,7 @@ defmodule WikWeb.PageLive.BlockActions do
         socket |> BlockEdit.start(block)
 
       {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "create_group_owned_block_on_page failed")
+        Utils.Log.scoped_error(scope, error, "create_space_owned_block_on_page failed")
         socket |> Phoenix.LiveView.put_flash(:error, "Could not add block to page")
     end
   end

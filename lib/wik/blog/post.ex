@@ -51,8 +51,8 @@ defmodule Wik.Blog.Post do
 
   multitenancy do
     strategy :attribute
-    attribute :group_id
-    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
+    attribute :space_id
+    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
   end
 
   attributes do
@@ -71,7 +71,7 @@ defmodule Wik.Blog.Post do
   end
 
   relationships do
-    belongs_to :group, Wik.Accounts.Group do
+    belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
     end

@@ -6,16 +6,16 @@ defmodule WikWeb.TagGraphLiveTest do
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
 
   test "renders root tags, creates and edits tags, links an existing child, and detaches a branch",
        %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    scope = scope(owner, group)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
 
     {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
     {:ok, beta} = Tags.create_tag("beta", "Beta", nil, scope: scope)
@@ -23,7 +23,7 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/tags")
+      |> live(~p"/#{space.slug}/tags")
 
     assert has_element?(view, testid("tag-graph-page"))
     assert has_element?(view, testid("tag-branch-tag-path-#{alpha.id}"))
@@ -59,7 +59,7 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, child} = Tags.get_tag_by_slug("social-dance", scope: scope)
 
     render_click(element(view, testid("tag-select-tag-path-#{alpha.id}")))
-    assert_patch(view, ~p"/#{group.slug}/tags?#{%{tag: alpha.id}}")
+    assert_patch(view, ~p"/#{space.slug}/tags?#{%{tag: alpha.id}}")
 
     render_click(element(view, testid("tag-link-child-start")))
 
@@ -68,7 +68,7 @@ defmodule WikWeb.TagGraphLiveTest do
     assert has_element?(view, testid("tag-branch-tag-path-#{alpha.id}__#{child.id}"))
 
     render_click(element(view, testid("tag-select-tag-path-#{beta.id}")))
-    assert_patch(view, ~p"/#{group.slug}/tags?#{%{tag: beta.id}}")
+    assert_patch(view, ~p"/#{space.slug}/tags?#{%{tag: beta.id}}")
 
     render_click(element(view, testid("tag-link-child-start")))
 
@@ -77,7 +77,7 @@ defmodule WikWeb.TagGraphLiveTest do
     assert has_element?(view, testid("tag-branch-tag-path-#{beta.id}__#{child.id}"))
 
     render_click(element(view, testid("tag-select-tag-path-#{alpha.id}__#{child.id}")))
-    assert_patch(view, ~p"/#{group.slug}/tags?#{%{tag: child.id}}")
+    assert_patch(view, ~p"/#{space.slug}/tags?#{%{tag: child.id}}")
     assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
     assert has_element?(view, testid("tag-detail-jump-#{alpha.id}"))
@@ -91,9 +91,9 @@ defmodule WikWeb.TagGraphLiveTest do
 
   test "deleting a selected tag removes it from the rendered graph", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    scope = scope(owner, group)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
 
     {:ok, root} = Tags.create_tag("dance", "Dance", nil, scope: scope)
     {:ok, child} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
@@ -102,7 +102,7 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/tags?#{%{tag: child.id}}")
+      |> live(~p"/#{space.slug}/tags?#{%{tag: child.id}}")
 
     assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
@@ -119,29 +119,29 @@ defmodule WikWeb.TagGraphLiveTest do
 
   test "read mode tag click navigates to the tag page", %{conn: conn} do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    scope = scope(owner, group)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
 
     {:ok, alpha} = Tags.create_tag("alpha", "Alpha", "Foundational rhythm", scope: scope)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{group.slug}/tags")
+      |> live(~p"/#{space.slug}/tags")
 
     refute has_element?(view, testid("tag-add-root"))
 
     render_click(element(view, testid("tag-select-tag-path-#{alpha.id}")))
 
-    path = ~p"/#{group.slug}/tags/#{alpha.slug}"
+    path = ~p"/#{space.slug}/tags/#{alpha.slug}"
     assert_redirect(view, path)
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

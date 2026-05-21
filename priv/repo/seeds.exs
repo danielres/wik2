@@ -12,8 +12,8 @@
 
 alias Ash.Query
 alias Wik.Accounts
-alias Wik.Accounts.Group
-alias Wik.Accounts.GroupUserRelation
+alias Wik.Accounts.Space
+alias Wik.Accounts.Membership
 alias Wik.Accounts.User
 alias Wik.Access
 alias Wik.Access.ExternalIdentity
@@ -56,20 +56,20 @@ member =
       )
   end
 
-group =
-  case Group
-       |> Query.filter(name == "Seed Group 2 members")
+space =
+  case Space
+       |> Query.filter(name == "Seed Space 2 members")
        |> Ash.read_one(authorize?: false, domain: Accounts) do
-    {:ok, %Group{} = group} ->
-      group
+    {:ok, %Space{} = space} ->
+      space
 
     {:ok, nil} ->
       Ash.create!(
-        Group,
+        Space,
         %{
-          description: "Seed group with two members",
-          name: "Seed Group 2 members",
-          slug: "seed-group-2-members"
+          description: "Seed space with two members",
+          name: "Seed Space 2 members",
+          slug: "seed-space-2-members"
         },
         action: :create,
         actor: owner,
@@ -79,28 +79,28 @@ group =
   end
 
 owner_membership =
-  case GroupUserRelation
-       |> Query.filter(group_id == ^group.id and user_id == ^owner.id)
+  case Membership
+       |> Query.filter(space_id == ^space.id and user_id == ^owner.id)
        |> Ash.read_one(authorize?: false, domain: Accounts) do
-    {:ok, %GroupUserRelation{} = membership} ->
+    {:ok, %Membership{} = membership} ->
       membership
 
     {:ok, nil} ->
-      raise "Expected owner membership to exist for seeded group"
+      raise "Expected owner membership to exist for seeded space"
   end
 
 member_membership =
-  case GroupUserRelation
-       |> Query.filter(group_id == ^group.id and user_id == ^member.id)
+  case Membership
+       |> Query.filter(space_id == ^space.id and user_id == ^member.id)
        |> Ash.read_one(authorize?: false, domain: Accounts) do
-    {:ok, %GroupUserRelation{} = membership} ->
+    {:ok, %Membership{} = membership} ->
       membership
 
     {:ok, nil} ->
       Ash.create!(
-        GroupUserRelation,
+        Membership,
         %{
-          group_id: group.id,
+          space_id: space.id,
           type: :member,
           user_id: member.id
         },
@@ -127,7 +127,7 @@ end
 source =
   case Source
        |> Query.filter(
-         provider == :telegram and provider_source_id == "seed-group-two-members-chat"
+         provider == :telegram and provider_source_id == "seed-space-two-members-chat"
        )
        |> Ash.read_one(authorize?: false, domain: Access) do
     {:ok, %Source{} = source} ->
@@ -139,12 +139,12 @@ source =
         %{
           claimed_at: DateTime.utc_now(),
           claimed_by_user_id: owner.id,
-          group_id: group.id,
+          space_id: space.id,
           metadata: %{"kind" => "telegram_chat"},
           provider: :telegram,
-          provider_source_id: "seed-group-two-members-chat",
+          provider_source_id: "seed-space-two-members-chat",
           status: :active,
-          title: "Seed Group Two Members"
+          title: "Seed Space Two Members"
         },
         authorize?: false,
         domain: Access
@@ -195,20 +195,20 @@ case Grant
     )
 end
 
-many_members_group =
-  case Group
-       |> Query.filter(name == "Seed Group 25 members")
+many_members_space =
+  case Space
+       |> Query.filter(name == "Seed Space 25 members")
        |> Ash.read_one(authorize?: false, domain: Accounts) do
-    {:ok, %Group{} = group} ->
-      group
+    {:ok, %Space{} = space} ->
+      space
 
     {:ok, nil} ->
       Ash.create!(
-        Group,
+        Space,
         %{
-          description: "Seed group with twenty-five members",
-          name: "Seed Group 25 members",
-          slug: "seed-group-25-members"
+          description: "Seed space with twenty-five members",
+          name: "Seed Space 25 members",
+          slug: "seed-space-25-members"
         },
         action: :create,
         actor: owner,
@@ -218,14 +218,14 @@ many_members_group =
   end
 
 many_members_owner_membership =
-  case GroupUserRelation
-       |> Query.filter(group_id == ^many_members_group.id and user_id == ^owner.id)
+  case Membership
+       |> Query.filter(space_id == ^many_members_space.id and user_id == ^owner.id)
        |> Ash.read_one(authorize?: false, domain: Accounts) do
-    {:ok, %GroupUserRelation{} = membership} ->
+    {:ok, %Membership{} = membership} ->
       membership
 
     {:ok, nil} ->
-      raise "Expected owner membership to exist for 25-member seeded group"
+      raise "Expected owner membership to exist for 25-member seeded space"
   end
 
 if many_members_owner_membership.username != "owner" do
@@ -260,17 +260,17 @@ for index <- 1..25 do
     end
 
   membership =
-    case GroupUserRelation
-         |> Query.filter(group_id == ^many_members_group.id and user_id == ^user.id)
+    case Membership
+         |> Query.filter(space_id == ^many_members_space.id and user_id == ^user.id)
          |> Ash.read_one(authorize?: false, domain: Accounts) do
-      {:ok, %GroupUserRelation{} = membership} ->
+      {:ok, %Membership{} = membership} ->
         membership
 
       {:ok, nil} ->
         Ash.create!(
-          GroupUserRelation,
+          Membership,
           %{
-            group_id: many_members_group.id,
+            space_id: many_members_space.id,
             type: :member,
             user_id: user.id
           },

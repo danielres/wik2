@@ -20,11 +20,11 @@ defmodule WikWeb.TagGraphLive do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
-    group = scope.tenant
+    space = scope.tenant
 
     if connected?(socket) do
-      :ok = WikWeb.Endpoint.subscribe(Tag.group_pub_sub_topic(group.id))
-      :ok = WikWeb.Endpoint.subscribe(TagEdge.group_pub_sub_topic(group.id))
+      :ok = WikWeb.Endpoint.subscribe(Tag.space_pub_sub_topic(space.id))
+      :ok = WikWeb.Endpoint.subscribe(TagEdge.space_pub_sub_topic(space.id))
     end
 
     graph = Tags.load_tag_graph(scope)
@@ -34,7 +34,7 @@ defmodule WikWeb.TagGraphLive do
      socket
      |> assign(editing?: false)
      |> assign(editable?: editable?)
-     |> assign(group: group)
+     |> assign(space: space)
      |> assign(tag_form: nil)
      |> assign(tag_form_mode: nil)
      |> assign(tag_form_parent_id: nil)
@@ -55,7 +55,7 @@ defmodule WikWeb.TagGraphLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope} view="tags">
+      <Layouts.space presences={@presences} scope={@current_scope} view="tags">
         <div class="space-y-4" data-testid="tag-graph-page">
           <section class="space-y-4">
             <div :if={@editable?} class="mb-2 flex items-center justify-end gap-2">
@@ -78,7 +78,7 @@ defmodule WikWeb.TagGraphLive do
 
             <TagTree.render
               editing?={@editing?}
-              group_slug={@group.slug}
+              space_slug={@space.slug}
               nodes={@graph.root_tree}
               selected_tag_id={@selected_tag_id}
             />
@@ -97,7 +97,7 @@ defmodule WikWeb.TagGraphLive do
             eligible_children={@eligible_children}
             eligible_parents={@eligible_parents}
             graph={@graph}
-            group_slug={@group.slug}
+            space_slug={@space.slug}
             selected_descendants={@selected_descendants}
             selected_tag={@selected_tag}
             selected_tag_id={@selected_tag_id}
@@ -134,7 +134,7 @@ defmodule WikWeb.TagGraphLive do
             tag={@selected_tag}
           />
         </Modal.render>
-      </Layouts.group>
+      </Layouts.space>
     </Layouts.app>
     """
   end
@@ -184,7 +184,7 @@ defmodule WikWeb.TagGraphLive do
 
   @impl true
   def handle_event("select_tag", %{"tag_id" => tag_id}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.group.slug}/tags?#{%{tag: tag_id}}")}
+    {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.space.slug}/tags?#{%{tag: tag_id}}")}
   end
 
   def handle_event("toggle_edit_mode", _params, socket) do
@@ -199,7 +199,7 @@ defmodule WikWeb.TagGraphLive do
   end
 
   def handle_event("tag_detail_close", _params, socket) do
-    {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.group.slug}/tags")}
+    {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.space.slug}/tags")}
   end
 
   def handle_event("create_root_start", _params, socket) do
@@ -355,9 +355,9 @@ defmodule WikWeb.TagGraphLive do
 
   @impl true
   def handle_info(%{topic: topic}, socket) do
-    group = socket.assigns.group
+    space = socket.assigns.space
 
-    if topic in [Tag.group_pub_sub_topic(group.id), TagEdge.group_pub_sub_topic(group.id)] do
+    if topic in [Tag.space_pub_sub_topic(space.id), TagEdge.space_pub_sub_topic(space.id)] do
       {:noreply, refresh_graph(socket, socket.assigns.selected_tag_id)}
     else
       {:noreply, socket}

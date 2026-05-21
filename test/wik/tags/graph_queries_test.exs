@@ -3,15 +3,15 @@ defmodule Wik.Tags.GraphQueriesTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
 
   test "roots, parents, children, ancestors, descendants, repeated subtrees, and sibling ordering are projected correctly" do
     owner = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    scope = scope(owner, group)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
 
     {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
     {:ok, beta} = Tags.create_tag("beta", "Beta", nil, scope: scope)
@@ -55,10 +55,10 @@ defmodule Wik.Tags.GraphQueriesTest do
     assert Enum.any?(beta_children, &(&1.tag.id == shared.id))
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

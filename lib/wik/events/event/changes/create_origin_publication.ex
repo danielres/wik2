@@ -7,7 +7,7 @@ defmodule Wik.Events.Event.Changes.CreateOriginPublication do
   @impl true
   def change(changeset, _opts, context) do
     Changeset.after_action(changeset, fn _changeset, event ->
-      case EventPublication.publish_to_origin_group(
+      case EventPublication.publish_to_origin_space(
              %{event_id: event.id},
              scope: context
            ) do

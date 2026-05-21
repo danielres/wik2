@@ -27,7 +27,7 @@ defmodule Wik.Tags.Tagging.Changes.NormalizeMembershipFields do
 
   defp normalize_dimensions(dimensions) do
     dimensions_by_key =
-      "group_user_relation"
+      "membership"
       |> Dimensions.all_for()
       |> Map.new(&{&1.key, &1})
 

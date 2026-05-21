@@ -5,16 +5,16 @@ defmodule Wik.Tags.GraphRules do
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
 
-  def validate_link(group_id, parent_tag_id, child_tag_id)
-      when is_binary(group_id) and is_binary(parent_tag_id) and is_binary(child_tag_id) do
+  def validate_link(space_id, parent_tag_id, child_tag_id)
+      when is_binary(space_id) and is_binary(parent_tag_id) and is_binary(child_tag_id) do
     cond do
       parent_tag_id == child_tag_id ->
         {:error, :child_tag_id, "cannot link a tag to itself"}
 
-      not tags_belong_to_group?(group_id, [parent_tag_id, child_tag_id]) ->
-        {:error, :child_tag_id, "tags must belong to the current group"}
+      not tags_belong_to_space?(space_id, [parent_tag_id, child_tag_id]) ->
+        {:error, :child_tag_id, "tags must belong to the current space"}
 
-      GraphQueries.path_exists?(group_id, child_tag_id, parent_tag_id) ->
+      GraphQueries.path_exists?(space_id, child_tag_id, parent_tag_id) ->
         {:error, :child_tag_id, "cannot create a cycle"}
 
       true ->
@@ -22,10 +22,10 @@ defmodule Wik.Tags.GraphRules do
     end
   end
 
-  def validate_link(_group_id, _parent_tag_id, _child_tag_id),
+  def validate_link(_space_id, _parent_tag_id, _child_tag_id),
     do: {:error, :child_tag_id, "is invalid"}
 
-  defp tags_belong_to_group?(group_id, tag_ids) do
+  defp tags_belong_to_space?(space_id, tag_ids) do
     tag_ids =
       tag_ids
       |> Enum.filter(&is_binary/1)
@@ -33,7 +33,7 @@ defmodule Wik.Tags.GraphRules do
 
     count =
       Tag
-      |> where([tag], tag.group_id == ^group_id and tag.id in ^tag_ids)
+      |> where([tag], tag.space_id == ^space_id and tag.id in ^tag_ids)
       |> select([tag], count(tag.id))
       |> Repo.one()
 

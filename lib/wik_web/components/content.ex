@@ -18,22 +18,22 @@ defmodule WikWeb.Components.Content do
         Telegram identity fields needed for account linking and access checks.
       </p>
 
-      <h3>Groups, memberships, and access grants</h3>
+      <h3>Spaces, memberships, and access grants</h3>
       <p>
-        We store which groups you belong to, your role in those groups, linked access sources,
+        We store which spaces you belong to, your role in those spaces, linked access sources,
         and access grant verification state so the service can decide what you are allowed to see.
       </p>
 
       <h3>Content you create</h3>
       <p>
         Wik stores authored wiki pages, blocks, blog posts, events, and profile or membership
-        usernames so groups can collaborate inside their shared space.
+        usernames so spaces can collaborate inside their shared space.
       </p>
 
       <h3>Presence and activity data</h3>
       <p>
-        Group members can see live presence, current path, and editing indicators while you are
-        active in a group. This data is used for collaboration and lock hints and is intended to
+        Space members can see live presence, current path, and editing indicators while you are
+        active in a space. This data is used for collaboration and lock hints and is intended to
         be operational and short-lived rather than a long-term activity log.
       </p>
 
@@ -67,8 +67,8 @@ defmodule WikWeb.Components.Content do
         support the hosted service.
       </p>
       <p>
-        Members of the same group can generally see group membership lists, usernames, avatars,
-        authored content, and live presence or editing indicators inside that group.
+        Members of the same space can generally see space membership lists, usernames, avatars,
+        authored content, and live presence or editing indicators inside that space.
       </p>
       <p>
         Calendar feeds are visible to anyone who has the private feed URL, so those links must
@@ -80,13 +80,13 @@ defmodule WikWeb.Components.Content do
       <p>The email provider used for magic-link sign-in.</p>
       <p>Error tracking used to capture application failures.</p>
       <p>
-        Telegram, if you use Telegram login or a group depends on Telegram-backed access
+        Telegram, if you use Telegram login or a space depends on Telegram-backed access
         verification.
       </p>
 
       <h2>Retention</h2>
       <p>
-        We keep account, access, and content data for as long as the account or group needs it to
+        We keep account, access, and content data for as long as the account or space needs it to
         operate.
       </p>
       <p>
@@ -110,12 +110,12 @@ defmodule WikWeb.Components.Content do
       </p>
       <p>
         If you cannot access your account, use the separate recovery or contact path shared by
-        your group operator. This fallback is handled outside the app.
+        your space operator. This fallback is handled outside the app.
       </p>
 
       <h2>Invitation-only hosted service</h2>
       <p>
-        This hosted service is intended for invited users and private groups. If someone else
+        This hosted service is intended for invited users and private spaces. If someone else
         self-hosts Wik, they are responsible for their own legal, privacy, and operational
         compliance for that separate instance.
       </p>
@@ -198,7 +198,7 @@ defmodule WikWeb.Components.Content do
         <h2>Content and moderation</h2>
         <ul>
           <li>
-            The operator may remove content, invites, memberships, users, sources, grants, or groups
+            The operator may remove content, invites, memberships, users, sources, grants, or spaces
             at their discretion.
           </li>
           <li>

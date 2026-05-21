@@ -1,5 +1,5 @@
 defmodule Wik.Wiki.Page do
-  alias Wik.Accounts.Group
+  alias Wik.Accounts.Space
 
   use Ash.Resource,
     otp_app: :wik,
@@ -42,38 +42,38 @@ defmodule Wik.Wiki.Page do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
     end
 
     policy action_type(:create) do
-      authorize_if Group.Checks.ActorCanManageCurrentTenantGroup
+      authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
     end
 
     policy action_type(:update) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
 
     policy action_type(:destroy) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
 
     policy action(:manage_page) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
   end
 
   pub_sub do
     module WikWeb.Endpoint
     prefix "page"
-    publish :create, ["group", :group_id]
-    publish :update, ["group", :group_id]
-    publish :destroy, ["group", :group_id]
+    publish :create, ["space", :space_id]
+    publish :update, ["space", :space_id]
+    publish :destroy, ["space", :space_id]
   end
 
   multitenancy do
     strategy :attribute
-    attribute :group_id
-    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
+    attribute :space_id
+    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
   end
 
   attributes do
@@ -82,7 +82,7 @@ defmodule Wik.Wiki.Page do
   end
 
   relationships do
-    belongs_to :group, Wik.Accounts.Group do
+    belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
     end

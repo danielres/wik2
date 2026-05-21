@@ -91,7 +91,7 @@ defmodule WikWeb.Components.Block do
           @editing? and @editing_block_id == nil and "ring-2 p-2 hover:ring-accent/70 cursor-pointer",
           @editing? and @editing_block_id != nil and "pointer-events-none opacity-50",
           "rounded ring-accent/20 transition",
-          "group"
+          "space"
         ]}
         phx-click={@editing? and "edit_block_start"}
         phx-value-block_id={@placement.block.id}

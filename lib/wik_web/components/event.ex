@@ -271,10 +271,10 @@ defmodule WikWeb.Components.Event do
         ]}>
           <span class="badge badge-soft">by {@publication.event.author |> to_string()}</span>
           <span :if={@publication.publication_type == :origin} class="badge badge-soft">
-            in {@publication.event.group.name}
+            in {@publication.event.space.name}
           </span>
           <span :if={@publication.publication_type == :relay} class="badge badge-soft">
-            from {@publication.event.group.name}
+            from {@publication.event.space.name}
           </span>
           <span :if={@publication.publication_type == :relay} class="badge badge-soft">
             relayed by {@publication.published_by |> to_string()}
@@ -295,7 +295,7 @@ defmodule WikWeb.Components.Event do
   attr :publication, :map, required: true
   attr :relay_error, :string, default: nil
   attr :relay_form, Phoenix.HTML.Form, required: true
-  attr :relay_target_groups, :list, required: true
+  attr :relay_target_spaces, :list, required: true
   attr :target, :any, default: nil
 
   def relay_form(assigns) do
@@ -320,15 +320,15 @@ defmodule WikWeb.Components.Event do
       </p>
 
       <div
-        :if={@relay_target_groups == [] and @relay_error in [nil, ""]}
+        :if={@relay_target_spaces == [] and @relay_error in [nil, ""]}
         class="text-sm opacity-70"
         data-testid="event-relay-empty"
       >
-        No groups available to relay to.
+        No spaces available to relay to.
       </div>
 
       <.form
-        :if={@relay_target_groups != []}
+        :if={@relay_target_spaces != []}
         for={@relay_form}
         id="event-relay-form"
         data-testid="event-relay-form"
@@ -337,11 +337,11 @@ defmodule WikWeb.Components.Event do
       >
         <div class="space-y-4">
           <.input
-            field={@relay_form[:target_group_id]}
-            id="event-relay-target-group-id"
-            label="Target group"
-            options={Enum.map(@relay_target_groups, &{&1.name, &1.id})}
-            prompt="Select a group"
+            field={@relay_form[:target_space_id]}
+            id="event-relay-target-space-id"
+            label="Target space"
+            options={Enum.map(@relay_target_spaces, &{&1.name, &1.id})}
+            prompt="Select a space"
             type="select"
           />
 
@@ -374,7 +374,7 @@ defmodule WikWeb.Components.Event do
         </div>
       </.form>
 
-      <div :if={@relay_target_groups == []} class="flex justify-end pt-2">
+      <div :if={@relay_target_spaces == []} class="flex justify-end pt-2">
         <button
           type="button"
           class="btn btn-ghost btn-sm"
@@ -447,12 +447,12 @@ defmodule WikWeb.Components.Event do
     """
   end
 
-  defp event_link_target(%{tenant: %{slug: group_slug}}, publication) do
-    ~p"/#{group_slug}/events?#{%{event: publication.id}}"
+  defp event_link_target(%{tenant: %{slug: space_slug}}, publication) do
+    ~p"/#{space_slug}/events?#{%{event: publication.id}}"
   end
 
   defp event_link_target(_scope, publication) do
-    ~p"/#{publication.group.slug}/events?#{%{event: publication.id}}"
+    ~p"/#{publication.space.slug}/events?#{%{event: publication.id}}"
   end
 
   attr :class, :string, default: nil
@@ -586,8 +586,8 @@ defmodule WikWeb.Components.Event do
   defp relay_policy_options do
     [
       {"Internal only", "internal_only"},
-      {"Admins can relay to groups", "admins_only_groups"},
-      {"Members can relay to groups", "members_to_groups"}
+      {"Admins can relay to spaces", "admins_only_spaces"},
+      {"Members can relay to spaces", "members_to_spaces"}
     ]
   end
 end

@@ -1,10 +1,10 @@
 # Mission
 
-This project exists to help groups coordinate with less noise, less screen time, and more real-life connection.
+This project exists to help spaces coordinate with less noise, less screen time, and more real-life connection.
 
 ## Core Problem
 
-Many groups currently organize through chat tools such as Telegram, Discord, Whatsapp,... 
+Many spaces currently organize through chat tools such as Telegram, Discord, Whatsapp,... 
 
  Chat is useful for:
 
@@ -23,7 +23,7 @@ Over time, important knowledge gets buried in years of messages. People spend to
 
 ## Core Goal
 
-Move persistent group knowledge out of chat and into a structured shared memory.
+Move persistent space knowledge out of chat and into a structured shared memory.
 
 The platform should help people:
 
@@ -49,29 +49,29 @@ In that sense, the project fights harmful tech patterns with better tech:
 
 ## Main Unit
 
-The main unit is the group.
+The main unit is the space.
 
 Examples:
 
 - local communities
 - neighborhoods
-- student groups
-- hobby groups
-- support groups
+- student spaces
+- hobby spaces
+- support spaces
 - small companies
 
-Each group needs its own shared space for knowledge, coordination, and light governance.
+Each space needs its own shared space for knowledge, coordination, and light governance.
 
 ## What The Wiki Is For
 
-The wiki is the durable knowledge layer for the group.
+The wiki is the durable knowledge layer for the space.
 
 It should hold:
 
 - practical information
 - guides
 - recurring resources
-- group memory
+- space memory
 - reusable content
 
 Chat should remain mostly for:
@@ -86,16 +86,16 @@ Version 2 is not a change of mission. It is a stronger architecture for the same
 
 The direction of v2 is to make first-class:
 
-- group multitenancy
+- space multitenancy
 - strong permission boundaries
 - reusable modular content blocks
 - separation of content ownership and publication
 - collaborative editing safeguards
-- maintenance surfaces for group stewards
+- maintenance surfaces for space stewards
 
 ## Design Filter
 
-A feature is aligned if it helps groups:
+A feature is aligned if it helps spaces:
 
 - reduce chat noise
 - reduce repeated explanations

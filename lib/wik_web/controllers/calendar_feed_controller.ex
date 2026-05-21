@@ -31,12 +31,12 @@ defmodule WikWeb.CalendarFeedController do
     end
   end
 
-  defp load_feed(%{feed_kind: :group, group_id: group_id}, user) do
-    with {:ok, %{events: events, group: group}} <- Events.get_group_feed(user, group_id) do
-      {:ok, group_calendar_name(group), events}
+  defp load_feed(%{feed_kind: :space, space_id: space_id}, user) do
+    with {:ok, %{events: events, space: space}} <- Events.get_space_feed(user, space_id) do
+      {:ok, space_calendar_name(space), events}
     end
   end
 
   defp aggregate_calendar_name(user), do: "#{user} events"
-  defp group_calendar_name(group), do: "#{group.name} events"
+  defp space_calendar_name(space), do: "#{space.name} events"
 end

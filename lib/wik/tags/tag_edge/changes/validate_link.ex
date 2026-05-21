@@ -6,11 +6,11 @@ defmodule Wik.Tags.TagEdge.Changes.ValidateLink do
 
   @impl true
   def change(changeset, _opts, _context) do
-    group_id = Changeset.get_attribute(changeset, :group_id)
+    space_id = Changeset.get_attribute(changeset, :space_id)
     parent_tag_id = Changeset.get_attribute(changeset, :parent_tag_id)
     child_tag_id = Changeset.get_attribute(changeset, :child_tag_id)
 
-    case GraphRules.validate_link(group_id, parent_tag_id, child_tag_id) do
+    case GraphRules.validate_link(space_id, parent_tag_id, child_tag_id) do
       :ok ->
         changeset
 

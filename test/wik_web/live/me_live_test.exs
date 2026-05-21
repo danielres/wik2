@@ -9,7 +9,7 @@ defmodule WikWeb.MeLiveTest do
   alias Wik.Access.ExternalIdentity
   alias Wik.Access.Grant
   alias Wik.Access.Source
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Accounts.User
 
   test "renders connected identity and access grant instead of global username and email details",
@@ -17,11 +17,11 @@ defmodule WikWeb.MeLiveTest do
          conn: conn
        } do
     user = generate(user(email: nil))
-    group = generate(group())
+    space = generate(space())
 
-    create_membership(group, user)
+    create_membership(space, user)
 
-    create_telegram_access(group, user,
+    create_telegram_access(space, user,
       display_name: "Ada Lovelace",
       username: "ada"
     )
@@ -34,7 +34,7 @@ defmodule WikWeb.MeLiveTest do
     assert has_element?(view, testid("me-access-grants"))
     assert has_element?(view, testid("me-connected-identities"))
     assert render(view) =~ "@ada"
-    assert render(view) =~ group.name
+    assert render(view) =~ space.name
     assert render(view) =~ "member"
     refute render(view) =~ "<th>username</th>"
     refute render(view) =~ "<th>email</th>"
@@ -42,11 +42,11 @@ defmodule WikWeb.MeLiveTest do
 
   test "renders the membership type for access grants", %{conn: conn} do
     user = generate(user(email: nil))
-    group = generate(group())
+    space = generate(space())
 
-    create_membership(group, user, :admin)
+    create_membership(space, user, :admin)
 
-    create_telegram_access(group, user,
+    create_telegram_access(space, user,
       display_name: "Ada Lovelace",
       username: "ada"
     )
@@ -81,11 +81,11 @@ defmodule WikWeb.MeLiveTest do
 
   test "renders Telegram display name when username is missing", %{conn: conn} do
     user = generate(user(email: nil))
-    group = generate(group())
+    space = generate(space())
 
-    create_membership(group, user)
+    create_membership(space, user)
 
-    create_telegram_access(group, user,
+    create_telegram_access(space, user,
       display_name: "Ada Lovelace",
       username: nil
     )
@@ -100,11 +100,11 @@ defmodule WikWeb.MeLiveTest do
 
   test "renders provider id when username and display name are missing", %{conn: conn} do
     user = generate(user(email: nil))
-    group = generate(group())
+    space = generate(space())
 
-    create_membership(group, user)
+    create_membership(space, user)
 
-    create_telegram_access(group, user,
+    create_telegram_access(space, user,
       display_name: nil,
       provider_user_id: "telegram-user-42",
       username: nil
@@ -120,9 +120,9 @@ defmodule WikWeb.MeLiveTest do
 
   test "explains that owner access bypasses access grants", %{conn: conn} do
     user = generate(user(email: nil))
-    group = generate(group())
+    space = generate(space())
 
-    create_membership(group, user, :owner)
+    create_membership(space, user, :owner)
 
     {:ok, view, _html} =
       conn
@@ -131,7 +131,7 @@ defmodule WikWeb.MeLiveTest do
 
     assert has_element?(view, testid("owner-access-bypass"))
     assert render(view) =~ "As the space owner, you always keep access to:"
-    assert render(view) =~ group.name
+    assert render(view) =~ space.name
   end
 
   test "explains that superadmin access bypasses access grants", %{conn: conn} do
@@ -192,15 +192,15 @@ defmodule WikWeb.MeLiveTest do
     assert updated_user.tz == nil
   end
 
-  defp create_membership(group, user, type \\ :member) do
-    add_membership(group, user, type)
+  defp create_membership(space, user, type \\ :member) do
+    add_membership(space, user, type)
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
+      Membership,
       %{
-        group_id: group.id,
+        space_id: space.id,
         type: type,
         user_id: user.id
       },
@@ -208,18 +208,18 @@ defmodule WikWeb.MeLiveTest do
     )
   end
 
-  defp create_telegram_access(group, user, opts) do
+  defp create_telegram_access(space, user, opts) do
     source =
       Ash.create!(
         Source,
         %{
           claimed_at: DateTime.utc_now(),
           claimed_by_user_id: user.id,
-          group_id: group.id,
+          space_id: space.id,
           provider: :telegram,
           provider_source_id: "telegram-source-#{System.unique_integer([:positive])}",
           status: :active,
-          title: "Telegram Group"
+          title: "Telegram Space"
         },
         authorize?: false
       )

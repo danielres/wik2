@@ -6,22 +6,22 @@ defmodule WikWeb.MemberProfileLiveTest do
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
 
   test "membership owner can add, update, and remove their own taggings from the profile page",
        %{conn: conn} do
-    %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-    owner_scope = scope(owner, group)
-    member_scope = scope(user, group)
+    %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+    owner_scope = scope(owner, space)
+    member_scope = scope(user, space)
 
     {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}")
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}")
 
     render_async(view)
 
@@ -55,7 +55,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     refute has_element?(view, testid("member-tagging-skill-#{dance.id}"))
 
     render_click(element(view, testid("member-tagging-open-#{dance.id}")))
-    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+    assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
     assert has_element?(view, testid("member-tagging-details"))
     assert has_element?(view, testid("member-tagging-edit-#{dance.id}"))
 
@@ -85,7 +85,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     assert has_element?(view, testid("member-tagging-description-#{dance.id}"))
 
     render_click(element(view, testid("member-tagging-open-#{dance.id}")))
-    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+    assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
     assert has_element?(view, testid("member-tagging-delete"))
     render_click(element(view, testid("member-tagging-delete")))
 
@@ -93,15 +93,15 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     assert {:ok, []} = Tags.list_membership_taggings(membership, scope: member_scope)
     assert has_element?(view, testid("member-tagging-empty"))
-    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}")
+    assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}")
   end
 
-  test "other group members can read but not edit another member's taggings", %{conn: conn} do
-    %{group: group, membership: membership, other_user: other_user, owner: owner, user: user} =
+  test "other space members can read but not edit another member's taggings", %{conn: conn} do
+    %{space: space, membership: membership, other_user: other_user, owner: owner, user: user} =
       member_fixture(other_member?: true)
 
-    owner_scope = scope(owner, group)
-    member_scope = scope(user, group)
+    owner_scope = scope(owner, space)
+    member_scope = scope(user, space)
 
     {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
@@ -119,7 +119,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(other_user)
-      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}")
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}")
 
     render_async(view)
 
@@ -133,23 +133,23 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_click(element(view, testid("member-tagging-open-#{dance.id}")))
 
-    assert_patch(view, ~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+    assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
     assert has_element?(view, testid("member-tagging-details"))
     refute has_element?(view, testid("member-tagging-edit-#{dance.id}"))
   end
 
   test "superadmin can add taggings to another member from the profile page", %{conn: conn} do
-    %{group: group, membership: membership, owner: owner} = member_fixture()
+    %{space: space, membership: membership, owner: owner} = member_fixture()
     superadmin = generate(user(role: :superadmin))
-    owner_scope = scope(owner, group)
-    superadmin_scope = scope(superadmin, group)
+    owner_scope = scope(owner, space)
+    superadmin_scope = scope(superadmin, space)
 
     {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
     {:ok, view, _html} =
       conn
       |> log_in(superadmin)
-      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}")
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}")
 
     render_async(view)
 
@@ -179,9 +179,9 @@ defmodule WikWeb.MemberProfileLiveTest do
 
   test "member profile table orders rows by highest interest first and shows blank missing sides",
        %{conn: conn} do
-    %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-    owner_scope = scope(owner, group)
-    member_scope = scope(user, group)
+    %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+    owner_scope = scope(owner, space)
+    member_scope = scope(user, space)
 
     {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
     {:ok, acro} = Tags.create_tag("acro", "Acro", nil, scope: owner_scope)
@@ -214,7 +214,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}")
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}")
 
     render_async(view)
 
@@ -237,9 +237,9 @@ defmodule WikWeb.MemberProfileLiveTest do
   end
 
   test "tag route opens the tagging modal in read mode", %{conn: conn} do
-    %{group: group, membership: membership, owner: owner, user: user} = member_fixture()
-    owner_scope = scope(owner, group)
-    member_scope = scope(user, group)
+    %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
+    owner_scope = scope(owner, space)
+    member_scope = scope(user, space)
 
     {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
@@ -254,7 +254,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(user)
-      |> live(~p"/#{group.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
 
     render_async(view)
 
@@ -268,18 +268,18 @@ defmodule WikWeb.MemberProfileLiveTest do
   defp member_fixture(opts \\ []) do
     owner = generate(user())
     user = generate(user())
-    group = generate(group(author: owner))
-    add_membership(group, owner, :owner)
-    membership = add_membership(group, user, :member)
-    grant_active_telegram_access(group, user)
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    membership = add_membership(space, user, :member)
+    grant_active_telegram_access(space, user)
     set_username(membership, "ada")
 
-    fixture = %{group: group, membership: reload_membership(membership), owner: owner, user: user}
+    fixture = %{space: space, membership: reload_membership(membership), owner: owner, user: user}
 
     if Keyword.get(opts, :other_member?, false) do
       other_user = generate(user())
-      other_membership = add_membership(group, other_user, :member)
-      grant_active_telegram_access(group, other_user)
+      other_membership = add_membership(space, other_user, :member)
+      grant_active_telegram_access(space, other_user)
       set_username(other_membership, "bob")
       Map.put(fixture, :other_user, other_user)
     else
@@ -287,10 +287,10 @@ defmodule WikWeb.MemberProfileLiveTest do
     end
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )
@@ -307,7 +307,7 @@ defmodule WikWeb.MemberProfileLiveTest do
   end
 
   defp reload_membership(membership) do
-    membership.group_id
+    membership.space_id
     |> Wik.Accounts.get_membership(membership.user_id)
     |> elem(1)
   end

@@ -7,12 +7,12 @@ defmodule Wik.Wiki.Backlinks do
   require Ash.Query
 
   def list_pages_linking_to_node(
-        %{tenant: %{id: group_id}} = scope,
+        %{tenant: %{id: space_id}} = scope,
         %{id: target_node_id, page_id: target_page_id},
         %PageTree{nodes: nodes}
       ) do
     BlockPlacement
-    |> Query.filter(attachable_type == "page" and group_id == ^group_id)
+    |> Query.filter(attachable_type == "page" and space_id == ^space_id)
     |> Ash.read(scope: scope, load: [:block])
     |> case do
       {:ok, placements} ->

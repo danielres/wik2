@@ -1,6 +1,6 @@
 defmodule Wik.Tags.Tag do
-  alias Wik.Accounts.Group
-  alias Wik.Changes.SetGroupFromCurrentTenant
+  alias Wik.Accounts.Space
+  alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Tags.TagEdge
 
   use Ash.Resource,
@@ -26,7 +26,7 @@ defmodule Wik.Tags.Tag do
 
     create :create do
       accept [:slug, :name, :description]
-      change SetGroupFromCurrentTenant
+      change SetSpaceFromCurrentTenant
     end
 
     update :update do
@@ -40,34 +40,34 @@ defmodule Wik.Tags.Tag do
     end
 
     policy action_type(:read) do
-      authorize_if Group.Checks.ActorIsMemberOfResourceGroup
+      authorize_if Space.Checks.ActorIsMemberOfResourceSpace
     end
 
     policy action_type(:create) do
-      authorize_if Group.Checks.ActorCanManageCurrentTenantGroup
+      authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
     end
 
     policy action_type(:update) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
 
     policy action_type(:destroy) do
-      authorize_if Group.Checks.ActorCanManageResourceGroup
+      authorize_if Space.Checks.ActorCanManageResourceSpace
     end
   end
 
   pub_sub do
     module WikWeb.Endpoint
     prefix "tag"
-    publish :create, ["group", :group_id]
-    publish :update, ["group", :group_id]
-    publish :destroy, ["group", :group_id]
+    publish :create, ["space", :space_id]
+    publish :update, ["space", :space_id]
+    publish :destroy, ["space", :space_id]
   end
 
   multitenancy do
     strategy :attribute
-    attribute :group_id
-    parse_attribute {Wik.Accounts, :group_slug_to_id, []}
+    attribute :space_id
+    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
   end
 
   attributes do
@@ -91,7 +91,7 @@ defmodule Wik.Tags.Tag do
   end
 
   relationships do
-    belongs_to :group, Wik.Accounts.Group do
+    belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
     end
@@ -108,11 +108,11 @@ defmodule Wik.Tags.Tag do
   end
 
   identities do
-    identity :unique_group_slug, [:group_id, :slug]
-    identity :unique_group_scoped_id, [:id, :group_id]
+    identity :unique_space_slug, [:space_id, :slug]
+    identity :unique_space_scoped_id, [:id, :space_id]
   end
 
-  def group_pub_sub_topic(group_id), do: "tag:group:#{group_id}"
+  def space_pub_sub_topic(space_id), do: "tag:space:#{space_id}"
 end
 
 defimpl String.Chars, for: Wik.Tags.Tag do

@@ -3,46 +3,46 @@ defmodule Wik.Blocks.BlockPolicyTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Blocks.Block
   alias Wik.Blocks.BlockPlacement
   alias Wik.Scope
   alias Wik.Wiki.Page
 
   describe "block access" do
-    test "group owner can read and manage their group owned block" do
-      %{group: group, group_owned_block: block, owner: owner} = access_fixture()
+    test "space owner can read and manage their space owned block" do
+      %{space: space, space_owned_block: block, owner: owner} = access_fixture()
 
-      assert Ash.can?({block, :read}, scope(owner, group))
-      assert Ash.can?({block, :update}, scope(owner, group))
-      assert Ash.can?({block, :destroy}, scope(owner, group))
+      assert Ash.can?({block, :read}, scope(owner, space))
+      assert Ash.can?({block, :update}, scope(owner, space))
+      assert Ash.can?({block, :destroy}, scope(owner, space))
     end
 
-    test "group admin can create and manage their group owned block" do
-      %{admin: admin, group: group, group_owned_block: block} = access_fixture()
+    test "space admin can create and manage their space owned block" do
+      %{admin: admin, space: space, space_owned_block: block} = access_fixture()
 
       assert Ash.can?(
                {Block, :create,
-                %{data: %{"text" => "Hello"}, owner_group_id: group.id, type: :text}},
-               scope(admin, group)
+                %{data: %{"text" => "Hello"}, owner_space_id: space.id, type: :text}},
+               scope(admin, space)
              )
 
-      assert Ash.can?({block, :read}, scope(admin, group))
-      assert Ash.can?({block, :update}, scope(admin, group))
-      assert Ash.can?({block, :destroy}, scope(admin, group))
+      assert Ash.can?({block, :read}, scope(admin, space))
+      assert Ash.can?({block, :update}, scope(admin, space))
+      assert Ash.can?({block, :destroy}, scope(admin, space))
     end
 
-    test "plain member can read a group owned block but cannot manage it" do
-      %{group: group, group_owned_block: block, member: member} = access_fixture()
+    test "plain member can read a space owned block but cannot manage it" do
+      %{space: space, space_owned_block: block, member: member} = access_fixture()
 
-      assert Ash.can?({block, :read}, scope(member, group))
-      refute Ash.can?({block, :update}, scope(member, group))
-      refute Ash.can?({block, :destroy}, scope(member, group))
+      assert Ash.can?({block, :read}, scope(member, space))
+      refute Ash.can?({block, :update}, scope(member, space))
+      refute Ash.can?({block, :destroy}, scope(member, space))
 
       refute Ash.can?(
                {Block, :create,
-                %{data: %{"text" => "Hello"}, owner_group_id: group.id, type: :text}},
-               scope(member, group)
+                %{data: %{"text" => "Hello"}, owner_space_id: space.id, type: :text}},
+               scope(member, space)
              )
     end
 
@@ -68,38 +68,38 @@ defmodule Wik.Blocks.BlockPolicyTest do
       refute Ash.can?({block, :destroy}, scope(outsider))
     end
 
-    test "group members can read a user owned block once it is placed on a group page" do
-      %{group: group, member: member, placed_user_owned_block: block} = access_fixture()
+    test "space members can read a user owned block once it is placed on a space page" do
+      %{space: space, member: member, placed_user_owned_block: block} = access_fixture()
 
-      assert Ash.can?({block, :read}, scope(member, group))
-      refute Ash.can?({block, :update}, scope(member, group))
-      refute Ash.can?({block, :destroy}, scope(member, group))
+      assert Ash.can?({block, :read}, scope(member, space))
+      refute Ash.can?({block, :update}, scope(member, space))
+      refute Ash.can?({block, :destroy}, scope(member, space))
     end
   end
 
   defp access_fixture do
-    group = generate(group())
+    space = generate(space())
     owner = generate(user())
     admin = generate(user())
     member = generate(user())
     outsider = generate(user())
     user_owner = generate(user())
 
-    add_membership(group, owner, :owner)
-    add_membership(group, admin, :admin)
-    add_membership(group, member, :member)
-    add_membership(group, user_owner, :member)
-    grant_active_telegram_access(group, admin)
-    grant_active_telegram_access(group, member)
-    grant_active_telegram_access(group, user_owner)
+    add_membership(space, owner, :owner)
+    add_membership(space, admin, :admin)
+    add_membership(space, member, :member)
+    add_membership(space, user_owner, :member)
+    grant_active_telegram_access(space, admin)
+    grant_active_telegram_access(space, member)
+    grant_active_telegram_access(space, user_owner)
 
-    group_scope = scope(owner, group)
-    {:ok, page} = Page.create(authorize?: false, scope: group_scope)
+    space_scope = scope(owner, space)
+    {:ok, page} = Page.create(authorize?: false, scope: space_scope)
 
-    group_owned_block =
+    space_owned_block =
       create_block(
-        %{data: %{"text" => "group"}, owner_group_id: group.id, type: :text},
-        group_scope
+        %{data: %{"text" => "space"}, owner_space_id: space.id, type: :text},
+        space_scope
       )
 
     user_owned_block =
@@ -114,12 +114,12 @@ defmodule Wik.Blocks.BlockPolicyTest do
         scope(user_owner)
       )
 
-    create_placement(page, placed_user_owned_block, group_scope)
+    create_placement(page, placed_user_owned_block, space_scope)
 
     %{
       admin: admin,
-      group: group,
-      group_owned_block: group_owned_block,
+      space: space,
+      space_owned_block: space_owned_block,
       member: member,
       outsider: outsider,
       owner: owner,
@@ -129,10 +129,10 @@ defmodule Wik.Blocks.BlockPolicyTest do
     }
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

@@ -3,7 +3,7 @@ defmodule Wik.Blocks.BlockPlacementTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Blocks
   alias Wik.Blocks.BlockPlacement
   alias Wik.Scope
@@ -12,9 +12,9 @@ defmodule Wik.Blocks.BlockPlacementTest do
   describe "ordering integrity" do
     test "fails when the same order key is reused in the same container" do
       actor = generate(user())
-      group = generate(group(author: actor))
-      add_membership(group, actor, :owner)
-      scope = make_scope(actor, group)
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = make_scope(actor, space)
       {:ok, page} = Page.create(scope: scope)
 
       {:ok, block1} =
@@ -44,10 +44,10 @@ defmodule Wik.Blocks.BlockPlacementTest do
     %Scope{actor: actor, tenant: tenant}
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     Ash.create!(
-      GroupUserRelation,
-      %{group_id: group.id, type: type, user_id: user.id},
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
     )

@@ -3,102 +3,102 @@ defmodule Wik.Events.EventPolicyTest do
 
   import Wik.TestGenerators
 
-  alias Wik.Accounts.GroupUserRelation
+  alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
   alias Wik.Scope
 
   describe "event access" do
-    test "owner can read, create, and update their group's event" do
+    test "owner can read, create, and update their space's event" do
       owner = generate(user())
-      group = generate(group(author: owner))
+      space = generate(space(author: owner))
 
-      add_membership(group, owner, :owner)
+      add_membership(space, owner, :owner)
 
-      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, space))
 
-      assert Ash.can?({event, :read}, scope(owner, group))
-      assert Ash.can?({Event, :create}, scope(owner, group))
-      assert Ash.can?({event, :update}, scope(owner, group))
+      assert Ash.can?({event, :read}, scope(owner, space))
+      assert Ash.can?({Event, :create}, scope(owner, space))
+      assert Ash.can?({event, :update}, scope(owner, space))
     end
 
-    test "admin can read, create, and update their group's event" do
+    test "admin can read, create, and update their space's event" do
       owner = generate(user())
       admin = generate(user())
-      group = generate(group(author: owner))
+      space = generate(space(author: owner))
 
-      add_membership(group, owner, :owner)
-      add_membership(group, admin, :admin)
-      grant_active_telegram_access(group, admin)
+      add_membership(space, owner, :owner)
+      add_membership(space, admin, :admin)
+      grant_active_telegram_access(space, admin)
 
-      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, space))
 
-      assert Ash.can?({event, :read}, scope(admin, group))
-      assert Ash.can?({Event, :create}, scope(admin, group))
-      assert Ash.can?({event, :update}, scope(admin, group))
+      assert Ash.can?({event, :read}, scope(admin, space))
+      assert Ash.can?({Event, :create}, scope(admin, space))
+      assert Ash.can?({event, :update}, scope(admin, space))
     end
 
     test "member can read but cannot create or update" do
       owner = generate(user())
       member = generate(user())
-      group = generate(group(author: owner))
+      space = generate(space(author: owner))
 
-      add_membership(group, owner, :owner)
-      add_membership(group, member, :member)
-      grant_active_telegram_access(group, member)
+      add_membership(space, owner, :owner)
+      add_membership(space, member, :member)
+      grant_active_telegram_access(space, member)
 
-      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, space))
 
-      assert Ash.can?({event, :read}, scope(member, group))
-      refute Ash.can?({Event, :create}, scope(member, group))
-      refute Ash.can?({event, :update}, scope(member, group))
+      assert Ash.can?({event, :read}, scope(member, space))
+      refute Ash.can?({Event, :create}, scope(member, space))
+      refute Ash.can?({event, :update}, scope(member, space))
     end
 
-    test "relay visibility allows target group members to read the event" do
+    test "relay visibility allows target space members to read the event" do
       origin_owner = generate(user())
       relayer = generate(user())
       target_owner = generate(user())
-      origin_group = generate(group(author: origin_owner))
-      target_group = generate(group(author: target_owner))
+      origin_space = generate(space(author: origin_owner))
+      target_space = generate(space(author: target_owner))
 
-      add_membership(origin_group, origin_owner, :owner)
-      add_membership(origin_group, relayer, :member)
-      add_membership(target_group, relayer, :owner)
-      add_membership(target_group, target_owner, :owner)
-      grant_active_telegram_access(origin_group, relayer)
+      add_membership(origin_space, origin_owner, :owner)
+      add_membership(origin_space, relayer, :member)
+      add_membership(target_space, relayer, :owner)
+      add_membership(target_space, target_owner, :owner)
+      grant_active_telegram_access(origin_space, relayer)
 
       {:ok, event} =
         Ash.create(
           Event,
-          event_attrs(relay_policy: :members_to_groups),
+          event_attrs(relay_policy: :members_to_spaces),
           action: :create,
-          scope: scope(origin_owner, origin_group)
+          scope: scope(origin_owner, origin_space)
         )
 
       assert {:ok, _publication} =
-               Events.relay_to_group(event, target_group, scope: scope(relayer, origin_group))
+               Events.relay_to_space(event, target_space, scope: scope(relayer, origin_space))
 
-      assert Ash.can?({event, :read}, scope(target_owner, target_group))
+      assert Ash.can?({event, :read}, scope(target_owner, target_space))
     end
 
-    test "outsiders cannot read another group's event without a relay" do
+    test "outsiders cannot read another space's event without a relay" do
       owner = generate(user())
       outsider = generate(user())
-      group = generate(group(author: owner))
+      space = generate(space(author: owner))
 
-      add_membership(group, owner, :owner)
+      add_membership(space, owner, :owner)
 
-      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, group))
+      {:ok, event} = Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, space))
 
-      refute Ash.can?({event, :read}, scope(outsider, group))
+      refute Ash.can?({event, :read}, scope(outsider, space))
     end
   end
 
-  defp add_membership(group, user, type) do
+  defp add_membership(space, user, type) do
     {:ok, membership} =
       Ash.create(
-        GroupUserRelation,
-        %{group_id: group.id, type: type, user_id: user.id},
+        Membership,
+        %{space_id: space.id, type: type, user_id: user.id},
         authorize?: false
       )
 

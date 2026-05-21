@@ -12,7 +12,7 @@ defmodule WikWeb.PageLive.Components.BlockHistoryModalTest do
       render_component(&BlockHistoryModal.render/1, %{
         page_tree: %PageTree{nodes: []},
         placement: %{id: "placement-1", block: %{id: "block-1", type: :markdown}},
-        scope: %{tenant: %{name: "group"}},
+        scope: %{tenant: %{name: "space"}},
         selected_text: "hello",
         selected_version: %{
           id: "version-2",

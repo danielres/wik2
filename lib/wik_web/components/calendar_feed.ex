@@ -65,12 +65,12 @@ defmodule WikWeb.Components.CalendarFeed do
 
     <UI.modal id={@id}>
       <div class="space-y-1" data-testid={@testid}>
-        <div class="text-xs">
+        <div class="text-xs text-balance">
           {@text}
         </div>
 
         <.input
-          class="input w-full input-sm text-base-content/50"
+          class="input w-full input-sm text-base-content/50 bg-base-300"
           id={@input_name}
           name={@input_name}
           readonly

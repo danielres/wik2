@@ -36,11 +36,7 @@ defmodule WikWeb.EventsLive do
     >
       <Layouts.group presences={@presences} scope={@current_scope} view="events">
         <div class="space-y-6" data-testid="events-page">
-          <div class="flex flex-wrap items-start gap-4">
-            <UI.page_title class="flex-grow">
-              Events
-            </UI.page_title>
-
+          <div class="flex flex-wrap items-start gap-4 justify-between">
             <Components.CalendarFeed.group_subscribe_button scope={@current_scope} />
 
             <UI.button_plus

@@ -10,19 +10,18 @@ defmodule WikWeb.Components.Presences do
 
   def avatars(assigns) do
     ~H"""
-    <ul class="avatar-group -space-x-0">
-      <li
-        :for={presence <- @presences}
-        id={"online-user-#{presence.id}"}
-      >
-        <Components.User.avatar
-          link?
-          membership={presence.membership}
-          tenant={@tenant}
-          size="sm"
-        />
-      </li>
-    </ul>
+    <div
+      :for={presence <- @presences}
+      id={"online-user-#{presence.id}"}
+    >
+      <Components.User.avatar
+        link?={false}
+        membership={Map.get(presence, :membership)}
+        tenant={@tenant}
+        size="sm"
+        user={Map.get(presence, :user)}
+      />
+    </div>
     """
   end
 end

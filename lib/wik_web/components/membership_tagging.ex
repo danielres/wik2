@@ -63,7 +63,7 @@ defmodule WikWeb.Components.MembershipTagging do
             data-testid={"member-tagging-open-#{tagging.tag_id}"}
             class="block px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
           >
-            <div class="grid grid-cols-[1fr_6rem] gap-2 items-start">
+            <div class="grid grid-cols-[1fr_auto] gap-2 items-start ">
               <div class="text-sm" data-testid={"member-tagging-row-#{tagging.tag_id}"}>
                 <div data-testid={"member-tagging-name-#{tagging.tag_id}"}>
                   {tagging.tag.name}
@@ -156,7 +156,7 @@ defmodule WikWeb.Components.MembershipTagging do
             data-testid={"tag-member-tagging-open-#{tagging.id}"}
             class="block px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
           >
-            <div class="grid grid-cols-[1fr_6rem] gap-2 items-start">
+            <div class="grid grid-cols-[1fr_auto] gap-2 items-start">
               <div class="min-w-0 text-sm" data-testid={"tag-member-tagging-row-#{tagging.id}"}>
                 <div
                   class="flex items-center gap-3"
@@ -416,10 +416,11 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :level, :integer, required: true
   attr :dimension, :map, required: true
   attr :testid, :string, required: true
+  attr :width_class, :string, default: "w-24"
 
   defp level_meter(assigns) do
     ~H"""
-    <div class="min-w-0 flex items-center gap-1">
+    <div class="flex items-center gap-1">
       <div
         class="tooltip leading-none"
         style={"--tt-bg: color-mix(#{@dimension.color} 0%, var(--color-base-300))"}
@@ -430,8 +431,9 @@ defmodule WikWeb.Components.MembershipTagging do
             <span>{"#{@level}/#{@dimension.max}"}</span>
           </div>
         </div>
+
         <progress
-          class="progress w-full"
+          class={["progress", @width_class]}
           data-testid={@testid}
           style={"color: #{@dimension.color};"}
           value={meter_value(@level, @dimension.max)}

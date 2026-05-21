@@ -103,30 +103,73 @@ defmodule WikWeb.Layouts do
   def group(assigns) do
     ~H"""
     <div class={[
-      "flex flex-wrap items-center justify-between gap-4",
-      "px-2 sm:px-4 lg:px-8",
-      "mb-8"
+      "sticky top-0 z-50"
     ]}>
-      <menu class={[]}>
-        <ul class="menu menu-horizontal gap-1">
-          <.menu_item tenant={@scope.tenant} view={@view} target="wiki/home">Wiki</.menu_item>
-          <.menu_item tenant={@scope.tenant} view={@view} target="members">Members</.menu_item>
-          <.menu_item tenant={@scope.tenant} view={@view} target="events">Events</.menu_item>
-          <.menu_item tenant={@scope.tenant} view={@view} target="tags">Tags</.menu_item>
-          <.menu_item
-            :if={@scope.actor.role == :superadmin}
-            tenant={@scope.tenant}
-            view={@view}
-            target="blog"
-          >
-            <span>
-              [Blog]
-            </span>
-          </.menu_item>
-        </ul>
-      </menu>
+      <div class={[
+        "bg-base-300",
+        "px-2 sm:px-4 lg:px-8",
+        "flex gap-2",
+        "[&>a]:rounded",
+        "[&>a]:max-sm:flex-grow",
+        "[&>a]:bg-base-300",
+        "[&>a]:px-3",
+        "[&>a]:py-2",
+        "[&>a]:flex",
+        "[&>a]:gap-1",
+        "[&>a]:items-center",
+        "[&>a]:text-xs",
+        "[&>a]:justify-center",
+        "[&>a]:font-bold",
+        "[&>a]:opacity-40",
+        "[&>a.active]:opacity-100",
+        "[&_.icon]:size-4",
+        "[&_.icon]:opacity-60",
+        "[&_.dock-label]:opacity-70",
+        "[&_.icon]:hidden"
+      ]}>
+        <.link patch={"/#{@scope.tenant.slug}/wiki"} class={@view == "wiki/home" and "active"}>
+          <.icon name="hero-book-open-solid" />
+          <span class="dock-label">Wiki</span>
+        </.link>
 
-      <Components.Presences.avatars presences={@presences} tenant={@scope.tenant} />
+        <.link patch={"/#{@scope.tenant.slug}/tags"} class={@view == "tags" and "active"}>
+          <.icon name="hero-tag-solid" />
+          <span class="dock-label">Tags</span>
+        </.link>
+
+        <.link patch={"/#{@scope.tenant.slug}/events"} class={@view == "events" and "active"}>
+          <.icon name="hero-calendar-solid" />
+          <span class="dock-label">Events</span>
+        </.link>
+
+        <.link patch={"/#{@scope.tenant.slug}/members"} class={@view == "members" and "active"}>
+          <.icon name="hero-user-group-solid" />
+          <span class="dock-label">Members</span>
+        </.link>
+      </div>
+    </div>
+
+    <div
+      :if={@presences |> length() > 1}
+      class={[
+        "absolute",
+        "right-2 sm:right-2",
+        "w-[50svw]",
+        "flex items-end",
+        "z-40",
+        "pt-0.5",
+        "tooltip tooltip-left"
+      ]}
+      data-tip={ "#{@presences |> length() } members online" }
+    >
+      <div class={[
+        "flex gap-1",
+        "[&>:first-child]:ml-auto",
+        "w-[50svw]",
+        "overflow-x-auto"
+      ]}>
+        <Components.Presences.avatars presences={@presences} tenant={@scope.tenant} />
+      </div>
     </div>
 
     <.container>
@@ -158,7 +201,7 @@ defmodule WikWeb.Layouts do
 
   def container(assigns) do
     ~H"""
-    <main class="px-4 sm:px-6 lg:px-8">
+    <main class="px-4 sm:px-6 lg:px-8 pt-16">
       <div class={[
         "mx-auto space-y-4",
         @width_class,
@@ -181,21 +224,25 @@ defmodule WikWeb.Layouts do
   def app(assigns) do
     ~H"""
     <div class="grid grid-rows-[auto_1fr_auto] min-h-screen">
-      <header class="navbar px-2 sm:px-4 lg:px-8">
-        <div class="flex-1 flex w-fit items-center gap-0">
+      <header class="navbar px-2 sm:px-4 lg:px-8 bg-base-300/50 py-2 sm:py-3 min-h-0">
+        <div class="flex-1 flex items-center gap-0">
           <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
             <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
           </.link>
 
-          <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mt-0.5" />
+          <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mx-1" />
 
-          <.link
+          <div
             :if={@scope.tenant}
-            class={["opacity-30 hover:opacity-100 transition"]}
-            navigate={~p"/#{@scope.tenant.slug}"}
+            class={[
+              "max-w-[calc(100svw-9rem)] overflow-hidden truncate",
+              "opacity-60 hover:opacity-100 transition text-sm"
+            ]}
           >
-            {@scope.tenant |> to_string()}
-          </.link>
+            <.link navigate={~p"/#{@scope.tenant.slug}"}>
+              {@scope.tenant |> to_string()}
+            </.link>
+          </div>
         </div>
 
         <div>
@@ -210,6 +257,7 @@ defmodule WikWeb.Layouts do
             <Components.User.avatar
               membership={@tenant_context && @tenant_context[:current_membership]}
               tenant={@scope.tenant}
+              size="sm"
             />
 
             <div
@@ -226,9 +274,9 @@ defmodule WikWeb.Layouts do
             class={[
               "min-w-36",
               "dropdown dropdown-end mt-1",
-              "bg-base-200/80 backdrop-blur",
+              "bg-base-300 dark:shadow-lg",
               "shadow",
-              "border border-base-200",
+              "border border-base-content/30",
               "rounded-box",
               "p-2"
             ]}

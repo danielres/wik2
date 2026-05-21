@@ -56,8 +56,6 @@ defmodule WikWeb.TagGraphLive do
       scope={@current_scope}
     >
       <Layouts.group presences={@presences} scope={@current_scope} view="tags">
-        <UI.page_title>Tags</UI.page_title>
-
         <div class="space-y-4" data-testid="tag-graph-page">
           <section class="space-y-4">
             <div :if={@editable?} class="mb-2 flex items-center justify-end gap-2">

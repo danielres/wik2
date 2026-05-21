@@ -62,7 +62,7 @@ defmodule WikWeb.GroupLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.group presences={@presences} scope={@current_scope}>
+      <Layouts.group presences={@presences} scope={@current_scope} view="members">
         <UI.page_title class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
           {@current_scope.tenant.name |> String.capitalize()}
 

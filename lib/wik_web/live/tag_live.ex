@@ -89,13 +89,12 @@ defmodule WikWeb.TagLive do
     >
       <Layouts.group presences={@presences} scope={@current_scope} view="tags">
         <div :if={@tag} class="space-y-6" data-testid="tag-page">
-          <div class="flex items-center gap-2 text-sm opacity-60">
-            <.link navigate={~p"/#{@current_scope.tenant.slug}/tags"} class="hover:opacity-100">
-              Tags
-            </.link>
-            <.icon name="hero-chevron-right-mini" class="opacity-50" />
-            <span>{@tag.name}</span>
-          </div>
+          <TagComponent.breadcrumbs
+            render_root?={false}
+            render_self?={false}
+            scope={@current_scope}
+            tag={@tag}
+          />
 
           <section class="">
             <div :if={@editable?} class="flex justify-end gap-2">

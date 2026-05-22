@@ -4,7 +4,21 @@
   tenant_context={@tenant_context}
   scope={@current_scope}
 >
-  <Layouts.space presences={@presences} scope={@current_scope} view="wiki/home">
+  <Layouts.space
+    editing?={@editing?}
+    presences={@presences}
+    scope={@current_scope}
+    view="wiki/home"
+  >
+    <:actions :if={@can_manage_page? and @editing_block_id == nil}>
+      <%= if @editing? do %>
+        <WikWeb.Components.Block.AddBlockMenuButton.render event_open="add_block_modal_open" />
+        <UI.button_ok phx-click="toggle_edit_mode" />
+      <% else %>
+        <UI.button_edit phx-click="toggle_edit_mode" />
+      <% end %>
+    </:actions>
+
     <%= if assigns[:not_found_path] do %>
       <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
         <div>Ooops...</div>
@@ -12,27 +26,7 @@
         <div>Could not be found</div>
       </div>
     <% else %>
-      <section class="">
-        <div
-          :if={@can_manage_page?}
-          class="sticky top-12 z-20 h-0 flex justify-end"
-        >
-          <div>
-            <div
-              :if={@editing_block_id == nil}
-              class="flex items-center gap-2"
-            >
-              <%= if @editing? do %>
-                <WikWeb.Components.Block.AddBlockMenuButton.render event_open="add_block_modal_open" />
-
-                <UI.button_ok phx-click="toggle_edit_mode" />
-              <% else %>
-                <UI.button_edit phx-click="toggle_edit_mode" />
-              <% end %>
-            </div>
-          </div>
-        </div>
-
+      <section>
         <Components.Block.AddBlockMenuButton.modal_special_blocks
           scope={@current_scope}
           event_cancel="add_block_modal_cancel"

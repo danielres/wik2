@@ -55,27 +55,28 @@ defmodule WikWeb.TagGraphLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.space presences={@presences} scope={@current_scope} view="tags">
+      <Layouts.space editing?={@editing?} presences={@presences} scope={@current_scope} view="tags">
+        <:actions :if={@editable?}>
+          <%= if @editing? do %>
+            <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
+          <% else %>
+            <UI.button_edit
+              phx-click="toggle_edit_mode"
+              data-testid="tag-edit-mode-toggle"
+            />
+          <% end %>
+        </:actions>
+
         <div class="space-y-4" data-testid="tag-graph-page">
-          <section class="space-y-4">
-            <div :if={@editable?} class="mb-2 flex items-center justify-end gap-2">
-              <%= if @editing? do %>
-                <ActionButtons.button
-                  data-tip="add root tag"
-                  icon="hero-plus-mini"
-                  data-testid="tag-add-root"
-                  phx-click="create_root_start"
-                />
-
-                <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
-              <% else %>
-                <UI.button_edit
-                  phx-click="toggle_edit_mode"
-                  data-testid="tag-edit-mode-toggle"
-                />
-              <% end %>
+          <section class="space-y-4 relative">
+            <div :if={@editing?} class="absolute right-0 -top-9">
+              <ActionButtons.button
+                data-tip="add root tag"
+                icon="hero-plus-mini"
+                data-testid="tag-add-root"
+                phx-click="create_root_start"
+              />
             </div>
-
             <TagTree.render
               editing?={@editing?}
               space_slug={@space.slug}

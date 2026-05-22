@@ -30,19 +30,17 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
-      <div class="flex items-center justify-end gap-4 mb-2">
-        <ActionButtons.wrapper>
-          <ActionButtons.button
-            :if={@editable?}
-            data-tip="add at top level"
-            data-testid="page-tree-editor-add-root"
-            icon="hero-plus-mini"
-            phx-click="add_child_start"
-            phx-target={@myself}
-            phx-value-node_id=""
-          />
-        </ActionButtons.wrapper>
+    <div class="relative">
+      <div class="absolute right-0 -top-9">
+        <ActionButtons.button
+          :if={@editable?}
+          data-tip="add at top level"
+          data-testid="page-tree-editor-add-root"
+          icon="hero-plus-mini"
+          phx-click="add_child_start"
+          phx-target={@myself}
+          phx-value-node_id=""
+        />
       </div>
 
       <Components.PageTree.render nodes_flat={@page_tree.nodes}>

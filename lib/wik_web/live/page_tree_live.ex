@@ -3,6 +3,7 @@ defmodule WikWeb.PageTreeLive do
   use WikWeb.Presence.Handlers
 
   alias WikWeb.PageTreeLive.PageTreeEditor
+  alias WikWeb.Components.UI
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
@@ -13,7 +14,7 @@ defmodule WikWeb.PageTreeLive do
     page_tree = Wik.Wiki.load_page_tree(scope)
     editable? = page_tree.id != nil and Ash.can?({page_tree, :manage_tree}, scope)
 
-    {:ok, socket |> assign(page_tree: page_tree, editable?: editable?)}
+    {:ok, socket |> assign(page_tree: page_tree, editable?: editable?, editing?: false)}
   end
 
   @impl true
@@ -25,29 +26,21 @@ defmodule WikWeb.PageTreeLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.space presences={@presences} scope={@current_scope} view="tree">
-        <div class="flex items-center gap-4 mb-4">
-          <h1 class="text-xl font-[100] flex items-center justify-between gap-4 mb-0">
-            <div>
-              <span class="font-[400] opacity-70 flex items-center flex-wrap gap-2">
-                <.link
-                  navigate={~p"/#{@current_scope.tenant.slug}"}
-                  class={[
-                    "opacity-50 hover:opacity-100 transition-opacity",
-                    "leading-none"
-                  ]}
-                >
-                  {@current_scope.tenant.name}
-                </.link>
-                <.icon name="hero-chevron-right-mini" class="opacity-50" />
-                <span class="text-base">Page tree</span>
-              </span>
-            </div>
-          </h1>
-        </div>
+      <Layouts.space editing?={@editing?} presences={@presences} scope={@current_scope} view="tree">
+        <:actions :if={@editable?}>
+          <%= if @editing? do %>
+            <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
+          <% else %>
+            <UI.button_edit
+              phx-click="toggle_edit_mode"
+              data-testid="tag-edit-mode-toggle"
+            />
+          <% end %>
+        </:actions>
+
         <.live_component
           current_scope={@current_scope}
-          editable?={@editable?}
+          editable?={@editable? and @editing?}
           id="page_tree_editor"
           module={PageTreeEditor}
           page_tree={@page_tree}
@@ -65,5 +58,12 @@ defmodule WikWeb.PageTreeLive do
   @impl true
   def handle_info({:page_tree_updated, page_tree}, socket) do
     {:noreply, socket |> assign(page_tree: page_tree)}
+  end
+
+  @impl true
+  def handle_event("toggle_edit_mode", _params, socket) do
+    socket = assign(socket, editing?: !socket.assigns.editing?)
+
+    {:noreply, socket}
   end
 end

@@ -189,11 +189,12 @@ defmodule WikWeb.Cinder.Themes.Dense do
   set :sort_desc_icon, "↓"
 
   # Grid
-  set :grid_container_class, "grid gap-1 px-4"
-  set :grid_item_class, "card card-body bg-base-300 text-base-content"
+  set :grid_container_class, "grid gap-1"
+  # set :grid_item_class, "card card-body bg-base-300 text-base-content"
+  set :grid_item_class, ""
 
-  set :grid_item_clickable_class,
-      "cursor-pointer hover:shadow-lg transition-shadow"
+  # set :grid_item_clickable_class, "cursor-pointer hover:shadow-lg transition-shadow"
+  set :grid_item_clickable_class, ""
 
   # Selection
   set :selection_checkbox_class, "checkbox checkbox-sm"

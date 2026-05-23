@@ -152,7 +152,7 @@ defmodule WikWeb.Components.UI do
       class={[
         "btn btn-xs btn-circle btn-accent btn-ghost",
         "text-accent hover:text-base-content",
-        "opacity-40 hover:opacity-100"
+        "opacity-60 hover:opacity-100"
       ]}
       {@rest}
     >

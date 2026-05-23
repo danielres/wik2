@@ -144,11 +144,11 @@ defmodule WikWeb.Components.User do
 
   defp resolved_avatar_url(assigns), do: assigns.avatar_url
 
-  defp resolved_profile_path(%{profile_path: profile_path}) when is_binary(profile_path),
+  def resolved_profile_path(%{profile_path: profile_path}) when is_binary(profile_path),
     do: profile_path
 
-  defp resolved_profile_path(%{membership: membership, tenant: %{slug: tenant_slug}})
-       when not is_nil(membership) do
+  def resolved_profile_path(%{membership: membership, tenant: %{slug: tenant_slug}})
+      when not is_nil(membership) do
     case Map.get(membership, :username) do
       username when is_binary(username) and username != "" ->
         "/#{tenant_slug}/wiki/members/#{username}"
@@ -158,7 +158,7 @@ defmodule WikWeb.Components.User do
     end
   end
 
-  defp resolved_profile_path(_assigns), do: nil
+  def resolved_profile_path(_assigns), do: nil
 
   defp resolved_user(%{membership: membership}) when not is_nil(membership) do
     Map.get(membership, :user)

@@ -25,6 +25,7 @@ defmodule WikWeb.Components.Block.Types.Members do
     <Cinder.collection
       :if={@query}
       id={"members-block-#{@block.id}"}
+      layout={:list}
       page_size={[default: 10]}
       query={@query}
       query_opts={[load: [:avatar_url, :user]]}
@@ -37,31 +38,61 @@ defmodule WikWeb.Components.Block.Types.Members do
       ]}
       }
     >
-      <:col :let={membership} label="" class="w-0">
-        <Components.User.avatar
-          link?
-          membership={membership}
-          size="md"
-          tenant={@scope.tenant}
-        />
-      </:col>
+      <:item :let={membership}>
+        <div class={[
+          "bg-base-300/30 rounded-lg p-2 stacked",
+          !@actions? and "hover:bg-base-300/50",
+          (@actions? and membership.type == :owner and
+             Ash.can?({membership, :transfer_ownership}, @scope)) &&
+            "border border-accent/50 hover:border-accent",
+          (@actions? and membership.type != :owner and
+             Ash.can?({membership, :update_membership_type}, @scope)) &&
+            "border border-accent/50 hover:border-accent"
+        ]}>
+          <div>
+            <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+              <Components.User.avatar
+                link?
+                membership={membership}
+                size="lg"
+                tenant={@scope.tenant}
+              />
 
-      <:col :let={membership} field="user.email" label="Name" sort>
-        {membership.user |> to_string()}
-      </:col>
+              <div class="text-xs">{membership.user |> to_string()}</div>
 
-      <:col :let={membership} field="type" label="Role" sort>
-        <span class={["badge badge-sm bg-base-200"]}>
-          <span>{membership.type |> Atom.to_string() |> String.capitalize()}</span>
+              <div class="">
+                <span class={["badge badge-sm bg-base-300 text-xs text"]}>
+                  <span>{membership.type |> Atom.to_string() |> String.capitalize()}</span>
+                </span>
+              </div>
+            </div>
 
-          <button
-            :if={@actions? and Ash.can?({membership, :transfer_ownership}, @scope)}
-            phx-click={@event_transfer_ownership_start}
-            phx-value-membership_id={membership.id}
-            class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+            <div class="flex justify-end">
+              <span
+                class={[
+                  "badge badge-sm px-2 bg-base-200",
+                  "whitespace-nowrap",
+                  "tooltip tooltip-left tooltip-delayed",
+                  "cursor-default",
+                  "text-base-content/40"
+                ]}
+                data-tip={"Member since #{Utils.Time.precise(membership.inserted_at)}"}
+              >
+                {Utils.Time.relative(membership.inserted_at)}
+              </span>
+            </div>
+          </div>
+
+          <.link
+            :if={!@actions?}
+            navigate={
+              Components.User.resolved_profile_path(%{
+                membership: membership,
+                tenant: @scope.tenant
+              })
+            }
           >
-            <.icon name="hero-cog-micro" class="" />
-          </button>
+          </.link>
 
           <button
             :if={
@@ -72,24 +103,21 @@ defmodule WikWeb.Components.Block.Types.Members do
             phx-value-membership_id={membership.id}
             class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
           >
-            <.icon name="hero-cog-micro" class="" />
           </button>
-        </span>
-      </:col>
 
-      <:col :let={membership} field="inserted_at" label="Joined" sort>
-        <span
-          class={[
-            "badge badge-sm px-2 bg-base-200",
-            "whitespace-nowrap",
-            "tooltip tooltip-primary tooltip-left tooltip-delayed",
-            "cursor-default"
-          ]}
-          data-tip={"Member since #{Utils.Time.precise(membership.inserted_at)}"}
-        >
-          {Utils.Time.relative(membership.inserted_at)}
-        </span>
-      </:col>
+          <button
+            :if={@actions? and Ash.can?({membership, :transfer_ownership}, @scope)}
+            phx-click={@event_transfer_ownership_start}
+            phx-value-membership_id={membership.id}
+            class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+          >
+          </button>
+        </div>
+      </:item>
+
+      <:col :if={false} field="user.email" label="Username" sort></:col>
+      <:col :if={false} field="type" label="Role" sort></:col>
+      <:col :if={false} field="inserted_at" label="Joined" sort></:col>
     </Cinder.collection>
     """
   end

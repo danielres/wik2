@@ -4,7 +4,6 @@ defmodule WikWeb.MembersLive do
 
   alias AshPhoenix.Form
   alias Wik.Accounts.Membership
-  alias Wik.Blocks
   alias WikWeb.Components
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
@@ -39,10 +38,6 @@ defmodule WikWeb.MembersLive do
       |> assign(transfer_ownership_form: nil)
 
     {:ok, socket}
-  end
-
-  defp init_form(space, scope) do
-    space |> Form.for_update(:update, scope: scope) |> to_form()
   end
 
   @impl true
@@ -115,6 +110,12 @@ defmodule WikWeb.MembersLive do
     else
       {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_event("toggle_edit_mode", _params, socket) do
+    socket = socket |> assign(editing?: !socket.assigns.editing?)
+    {:noreply, socket}
   end
 
   @impl true
@@ -234,11 +235,5 @@ defmodule WikWeb.MembersLive do
             )
         end
     end
-  end
-
-  @impl true
-  def handle_event("toggle_edit_mode", _params, socket) do
-    socket = socket |> assign(editing?: !socket.assigns.editing?)
-    {:noreply, socket}
   end
 end

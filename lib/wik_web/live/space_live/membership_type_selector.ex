@@ -10,9 +10,10 @@ defmodule WikWeb.SpaceLive.MembershipTypeSelector do
     ~H"""
     <div class="space-y-4">
       <div class="space-y-1">
-        <h3 class="text-xl">Change membership type</h3>
-        <p class="text-sm opacity-70">
-          Update the role for {@membership.user |> to_string()}.
+        <p class="text-sm">
+          <span class="opacity-70">Update the role for</span>
+
+          <span class="font-bold text-base-content">{@membership.user |> to_string()}</span>.
         </p>
       </div>
 
@@ -34,16 +35,19 @@ defmodule WikWeb.SpaceLive.MembershipTypeSelector do
               name={@form[:type].name}
               value={type}
               checked={to_string(@form[:type].value) == Atom.to_string(type)}
-              class="radio radio-sm"
+              class="radio radio-xs"
             />
 
-            <span>{type |> Atom.to_string() |> String.capitalize()}</span>
+            <span class="text-sm">{type |> Atom.to_string() |> String.capitalize()}</span>
+            <span :if={@membership.type == type} class="badge badge-sm bg-base-300 text-xs opacity-80">
+              Current
+            </span>
           </label>
         </fieldset>
 
         <div class="mt-4 flex justify-end">
-          <button type="submit" class="btn btn-primary btn-sm">
-            Save
+          <button type="submit" class="btn btn-accent btn-sm">
+            Update membership type
           </button>
         </div>
       </.form>

@@ -19,6 +19,7 @@ defmodule Wik.TaggingsPolicyTest do
         owner: owner,
         superadmin: superadmin,
         tag: tag,
+        other_tag: other_tag,
         tagging: tagging
       } = access_fixture()
 
@@ -74,7 +75,7 @@ defmodule Wik.TaggingsPolicyTest do
                  %{
                    description: nil,
                    dimensions: %{"skill" => 1},
-                   tag_id: tag.id,
+                   tag_id: other_tag.id,
                    tagged_by_membership_id: member_membership.id,
                    taggable_id: member_membership.id,
                    taggable_type: "membership"
@@ -110,6 +111,7 @@ defmodule Wik.TaggingsPolicyTest do
     grant_active_telegram_access(space, other_member)
 
     {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
+    {:ok, other_tag} = Tags.create_tag("music", "Music", nil, scope: scope(owner, space))
 
     {:ok, tagging} =
       Tags.upsert_membership_tagging(
@@ -127,6 +129,7 @@ defmodule Wik.TaggingsPolicyTest do
       other_member: other_member,
       outsider: outsider,
       owner: owner,
+      other_tag: other_tag,
       superadmin: superadmin,
       tag: tag,
       tagging: tagging

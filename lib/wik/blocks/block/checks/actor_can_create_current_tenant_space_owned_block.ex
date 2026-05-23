@@ -2,7 +2,7 @@ defmodule Wik.Blocks.Block.Checks.ActorCanCreateCurrentTenantSpaceOwnedBlock do
   use Ash.Policy.SimpleCheck
 
   alias Wik.Accounts
-  alias Wik.Accounts.Space.Access
+  alias Wik.Accounts.Space.Checks.Access
 
   require Ash.Query
 

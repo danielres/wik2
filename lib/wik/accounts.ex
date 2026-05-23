@@ -1,4 +1,6 @@
 defmodule Wik.Accounts do
+  import Ecto.Query, only: [from: 2]
+
   use Ash.Domain,
     otp_app: :wik,
     extensions: [
@@ -35,11 +37,20 @@ defmodule Wik.Accounts do
 
   alias Wik.Accounts.Space
   alias Wik.Accounts.Membership
+  alias Wik.Repo
   alias Wik.Accounts.User
 
+  # TODO: rename to: list_user_owned_spaces
   def list_owned_spaces(%User{id: user_id}) do
+    owned_space_ids =
+      from(membership in "memberships",
+        where: membership.user_id == type(^user_id, Ecto.UUID) and membership.type == "owner",
+        select: membership.space_id
+      )
+      |> Repo.all()
+
     Space
-    |> Ash.Query.filter(exists(memberships, user_id == ^user_id and type == :owner))
+    |> Ash.Query.filter(id in ^owned_space_ids)
     |> Ash.Query.sort(name: :asc)
     |> Ash.read(authorize?: false, domain: __MODULE__)
   end
@@ -51,6 +62,7 @@ defmodule Wik.Accounts do
     end
   end
 
+  # TODO: inline?
   def tenant_to_space_id(%{id: space_id}), do: space_id
   def tenant_to_space_id(space_slug) when is_binary(space_slug), do: space_slug_to_id(space_slug)
   def tenant_to_space_id(_), do: nil
@@ -98,13 +110,10 @@ defmodule Wik.Accounts do
         {:ok, []}
 
       {{:ok, _uuid}, _user_ids} ->
-        memberships =
-          Membership
-          |> Ash.Query.filter(space_id == ^space_id and user_id in ^normalized_user_ids)
-          |> Ash.Query.load([:user, :avatar_url])
-          |> Ash.read!(authorize?: false, domain: __MODULE__)
-
-        {:ok, memberships}
+        Membership
+        |> Ash.Query.filter(space_id == ^space_id and user_id in ^normalized_user_ids)
+        |> Ash.Query.load([:user, :avatar_url])
+        |> Ash.read(authorize?: false, domain: __MODULE__)
     end
   end
 

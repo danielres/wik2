@@ -2,7 +2,7 @@ defmodule Wik.Blocks.BlockPlacement.Checks.ActorCanCreateCurrentTenantPagePlacem
   use Ash.Policy.SimpleCheck
 
   alias Wik.Accounts
-  alias Wik.Accounts.Space.Access
+  alias Wik.Accounts.Space.Checks.Access
   alias Wik.Blocks.Block
   alias Wik.Wiki.Page
 

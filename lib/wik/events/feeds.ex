@@ -4,7 +4,6 @@ defmodule Wik.Events.Feeds do
   alias Wik.Accounts
   alias Wik.Accounts.Space
   alias Wik.Accounts.User
-  alias Wik.Events.Event
   alias Wik.Events.EventPublication
   alias Wik.Scope
 
@@ -28,16 +27,10 @@ defmodule Wik.Events.Feeds do
     end
   end
 
-  defp space_feed_events_query do
-    Event
-    |> Ash.Query.filter(status != :draft)
-    |> Ash.Query.sort(starts_at: :asc, inserted_at: :asc)
-  end
-
-  defp read_space_feed_events(%Space{id: space_id}, %User{} = user) do
-    space_feed_events_query()
-    |> Ash.Query.filter(exists(publications, target_space_id == ^space_id))
-    |> Ash.read(actor: user)
+  defp read_space_feed_events(%Space{} = space, %User{} = user) do
+    with {:ok, publications} <- load_space_feed_publications(space, user) do
+      {:ok, Enum.map(publications, & &1.event)}
+    end
   end
 
   defp aggregate_feed_publications_query do
@@ -49,6 +42,22 @@ defmodule Wik.Events.Feeds do
       {:inserted_at, :asc}
     ])
     |> Ash.Query.load([:space, :published_by, event: [:author, :space]])
+  end
+
+  defp space_feed_publications_query do
+    EventPublication
+    |> Ash.Query.filter(event.status != :draft)
+    |> Ash.Query.sort([
+      {"event.starts_at", :asc},
+      {"event.inserted_at", :asc},
+      {:inserted_at, :asc}
+    ])
+    |> Ash.Query.load(event: [:author, :space])
+  end
+
+  defp load_space_feed_publications(%Space{} = space, user) do
+    space_feed_publications_query()
+    |> Ash.read(scope: %Scope{actor: user, tenant: space})
   end
 
   defp load_aggregate_feed_publications(spaces, user) do

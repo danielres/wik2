@@ -8,6 +8,7 @@ defmodule Wik.Accounts.Membership do
     notifiers: [Ash.Notifier.PubSub]
 
   alias Wik.Accounts.Space
+  alias Wik.Accounts.Membership.Checks
   alias Wik.Accounts.Membership.Changes
 
   postgres do
@@ -67,11 +68,7 @@ defmodule Wik.Accounts.Membership do
 
     policy action(:update_membership_type) do
       authorize_if expr(type != :owner and ^actor(:role) == :superadmin)
-
-      authorize_if expr(
-                     type != :owner and user_id != ^actor(:id) and
-                       exists(space.memberships, user_id == ^actor(:id) and type == :owner)
-                   )
+      authorize_if Checks.ActorCanUpdateMembershipType
     end
 
     policy action(:transfer_ownership) do

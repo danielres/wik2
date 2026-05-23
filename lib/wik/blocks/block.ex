@@ -51,37 +51,8 @@ defmodule Wik.Blocks.Block do
 
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:owner_user)
-
-      # TODO: is there a way to simplify?
-      authorize_if expr(
-                     exists(owner_space.memberships, user_id == ^actor(:id) and type == :owner) or
-                       (exists(
-                          owner_space.memberships,
-                          user_id == ^actor(:id) and type in [:admin, :member]
-                        ) and
-                          exists(
-                            owner_space.access_sources,
-                            status == :active and
-                              exists(grants, user_id == ^actor(:id) and status == :active)
-                          ))
-                   )
-
-      # TODO: is there a way to simplify?
-      authorize_if expr(
-                     exists(
-                       placements,
-                       exists(space.memberships, user_id == ^actor(:id) and type == :owner) or
-                         (exists(
-                            space.memberships,
-                            user_id == ^actor(:id) and type in [:admin, :member]
-                          ) and
-                            exists(
-                              space.access_sources,
-                              status == :active and
-                                exists(grants, user_id == ^actor(:id) and status == :active)
-                            ))
-                     )
-                   )
+      authorize_if Checks.ActorCanReadSpaceOwnedBlock
+      authorize_if Checks.ActorCanReadPlacedBlock
     end
 
     policy action_type(:create) do
@@ -89,28 +60,14 @@ defmodule Wik.Blocks.Block do
       authorize_if Checks.ActorCanCreateCurrentTenantSpaceOwnedBlock
     end
 
-    policy_group expr(
-                   exists(
-                     owner_space.memberships,
-                     user_id == ^actor(:id) and type == :owner
-                   ) or
-                     (exists(
-                        owner_space.memberships,
-                        user_id == ^actor(:id) and type == :admin
-                      ) and
-                        exists(
-                          owner_space.access_sources,
-                          status == :active and
-                            exists(grants, user_id == ^actor(:id) and status == :active)
-                        ))
-                 ) do
-      policy action_type(:update), do: authorize_if(always())
-      policy action_type(:destroy), do: authorize_if(always())
+    policy action_type(:update) do
+      authorize_if relates_to_actor_via(:owner_user)
+      authorize_if Checks.ActorCanManageSpaceOwnedBlock
     end
 
-    policy_group relates_to_actor_via(:owner_user) do
-      policy action_type(:update), do: authorize_if(always())
-      policy action_type(:destroy), do: authorize_if(always())
+    policy action_type(:destroy) do
+      authorize_if relates_to_actor_via(:owner_user)
+      authorize_if Checks.ActorCanManageSpaceOwnedBlock
     end
   end
 

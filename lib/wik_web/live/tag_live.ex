@@ -134,26 +134,35 @@ defmodule WikWeb.TagLive do
             </div>
           </section>
 
-          <section>
-            <h2 class="text-xl font-semibold mb-2 mt-8">Members</h2>
+          <div
+            :if={not @editing?}
+            class={[
+              "grid sm:grid-cols-[3fr_1fr]",
+              "[&>section:first-child]:border-base-content/20",
+              "[&>section:first-child]:max-sm:border-b",
+              "[&>section:first-child]:max-sm:pb-8",
+              "[&>section:first-child]:max-sm:mb-8",
+              "[&>section:first-child]:sm:border-r",
+              "[&>section:first-child]:sm:pr-4",
+              "[&>section:first-child]:sm:mr-4"
+            ]}
+          >
+            <section>
+              <h2 class="text-xl font-semibold mb-2">Members</h2>
 
-            <MembershipTagging.list_for_tag
-              query={@taggings_query}
-              scope={@current_scope}
-              tag={@tag}
-            />
-          </section>
+              <MembershipTagging.list_for_tag
+                query={@taggings_query}
+                scope={@current_scope}
+                tag={@tag}
+              />
+            </section>
 
-          <section :if={not @editing?} class="space-y-4">
-            <h2 class="text-xl font-semibold mb-2 mt-8">Graph</h2>
-
-            <div class="grid gap-2 sm:grid-cols-2">
+            <section class="space-y-4">
               <TagComponent.parents scope={@current_scope} tag={@tag} />
               <TagComponent.children scope={@current_scope} tag={@tag} />
-            </div>
-
-            <TagComponent.descendants scope={@current_scope} tag={@tag} />
-          </section>
+              {# <TagComponent.descendants scope={@current_scope} tag={@tag} /> }
+            </section>
+          </div>
         </div>
       </Layouts.space>
     </Layouts.app>

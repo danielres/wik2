@@ -170,6 +170,7 @@ defmodule WikWeb.Components.Tag do
   attr :graph, :map, default: nil
   attr :interaction, :atom, default: :navigate
   attr :item_testid_prefix, :string, default: "tag-parents-jump"
+  attr :section_testid, :string, default: "tag-parents"
   attr :scope, :map, required: true
   attr :tag, :map, required: true
 
@@ -187,8 +188,9 @@ defmodule WikWeb.Components.Tag do
       interaction={@interaction}
       item_testid_prefix={@item_testid_prefix}
       items={@items}
+      section_testid={@section_testid}
       space_slug={@space_slug}
-      title="Parents"
+      title="Tag parents"
     />
     """
   end
@@ -196,6 +198,7 @@ defmodule WikWeb.Components.Tag do
   attr :graph, :map, default: nil
   attr :interaction, :atom, default: :navigate
   attr :item_testid_prefix, :string, default: "tag-children-jump"
+  attr :section_testid, :string, default: "tag-children"
   attr :scope, :map, required: true
   attr :tag, :map, required: true
 
@@ -213,8 +216,9 @@ defmodule WikWeb.Components.Tag do
       interaction={@interaction}
       item_testid_prefix={@item_testid_prefix}
       items={@items}
+      section_testid={@section_testid}
       space_slug={@space_slug}
-      title="Children"
+      title="Tag children"
     />
     """
   end
@@ -225,18 +229,23 @@ defmodule WikWeb.Components.Tag do
 
   def descendants(assigns) do
     graph = graph_or_load(assigns.graph, assigns.scope)
-    children = GraphQueries.children_for(graph, assigns.tag)
+    nodes = GraphQueries.descendant_tree(graph, assigns.tag)
 
     assigns =
       assigns
-      |> assign(:children, children)
-      |> assign(:nodes, GraphQueries.descendant_tree(graph, assigns.tag))
+      |> assign(:nodes, nodes)
       |> assign(:space_slug, assigns.scope.tenant.slug)
 
     ~H"""
-    <div :if={@children != []} class="space-y-2" data-testid="tag-descendants">
+    <div class="space-y-2" data-testid="tag-descendants">
       <UI.panel_title>Descendants</UI.panel_title>
+
+      <div :if={@nodes == []} class="text-sm opacity-50">
+        No descendants.
+      </div>
+
       <TagTree.render
+        :if={@nodes != []}
         editing?={false}
         nodes={@nodes}
         selected_tag_id={@tag.id}
@@ -251,14 +260,12 @@ defmodule WikWeb.Components.Tag do
   attr :interaction, :atom, required: true
   attr :item_testid_prefix, :string, required: true
   attr :items, :list, required: true
+  attr :section_testid, :string, required: true
   attr :space_slug, :string, required: true
 
   defp relationship_list(assigns) do
     ~H"""
-    <div
-      class="rounded-box border border-base-300 bg-base-100/70 p-3"
-      data-testid={relationship_section_testid(@title)}
-    >
+    <div class="" data-testid={@section_testid}>
       <UI.panel_title>{@title}</UI.panel_title>
 
       <div :if={@items == []} class="text-sm opacity-50">
@@ -402,9 +409,6 @@ defmodule WikWeb.Components.Tag do
 
   defp graph_or_load(nil, scope), do: Tags.load_tag_graph(scope)
   defp graph_or_load(graph, _scope), do: graph
-
-  defp relationship_section_testid("Parents"), do: "tag-parents"
-  defp relationship_section_testid("Children"), do: "tag-children"
 
   defp tag_autoslug_testid(""), do: "tag-autoslug-empty"
   defp tag_autoslug_testid(auto_slug), do: "tag-autoslug-#{auto_slug}"

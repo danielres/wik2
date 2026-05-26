@@ -134,11 +134,26 @@ defmodule WikWeb.TagLive do
             </div>
           </section>
 
-          <MembershipTagging.list_for_tag
-            query={@taggings_query}
-            scope={@current_scope}
-            tag={@tag}
-          />
+          <section>
+            <h2 class="text-xl font-semibold mb-2 mt-8">Members</h2>
+
+            <MembershipTagging.list_for_tag
+              query={@taggings_query}
+              scope={@current_scope}
+              tag={@tag}
+            />
+          </section>
+
+          <section :if={not @editing?} class="space-y-4">
+            <h2 class="text-xl font-semibold mb-2 mt-8">Graph</h2>
+
+            <div class="grid gap-2 sm:grid-cols-2">
+              <TagComponent.parents scope={@current_scope} tag={@tag} />
+              <TagComponent.children scope={@current_scope} tag={@tag} />
+            </div>
+
+            <TagComponent.descendants scope={@current_scope} tag={@tag} />
+          </section>
         </div>
       </Layouts.space>
     </Layouts.app>

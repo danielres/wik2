@@ -91,10 +91,8 @@ defmodule WikWeb.TagGraphLive do
             eligible_children={@eligible_children}
             eligible_parents={@eligible_parents}
             graph={@graph}
-            space_slug={@space.slug}
-            selected_descendants={@selected_descendants}
+            scope={@current_scope}
             selected_tag={@selected_tag}
-            selected_tag_id={@selected_tag_id}
           />
           <TagComponents.delete_confirm
             :if={@tag_modal.mode == :confirm_delete and @selected_tag != nil}

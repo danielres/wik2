@@ -56,18 +56,10 @@ defmodule WikWeb.Components.Tag do
   attr :eligible_children, :list, required: true
   attr :eligible_parents, :list, required: true
   attr :graph, :map, required: true
-  attr :space_slug, :string, required: true
-  attr :selected_descendants, :list, required: true
+  attr :scope, :map, required: true
   attr :selected_tag, :map, required: true
-  attr :selected_tag_id, :string, required: true
 
   def detail(assigns) do
-    assigns =
-      assign(assigns,
-        parents: GraphQueries.parents_for(assigns.graph, assigns.selected_tag),
-        children: GraphQueries.children_for(assigns.graph, assigns.selected_tag)
-      )
-
     ~H"""
     <div class="space-y-4" data-testid={"tag-detail-#{@selected_tag.id}"}>
       <div class={[
@@ -153,43 +145,121 @@ defmodule WikWeb.Components.Tag do
       </div>
 
       <div class="grid gap-2 md:grid-cols-2">
-        <.detail_list
-          title="Parents"
-          empty="No parents."
-          items={@parents}
-          target_tag_id={@selected_tag.id}
+        <.parents
+          graph={@graph}
+          interaction={:select}
+          item_testid_prefix="tag-detail-jump"
+          scope={@scope}
+          tag={@selected_tag}
         />
 
-        <.detail_list
-          title="Children"
-          empty="No children."
-          items={@children}
-          target_tag_id={@selected_tag.id}
+        <.children
+          graph={@graph}
+          interaction={:select}
+          item_testid_prefix="tag-detail-jump"
+          scope={@scope}
+          tag={@selected_tag}
         />
       </div>
 
-      <div :if={@children != []} class="space-y-2">
-        <h3 class="text-sm uppercase tracking-[0.18em] opacity-50">Descendants</h3>
-        <TagTree.render
-          editing?={false}
-          space_slug={@space_slug}
-          nodes={@selected_descendants}
-          selected_tag_id={@selected_tag_id}
-        />
-      </div>
+      <.descendants graph={@graph} scope={@scope} tag={@selected_tag} />
+    </div>
+    """
+  end
+
+  attr :graph, :map, default: nil
+  attr :interaction, :atom, default: :navigate
+  attr :item_testid_prefix, :string, default: "tag-parents-jump"
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def parents(assigns) do
+    graph = graph_or_load(assigns.graph, assigns.scope)
+
+    assigns =
+      assigns
+      |> assign(:items, GraphQueries.parents_for(graph, assigns.tag))
+      |> assign(:space_slug, assigns.scope.tenant.slug)
+
+    ~H"""
+    <.relationship_list
+      empty="No parents."
+      interaction={@interaction}
+      item_testid_prefix={@item_testid_prefix}
+      items={@items}
+      space_slug={@space_slug}
+      title="Parents"
+    />
+    """
+  end
+
+  attr :graph, :map, default: nil
+  attr :interaction, :atom, default: :navigate
+  attr :item_testid_prefix, :string, default: "tag-children-jump"
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def children(assigns) do
+    graph = graph_or_load(assigns.graph, assigns.scope)
+
+    assigns =
+      assigns
+      |> assign(:items, GraphQueries.children_for(graph, assigns.tag))
+      |> assign(:space_slug, assigns.scope.tenant.slug)
+
+    ~H"""
+    <.relationship_list
+      empty="No children."
+      interaction={@interaction}
+      item_testid_prefix={@item_testid_prefix}
+      items={@items}
+      space_slug={@space_slug}
+      title="Children"
+    />
+    """
+  end
+
+  attr :graph, :map, default: nil
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def descendants(assigns) do
+    graph = graph_or_load(assigns.graph, assigns.scope)
+    children = GraphQueries.children_for(graph, assigns.tag)
+
+    assigns =
+      assigns
+      |> assign(:children, children)
+      |> assign(:nodes, GraphQueries.descendant_tree(graph, assigns.tag))
+      |> assign(:space_slug, assigns.scope.tenant.slug)
+
+    ~H"""
+    <div :if={@children != []} class="space-y-2" data-testid="tag-descendants">
+      <UI.panel_title>Descendants</UI.panel_title>
+      <TagTree.render
+        editing?={false}
+        nodes={@nodes}
+        selected_tag_id={@tag.id}
+        space_slug={@space_slug}
+      />
     </div>
     """
   end
 
   attr :title, :string, required: true
   attr :empty, :string, required: true
+  attr :interaction, :atom, required: true
+  attr :item_testid_prefix, :string, required: true
   attr :items, :list, required: true
-  attr :target_tag_id, :string, required: true
+  attr :space_slug, :string, required: true
 
-  defp detail_list(assigns) do
+  defp relationship_list(assigns) do
     ~H"""
-    <div class="rounded-box border border-base-300 bg-base-100/70 p-3">
-      <h3 class="mb-2 text-xs uppercase tracking-wider opacity-50">{@title}</h3>
+    <div
+      class="rounded-box border border-base-300 bg-base-100/70 p-3"
+      data-testid={relationship_section_testid(@title)}
+    >
+      <UI.panel_title>{@title}</UI.panel_title>
 
       <div :if={@items == []} class="text-sm opacity-50">
         {@empty}
@@ -198,18 +268,31 @@ defmodule WikWeb.Components.Tag do
       <div :if={@items != []} class="flex flex-wrap gap-1">
         <button
           :for={tag <- @items}
+          :if={@interaction == :select}
           class={[
             "rounded border px-2.5 py-1 text-xs transition text-left w-full",
             "cursor-pointer",
-            tag.id == @target_tag_id && "border-accent bg-accent/10",
-            tag.id != @target_tag_id && "border-base-300 bg-base-200/50 hover:border-accent"
+            "border-base-300 bg-base-200/50 hover:border-accent"
           ]}
-          data-testid={"tag-detail-jump-#{tag.id}"}
+          data-testid={"#{@item_testid_prefix}-#{tag.id}"}
           phx-click="select_tag"
           phx-value-tag_id={tag.id}
         >
           {tag.name}
         </button>
+
+        <.link
+          :for={tag <- @items}
+          :if={@interaction == :navigate}
+          class={[
+            "rounded border px-2.5 py-1 text-xs transition text-left w-full",
+            "border-base-300 bg-base-200/50 hover:border-accent"
+          ]}
+          data-testid={"#{@item_testid_prefix}-#{tag.id}"}
+          navigate={~p"/#{@space_slug}/tags/#{tag.slug}"}
+        >
+          {tag.name}
+        </.link>
       </div>
     </div>
     """
@@ -316,6 +399,12 @@ defmodule WikWeb.Components.Tag do
     </div>
     """
   end
+
+  defp graph_or_load(nil, scope), do: Tags.load_tag_graph(scope)
+  defp graph_or_load(graph, _scope), do: graph
+
+  defp relationship_section_testid("Parents"), do: "tag-parents"
+  defp relationship_section_testid("Children"), do: "tag-children"
 
   defp tag_autoslug_testid(""), do: "tag-autoslug-empty"
   defp tag_autoslug_testid(auto_slug), do: "tag-autoslug-#{auto_slug}"

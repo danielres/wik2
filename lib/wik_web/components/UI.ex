@@ -1,6 +1,12 @@
 defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
+  def panel_title(assigns) do
+    ~H"""
+    <h3 class="mb-2 text-xs uppercase tracking-wider opacity-50">{render_slot(@inner_block)}</h3>
+    """
+  end
+
   defp step_id(id, index), do: "#{id}-step#{index}"
 
   attr :id, :string, required: true

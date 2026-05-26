@@ -25,7 +25,7 @@ defmodule WikWeb.Presence do
     memberships = fetch_memberships_by_user_id(space_id, user_ids)
 
     presentation_by_user_id = present_memberships(memberships)
-    users = safe_list_users_by_id(user_ids, presentation_by_user_id)
+    users = list_users_by_id(user_ids, presentation_by_user_id)
 
     for {user_id, %{metas: [meta | metas]}} <- presences, into: %{} do
       membership =
@@ -197,14 +197,6 @@ defmodule WikWeb.Presence do
   defp default_display_name(%User{} = user, _user_id), do: to_string(user)
   defp default_display_name(_user, user_id), do: user_id
 
-  defp safe_list_users_by_id(user_ids, presentation_by_user_id) do
-    list_users_by_id(user_ids, presentation_by_user_id)
-  rescue
-    _ -> %{}
-  catch
-    :exit, _ -> %{}
-  end
-
   defp list_users_by_id(user_ids, presentation_by_user_id) do
     loaded_users =
       presentation_by_user_id
@@ -223,27 +215,18 @@ defmodule WikWeb.Presence do
         loaded_users
 
       _user_ids ->
-        case User
-             |> Ash.Query.filter(id in ^missing_user_ids)
-             |> Ash.read(authorize?: false) do
-          {:ok, fetched_users} ->
-            Map.merge(loaded_users, Map.new(fetched_users, &{&1.id, &1}))
+        fetched_users =
+          User
+          |> Ash.Query.filter(id in ^missing_user_ids)
+          |> Ash.read!(authorize?: false)
 
-          {:error, _error} ->
-            loaded_users
-        end
+        Map.merge(loaded_users, Map.new(fetched_users, &{&1.id, &1}))
     end
   end
 
   defp fetch_memberships_by_user_id(space_id, user_ids) do
-    case Accounts.list_memberships_by_user_id(space_id, user_ids) do
-      {:ok, memberships} -> memberships
-      {:error, _error} -> %{}
-    end
-  rescue
-    _ -> %{}
-  catch
-    :exit, _ -> %{}
+    {:ok, memberships} = Accounts.list_memberships_by_user_id(space_id, user_ids)
+    memberships
   end
 
   defp build_presence_meta(path, space_id, opts) do

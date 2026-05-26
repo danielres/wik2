@@ -109,7 +109,7 @@ defmodule WikWeb.SpaceLive do
 
         <Modal.render
           cancel="update_space_cancel"
-          cancel_testid="up date-space-cancel"
+          cancel_testid="update-space-cancel"
           open?={@form != nil}
           testid="update-space-dialog"
         >

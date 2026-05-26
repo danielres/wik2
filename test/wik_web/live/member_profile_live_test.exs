@@ -86,7 +86,11 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_click(element(view, testid("member-tagging-open-#{dance.id}")))
     assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+    assert has_element?(view, testid("member-tagging-details"))
+
+    render_click(element(view, testid("member-tagging-edit-#{dance.id}")))
     assert has_element?(view, testid("member-tagging-delete"))
+
     render_click(element(view, testid("member-tagging-delete")))
 
     render_async(view)

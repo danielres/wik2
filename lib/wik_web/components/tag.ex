@@ -70,27 +70,45 @@ defmodule WikWeb.Components.Tag do
 
     ~H"""
     <div class="space-y-4" data-testid={"tag-detail-#{@selected_tag.id}"}>
-      <div class="min-w-0">
-        <UI.page_title class="text-lg font-[300]">
-          {@selected_tag.name}
-        </UI.page_title>
+      <div class={[
+        "stacked"
+      ]}>
+        <div class="p-2">
+          <UI.page_title class="text-lg font-[300]">
+            {@selected_tag.name}
+          </UI.page_title>
 
-        <div class="mb-4 text-xs font-mono opacity-50">
-          /{@selected_tag.slug}
+          <div class="mb-4 text-xs font-mono opacity-50">
+            /{@selected_tag.slug}
+          </div>
+
+          <%= if @selected_tag.description in [nil, ""] do %>
+            <span class="italic opacity-50 text-sm">
+              No description yet.
+            </span>
+          <% else %>
+            <div class={[
+              "max-h-30 overflow-y-auto rounded-box bg-base-100/70 p-3",
+              "text-sm text-base-content/60 leading-tight"
+            ]}>
+              <div class="whitespace-pre-wrap">{@selected_tag.description}</div>
+            </div>
+          <% end %>
         </div>
 
-        <%= if @selected_tag.description in [nil, ""] do %>
-          <span class="italic opacity-50">
-            No description yet.
-          </span>
-        <% else %>
-          <div class={[
-            "max-h-30 overflow-y-auto rounded-box bg-base-100/70 p-3",
-            "text-sm text-base-content/60 leading-tight"
-          ]}>
-            <div class="whitespace-pre-wrap">{@selected_tag.description}</div>
-          </div>
-        <% end %>
+        <button
+          class={[
+            "border",
+            "cursor-pointer",
+            "rounded",
+            "border-accent/50 hover:border-accent transition-colors",
+            "bg-accent/2 hover:bg-accent/10"
+          ]}
+          data-testid="tag-detail-edit"
+          phx-click="tag_edit_open"
+          phx-value-tag_id={@selected_tag.id}
+        >
+        </button>
       </div>
 
       <div :if={@editing?} class="flex flex-wrap gap-2 [&>*]:flex-grow">
@@ -121,6 +139,16 @@ defmodule WikWeb.Components.Tag do
           phx-value-tag_id={@selected_tag.id}
         >
           <.icon name="hero-link-mini" class="size-3" /> Link parent
+        </button>
+
+        <button
+          class="btn btn-xs btn-soft btn-error"
+          data-testid="tag-detail-delete"
+          phx-click="tag_delete_confirm"
+          phx-value-tag_id={@selected_tag.id}
+          type="button"
+        >
+          <.icon name="hero-trash-mini" class="size-3" /> Delete
         </button>
       </div>
 
@@ -189,9 +217,13 @@ defmodule WikWeb.Components.Tag do
 
   attr :action_label, :string, required: true
   attr :class, :string, default: ""
+  attr :cancel_testid, :string, default: nil
+  attr :event_cancel, :string, default: nil
+  attr :event_delete, :string, default: nil
   attr :event_submit, :string, required: true
   attr :event_validate, :string, required: true
   attr :form, :any, required: true
+  attr :tag_id, :string, default: nil
 
   def form(assigns) do
     name_value = assigns.form[:name].value || ""
@@ -225,13 +257,62 @@ defmodule WikWeb.Components.Tag do
 
           <.input field={@form[:description]} label="Description" type="textarea" />
 
-          <div class="flex justify-end">
+          <div class="flex items-center justify-between gap-2">
+            <button
+              :if={@event_cancel != nil}
+              class="btn btn-sm btn-soft"
+              data-testid={@cancel_testid}
+              phx-click={@event_cancel}
+              type="button"
+            >
+              Cancel
+            </button>
+
             <.button class="btn btn-sm btn-accent" data-testid="tag-form-submit" type="submit">
               {@action_label}
             </.button>
           </div>
         </div>
       </Phoenix.Component.form>
+    </div>
+    """
+  end
+
+  attr :tag, :map, required: true
+
+  def delete_confirm(assigns) do
+    ~H"""
+    <div class="space-y-4" data-testid="tag-delete-confirm">
+      <div class="space-y-2">
+        <UI.page_title class="text-lg font-[300]">
+          Delete tag?
+        </UI.page_title>
+
+        <p class="text-sm text-base-content/70">
+          This will permanently delete <span class="font-semibold">{@tag.name}</span>.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-between gap-2">
+        <button
+          class="btn btn-sm btn-soft"
+          data-testid="tag-delete-confirm-cancel"
+          phx-click="tag_modal_cancel"
+          type="button"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="btn btn-sm btn-error"
+          data-testid="tag-delete-confirm-submit"
+          phx-click="delete_tag"
+          phx-value-tag_id={@tag.id}
+          type="button"
+        >
+          <.icon name="hero-trash-mini" class="size-4" /> Delete tag
+        </button>
+      </div>
     </div>
     """
   end

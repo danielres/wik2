@@ -35,14 +35,7 @@ defmodule WikWeb.TagGraphLive do
      |> assign(editing?: false)
      |> assign(editable?: editable?)
      |> assign(space: space)
-     |> assign(tag_form: nil)
-     |> assign(tag_form_mode: nil)
-     |> assign(tag_form_parent_id: nil)
-     |> assign(tag_form_tag_id: nil)
-     |> assign(link_form: nil)
-     |> assign(link_form_mode: nil)
-     |> assign(link_form_tag_id: nil)
-     |> assign(link_form_error: nil)
+     |> assign(tag_modal: new_tag_modal())
      |> assign_graph_state(graph, nil)}
   end
 
@@ -87,13 +80,13 @@ defmodule WikWeb.TagGraphLive do
         </div>
 
         <Modal.render
-          cancel="tag_detail_close"
+          cancel="tag_modal_cancel"
           cancel_testid="tag-detail-cancel"
-          open?={@selected_tag != nil}
+          open?={@tag_modal.mode != nil}
           testid="tag-detail-dialog"
         >
           <TagComponents.detail
-            :if={@selected_tag != nil}
+            :if={@tag_modal.mode == :details and @selected_tag != nil}
             editing?={@editing?}
             eligible_children={@eligible_children}
             eligible_parents={@eligible_parents}
@@ -103,35 +96,26 @@ defmodule WikWeb.TagGraphLive do
             selected_tag={@selected_tag}
             selected_tag_id={@selected_tag_id}
           />
-        </Modal.render>
-
-        <Modal.render
-          cancel="tag_form_cancel"
-          cancel_testid="tag-form-cancel"
-          open?={@tag_form != nil}
-          testid="tag-form-dialog"
-        >
+          <TagComponents.delete_confirm
+            :if={@tag_modal.mode == :confirm_delete and @selected_tag != nil}
+            tag={@selected_tag}
+          />
           <TagComponents.form
-            :if={@tag_form != nil}
-            action_label={tag_form_action_label(@tag_form_mode)}
+            :if={@tag_modal.mode in [:create_root, :create_child, :edit] and @tag_modal.form != nil}
+            action_label={tag_form_action_label(@tag_modal.mode)}
+            cancel_testid="tag-form-cancel"
             event_submit="tag_submit"
             event_validate="tag_validate"
-            form={@tag_form}
+            event_cancel="tag_modal_cancel"
+            form={@tag_modal.form}
+            tag_id={@selected_tag && @selected_tag.id}
           />
-        </Modal.render>
-
-        <Modal.render
-          cancel="link_form_cancel"
-          cancel_testid="tag-link-cancel"
-          open?={@link_form != nil}
-          testid="tag-link-dialog"
-        >
           <.link_form
-            :if={@link_form != nil and @selected_tag}
-            error={@link_form_error}
-            form={@link_form}
-            mode={@link_form_mode}
-            options={link_options(@link_form_mode, @eligible_children, @eligible_parents)}
+            :if={@tag_modal.mode in [:link_child, :link_parent] and @selected_tag}
+            error={@tag_modal.error}
+            form={@tag_modal.link_form}
+            mode={@tag_modal.mode}
+            options={link_options(@tag_modal.mode, @eligible_children, @eligible_parents)}
             tag={@selected_tag}
           />
         </Modal.render>
@@ -150,19 +134,20 @@ defmodule WikWeb.TagGraphLive do
     ~H"""
     <div data-testid="tag-link-form">
       <div class="mb-3 text-sm opacity-70">
-        <span :if={@mode == :child}>Link an existing child under </span>
-        <span :if={@mode == :parent}>Link an existing parent above </span>
+        <span :if={@mode == :link_child}>Link an existing child under </span>
+        <span :if={@mode == :link_parent}>Link an existing parent above </span>
         <span class="font-bold">{@tag.name}</span>.
       </div>
 
       <.form for={@form} data-testid="tag-link-form-form" phx-submit="link_submit">
         <div class="space-y-3 rounded-box bg-base-100 p-4">
-          <.input
+          <WikWeb.Components.Combobox.field
             field={@form[:target_tag_id]}
+            id="tag-link-target-tag"
             label="Tag"
-            options={Enum.map(@options, &{&1.name, &1.id})}
-            prompt="Select a tag"
-            type="select"
+            options_json={link_options_json(@options)}
+            placeholder="Search tags"
+            testid="tag-link-target-tag"
           />
 
           <.error :if={@error != nil}>{@error}</.error>
@@ -179,13 +164,18 @@ defmodule WikWeb.TagGraphLive do
   @impl true
   def handle_params(params, url, socket) do
     selected_tag_id = params["tag"]
-    socket = refresh_graph(socket, selected_tag_id)
+
+    socket =
+      socket
+      |> refresh_graph(selected_tag_id)
+      |> sync_modal_to_selected_tag(selected_tag_id)
+
     {:noreply, WikWeb.Presence.track_in_liveview(socket, url)}
   end
 
   @impl true
   def handle_event("select_tag", %{"tag_id" => tag_id}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.space.slug}/tags?#{%{tag: tag_id}}")}
+    {:noreply, socket |> refresh_graph(tag_id) |> open_tag_modal(:details)}
   end
 
   def handle_event("toggle_edit_mode", _params, socket) do
@@ -194,75 +184,65 @@ defmodule WikWeb.TagGraphLive do
     socket =
       if socket.assigns.editing?,
         do: socket,
-        else: socket |> close_tag_form() |> close_link_form()
+        else: socket |> close_tag_modal() |> refresh_graph(nil)
 
     {:noreply, socket}
-  end
-
-  def handle_event("tag_detail_close", _params, socket) do
-    {:noreply, push_patch(socket, to: ~p"/#{socket.assigns.space.slug}/tags")}
   end
 
   def handle_event("create_root_start", _params, socket) do
     {:noreply,
      socket
-     |> assign(tag_form: init_tag_form(socket.assigns.current_scope))
-     |> assign(tag_form_mode: :create)
-     |> assign(tag_form_parent_id: nil)
-     |> assign(tag_form_tag_id: nil)}
+     |> assign(
+       tag_modal: new_tag_modal(:create_root, form: init_tag_form(socket.assigns.current_scope))
+     )}
   end
 
   def handle_event("create_child_start", %{"parent_tag_id" => parent_tag_id}, socket) do
     {:noreply,
      socket
-     |> assign(tag_form: init_tag_form(socket.assigns.current_scope))
-     |> assign(tag_form_mode: :create)
-     |> assign(tag_form_parent_id: parent_tag_id)
-     |> assign(tag_form_tag_id: nil)}
+     |> refresh_graph(parent_tag_id)
+     |> assign(
+       tag_modal:
+         new_tag_modal(:create_child,
+           form: init_tag_form(socket.assigns.current_scope),
+           parent_tag_id: parent_tag_id
+         )
+     )}
   end
 
   def handle_event("edit_tag_start", %{"tag_id" => tag_id}, socket) do
-    case Map.get(socket.assigns.graph.tags_by_id, tag_id) do
-      nil ->
-        {:noreply, socket}
-
-      tag ->
-        {:noreply,
-         socket
-         |> assign(
-           tag_form:
-             tag |> Form.for_update(:update, scope: socket.assigns.current_scope) |> to_form()
-         )
-         |> assign(tag_form_mode: :edit)
-         |> assign(tag_form_parent_id: nil)
-         |> assign(tag_form_tag_id: tag.id)}
-    end
+    {:noreply, socket |> refresh_graph(tag_id) |> open_tag_modal(:details)}
   end
 
-  def handle_event("tag_form_cancel", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(tag_form: nil)
-     |> assign(tag_form_mode: nil)
-     |> assign(tag_form_parent_id: nil)
-     |> assign(tag_form_tag_id: nil)}
+  def handle_event("tag_edit_open", %{"tag_id" => tag_id}, socket) do
+    {:noreply, socket |> refresh_graph(tag_id) |> open_tag_modal(:edit)}
+  end
+
+  def handle_event("tag_delete_confirm", %{"tag_id" => tag_id}, socket) do
+    {:noreply, socket |> refresh_graph(tag_id) |> open_tag_modal(:confirm_delete)}
+  end
+
+  def handle_event("tag_modal_cancel", _params, socket) do
+    {:noreply, cancel_tag_modal(socket)}
   end
 
   def handle_event("tag_validate", %{"form" => params}, socket) do
     {:noreply,
-     assign(socket, tag_form: Form.validate(socket.assigns.tag_form, tag_params(params)))}
+     update(socket, :tag_modal, fn modal ->
+       %{modal | form: Form.validate(modal.form, tag_params(params))}
+     end)}
   end
 
   def handle_event("tag_submit", %{"form" => params}, socket) do
     scope = socket.assigns.current_scope
     params = tag_params(params)
 
-    case Form.submit(socket.assigns.tag_form, params: params) do
+    case Form.submit(socket.assigns.tag_modal.form, params: params) do
       {:ok, %Tag{} = tag} ->
         link_result =
           maybe_link_new_tag(
-            socket.assigns.tag_form_mode,
-            socket.assigns.tag_form_parent_id,
+            socket.assigns.tag_modal.mode,
+            socket.assigns.tag_modal.parent_tag_id,
             tag,
             scope
           )
@@ -272,10 +252,10 @@ defmodule WikWeb.TagGraphLive do
           Log.scoped_error(scope, error, "tag link after create failed")
         end
 
-        {:noreply, socket |> close_tag_form() |> refresh_graph(socket.assigns.selected_tag_id)}
+        {:noreply, handle_saved_tag(socket, tag)}
 
       {:error, form} ->
-        {:noreply, assign(socket, tag_form: form)}
+        {:noreply, update(socket, :tag_modal, &%{&1 | form: form})}
     end
   end
 
@@ -286,10 +266,12 @@ defmodule WikWeb.TagGraphLive do
       case Tags.destroy_tag(tag_id, scope: scope) do
         :ok ->
           socket
+          |> close_tag_modal()
           |> refresh_graph(nil_if_selected(socket.assigns.selected_tag_id, tag_id))
 
         {:ok, _tag} ->
           socket
+          |> close_tag_modal()
           |> refresh_graph(nil_if_selected(socket.assigns.selected_tag_id, tag_id))
 
         {:error, error} ->
@@ -321,33 +303,29 @@ defmodule WikWeb.TagGraphLive do
   end
 
   def handle_event("link_child_start", %{"tag_id" => tag_id}, socket) do
-    {:noreply, open_link_form(socket, :child, tag_id)}
+    {:noreply, socket |> refresh_graph(tag_id) |> open_tag_modal(:link_child)}
   end
 
   def handle_event("link_parent_start", %{"tag_id" => tag_id}, socket) do
-    {:noreply, open_link_form(socket, :parent, tag_id)}
-  end
-
-  def handle_event("link_form_cancel", _params, socket) do
-    {:noreply, close_link_form(socket)}
+    {:noreply, socket |> refresh_graph(tag_id) |> open_tag_modal(:link_parent)}
   end
 
   def handle_event("link_submit", %{"link" => %{"target_tag_id" => target_tag_id}}, socket) do
     scope = socket.assigns.current_scope
-    current_tag = link_form_tag(socket)
+    current_tag = socket.assigns.selected_tag
 
     socket =
-      case {current_tag, socket.assigns.link_form_mode, target_tag_id} do
+      case {current_tag, socket.assigns.tag_modal.mode, target_tag_id} do
         {nil, _mode, _target_tag_id} ->
-          assign(socket, link_form_error: "The selected tag is no longer available.")
+          update(socket, :tag_modal, &%{&1 | error: "The selected tag is no longer available."})
 
         {_tag, _mode, ""} ->
-          assign(socket, link_form_error: "Please select a tag.")
+          update(socket, :tag_modal, &%{&1 | error: "Please select a tag."})
 
-        {%Tag{} = current_tag, :child, target_tag_id} ->
+        {%Tag{} = current_tag, :link_child, target_tag_id} ->
           submit_link(socket, current_tag.id, target_tag_id, current_tag.id, scope)
 
-        {%Tag{} = current_tag, :parent, target_tag_id} ->
+        {%Tag{} = current_tag, :link_parent, target_tag_id} ->
           submit_link(socket, target_tag_id, current_tag.id, current_tag.id, scope)
       end
 
@@ -395,56 +373,61 @@ defmodule WikWeb.TagGraphLive do
     |> assign(eligible_parents: eligible_parents)
   end
 
-  defp open_link_form(socket, mode, tag_id) do
-    socket
-    |> assign(link_form: to_form(%{"target_tag_id" => ""}, as: :link))
-    |> assign(link_form_mode: mode)
-    |> assign(link_form_tag_id: tag_id)
-    |> assign(link_form_error: nil)
-    |> refresh_graph(tag_id)
+  defp open_tag_modal(socket, :details) do
+    assign(socket, :tag_modal, new_tag_modal(:details))
   end
 
-  defp link_form_tag(socket) do
-    socket.assigns.link_form_tag_id &&
-      Map.get(socket.assigns.graph.tags_by_id, socket.assigns.link_form_tag_id)
+  defp open_tag_modal(socket, :confirm_delete) do
+    assign(socket, :tag_modal, new_tag_modal(:confirm_delete))
+  end
+
+  defp open_tag_modal(socket, mode) when mode in [:link_child, :link_parent] do
+    assign(
+      socket,
+      :tag_modal,
+      new_tag_modal(mode, link_form: to_form(%{"target_tag_id" => ""}, as: :link))
+    )
+  end
+
+  defp open_tag_modal(socket, :edit) do
+    case socket.assigns.selected_tag do
+      nil ->
+        socket
+
+      tag ->
+        assign(
+          socket,
+          :tag_modal,
+          new_tag_modal(:edit,
+            form:
+              tag |> Form.for_update(:update, scope: socket.assigns.current_scope) |> to_form()
+          )
+        )
+    end
   end
 
   defp submit_link(socket, parent_tag_id, child_tag_id, selected_tag_id, scope) do
     case Tags.link_tags(parent_tag_id, child_tag_id, scope: scope) do
       {:ok, _edge} ->
         socket
-        |> close_link_form()
+        |> open_tag_modal(:details)
         |> refresh_graph(selected_tag_id)
 
       {:error, error} ->
         Log.scoped_error(scope, error, "tag link failed")
-        assign(socket, link_form_error: "Could not link those tags.")
+        update(socket, :tag_modal, &%{&1 | error: "Could not link those tags."})
     end
   end
 
-  defp close_link_form(socket) do
-    socket
-    |> assign(link_form: nil)
-    |> assign(link_form_mode: nil)
-    |> assign(link_form_tag_id: nil)
-    |> assign(link_form_error: nil)
-  end
-
-  defp close_tag_form(socket) do
-    socket
-    |> assign(tag_form: nil)
-    |> assign(tag_form_mode: nil)
-    |> assign(tag_form_parent_id: nil)
-    |> assign(tag_form_tag_id: nil)
-  end
+  defp close_tag_modal(socket), do: assign(socket, :tag_modal, new_tag_modal())
 
   defp init_tag_form(scope) do
     Tag |> Form.for_create(:create, scope: scope) |> to_form()
   end
 
-  defp maybe_link_new_tag(:create, nil, _tag, _scope), do: :ok
+  defp maybe_link_new_tag(:create_root, nil, _tag, _scope), do: :ok
 
-  defp maybe_link_new_tag(:create, parent_tag_id, tag, scope) do
+  defp maybe_link_new_tag(:create_child, parent_tag_id, tag, scope) do
     case Tags.link_tags(parent_tag_id, tag.id, scope: scope) do
       {:ok, _edge} -> :ok
       {:error, error} -> {:error, error}
@@ -452,9 +435,11 @@ defmodule WikWeb.TagGraphLive do
   end
 
   defp maybe_link_new_tag(:edit, _parent_tag_id, _tag, _scope), do: :ok
+  defp maybe_link_new_tag(:details, _parent_tag_id, _tag, _scope), do: :ok
 
-  defp link_options(:child, eligible_children, _eligible_parents), do: eligible_children
-  defp link_options(:parent, _eligible_children, eligible_parents), do: eligible_parents
+  defp link_options(:link_child, eligible_children, _eligible_parents), do: eligible_children
+  defp link_options(:link_parent, _eligible_children, eligible_parents), do: eligible_parents
+  defp link_options(_mode, _eligible_children, _eligible_parents), do: []
 
   defp tag_params(%{"name" => name} = params),
     do: Map.put(params, "slug", Utils.Slugify.generate(name))
@@ -466,4 +451,82 @@ defmodule WikWeb.TagGraphLive do
 
   defp nil_if_selected(selected_tag_id, selected_tag_id), do: nil
   defp nil_if_selected(selected_tag_id, _deleted_tag_id), do: selected_tag_id
+
+  defp cancel_tag_modal(%{assigns: %{tag_modal: %{mode: :details}}} = socket) do
+    socket
+    |> close_tag_modal()
+    |> refresh_graph(nil)
+  end
+
+  defp cancel_tag_modal(%{assigns: %{tag_modal: %{mode: :create_root}}} = socket),
+    do: close_tag_modal(socket)
+
+  defp cancel_tag_modal(%{assigns: %{selected_tag_id: selected_tag_id}} = socket)
+       when is_binary(selected_tag_id) do
+    socket |> refresh_graph(selected_tag_id) |> open_tag_modal(:details)
+  end
+
+  defp cancel_tag_modal(socket), do: close_tag_modal(socket)
+
+  defp sync_modal_to_selected_tag(socket, nil), do: close_tag_modal(socket)
+
+  defp sync_modal_to_selected_tag(socket, selected_tag_id) do
+    case {socket.assigns.tag_modal.mode,
+          Map.get(socket.assigns.graph.tags_by_id, selected_tag_id)} do
+      {_mode, nil} ->
+        close_tag_modal(socket)
+
+      {nil, %Tag{}} ->
+        open_tag_modal(socket, :details)
+
+      {_mode, %Tag{}} ->
+        socket
+    end
+  end
+
+  defp handle_saved_tag(socket, %Tag{} = tag) do
+    case socket.assigns.tag_modal.mode do
+      :create_root ->
+        socket
+        |> close_tag_modal()
+        |> refresh_graph(socket.assigns.selected_tag_id)
+
+      :create_child ->
+        socket
+        |> refresh_graph(socket.assigns.tag_modal.parent_tag_id)
+        |> open_tag_modal(:details)
+
+      :edit ->
+        socket
+        |> refresh_graph(tag.id)
+        |> open_tag_modal(:details)
+
+      _mode ->
+        socket
+        |> close_tag_modal()
+        |> refresh_graph(socket.assigns.selected_tag_id)
+    end
+  end
+
+  defp new_tag_modal(mode \\ nil, attrs \\ []) do
+    %{
+      error: Keyword.get(attrs, :error),
+      form: Keyword.get(attrs, :form),
+      link_form: Keyword.get(attrs, :link_form),
+      mode: mode,
+      parent_tag_id: Keyword.get(attrs, :parent_tag_id)
+    }
+  end
+
+  defp link_options_json(options) do
+    options
+    |> Enum.map(fn tag ->
+      %{
+        label: tag.name,
+        search: String.downcase(tag.name),
+        value: tag.id
+      }
+    end)
+    |> Jason.encode!()
+  end
 end

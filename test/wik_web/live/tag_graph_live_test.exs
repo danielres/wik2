@@ -36,7 +36,7 @@ defmodule WikWeb.TagGraphLiveTest do
 
     render_click(element(view, testid("tag-add-root")))
 
-    assert has_element?(view, testid("tag-form-dialog"))
+    assert has_element?(view, testid("tag-detail-dialog"))
 
     render_submit(
       form(view, testid("tag-form-form"),
@@ -49,6 +49,9 @@ defmodule WikWeb.TagGraphLiveTest do
     refute has_element?(view, testid("tag-detail-#{child.id}"))
 
     render_click(element(view, testid("tag-edit-tag-path-#{child.id}")))
+    assert has_element?(view, testid("tag-detail-#{child.id}"))
+
+    render_click(element(view, testid("tag-detail-edit")))
 
     render_submit(
       form(view, testid("tag-form-form"),
@@ -58,8 +61,8 @@ defmodule WikWeb.TagGraphLiveTest do
 
     {:ok, child} = Tags.get_tag_by_slug("social-dance", scope: scope)
 
-    render_click(element(view, testid("tag-select-tag-path-#{alpha.id}")))
-    assert_patch(view, ~p"/#{space.slug}/tags?#{%{tag: alpha.id}}")
+    render_click(element(view, testid("tag-edit-tag-path-#{alpha.id}")))
+    assert has_element?(view, testid("tag-detail-#{alpha.id}"))
 
     render_click(element(view, testid("tag-link-child-start")))
 
@@ -67,8 +70,8 @@ defmodule WikWeb.TagGraphLiveTest do
 
     assert has_element?(view, testid("tag-branch-tag-path-#{alpha.id}__#{child.id}"))
 
-    render_click(element(view, testid("tag-select-tag-path-#{beta.id}")))
-    assert_patch(view, ~p"/#{space.slug}/tags?#{%{tag: beta.id}}")
+    render_click(element(view, testid("tag-edit-tag-path-#{beta.id}")))
+    assert has_element?(view, testid("tag-detail-#{beta.id}"))
 
     render_click(element(view, testid("tag-link-child-start")))
 
@@ -76,9 +79,7 @@ defmodule WikWeb.TagGraphLiveTest do
 
     assert has_element?(view, testid("tag-branch-tag-path-#{beta.id}__#{child.id}"))
 
-    render_click(element(view, testid("tag-select-tag-path-#{alpha.id}__#{child.id}")))
-    assert_patch(view, ~p"/#{space.slug}/tags?#{%{tag: child.id}}")
-    assert has_element?(view, testid("tag-detail-dialog"))
+    render_click(element(view, testid("tag-edit-tag-path-#{alpha.id}__#{child.id}")))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
     assert has_element?(view, testid("tag-detail-jump-#{alpha.id}"))
     assert has_element?(view, testid("tag-detail-jump-#{beta.id}"))
@@ -111,7 +112,10 @@ defmodule WikWeb.TagGraphLiveTest do
     render_click(element(view, testid("tag-edit-mode-toggle")))
     assert has_element?(view, testid("tag-edit-mode-ok"))
 
-    render_click(element(view, testid("tag-delete-tag-path-#{root.id}__#{child.id}")))
+    assert has_element?(view, testid("tag-detail-delete"))
+    render_click(element(view, testid("tag-detail-delete")))
+    assert has_element?(view, testid("tag-delete-confirm"))
+    render_click(element(view, testid("tag-delete-confirm-submit")))
 
     refute has_element?(view, testid("tag-branch-tag-path-#{root.id}__#{child.id}"))
     refute has_element?(view, testid("tag-detail-#{child.id}"))

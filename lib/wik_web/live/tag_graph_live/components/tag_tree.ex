@@ -73,17 +73,13 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       style="--size-field: 0.22rem;"
     >
       <div class="space flex justify-between gap-2">
-        <button
+        <div
           :if={@editing?}
           class={[
             "flex min-w-0 flex-1 items-center gap-0 text-left transition",
-            "cursor-pointer",
             @selected? && "opacity-100",
-            !@selected? && "opacity-80 hover:opacity-100"
+            !@selected? && "opacity-80"
           ]}
-          data-testid={"tag-select-#{@node.dom_id}"}
-          phx-click="select_tag"
-          phx-value-tag_id={@node.tag.id}
         >
           <.icon
             name="hero-chevron-right-mini"
@@ -99,7 +95,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
               <span class="truncate">{@node.tag.name}</span>
             </div>
           </div>
-        </button>
+        </div>
 
         <.link
           :if={not @editing?}
@@ -154,15 +150,6 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             icon="hero-pencil-mini"
             phx-click="edit_tag_start"
             phx-value-tag_id={@node.tag.id}
-          />
-
-          <ActionButtons.button
-            data-tip="delete"
-            data-testid={"tag-delete-#{@node.dom_id}"}
-            icon="hero-x-mark-mini"
-            phx-click="delete_tag"
-            phx-value-tag_id={@node.tag.id}
-            variant="error"
           />
         </ActionButtons.wrapper>
       </div>

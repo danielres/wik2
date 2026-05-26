@@ -69,7 +69,7 @@ defmodule WikWeb.TagGraphLive do
 
         <div class="space-y-4" data-testid="tag-graph-page">
           <section class="space-y-4 relative">
-            <div :if={@editing?} class="absolute right-0 -top-9">
+            <div :if={@editable? and @editing?} class="absolute right-0 -top-9">
               <ActionButtons.button
                 data-tip="add root tag"
                 icon="hero-plus-mini"

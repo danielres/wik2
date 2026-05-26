@@ -22,13 +22,13 @@ defmodule WikWeb.Components.UI.Forms do
 
       <div class={["flex-grow"]}>
         <div
+          {@rest}
           class={[
             "opacity-80",
             "font-mono",
             "w-full",
             "!bg-transparent"
           ]}
-          data-testid={@rest["data-testid"]}
         >
           {@auto_slug}
         </div>

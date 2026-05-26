@@ -80,7 +80,7 @@
             :if={has_area?(@page, :aside)}
             area={:aside}
             class={[
-              "md:border-l lg:pl-4",
+              "md:border-l sm:pl-2 lg:pl-4",
               if(@editing?, do: "border-transparent", else: "border-base-content/10")
             ]}
             editing?={@editing?}

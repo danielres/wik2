@@ -105,7 +105,7 @@ defmodule WikWeb.Superadmin.InboxLive do
         >
           <:col :let={ticket} field="type" label="Type" filter sort>
             <span
-              class={type_badge_class(ticket.type)}
+              class={[type_badge_class(ticket.type), "cursor-pointer"]}
               data-testid={"inbox-ticket-#{ticket.id}"}
             >
               {ticket_type_label(ticket.type)}

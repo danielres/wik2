@@ -243,7 +243,7 @@ defmodule WikWeb.Layouts do
 
   def container(assigns) do
     ~H"""
-    <main class="px-4 sm:px-6 lg:px-8">
+    <main class="px-2 sm:px-6 lg:px-8">
       <div class={[
         "mx-auto space-y-4",
         @width_class,

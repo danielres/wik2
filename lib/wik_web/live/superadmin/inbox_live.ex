@@ -107,6 +107,8 @@ defmodule WikWeb.Superadmin.InboxLive do
             <span
               class={[type_badge_class(ticket.type), "cursor-pointer"]}
               data-testid={"inbox-ticket-#{ticket.id}"}
+              phx-click="show_ticket"
+              phx-value-id={ticket.id}
             >
               {ticket_type_label(ticket.type)}
             </span>

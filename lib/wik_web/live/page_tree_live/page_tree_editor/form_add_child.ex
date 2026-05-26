@@ -80,10 +80,12 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormAddChild do
   attr(:target, :any, required: true)
 
   defp add_child_form(assigns) do
-    auto_slug = assigns.form[:title].value |> Utils.Slugify.generate()
+    title_value = Phoenix.HTML.Form.input_value(assigns.form, :title) || ""
+    auto_slug = Utils.Slugify.generate(title_value)
 
     assigns =
       assigns
+      |> assign(title_value: title_value)
       |> assign(auto_slug: auto_slug)
       |> assign(form_errors: AshPhoenix.Form.errors(assigns.form))
 
@@ -115,7 +117,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormAddChild do
           <.input hidden field={@form[:slug]} value={@auto_slug} />
 
           <UI.Forms.autoslug_preview
-            source_value={@form[:title].value}
+            source_value={@title_value}
             data-testid={data_auto_slug_testid(@auto_slug)}
           />
 

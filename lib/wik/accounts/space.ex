@@ -50,8 +50,8 @@ defmodule Wik.Accounts.Space do
     end
 
     policy action_type(:create) do
-      # TODO: restrict to admins+
-      authorize_if Checks.ActorHasAnySpaceMembership
+      authorize_if Checks.ActorHasOwnerSpaceMembership
+      authorize_if Checks.ActorHasAdminSpaceMembership
     end
 
     # TODO: consider only allowing updates by owner

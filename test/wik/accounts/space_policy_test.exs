@@ -189,13 +189,13 @@ defmodule Wik.Accounts.SpacePolicyTest do
       refute Ash.can?({space, :read}, scope(member, space))
     end
 
-    test "can create a space once they belong to a space" do
+    test "cannot create a space" do
       member = generate(user())
       current_space = generate(space())
       add_membership(current_space, member, :member)
       grant_active_telegram_access(current_space, member)
 
-      assert Ash.can?({Space, :create}, scope(member, current_space))
+      refute Ash.can?({Space, :create}, scope(member, current_space))
     end
 
     test "cannot update their space" do

@@ -18,24 +18,14 @@ defmodule WikWeb.MembersLive do
     scope = socket.assigns.current_scope
     space = socket.assigns.current_scope.tenant |> load_space(scope)
 
-    if connected?(socket) do
-      :ok = WikWeb.Endpoint.subscribe(Membership.space_pub_sub_topic(space.id))
-    end
-
-    current_membership = socket.assigns.tenant_context[:current_membership]
-    is_owner = current_membership && current_membership.type == :owner
-    is_superadmin = scope.actor.role == :superadmin
-
-    editable? = is_owner || is_superadmin
-
     socket =
       socket
       |> assign(editing?: false)
-      |> assign(editable?: editable?)
-      |> assign(space: space)
       |> assign(selected_membership: nil)
       |> assign(membership_type_form: nil)
       |> assign(transfer_ownership_form: nil)
+      |> assign(space: space)
+      |> assign(editable?: editable?(scope, socket.assigns.tenant_context))
 
     {:ok, socket}
   end
@@ -207,8 +197,14 @@ defmodule WikWeb.MembersLive do
 
     socket
     |> assign(space: space)
+    |> assign(editable?: editable?(scope, socket.assigns.tenant_context))
     |> assign_membership_type_form(space.memberships)
   end
+
+  defp editable?(%{actor: %{role: :superadmin}}, _tenant_context), do: true
+
+  defp editable?(_scope, %{current_membership: %{type: :owner}}), do: true
+  defp editable?(_scope, _tenant_context), do: false
 
   defp assign_membership_type_form(socket, memberships) do
     case socket.assigns.selected_membership do

@@ -187,10 +187,12 @@ defmodule WikWeb.LiveUserAuth do
   defp attach_context_hook(socket) do
     current_user = socket.assigns[:current_user]
     user_pub_sub_topic = current_user && Membership.user_pub_sub_topic(current_user.id)
+    space_membership_pub_sub_topic = current_space_membership_pub_sub_topic(socket)
 
     if Phoenix.LiveView.connected?(socket) do
       :ok = Context.subscribe(current_user)
       :ok = subscribe_to_membership_updates(current_user)
+      :ok = subscribe_to_space_membership_updates(socket)
     end
 
     socket
@@ -209,6 +211,14 @@ defmodule WikWeb.LiveUserAuth do
           |> ErrorTrackerContext.set()
 
         {:halt, socket}
+
+      %{topic: topic}, socket when topic == space_membership_pub_sub_topic ->
+        socket =
+          socket
+          |> refresh_current_scope()
+          |> ErrorTrackerContext.set()
+
+        {:cont, socket}
 
       _message, socket ->
         {:cont, socket}
@@ -265,6 +275,22 @@ defmodule WikWeb.LiveUserAuth do
   defp subscribe_to_membership_updates(%{id: user_id}) do
     WikWeb.Endpoint.subscribe(Membership.user_pub_sub_topic(user_id))
   end
+
+  defp subscribe_to_space_membership_updates(%{
+         assigns: %{current_scope: %{tenant: %{id: space_id}}}
+       }) do
+    WikWeb.Endpoint.subscribe(Membership.space_pub_sub_topic(space_id))
+  end
+
+  defp subscribe_to_space_membership_updates(_socket), do: :ok
+
+  defp current_space_membership_pub_sub_topic(%{
+         assigns: %{current_scope: %{tenant: %{id: space_id}}}
+       }) do
+    Membership.space_pub_sub_topic(space_id)
+  end
+
+  defp current_space_membership_pub_sub_topic(_socket), do: nil
 
   defp current_user_for_dev(%{role: :superadmin} = user) do
     if dev_demote_superadmin?() do

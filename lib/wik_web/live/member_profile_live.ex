@@ -5,10 +5,12 @@ defmodule WikWeb.MemberProfileLive do
   import Cinder.Refresh
 
   alias Utils.Log
+  alias Wik.Access
   alias Wik.Accounts
   alias Wik.Tags
   alias Wik.Tags.Tag
   alias Wik.Tags.Tagging
+  alias WikWeb.Components
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
@@ -20,6 +22,7 @@ defmodule WikWeb.MemberProfileLive do
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
+       access_grants: [],
        available_tags: [],
        editable?: false,
        membership: nil,
@@ -83,7 +86,7 @@ defmodule WikWeb.MemberProfileLive do
       scope={@current_scope}
     >
       <Layouts.space presences={@presences} scope={@current_scope} view="members">
-        <div :if={@membership} class="space-y-4" data-testid="member-profile-page">
+        <div :if={@membership} class="space-y-12" data-testid="member-profile-page">
           <UI.page_title>
             <span class="flex flex-wrap items-center gap-2 font-[400] opacity-70">
               <.link
@@ -136,6 +139,33 @@ defmodule WikWeb.MemberProfileLive do
               query={@taggings_query}
               scope={@current_scope}
             />
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+              <.icon name="hero-key-micro" />
+              <span>Access</span>
+            </h2>
+
+            <div
+              :if={@access_grants == []}
+              class="rounded-box border border-dashed border-base-300 bg-base-200/40 px-4 py-6 text-sm opacity-60"
+              data-testid="member-access-empty"
+            >
+              No access grants for this space.
+            </div>
+
+            <div
+              :if={@access_grants != []}
+              class="grid md:grid-cols-2 gap-2"
+              data-testid="member-access-grants"
+            >
+              <Components.Membership.Access.grant_card
+                :for={grant <- @access_grants}
+                grant={grant}
+                variant={:profile}
+              />
+            </div>
           </section>
         </div>
 
@@ -278,7 +308,9 @@ defmodule WikWeb.MemberProfileLive do
 
       {:ok, membership} ->
         with {:ok, taggings} <- Tags.list_membership_taggings(membership, scope: scope),
-             {:ok, available_tags} <- Tags.list_space_tags(scope) do
+             {:ok, available_tags} <- Tags.list_space_tags(scope),
+             {:ok, access_grants} <-
+               Access.list_space_user_grants(membership.space_id, membership.user_id) do
           if connected?(socket) and socket.assigns.subscribed_space_id != scope.tenant.id do
             :ok = WikWeb.Endpoint.subscribe(Tag.space_pub_sub_topic(scope.tenant.id))
           end
@@ -288,7 +320,7 @@ defmodule WikWeb.MemberProfileLive do
               WikWeb.Endpoint.subscribe(Tagging.target_pub_sub_topic("membership", membership.id))
           end
 
-          {:ok, assign_profile_state(socket, membership, taggings, available_tags)}
+          {:ok, assign_profile_state(socket, membership, taggings, available_tags, access_grants)}
         else
           {:error, error} -> {:error, error}
         end
@@ -305,7 +337,7 @@ defmodule WikWeb.MemberProfileLive do
     end
   end
 
-  defp assign_profile_state(socket, membership, taggings, available_tags) do
+  defp assign_profile_state(socket, membership, taggings, available_tags, access_grants) do
     current_membership =
       socket.assigns.tenant_context && socket.assigns.tenant_context.current_membership
 
@@ -313,6 +345,7 @@ defmodule WikWeb.MemberProfileLive do
       profile_state(membership, taggings, current_membership, socket.assigns.current_scope.actor)
 
     socket
+    |> assign(:access_grants, access_grants)
     |> assign(:available_tags, available_tags)
     |> assign(:membership, membership)
     |> assign(:taggings, taggings)

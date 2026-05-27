@@ -1,4 +1,6 @@
 defmodule Wik.Accounts.Profile do
+  alias Wik.Accounts.Profile.Checks.ActorCanReadProfile
+
   use Ash.Resource,
     otp_app: :wik,
     domain: Wik.Accounts,
@@ -29,23 +31,7 @@ defmodule Wik.Accounts.Profile do
   policies do
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :superadmin)
-
-      # TODO: is there a way to simplify?
-      authorize_if expr(
-                     exists(
-                       membership.space.memberships,
-                       user_id == ^actor(:id) and type == :owner
-                     ) or
-                       (exists(
-                          membership.space.memberships,
-                          user_id == ^actor(:id) and type in [:admin, :member]
-                        ) and
-                          exists(
-                            membership.space.access_sources,
-                            status == :active and
-                              exists(grants, user_id == ^actor(:id) and status == :active)
-                          ))
-                   )
+      authorize_if ActorCanReadProfile
     end
 
     policy action_type(:create) do

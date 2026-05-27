@@ -22,11 +22,7 @@ defmodule WikWeb.Presence do
     user_ids = Map.keys(presences)
     space_id = space_id_from_topic(topic)
 
-    memberships =
-      case Accounts.list_memberships_by_user_id(space_id, user_ids) do
-        {:ok, memberships} -> memberships
-        {:error, _error} -> %{}
-      end
+    memberships = fetch_memberships_by_user_id(space_id, user_ids)
 
     presentation_by_user_id = present_memberships(memberships)
     users = list_users_by_id(user_ids, presentation_by_user_id)
@@ -223,10 +219,14 @@ defmodule WikWeb.Presence do
           User
           |> Ash.Query.filter(id in ^missing_user_ids)
           |> Ash.read!(authorize?: false)
-          |> Map.new(&{&1.id, &1})
 
-        Map.merge(loaded_users, fetched_users)
+        Map.merge(loaded_users, Map.new(fetched_users, &{&1.id, &1}))
     end
+  end
+
+  defp fetch_memberships_by_user_id(space_id, user_ids) do
+    {:ok, memberships} = Accounts.list_memberships_by_user_id(space_id, user_ids)
+    memberships
   end
 
   defp build_presence_meta(path, space_id, opts) do

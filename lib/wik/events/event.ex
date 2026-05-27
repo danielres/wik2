@@ -1,6 +1,7 @@
 defmodule Wik.Events.Event do
   alias Wik.Accounts.Space
   alias Wik.Changes.SetSpaceFromCurrentTenant
+  alias Wik.Events.Event.Checks.ActorCanReadRelayedEvent
   alias Wik.Events.Event.Changes.CreateOriginPublication
   alias Wik.Events.Event.Changes.SetScheduleFromLocalFields
   alias Wik.Events.Event.Validations.Timing
@@ -95,22 +96,7 @@ defmodule Wik.Events.Event do
 
     policy action_type(:read) do
       authorize_if Space.Checks.ActorIsMemberOfResourceSpace
-
-      authorize_if expr(
-                     exists(
-                       publications,
-                       exists(space.memberships, user_id == ^actor(:id) and type == :owner) or
-                         (exists(
-                            space.memberships,
-                            user_id == ^actor(:id) and type in [:admin, :member]
-                          ) and
-                            exists(
-                              space.access_sources,
-                              status == :active and
-                                exists(grants, user_id == ^actor(:id) and status == :active)
-                            ))
-                     )
-                   )
+      authorize_if ActorCanReadRelayedEvent
     end
 
     policy action_type(:create) do

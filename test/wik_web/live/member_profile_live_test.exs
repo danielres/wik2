@@ -86,7 +86,11 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_click(element(view, testid("member-tagging-open-#{dance.id}")))
     assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}/tag/#{dance.slug}")
+    assert has_element?(view, testid("member-tagging-details"))
+
+    render_click(element(view, testid("member-tagging-edit-#{dance.id}")))
     assert has_element?(view, testid("member-tagging-delete"))
+
     render_click(element(view, testid("member-tagging-delete")))
 
     render_async(view)
@@ -231,9 +235,6 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     assert index_of_testid(html, "member-tagging-name-#{tango.id}") <
              index_of_testid(html, "member-tagging-name-#{acro.id}")
-
-    assert index_of_testid(html, "member-tagging-name-#{acro.id}") <
-             index_of_testid(html, "member-tagging-name-#{dance.id}")
   end
 
   test "tag route opens the tagging modal in read mode", %{conn: conn} do

@@ -98,55 +98,97 @@ defmodule WikWeb.Layouts do
 
   attr :presences, :list, default: []
   attr :view, :string, default: nil, doc: "the current view for active menu state"
+  attr :editing?, :boolean, default: false
   slot :inner_block, required: true
+  slot :actions, required: false
 
   def space(assigns) do
     ~H"""
     <div class={[
-      "sticky top-0 z-50"
+      "sticky top-0 z-50",
+      "bg-base-300",
+      "mb-12",
+      "py-1",
+      "border-y border-base-content/10 shadow"
     ]}>
-      <div class={[
-        "bg-base-300",
-        "px-2 sm:px-4 lg:px-8",
-        "flex gap-2",
-        "[&>a]:rounded",
-        "[&>a]:max-sm:flex-grow",
-        "[&>a]:bg-base-300",
-        "[&>a]:px-3",
-        "[&>a]:py-2",
-        "[&>a]:flex",
-        "[&>a]:gap-1",
-        "[&>a]:items-center",
-        "[&>a]:text-xs",
-        "[&>a]:justify-center",
-        "[&>a]:font-bold",
-        "[&>a]:opacity-40",
-        "[&>a.active]:opacity-100",
-        "[&_.icon]:size-4",
-        "[&_.icon]:opacity-60",
-        "[&_.dock-label]:opacity-70",
-        "[&_.icon]:hidden"
-      ]}>
-        <.link patch={"/#{@scope.tenant.slug}/wiki"} class={@view == "wiki/home" and "active"}>
-          <.icon name="hero-book-open-solid" />
-          <span class="dock-label">Wiki</span>
-        </.link>
+      <.container>
+        <div class={[
+          "flex gap-1 sm:gap-3 items-center",
+          "h-7",
+          "[&>.item]:px-2",
+          "[&>.item]:py-2",
+          "[&>.item]:text-sm",
+          "[&_a]:opacity-40",
+          "[&_a]:transition-opacity",
+          "[&_a]:hover:opacity-80",
+          "[&_a.active]:opacity-100",
+          @editing? and "[&>.item]:hidden"
+        ]}>
+          <div class="item flex gap-0.5">
+            <.link
+              patch={"/#{@scope.tenant.slug}/wiki"}
+              class={(@view == "wiki/home" or @view == "tree") and "active"}
+            >
+              <span>Wiki</span>
+            </.link>
 
-        <.link patch={"/#{@scope.tenant.slug}/tags"} class={@view == "tags" and "active"}>
-          <.icon name="hero-tag-solid" />
-          <span class="dock-label">Tags</span>
-        </.link>
+            <div
+              :if={@view == "wiki/home" or @view == "tree"}
+              class={[
+                "dropdown dropdown-start"
+              ]}
+            >
+              <div
+                tabindex="0"
+                role="button"
+                class="cursor-pointer opacity-50 hover:opacity-100 transition pl-1"
+              >
+                <.icon name="hero-chevron-down" class="size-2" />
+              </div>
 
-        <.link patch={"/#{@scope.tenant.slug}/events"} class={@view == "events" and "active"}>
-          <.icon name="hero-calendar-solid" />
-          <span class="dock-label">Events</span>
-        </.link>
+              <ul
+                tabindex="-1"
+                class={[
+                  "dropdown-content bg-base-300 rounded whitespace-nowrap px-2 py-0.5 z-50 -ml-8 mt-3"
+                ]}
+              >
+                <li>
+                  <.link
+                    class={[
+                      @view == "tree" and "!opacity-80 pointer-events-none"
+                    ]}
+                    navigate={~p"/#{@scope.tenant.slug}/tree"}
+                  >
+                    Pages tree
+                  </.link>
+                </li>
+              </ul>
+            </div>
+          </div>
 
-        <.link patch={"/#{@scope.tenant.slug}/members"} class={@view == "members" and "active"}>
-          <.icon name="hero-user-space-solid" />
-          <span class="dock-label">Members</span>
-        </.link>
-      </div>
+          <.link patch={"/#{@scope.tenant.slug}/tags"} class={["item", @view == "tags" and "active"]}>
+            <span>Tags</span>
+          </.link>
+
+          <.link
+            patch={"/#{@scope.tenant.slug}/events"}
+            class={["item", @view == "events" and "active"]}
+          >
+            <span>Events</span>
+          </.link>
+
+          <.link
+            patch={"/#{@scope.tenant.slug}/members"}
+            class={["item", @view == "members" and "active"]}
+          >
+            <span>Members</span>
+          </.link>
+
+          <div :if={@actions != []} class="ml-auto flex items-center gap-2">
+            {render_slot(@actions)}
+          </div>
+        </div>
+      </.container>
     </div>
 
     <div
@@ -201,7 +243,7 @@ defmodule WikWeb.Layouts do
 
   def container(assigns) do
     ~H"""
-    <main class="px-4 sm:px-6 lg:px-8 pt-16">
+    <main class="px-2 sm:px-6 lg:px-8">
       <div class={[
         "mx-auto space-y-4",
         @width_class,
@@ -224,7 +266,7 @@ defmodule WikWeb.Layouts do
   def app(assigns) do
     ~H"""
     <div class="grid grid-rows-[auto_1fr_auto] min-h-screen">
-      <header class="navbar px-2 sm:px-4 lg:px-8 bg-base-300/50 py-2 sm:py-3 min-h-0">
+      <header class="navbar px-2 sm:pl-8 sm:pr-6 bg-base-300/80 py-2 sm:py-3 min-h-0">
         <div class="flex-1 flex items-center gap-0">
           <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
             <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
@@ -276,7 +318,7 @@ defmodule WikWeb.Layouts do
               "dropdown dropdown-end mt-1",
               "bg-base-300 dark:shadow-lg",
               "shadow",
-              "border border-base-content/30",
+              "border border-base-content/15",
               "rounded-box",
               "p-2"
             ]}
@@ -326,7 +368,7 @@ defmodule WikWeb.Layouts do
               }
               class={[
                 "menu w-full",
-                "border-t-1 border-base-content/20"
+                "border-t-1 border-base-content/10"
               ]}
             >
               <li>
@@ -340,7 +382,7 @@ defmodule WikWeb.Layouts do
 
             <ul class={[
               "py-2",
-              "border-t-1 border-base-content/20"
+              "border-t-1 border-base-content/10"
             ]}>
               <li>
                 <div class="w-min mx-auto">
@@ -353,7 +395,7 @@ defmodule WikWeb.Layouts do
               :if={@scope.actor && @scope.actor.role == :superadmin}
               class={[
                 "menu w-full",
-                "border-t-1 border-base-content/20"
+                "border-t-1 border-base-content/10"
               ]}
             >
               <li>

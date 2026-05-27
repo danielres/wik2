@@ -47,8 +47,10 @@ defmodule WikWeb.Components.BlockTest do
     html =
       render_component(&Block.render/1, %{
         lock: %{
-          avatar_url: "https://telegram.example/locker.png",
-          user: %User{id: "user-1", email: "locker@example.com"}
+          membership: %{
+            avatar_url: "https://telegram.example/locker.png",
+            user: %User{id: "user-1", email: "locker@example.com"}
+          }
         },
         placement: %{
           block: %{

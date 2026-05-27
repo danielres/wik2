@@ -13,7 +13,7 @@ defmodule WikWeb.Components.PageTest do
       render_component(&Page.breadcrumbs/1, %{
         node: %{id: 3},
         page_tree: page_tree_fixture(),
-        scope: %Scope{actor: %{id: "user-1"}, tenant: %{name: "cool-stuff"}}
+        scope: %Scope{actor: %{id: "user-1"}, tenant: %{slug: "cool-stuff"}}
       })
 
     document = LazyHTML.from_fragment(html)
@@ -33,7 +33,7 @@ defmodule WikWeb.Components.PageTest do
         trailing_separator?: true,
         node: %{id: 3},
         page_tree: page_tree_fixture(),
-        scope: %Scope{actor: %{id: "user-1"}, tenant: %{name: "cool-stuff"}}
+        scope: %Scope{actor: %{id: "user-1"}, tenant: %{slug: "cool-stuff"}}
       })
 
     assert html =~ ~s(href="/cool-stuff/wiki/recipes")

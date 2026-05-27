@@ -38,20 +38,20 @@ defmodule WikWeb.Components.MembershipTagging do
       >
         <:col
           field="tag.name"
-          label="Alphabetical"
-          sort={[cycle: [:asc_nils_last]]}
+          label="Tag"
+          sort={[cycle: [nil, :asc]]}
         >
         </:col>
         <:col
           field="interest_level"
           label={@interest_dimension.label}
-          sort={[cycle: [:desc_nils_last]]}
+          sort={[cycle: [:desc]]}
         >
         </:col>
         <:col
           field="skill_level"
           label={@skill_dimension.label}
-          sort={[cycle: [:desc_nils_last]]}
+          sort={[cycle: [nil, :desc]]}
         >
         </:col>
 
@@ -131,20 +131,20 @@ defmodule WikWeb.Components.MembershipTagging do
       >
         <:col
           field="target_membership.username"
-          label="Alphabetical"
-          sort={[cycle: [:asc_nils_last]]}
+          label="Username"
+          sort={[cycle: [nil, :asc_nils_last]]}
         >
         </:col>
         <:col
           field="interest_level"
           label={@interest_dimension.label}
-          sort={[cycle: [:desc_nils_last]]}
+          sort={[cycle: [:desc]]}
         >
         </:col>
         <:col
           field="skill_level"
           label={@skill_dimension.label}
-          sort={[cycle: [:desc_nils_last]]}
+          sort={[cycle: [nil, :desc]]}
         >
         </:col>
 
@@ -304,7 +304,7 @@ defmodule WikWeb.Components.MembershipTagging do
         </div>
       </div>
 
-      <div :if={@editable?} class="flex justify-end">
+      <div :if={@editable?} class="flex justify-end gap-2">
         <UI.button_edit
           data-testid={"member-tagging-edit-#{@tagging.tag_id}"}
           phx-click="tagging_edit_start"

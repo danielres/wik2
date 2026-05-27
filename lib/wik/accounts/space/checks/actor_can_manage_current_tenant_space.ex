@@ -4,7 +4,7 @@ defmodule Wik.Accounts.Space.Checks.ActorCanManageCurrentTenantSpace do
   require Ash.Query
 
   alias Wik.Accounts
-  alias Wik.Accounts.Space.Access
+  alias Wik.Accounts.Space.Checks.Access
 
   @impl true
   def describe(_opts), do: "actor can manage the current tenant space"

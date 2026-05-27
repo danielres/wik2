@@ -2,7 +2,7 @@ defmodule Wik.Events.EventPublication.Checks.ActorCanRelayEvent do
   use Ash.Policy.SimpleCheck
 
   alias Wik.Accounts
-  alias Wik.Accounts.Space.Access
+  alias Wik.Accounts.Space.Checks.Access
   alias Wik.Events.Event
   alias Wik.Repo
 

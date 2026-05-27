@@ -141,6 +141,34 @@ defmodule WikWeb.TagLiveTest do
     )
   end
 
+  test "tag page reuses tag relationship components for parents, children, and descendants", %{
+    conn: conn
+  } do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, parent} = Tags.create_tag("dance", "Dance", nil, scope: scope)
+    {:ok, current} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
+    {:ok, child} = Tags.create_tag("tango", "Tango", nil, scope: scope)
+
+    assert {:ok, _edge} = Tags.link_tags(parent.id, current.id, scope: scope)
+    assert {:ok, _edge} = Tags.link_tags(current.id, child.id, scope: scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/tags/#{current.slug}")
+
+    assert has_element?(view, testid("tag-parents"))
+    assert has_element?(view, testid("tag-children"))
+    assert has_element?(view, testid("tag-descendants"))
+    assert has_element?(view, testid("tag-parents-jump-#{parent.id}"))
+    assert has_element?(view, testid("tag-children-jump-#{child.id}"))
+    assert has_element?(view, testid("tag-branch-tag-path-#{current.id}__#{child.id}"))
+  end
+
   defp add_membership(space, user, type) do
     Ash.create!(
       Membership,

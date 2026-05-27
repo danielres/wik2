@@ -56,41 +56,55 @@ defmodule WikWeb.Components.Tag do
   attr :eligible_children, :list, required: true
   attr :eligible_parents, :list, required: true
   attr :graph, :map, required: true
-  attr :space_slug, :string, required: true
-  attr :selected_descendants, :list, required: true
+  attr :scope, :map, required: true
   attr :selected_tag, :map, required: true
-  attr :selected_tag_id, :string, required: true
 
   def detail(assigns) do
-    assigns =
-      assign(assigns,
-        parents: GraphQueries.parents_for(assigns.graph, assigns.selected_tag),
-        children: GraphQueries.children_for(assigns.graph, assigns.selected_tag)
-      )
-
     ~H"""
     <div class="space-y-4" data-testid={"tag-detail-#{@selected_tag.id}"}>
-      <div class="min-w-0">
-        <UI.page_title class="text-lg font-[300]">
-          {@selected_tag.name}
-        </UI.page_title>
+      <div class={[
+        "stacked"
+      ]}>
+        <div class="p-2">
+          <UI.page_title class="text-lg font-[300]">
+            {@selected_tag.name}
+          </UI.page_title>
 
-        <div class="mb-4 text-xs font-mono opacity-50">
-          /{@selected_tag.slug}
+          <div class="mb-4 text-xs font-mono opacity-50">
+            /{@selected_tag.slug}
+          </div>
+
+          <%= if @selected_tag.description in [nil, ""] do %>
+            <span class="italic opacity-50 text-sm">
+              No description yet.
+            </span>
+          <% else %>
+            <div class={[
+              "max-h-30 overflow-y-auto rounded-box bg-base-100/70 p-3",
+              "text-sm text-base-content/60 leading-tight"
+            ]}>
+              <div class="whitespace-pre-wrap">{@selected_tag.description}</div>
+            </div>
+          <% end %>
         </div>
 
-        <%= if @selected_tag.description in [nil, ""] do %>
-          <span class="italic opacity-50">
-            No description yet.
-          </span>
-        <% else %>
-          <div class={[
-            "max-h-30 overflow-y-auto rounded-box bg-base-100/70 p-3",
-            "text-sm text-base-content/60 leading-tight"
-          ]}>
-            <div class="whitespace-pre-wrap">{@selected_tag.description}</div>
-          </div>
-        <% end %>
+        <button
+          class={[
+            "border",
+            "cursor-pointer",
+            "rounded",
+            "border-accent/50 hover:border-accent transition-colors",
+            "bg-accent/2 hover:bg-accent/10"
+          ]}
+          aria-label={"Edit tag #{@selected_tag.name}"}
+          data-testid="tag-detail-edit"
+          phx-click="tag_edit_open"
+          phx-value-tag_id={@selected_tag.id}
+          title={"Edit tag #{@selected_tag.name}"}
+          type="button"
+        >
+          <span class="sr-only">Edit tag</span>
+        </button>
       </div>
 
       <div :if={@editing?} class="flex flex-wrap gap-2 [&>*]:flex-grow">
@@ -122,46 +136,141 @@ defmodule WikWeb.Components.Tag do
         >
           <.icon name="hero-link-mini" class="size-3" /> Link parent
         </button>
+
+        <button
+          class="btn btn-xs btn-soft btn-error"
+          data-testid="tag-detail-delete"
+          phx-click="tag_delete_confirm"
+          phx-value-tag_id={@selected_tag.id}
+          type="button"
+        >
+          <.icon name="hero-trash-mini" class="size-3" /> Delete
+        </button>
       </div>
 
       <div class="grid gap-2 md:grid-cols-2">
-        <.detail_list
-          title="Parents"
-          empty="No parents."
-          items={@parents}
-          target_tag_id={@selected_tag.id}
+        <.parents
+          graph={@graph}
+          interaction={:select}
+          item_testid_prefix="tag-detail-jump"
+          scope={@scope}
+          tag={@selected_tag}
         />
 
-        <.detail_list
-          title="Children"
-          empty="No children."
-          items={@children}
-          target_tag_id={@selected_tag.id}
+        <.children
+          graph={@graph}
+          interaction={:select}
+          item_testid_prefix="tag-detail-jump"
+          scope={@scope}
+          tag={@selected_tag}
         />
       </div>
 
-      <div :if={@children != []} class="space-y-2">
-        <h3 class="text-sm uppercase tracking-[0.18em] opacity-50">Descendants</h3>
-        <TagTree.render
-          editing?={false}
-          space_slug={@space_slug}
-          nodes={@selected_descendants}
-          selected_tag_id={@selected_tag_id}
-        />
+      <.descendants graph={@graph} scope={@scope} tag={@selected_tag} />
+    </div>
+    """
+  end
+
+  attr :graph, :map, default: nil
+  attr :interaction, :atom, default: :navigate
+  attr :item_testid_prefix, :string, default: "tag-parents-jump"
+  attr :section_testid, :string, default: "tag-parents"
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def parents(assigns) do
+    graph = graph_or_load(assigns.graph, assigns.scope)
+
+    assigns =
+      assigns
+      |> assign(:items, GraphQueries.parents_for(graph, assigns.tag))
+      |> assign(:space_slug, assigns.scope.tenant.slug)
+
+    ~H"""
+    <.relationship_list
+      empty="No parents."
+      interaction={@interaction}
+      item_testid_prefix={@item_testid_prefix}
+      items={@items}
+      section_testid={@section_testid}
+      space_slug={@space_slug}
+      title="Tag parents"
+    />
+    """
+  end
+
+  attr :graph, :map, default: nil
+  attr :interaction, :atom, default: :navigate
+  attr :item_testid_prefix, :string, default: "tag-children-jump"
+  attr :section_testid, :string, default: "tag-children"
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def children(assigns) do
+    graph = graph_or_load(assigns.graph, assigns.scope)
+
+    assigns =
+      assigns
+      |> assign(:items, GraphQueries.children_for(graph, assigns.tag))
+      |> assign(:space_slug, assigns.scope.tenant.slug)
+
+    ~H"""
+    <.relationship_list
+      empty="No children."
+      interaction={@interaction}
+      item_testid_prefix={@item_testid_prefix}
+      items={@items}
+      section_testid={@section_testid}
+      space_slug={@space_slug}
+      title="Tag children"
+    />
+    """
+  end
+
+  attr :graph, :map, default: nil
+  attr :scope, :map, required: true
+  attr :tag, :map, required: true
+
+  def descendants(assigns) do
+    graph = graph_or_load(assigns.graph, assigns.scope)
+    nodes = GraphQueries.descendant_tree(graph, assigns.tag)
+
+    assigns =
+      assigns
+      |> assign(:nodes, nodes)
+      |> assign(:space_slug, assigns.scope.tenant.slug)
+
+    ~H"""
+    <div class="space-y-2" data-testid="tag-descendants">
+      <UI.panel_title>Descendants</UI.panel_title>
+
+      <div :if={@nodes == []} class="text-sm opacity-50">
+        No descendants.
       </div>
+
+      <TagTree.render
+        :if={@nodes != []}
+        editing?={false}
+        nodes={@nodes}
+        selected_tag_id={@tag.id}
+        space_slug={@space_slug}
+      />
     </div>
     """
   end
 
   attr :title, :string, required: true
   attr :empty, :string, required: true
+  attr :interaction, :atom, required: true
+  attr :item_testid_prefix, :string, required: true
   attr :items, :list, required: true
-  attr :target_tag_id, :string, required: true
+  attr :section_testid, :string, required: true
+  attr :space_slug, :string, required: true
 
-  defp detail_list(assigns) do
+  defp relationship_list(assigns) do
     ~H"""
-    <div class="rounded-box border border-base-300 bg-base-100/70 p-3">
-      <h3 class="mb-2 text-xs uppercase tracking-wider opacity-50">{@title}</h3>
+    <div class="" data-testid={@section_testid}>
+      <UI.panel_title>{@title}</UI.panel_title>
 
       <div :if={@items == []} class="text-sm opacity-50">
         {@empty}
@@ -170,18 +279,31 @@ defmodule WikWeb.Components.Tag do
       <div :if={@items != []} class="flex flex-wrap gap-1">
         <button
           :for={tag <- @items}
+          :if={@interaction == :select}
           class={[
             "rounded border px-2.5 py-1 text-xs transition text-left w-full",
             "cursor-pointer",
-            tag.id == @target_tag_id && "border-accent bg-accent/10",
-            tag.id != @target_tag_id && "border-base-300 bg-base-200/50 hover:border-accent"
+            "border-base-300 bg-base-200/50 hover:border-accent"
           ]}
-          data-testid={"tag-detail-jump-#{tag.id}"}
+          data-testid={"#{@item_testid_prefix}-#{tag.id}"}
           phx-click="select_tag"
           phx-value-tag_id={tag.id}
         >
           {tag.name}
         </button>
+
+        <.link
+          :for={tag <- @items}
+          :if={@interaction == :navigate}
+          class={[
+            "rounded border px-2.5 py-1 text-xs transition text-left w-full",
+            "border-base-300 bg-base-200/50 hover:border-accent"
+          ]}
+          data-testid={"#{@item_testid_prefix}-#{tag.id}"}
+          navigate={~p"/#{@space_slug}/tags/#{tag.slug}"}
+        >
+          {tag.name}
+        </.link>
       </div>
     </div>
     """
@@ -189,9 +311,13 @@ defmodule WikWeb.Components.Tag do
 
   attr :action_label, :string, required: true
   attr :class, :string, default: ""
+  attr :cancel_testid, :string, default: nil
+  attr :event_cancel, :string, default: nil
+  attr :event_delete, :string, default: nil
   attr :event_submit, :string, required: true
   attr :event_validate, :string, required: true
   attr :form, :any, required: true
+  attr :tag_id, :string, default: nil
 
   def form(assigns) do
     name_value = assigns.form[:name].value || ""
@@ -225,7 +351,17 @@ defmodule WikWeb.Components.Tag do
 
           <.input field={@form[:description]} label="Description" type="textarea" />
 
-          <div class="flex justify-end">
+          <div class="flex items-center justify-between gap-2">
+            <button
+              :if={@event_cancel != nil}
+              class="btn btn-sm btn-soft"
+              data-testid={@cancel_testid}
+              phx-click={@event_cancel}
+              type="button"
+            >
+              Cancel
+            </button>
+
             <.button class="btn btn-sm btn-accent" data-testid="tag-form-submit" type="submit">
               {@action_label}
             </.button>
@@ -235,6 +371,48 @@ defmodule WikWeb.Components.Tag do
     </div>
     """
   end
+
+  attr :tag, :map, required: true
+
+  def delete_confirm(assigns) do
+    ~H"""
+    <div class="space-y-4" data-testid="tag-delete-confirm">
+      <div class="space-y-2">
+        <UI.page_title class="text-lg font-[300]">
+          Delete tag?
+        </UI.page_title>
+
+        <p class="text-sm text-base-content/70">
+          This will permanently delete <span class="font-semibold">{@tag.name}</span>.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-between gap-2">
+        <button
+          class="btn btn-sm btn-soft"
+          data-testid="tag-delete-confirm-cancel"
+          phx-click="tag_modal_cancel"
+          type="button"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="btn btn-sm btn-error"
+          data-testid="tag-delete-confirm-submit"
+          phx-click="delete_tag"
+          phx-value-tag_id={@tag.id}
+          type="button"
+        >
+          <.icon name="hero-trash-mini" class="size-4" /> Delete tag
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  defp graph_or_load(nil, scope), do: Tags.load_tag_graph(scope)
+  defp graph_or_load(graph, _scope), do: graph
 
   defp tag_autoslug_testid(""), do: "tag-autoslug-empty"
   defp tag_autoslug_testid(auto_slug), do: "tag-autoslug-#{auto_slug}"

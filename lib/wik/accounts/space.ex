@@ -41,44 +41,22 @@ defmodule Wik.Accounts.Space do
   end
 
   policies do
+    bypass actor_attribute_equals(:role, :superadmin) do
+      authorize_if always()
+    end
+
     policy action_type(:read) do
-      authorize_if expr(exists(memberships, user_id == ^actor(:id) and type == :owner))
-
-      authorize_if expr(
-                     exists(memberships, user_id == ^actor(:id) and type in [:admin, :member]) and
-                       exists(
-                         access_sources,
-                         status == :active and
-                           exists(grants, user_id == ^actor(:id) and status == :active)
-                       )
-                   )
-
-      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if Checks.ActorIsMemberOfSpace
     end
 
     policy action_type(:create) do
-      authorize_if actor_attribute_equals(:role, :superadmin)
-      authorize_if Checks.ActorHasAnySpaceMembership
+      authorize_if Checks.ActorHasOwnerSpaceMembership
+      authorize_if Checks.ActorHasAdminSpaceMembership
     end
 
     # TODO: consider only allowing updates by owner
     policy action_type(:update) do
-      authorize_if expr(exists(memberships, user_id == ^actor(:id) and type == :owner))
-
-      authorize_if expr(
-                     exists(memberships, user_id == ^actor(:id) and type == :admin) and
-                       exists(
-                         access_sources,
-                         status == :active and
-                           exists(grants, user_id == ^actor(:id) and status == :active)
-                       )
-                   )
-
-      authorize_if actor_attribute_equals(:role, :superadmin)
-    end
-
-    policy action_type(:destroy) do
-      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if Checks.ActorCanManageSpace
     end
   end
 

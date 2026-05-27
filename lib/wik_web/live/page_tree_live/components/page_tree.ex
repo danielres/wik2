@@ -68,15 +68,13 @@ defmodule WikWeb.PageTreeLive.Components.PageTree do
         "flex items-center justify-between gap-3"
       ]}>
         <div class={[
-          "flex gap-2",
+          "flex sm:gap-1",
           "opacity-80 space-has-[button:hover]:opacity-100",
           "transition"
         ]}>
-          <div class="flex">
-            <.icon_chevron />
-          </div>
+          <.icon_chevron />
 
-          {render_slot(@label, %{node: @node})}
+          {render_slot(@label, %{node: @node, depth: @depth})}
         </div>
 
         {render_slot(@action_buttons, %{node: @node, depth: @depth})}
@@ -125,6 +123,7 @@ defmodule WikWeb.PageTreeLive.Components.PageTree do
     <div
       class={[
         "card-body",
+        "pl-2 sm:pl-4",
         @depth > 1 and "py-1",
         @depth > 1 and "pr-0",
         @has_children? and "pb-2"

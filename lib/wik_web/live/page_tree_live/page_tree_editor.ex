@@ -58,13 +58,11 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
 
         <:label :let={props}>
           <div class="flex gap-1 items-center">
-            <span>{props.node[:title]}</span>
-
             <.link
               navigate={@current_scope |> link_target_for_node(@page_tree.nodes, props.node)}
-              class="opacity-50 hover:opacity-100 transition"
+              class="group opacity-80 hover:opacity-100 transition"
             >
-              <.icon name="hero-arrow-up-right-micro" class="" />
+              <span class={props.depth == 1 and "font-bold"}>{props.node[:title]}</span>
             </.link>
             <%= if @debug? do %>
               <span class="badge-xs bg-base-200 px-2 font-mono">{props.node[:slug]}</span>

@@ -131,7 +131,7 @@ defmodule WikWeb.Components.MembershipTagging do
       >
         <:col
           field="target_membership.username"
-          label="Tag"
+          label="Username"
           sort={[cycle: [nil, :asc_nils_last]]}
         >
         </:col>

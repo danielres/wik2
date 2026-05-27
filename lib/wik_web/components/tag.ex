@@ -96,10 +96,14 @@ defmodule WikWeb.Components.Tag do
             "border-accent/50 hover:border-accent transition-colors",
             "bg-accent/2 hover:bg-accent/10"
           ]}
+          aria-label={"Edit tag #{@selected_tag.name}"}
           data-testid="tag-detail-edit"
           phx-click="tag_edit_open"
           phx-value-tag_id={@selected_tag.id}
+          title={"Edit tag #{@selected_tag.name}"}
+          type="button"
         >
+          <span class="sr-only">Edit tag</span>
         </button>
       </div>
 

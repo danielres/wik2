@@ -11,7 +11,7 @@ defmodule WikWeb.Components.Block.Types.GoogleCalendar do
       <%= if @block.data["url"] do %>
         <iframe
           class={[
-            "aspect-square @sm/block:aspect-video",
+            "aspect-square @sm/block:aspect-square",
             "w-full rounded border-0",
             "dark:contrast-80",
             "dark:invert dark:hue-rotate-180"

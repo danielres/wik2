@@ -208,7 +208,7 @@ defmodule WikWeb.Components.Block do
 
   defp block_form_heading(type)
        when type in [:youtube, :soundcloud, :google_calendar, :google_maps] do
-    "Insert #{block_type_label(type)} block"
+    "#{block_type_label(type)} block"
   end
 
   defp block_form_heading(_type), do: nil

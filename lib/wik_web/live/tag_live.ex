@@ -95,26 +95,32 @@ defmodule WikWeb.TagLive do
       scope={@current_scope}
     >
       <Layouts.space presences={@presences} scope={@current_scope} view="tags">
+        <:actions :if={@editable?}>
+          <%= if @editing? do %>
+            <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
+          <% else %>
+            <UI.button_edit
+              phx-click="toggle_edit_mode"
+              data-testid="tag-edit-mode-toggle"
+            />
+          <% end %>
+        </:actions>
+
         <div :if={@tag} class="space-y-6" data-testid="tag-page">
-          <TagComponent.breadcrumbs
-            render_root?={false}
-            render_self?={false}
-            scope={@current_scope}
-            tag={@tag}
-          />
+          <UI.page_head :if={!@editing?}>
+            <:prepend>
+              <TagComponent.breadcrumbs
+                render_root?={false}
+                render_self?={false}
+                scope={@current_scope}
+                tag={@tag}
+              />
+            </:prepend>
 
-          <section class="">
-            <div :if={@editable?} class="flex justify-end gap-2">
-              <%= if @editing? do %>
-                <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
-              <% else %>
-                <UI.button_edit
-                  phx-click="toggle_edit_mode"
-                  data-testid="tag-edit-mode-toggle"
-                />
-              <% end %>
-            </div>
+            <UI.page_title>{@tag.name}</UI.page_title>
+          </UI.page_head>
 
+          <section class="mb-12">
             <TagComponent.form
               :if={@editing? and @tag_form != nil}
               action_label="Update tag"
@@ -124,20 +130,12 @@ defmodule WikWeb.TagLive do
               form={@tag_form}
             />
 
-            <div :if={not @editing?} class="space-y-3">
-              <UI.page_title>{@tag.name}</UI.page_title>
-
-              <div
-                :if={@tag.description not in [nil, ""]}
-                class="rounded-box opacity-80"
-                data-testid="tag-page-description"
-              >
-                <div class="whitespace-pre-wrap">{@tag.description}</div>
-              </div>
-
-              <div :if={@tag.description in [nil, ""]} class="italic opacity-50">
-                No description yet.
-              </div>
+            <div
+              :if={not @editing? and @tag.description not in [nil, ""]}
+              class="space-y-3 rounded-box opacity-80"
+              data-testid="tag-page-description"
+            >
+              <div class="whitespace-pre-wrap">{@tag.description}</div>
             </div>
           </section>
 

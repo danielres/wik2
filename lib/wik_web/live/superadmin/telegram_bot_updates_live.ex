@@ -40,7 +40,9 @@ defmodule WikWeb.Superadmin.TelegramBotUpdatesLive do
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.superadmin scope={@current_scope} view="bot">
         <div class="space-y-6">
-          <UI.page_title>Telegram bot updates</UI.page_title>
+          <UI.page_head>
+            <UI.page_title>Telegram bot updates</UI.page_title>
+          </UI.page_head>
 
           <Cinder.collection
             actor={@current_user}

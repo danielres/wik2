@@ -45,18 +45,22 @@ defmodule WikWeb.Me.TicketsLive do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.me view="me/tickets">
-        <div class="space-y-6">
-          <section class="space-y-4">
+        <div class="">
+          <UI.page_head>
             <UI.page_title>My tickets</UI.page_title>
-
-            <p class="text-sm text-base-content/70">
+            <p class="text-sm text-base-content/70 text-balance leading-tight mt-1">
               Use tickets for feedback, privacy requests, and moderation reports. Requests are reviewed manually.
             </p>
+          </UI.page_head>
 
-            <.button navigate={~p"/me/tickets/new"} class="btn btn-sm btn-primary">
-              New ticket
+          <div class="flex justify-end mb-2">
+            <.button
+              navigate={~p"/me/tickets/new"}
+              class="btn btn-primary btn-soft btn-circle btn-xs"
+            >
+              <.icon name="hero-plus-micro" />
             </.button>
-          </section>
+          </div>
 
           <section>
             <Cinder.collection

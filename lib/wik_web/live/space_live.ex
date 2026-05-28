@@ -67,12 +67,12 @@ defmodule WikWeb.SpaceLive do
           "w-fit"
         ]}>
           <div class="space-y-8">
-            <div>
+            <UI.page_head>
               <UI.page_title>{@current_scope.tenant.name |> String.capitalize()}</UI.page_title>
               <span class="badge badge-xs badge-ghost font-mono text-base-content/50">
                 /{@space.slug}
               </span>
-            </div>
+            </UI.page_head>
 
             <div>
               <span class="label font-bold">Description</span>

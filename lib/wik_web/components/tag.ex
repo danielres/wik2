@@ -29,7 +29,7 @@ defmodule WikWeb.Components.Tag do
         class="breadcrumbs p-0 text-sm opacity-60"
         data-testid={"tag-breadcrumbs-path-#{index}"}
       >
-        <ul>
+        <ul class="leading-none space-y-0">
           <li :if={@render_root?}>
             <.link navigate={~p"/#{@space_slug}/tags"} class="hover:opacity-100 transition-opacity">
               Tags

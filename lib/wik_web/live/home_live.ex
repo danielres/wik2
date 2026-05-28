@@ -24,6 +24,8 @@ defmodule WikWeb.HomeLive do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
+        <UI.page_head></UI.page_head>
+
         <div class="grid sm:grid-cols-2 gap-8">
           <UI.page_blocks>
             <:title>Your spaces</:title>

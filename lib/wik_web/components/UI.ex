@@ -1,6 +1,20 @@
 defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
+  attr :class, :string, default: ""
+  slot :prepend, required: false
+
+  def page_head(assigns) do
+    ~H"""
+    <header class={["mb-12", @class]}>
+      <div class="mb-2 text-sm opacity-60 min-h-4">
+        {render_slot(@prepend)}
+      </div>
+      {render_slot(@inner_block)}
+    </header>
+    """
+  end
+
   def panel_title(assigns) do
     ~H"""
     <h3 class="mb-2 text-xs uppercase tracking-wider opacity-50">{render_slot(@inner_block)}</h3>

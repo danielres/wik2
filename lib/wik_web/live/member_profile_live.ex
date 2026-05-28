@@ -87,8 +87,8 @@ defmodule WikWeb.MemberProfileLive do
     >
       <Layouts.space presences={@presences} scope={@current_scope} view="members">
         <div :if={@membership} class="space-y-12" data-testid="member-profile-page">
-          <UI.page_title>
-            <span class="flex flex-wrap items-center gap-2 font-[400] opacity-70">
+          <UI.page_head>
+            <:prepend>
               <.link
                 navigate={~p"/#{@current_scope.tenant.slug}/members"}
                 class="leading-none opacity-50 hover:opacity-100"
@@ -96,9 +96,10 @@ defmodule WikWeb.MemberProfileLive do
                 Members
               </.link>
               <.icon name="hero-chevron-right-mini" class="opacity-50" />
-              {@membership.username}
-            </span>
-          </UI.page_title>
+            </:prepend>
+
+            <UI.page_title>{@membership.username}</UI.page_title>
+          </UI.page_head>
 
           <section class="flex items-center justify-start gap-4">
             <WikWeb.Components.User.avatar

@@ -35,29 +35,22 @@
           open?={@add_block_modal_open?}
           position={@add_block_position}
         />
+        <UI.page_head class="mx-2">
+          <:prepend>
+            <Components.Page.breadcrumbs
+              class="mb-2 text-sm opacity-60"
+              include_current?={false}
+              node={@node}
+              page_tree={@page_tree}
+              scope={@current_scope}
+              trailing_separator?
+            />
+          </:prepend>
 
-        <header class="space-y-1 mb-12 mx-2">
-          <Components.Page.breadcrumbs
-            class="mb-2 text-sm opacity-60"
-            include_current?={false}
-            node={@node}
-            page_tree={@page_tree}
-            scope={@current_scope}
-            trailing_separator?
-          />
-
-          <PageLive.Components.Details.render
-            tenant_context={@tenant_context}
-            scope={@current_scope}
-            node={@node}
-            page={@page}
-            open?={false}
-          >
-            <UI.page_title class="opacity-90 hover:opacity-100 transition-opacity">
-              {@node.title}
-            </UI.page_title>
-          </PageLive.Components.Details.render>
-        </header>
+          <UI.page_title class="opacity-90 hover:opacity-100 transition-opacity">
+            {@node.title}
+          </UI.page_title>
+        </UI.page_head>
 
         <div class={[
           "grid grid-cols-1 gap-4",

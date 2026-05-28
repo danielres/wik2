@@ -99,7 +99,7 @@ defmodule WikWeb.Me.NewTicketLive do
               />
 
               <div class="flex justify-end">
-                <.button class="btn btn-sm btn-primary" type="submit">
+                <.button class="btn btn-sm btn-primary btn-soft" type="submit">
                   Submit ticket
                 </.button>
               </div>

@@ -4,6 +4,7 @@ defmodule WikWeb.Me.AccessLive do
   alias Utils.Log
   alias Wik.Access
   alias Wik.Accounts
+  alias WikWeb.Components
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
 
@@ -63,7 +64,12 @@ defmodule WikWeb.Me.AccessLive do
             </div>
 
             <div :if={@grants != []} class="space-y-2" data-testid="me-access-grants">
-              <.grant_card :for={grant <- @grants} current_user={@current_user} grant={grant} />
+              <Components.Membership.Access.grant_card
+                :for={grant <- @grants}
+                current_user={@current_user}
+                grant={grant}
+                variant={:me}
+              />
             </div>
           </section>
         </div>
@@ -104,73 +110,11 @@ defmodule WikWeb.Me.AccessLive do
       <div class="flex flex-wrap items-center gap-3">
         <img src={@identity.avatar_url} class="size-10 rounded-full" />
         <div>
-          <div class="font-bold">{@identity |> identity_label()}</div>
+          <div class="font-bold">{Components.Membership.Access.identity_label(@identity)}</div>
           <div class="badge badge-xs bg-base-300 text-base-content/50">
             id: {@identity.provider_user_id}
           </div>
         </div>
-      </div>
-    </.card>
-    """
-  end
-
-  attr :current_user, :map, required: true
-  attr :grant, :map, required: true
-
-  def grant_card(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :membership,
-        get_grant_membership(assigns.grant, assigns.current_user)
-      )
-
-    ~H"""
-    <.card data-testid={"access-grant-#{@grant.id}"}>
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="badge badge-sm badge-primary">
-          {@grant.source.provider |> Atom.to_string() |> String.capitalize()}
-        </span>
-
-        <span class={grant_status_class(@grant)}>
-          {@grant.status |> Atom.to_string()}
-        </span>
-
-        <span
-          class="ml-auto badge badge-sm bg-base-100 text-base-content/70"
-          data-testid={"access-grant-membership-#{@grant.id}"}
-        >
-          {@membership.type |> Atom.to_string()}
-        </span>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3">
-        <img src={@grant.external_identity.avatar_url} class="size-10 rounded-full" />
-        <div>
-          <.link
-            class={[
-              "font-bold flex items-center gap-1",
-              "opacity-90 hover:opacity-100 transition",
-              "space"
-            ]}
-            navigate={~p"/#{@grant.source.space.slug}/wiki"}
-          >
-            <span>{@grant.source.space.name}</span>
-            <.icon
-              name="hero-arrow-up-right-micro"
-              class="opacity-50 space-hover:opacity-100 transition"
-            />
-          </.link>
-
-          <div class="text-sm opacity-70">
-            as {@grant.external_identity |> identity_label()}
-          </div>
-        </div>
-      </div>
-
-      <div class="text-xs opacity-60 flex items-center gap-1">
-        <.icon name="hero-shield-check-micro" class="" />
-        Verified {@grant.last_verified_at |> Utils.Time.relative()} ago
       </div>
     </.card>
     """
@@ -271,25 +215,6 @@ defmodule WikWeb.Me.AccessLive do
     end
   end
 
-  defp grant_status_class(%{status: :active}), do: "badge badge-sm badge-success"
-  defp grant_status_class(_grant), do: "badge badge-sm badge-neutral"
-
   defp grant_bypass_messages?(%{role: :superadmin}, _owned_spaces), do: true
   defp grant_bypass_messages?(_user, owned_spaces), do: owned_spaces != []
-
-  defp get_grant_membership(%{source: %{space: %{memberships: memberships}}}, %{id: user_id}) do
-    Enum.find(memberships, &(&1.user_id == user_id))
-  end
-
-  defp identity_label(%{provider: :telegram, username: username}) when is_binary(username) do
-    "@#{username}"
-  end
-
-  defp identity_label(%{display_name: display_name}) when is_binary(display_name) do
-    display_name
-  end
-
-  defp identity_label(%{provider: provider, provider_user_id: provider_user_id}) do
-    "#{provider}:#{provider_user_id}"
-  end
 end

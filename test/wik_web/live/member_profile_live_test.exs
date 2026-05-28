@@ -6,6 +6,9 @@ defmodule WikWeb.MemberProfileLiveTest do
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
+  alias Wik.Access.ExternalIdentity
+  alias Wik.Access.Grant
+  alias Wik.Access.Source
   alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
@@ -181,6 +184,74 @@ defmodule WikWeb.MemberProfileLiveTest do
            ]
   end
 
+  test "member profile shows space access grants with issuer details and hides other-space grants",
+       %{conn: conn} do
+    owner = generate(user())
+    user = generate(user())
+    space = generate(space(author: owner))
+    other_space = generate(space(author: owner))
+
+    owner_membership = add_membership(space, owner, :owner)
+    set_username(owner_membership, "owner-issuer")
+
+    membership =
+      space
+      |> add_membership(user, :member)
+      |> then(&set_username(&1, "ada"))
+      |> reload_membership()
+
+    other_owner_membership = add_membership(other_space, owner, :owner)
+    set_username(other_owner_membership, "owner-elsewhere")
+    add_membership(other_space, user, :member)
+
+    %{grant: visible_grant} =
+      create_telegram_access_grant(space, user, owner, "channel", "ada_here")
+
+    %{grant: hidden_grant} =
+      create_telegram_access_grant(other_space, user, owner, "group", "ada_elsewhere")
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}")
+
+    render_async(view)
+
+    assert has_element?(view, testid("member-access-grants"))
+    assert has_element?(view, testid("access-grant-#{visible_grant.id}"))
+    refute has_element?(view, testid("access-grant-#{hidden_grant.id}"))
+    assert has_element?(view, testid("access-grant-via-#{visible_grant.id}"))
+    assert has_element?(view, testid("access-grant-source-title-#{visible_grant.id}"))
+    assert has_element?(view, testid("access-grant-issuer-#{visible_grant.id}"))
+    assert has_element?(view, testid("access-grant-identity-#{visible_grant.id}"))
+    assert has_element?(view, testid("access-grant-status-#{visible_grant.id}"))
+    refute has_element?(view, testid("access-grant-identity-#{hidden_grant.id}"))
+  end
+
+  test "member profile shows an empty access state when the member has no grants in this space",
+       %{conn: conn} do
+    owner = generate(user())
+    user = generate(user())
+    space = generate(space(author: owner))
+
+    add_membership(space, owner, :owner)
+
+    membership =
+      space
+      |> add_membership(user, :member)
+      |> then(&set_username(&1, "ada"))
+      |> reload_membership()
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}")
+
+    render_async(view)
+
+    assert has_element?(view, testid("member-access-empty"))
+  end
+
   test "member profile table orders rows by highest interest first and shows blank missing sides",
        %{conn: conn} do
     %{space: space, membership: membership, owner: owner, user: user} = member_fixture()
@@ -330,4 +401,54 @@ defmodule WikWeb.MemberProfileLiveTest do
   end
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}
+
+  defp create_telegram_access_grant(space, user, issuer, chat_type, username) do
+    source =
+      Ash.create!(
+        Source,
+        %{
+          claimed_at: DateTime.utc_now(),
+          claimed_by_user_id: issuer.id,
+          metadata: %{"chat" => %{"type" => chat_type}},
+          space_id: space.id,
+          provider: :telegram,
+          provider_source_id: "telegram-source-#{System.unique_integer([:positive])}",
+          status: :active,
+          title: "Telegram #{String.capitalize(chat_type)}"
+        },
+        authorize?: false,
+        domain: Wik.Access
+      )
+
+    identity =
+      Ash.create!(
+        ExternalIdentity,
+        %{
+          avatar_url: "https://telegram.example/avatar.png",
+          display_name: "Ada Lovelace",
+          provider: :telegram,
+          provider_user_id: "telegram-user-#{System.unique_integer([:positive])}",
+          user_id: user.id,
+          username: username
+        },
+        authorize?: false,
+        domain: Wik.Access
+      )
+
+    grant =
+      Ash.create!(
+        Grant,
+        %{
+          external_identity_id: identity.id,
+          last_verified_at: DateTime.utc_now(),
+          source_id: source.id,
+          status: :active,
+          user_id: user.id
+        },
+        authorize?: false,
+        domain: Wik.Access
+      )
+
+    %{grant: grant, identity: identity, source: source}
+  end
 end

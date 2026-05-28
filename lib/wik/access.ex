@@ -110,11 +110,19 @@ defmodule Wik.Access do
     Grant
     |> Ash.Query.filter(user_id == ^user_id)
     |> Ash.Query.sort(last_verified_at: :desc)
-    |> Ash.read(
-      authorize?: false,
-      domain: __MODULE__,
-      load: [:external_identity, source: [space: [:memberships]]]
-    )
+    |> Ash.read(authorize?: false, domain: __MODULE__, load: grant_card_load())
+  end
+
+  def list_space_user_grants(%{id: space_id}, %{id: user_id}) do
+    list_space_user_grants(space_id, user_id)
+  end
+
+  def list_space_user_grants(space_id, user_id)
+      when is_binary(space_id) and is_binary(user_id) do
+    Grant
+    |> Ash.Query.filter(source.space_id == ^space_id and user_id == ^user_id)
+    |> Ash.Query.sort(last_verified_at: :desc)
+    |> Ash.read(authorize?: false, domain: __MODULE__, load: grant_card_load())
   end
 
   def get_user_space_avatar_url(%User{id: user_id}, %{id: space_id}) do
@@ -213,4 +221,8 @@ defmodule Wik.Access do
   end
 
   defp normalize_username(_), do: nil
+
+  defp grant_card_load do
+    [:external_identity, source: [:claimed_by_user, space: [:memberships]]]
+  end
 end

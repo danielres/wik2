@@ -319,8 +319,7 @@ defmodule WikWeb.Layouts do
               "bg-base-300 dark:shadow-lg",
               "shadow",
               "border border-base-content/15",
-              "rounded-box",
-              "p-2"
+              "rounded-box"
             ]}
             popover
             id="popover-user-dropdown"
@@ -344,66 +343,72 @@ defmodule WikWeb.Layouts do
               </li>
             </ul>
 
-            <ul class={[
-              "menu w-full"
-            ]}>
-              <li>
-                <.link navigate={~p"/sign-out"} class="">
-                  <.icon name="hero-arrow-right-on-rectangle" /> Log out
-                </.link>
-              </li>
-
-              <li>
-                <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
-                  <.icon name="hero-user" /> Account
-                </.link>
-              </li>
-            </ul>
-
-            <ul
+            <section
               :if={
                 @scope.tenant && @tenant_context &&
                   @tenant_context[:current_membership] &&
                   @tenant_context[:current_membership].username != nil
               }
-              class={[
-                "menu w-full",
-                "border-t-1 border-base-content/10"
-              ]}
+              class="p-4 border-b border-base-content/20"
             >
-              <li>
-                <.link navigate={
-                  ~p"/#{@scope.tenant.slug}/wiki/members/#{@tenant_context[:current_membership].username}"
-                }>
-                  <.icon name="hero-face-smile" /> Profile
-                </.link>
-              </li>
-            </ul>
+              <h3 class="uppercase tracking-wider text-xs opacity-50">Space</h3>
+              <ul class={[
+                "menu w-full"
+              ]}>
+                <li>
+                  <.link navigate={
+                    ~p"/#{@scope.tenant.slug}/wiki/members/#{@tenant_context[:current_membership].username}"
+                  }>
+                    <Components.User.avatar
+                      membership={@tenant_context && @tenant_context[:current_membership]}
+                      tenant={@scope.tenant}
+                      size="xs"
+                    /> Profile
+                  </.link>
+                </li>
+              </ul>
+            </section>
 
-            <ul class={[
-              "py-2",
-              "border-t-1 border-base-content/10"
-            ]}>
-              <li>
-                <div class="w-min mx-auto">
-                  <WikWeb.Layouts.theme_toggle />
-                </div>
-              </li>
-            </ul>
+            <section class="p-4">
+              <h3 class="uppercase tracking-wider text-xs opacity-50">App</h3>
 
-            <ul
-              :if={@scope.actor && @scope.actor.role == :superadmin}
-              class={[
-                "menu w-full",
-                "border-t-1 border-base-content/10"
-              ]}
-            >
-              <li>
-                <.link navigate={~p"/_"}>
-                  <span class="badge badge-error">Superadmin</span>
-                </.link>
-              </li>
-            </ul>
+              <ul class={[
+                "menu w-full"
+              ]}>
+                <li>
+                  <.link navigate={~p"/sign-out"} class="">
+                    <.icon name="hero-arrow-right-on-rectangle" /> Log out
+                  </.link>
+                </li>
+
+                <li>
+                  <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
+                    <.icon name="hero-user" /> Account
+                  </.link>
+                </li>
+              </ul>
+
+              <ul class={[]}>
+                <li>
+                  <div class="w-min mx-auto">
+                    <WikWeb.Layouts.theme_toggle />
+                  </div>
+                </li>
+              </ul>
+
+              <ul
+                :if={@scope.actor && @scope.actor.role == :superadmin}
+                class={[
+                  "menu w-full"
+                ]}
+              >
+                <li>
+                  <.link navigate={~p"/_"}>
+                    <span class="badge badge-error">Superadmin</span>
+                  </.link>
+                </li>
+              </ul>
+            </section>
           </div>
         </div>
       </header>
@@ -543,7 +548,7 @@ defmodule WikWeb.Layouts do
     ~H"""
     <div
       id="theme-toggle"
-      class="card relative flex flex-row items-center rounded-full border-2 border-base-200 bg-base-300 p-1"
+      class="card relative flex flex-row items-center rounded-full border-2 border-base-200 bg-base-200 p-1 gap-1"
       role="group"
       aria-label="Theme selector"
     >
@@ -564,7 +569,7 @@ defmodule WikWeb.Layouts do
       >
         <.icon
           name={theme.icon}
-          class="size-4 opacity-75 transition-opacity group-hover:opacity-100"
+          class="size-3.5 opacity-75 transition-opacity group-hover:opacity-100"
         />
       </button>
     </div>

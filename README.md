@@ -4,7 +4,7 @@ Wik = community software that wants your attention for as little time as possibl
 
 This project exists to help groups coordinate with less noise, less screen time, and more real-life connection by moving durable knowledge out of chaotic chat and into quality shared memory.
 
-👉 See also: [deepwiki/wik2](https://deepwiki.com/danielres/wik2)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/danielres/wik2)
 
 ## About This Repo
 

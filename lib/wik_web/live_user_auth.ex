@@ -146,6 +146,16 @@ defmodule WikWeb.LiveUserAuth do
     {:cont, socket}
   end
 
+  def on_mount(:subscribe_space_memberships, _params, _session, socket) do
+    socket = assign(socket, :subscribe_space_memberships?, true)
+
+    if Phoenix.LiveView.connected?(socket) do
+      :ok = subscribe_to_space_membership_updates(socket)
+    end
+
+    {:cont, socket}
+  end
+
   defp assign_current_user_for_dev(socket) do
     current_user = socket.assigns[:current_user] |> current_user_for_dev()
     assign(socket, :current_user, current_user)
@@ -192,7 +202,6 @@ defmodule WikWeb.LiveUserAuth do
     if Phoenix.LiveView.connected?(socket) do
       :ok = Context.subscribe(current_user)
       :ok = subscribe_to_membership_updates(current_user)
-      :ok = subscribe_to_space_membership_updates(socket)
     end
 
     socket
@@ -285,7 +294,10 @@ defmodule WikWeb.LiveUserAuth do
   defp subscribe_to_space_membership_updates(_socket), do: :ok
 
   defp current_space_membership_pub_sub_topic(%{
-         assigns: %{current_scope: %{tenant: %{id: space_id}}}
+         assigns: %{
+           subscribe_space_memberships?: true,
+           current_scope: %{tenant: %{id: space_id}}
+         }
        }) do
     Membership.space_pub_sub_topic(space_id)
   end

@@ -3,7 +3,6 @@ defmodule WikWeb.SpaceLive do
   use WikWeb.Presence.Handlers
 
   alias AshPhoenix.Form
-  alias Wik.Accounts.Membership
   alias Wik.Blocks
   alias WikWeb.Components
   alias WikWeb.Components.Modal
@@ -18,10 +17,6 @@ defmodule WikWeb.SpaceLive do
     scope = socket.assigns.current_scope
     space = socket.assigns.current_scope.tenant |> load_space(scope)
     orphan_blocks = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
-
-    if connected?(socket) do
-      :ok = WikWeb.Endpoint.subscribe(Membership.space_pub_sub_topic(space.id))
-    end
 
     socket =
       socket

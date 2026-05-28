@@ -167,7 +167,12 @@ defmodule WikWeb.TagLive do
             <section class="space-y-4">
               {# <TagComponent.parents scope={@current_scope} tag={@tag} />}
               <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} />
-              {# <TagComponent.descendants :if={@show_descendants?} graph={@tag_graph} scope={@current_scope} tag={@tag} />}
+              <TagComponent.descendants
+                :if={@show_descendants?}
+                graph={@tag_graph}
+                scope={@current_scope}
+                tag={@tag}
+              />
             </section>
           </div>
         </div>

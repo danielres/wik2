@@ -153,9 +153,11 @@ defmodule WikWeb.TagLiveTest do
     {:ok, parent} = Tags.create_tag("dance", "Dance", nil, scope: scope)
     {:ok, current} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
     {:ok, child} = Tags.create_tag("tango", "Tango", nil, scope: scope)
+    {:ok, grandchild} = Tags.create_tag("argentine-tango", "Argentine tango", nil, scope: scope)
 
     assert {:ok, _edge} = Tags.link_tags(parent.id, current.id, scope: scope)
     assert {:ok, _edge} = Tags.link_tags(current.id, child.id, scope: scope)
+    assert {:ok, _edge} = Tags.link_tags(child.id, grandchild.id, scope: scope)
 
     {:ok, view, _html} =
       conn
@@ -168,6 +170,11 @@ defmodule WikWeb.TagLiveTest do
     assert has_element?(view, testid("tag-descendants"))
     assert has_element?(view, testid("tag-children-jump-#{child.id}"))
     assert has_element?(view, testid("tag-branch-tag-path-#{current.id}__#{child.id}"))
+
+    assert has_element?(
+             view,
+             testid("tag-branch-tag-path-#{current.id}__#{child.id}__#{grandchild.id}")
+           )
   end
 
   defp add_membership(space, user, type) do

@@ -11,6 +11,7 @@ defmodule WikWeb.MembersLive do
   alias WikWeb.SpaceLive.NewOwnerSelector
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
+  on_mount {WikWeb.LiveUserAuth, :subscribe_space_memberships}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
 
   @impl true

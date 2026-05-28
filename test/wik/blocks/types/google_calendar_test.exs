@@ -117,6 +117,25 @@ defmodule Wik.Blocks.Types.GoogleCalendarTest do
                  scope: scope
                )
     end
+
+    test "rejects another embed provider instead of switching type" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :google_calendar},
+          scope: scope
+        )
+
+      soundcloud_embed_url =
+        "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&color=%23ff5500"
+
+      assert {:error, _error} =
+               Blocks.update_block(block, %{"title" => "", "url" => soundcloud_embed_url},
+                 scope: scope
+               )
+    end
   end
 
   defp scope(actor, tenant \\ nil) do

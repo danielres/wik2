@@ -39,7 +39,14 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
       })
 
     assert html =~ ~s(data-testid="special-blocks")
-    assert html =~ "Embed"
+    assert html =~ "YouTube"
+    assert html =~ ~s(phx-value-type="youtube")
+    assert html =~ "SoundCloud"
+    assert html =~ ~s(phx-value-type="soundcloud")
+    assert html =~ "Google Calendar"
+    assert html =~ ~s(phx-value-type="google_calendar")
+    assert html =~ "Google Maps"
+    assert html =~ ~s(phx-value-type="google_maps")
     assert html =~ "Linked copy"
     assert html =~ ~s(phx-value-type="linked_copy")
     assert html =~ "Members"
@@ -85,7 +92,14 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
       })
 
     assert html =~ ~s(data-testid="special-blocks")
-    assert html =~ "Embed"
+    assert html =~ "YouTube"
+    assert html =~ ~s(phx-value-type="youtube")
+    assert html =~ "SoundCloud"
+    assert html =~ ~s(phx-value-type="soundcloud")
+    assert html =~ "Google Calendar"
+    assert html =~ ~s(phx-value-type="google_calendar")
+    assert html =~ "Google Maps"
+    assert html =~ ~s(phx-value-type="google_maps")
     assert html =~ "Linked copy"
     assert html =~ ~s(phx-value-type="linked_copy")
     assert html =~ "Members"

@@ -1,23 +1,16 @@
 defmodule WikWeb.Components.Block.Types.Embed do
   use WikWeb, :html
 
+  alias Wik.Blocks.Types.GoogleCalendar
+  alias Wik.Blocks.Types.GoogleMaps
+  alias Wik.Blocks.Types.SoundCloud
+  alias Wik.Blocks.Types.YouTube
+
   attr :block, :map, required: true
   attr :form, :any, required: true
 
   def form_fields(assigns) do
-    supported = Wik.Blocks.Types.Embed.available() |> Enum.map(& &1.label)
-    assigns = assign(assigns, supported: supported)
-
     ~H"""
-    <div class="flex flex-wrap gap-2 items-center">
-      <div class="font-bold">Supported:</div>
-      <ul class="flex flex-wrap gap-2">
-        <li :for={type <- @supported} class="badge">
-          {type}
-        </li>
-      </ul>
-    </div>
-
     <.input
       field={@form[:url]}
       id={"edit-block-url-#{@block.id}"}

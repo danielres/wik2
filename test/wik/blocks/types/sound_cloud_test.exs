@@ -117,6 +117,24 @@ defmodule Wik.Blocks.Types.SoundCloudTest do
                  scope: scope
                )
     end
+
+    test "rejects another embed provider instead of switching type" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} =
+        Blocks.create_user_owned_block(
+          %{type: :soundcloud},
+          scope: scope
+        )
+
+      youtube_embed_url = "https://www.youtube.com/embed/dQw4w9WgXcQ?si=example"
+
+      assert {:error, _error} =
+               Blocks.update_block(block, %{"title" => "", "url" => youtube_embed_url},
+                 scope: scope
+               )
+    end
   end
 
   defp scope(actor, tenant \\ nil) do

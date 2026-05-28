@@ -3,10 +3,13 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
 
   alias Wik.Blocks.Types.ChildPages
   alias Wik.Blocks.Types.Backlinks
-  alias Wik.Blocks.Types.Embed
+  alias Wik.Blocks.Types.GoogleCalendar
+  alias Wik.Blocks.Types.GoogleMaps
   alias Wik.Blocks.Types.Markdown
   alias Wik.Blocks.Types.Members
   alias Wik.Blocks.Types.Pages
+  alias Wik.Blocks.Types.SoundCloud
+  alias Wik.Blocks.Types.YouTube
   alias Wik.Wiki
   alias Wik.Wiki.PageTree
   alias WikWeb.Components.Modal
@@ -95,7 +98,29 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
               phx-value-type="markdown"
             />
 
-            <.button_special_block label={Embed.label()} phx-click="add_block" phx-value-type="embed" />
+            <.button_special_block
+              label={YouTube.label()}
+              phx-click="add_block"
+              phx-value-type="youtube"
+            />
+
+            <.button_special_block
+              label={SoundCloud.label()}
+              phx-click="add_block"
+              phx-value-type="soundcloud"
+            />
+
+            <.button_special_block
+              label={GoogleCalendar.label()}
+              phx-click="add_block"
+              phx-value-type="google_calendar"
+            />
+
+            <.button_special_block
+              label={GoogleMaps.label()}
+              phx-click="add_block"
+              phx-value-type="google_maps"
+            />
 
             <.button_special_block
               label={Pages.label()}

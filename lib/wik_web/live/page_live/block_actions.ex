@@ -4,7 +4,6 @@ defmodule WikWeb.PageLive.BlockActions do
   import Phoenix.Component
 
   alias Wik.Blocks
-  alias Wik.Blocks.Types.Embed
   alias WikWeb.PageLive.BlockEdit
   alias WikWeb.PageLive.PageState
 
@@ -16,9 +15,6 @@ defmodule WikWeb.PageLive.BlockActions do
     position = socket |> add_block_position()
 
     case type_param do
-      "embed" ->
-        socket |> add_block(space, page, Embed.default_type(), position, scope)
-
       "linked_copy" ->
         socket |> start_linked_copy()
 

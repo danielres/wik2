@@ -141,9 +141,10 @@ defmodule WikWeb.TagLiveTest do
     )
   end
 
-  test "tag page reuses tag relationship components for parents, children, and descendants", %{
-    conn: conn
-  } do
+  test "tag page uses breadcrumbs for parents and relationship components for children and descendants",
+       %{
+         conn: conn
+       } do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
@@ -161,10 +162,10 @@ defmodule WikWeb.TagLiveTest do
       |> log_in(owner)
       |> live(~p"/#{space.slug}/tags/#{current.slug}")
 
-    assert has_element?(view, testid("tag-parents"))
+    assert has_element?(view, testid("tag-breadcrumbs"))
+    assert has_element?(view, testid("tag-breadcrumbs-path-0"))
     assert has_element?(view, testid("tag-children"))
     assert has_element?(view, testid("tag-descendants"))
-    assert has_element?(view, testid("tag-parents-jump-#{parent.id}"))
     assert has_element?(view, testid("tag-children-jump-#{child.id}"))
     assert has_element?(view, testid("tag-branch-tag-path-#{current.id}__#{child.id}"))
   end

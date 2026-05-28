@@ -5,6 +5,7 @@ defmodule WikWeb.TagLive do
   alias AshPhoenix.Form
   alias Utils.Log
   alias Wik.Tags
+  alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Tag, as: TagComponent
@@ -22,8 +23,10 @@ defmodule WikWeb.TagLive do
      |> assign(editable?: editable?)
      |> assign(editing?: false)
      |> assign(tag: nil)
+     |> assign(tag_graph: nil)
      |> assign(tag_form: nil)
-     |> assign(taggings_query: nil)}
+     |> assign(taggings_query: nil)
+     |> assign(show_descendants?: false)}
   end
 
   @impl true
@@ -31,9 +34,13 @@ defmodule WikWeb.TagLive do
     socket =
       case Tags.get_tag_by_slug(tag_slug, scope: socket.assigns.current_scope) do
         {:ok, tag} when not is_nil(tag) ->
+          tag_graph = Tags.load_tag_graph(socket.assigns.current_scope)
+
           socket
           |> assign(:tag, tag)
+          |> assign(:tag_graph, tag_graph)
           |> assign(:taggings_query, Tags.tag_taggings_query(tag))
+          |> assign(:show_descendants?, GraphQueries.children_for(tag_graph, tag) != [])
           |> maybe_sync_tag_form()
 
         {:ok, nil} ->
@@ -158,9 +165,9 @@ defmodule WikWeb.TagLive do
             </section>
 
             <section class="space-y-4">
-              <TagComponent.parents scope={@current_scope} tag={@tag} />
-              <TagComponent.children scope={@current_scope} tag={@tag} />
-              {# <TagComponent.descendants scope={@current_scope} tag={@tag} /> }
+              {# <TagComponent.parents scope={@current_scope} tag={@tag} />}
+              <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} />
+              {# <TagComponent.descendants :if={@show_descendants?} graph={@tag_graph} scope={@current_scope} tag={@tag} />}
             </section>
           </div>
         </div>

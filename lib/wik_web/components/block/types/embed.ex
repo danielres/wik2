@@ -56,7 +56,7 @@ defmodule WikWeb.Components.Block.Types.Embed do
         "min-h-[50ch]",
         "[&_iframe]:min-h-[50ch]",
         "[&_iframe]:h-full",
-        "resize-y overflow-y-auto"
+        "sm:resize-y sm:overflow-y-auto"
       ]}>
         {render_slot(@inner_block)}
       </div>

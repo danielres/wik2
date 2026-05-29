@@ -102,6 +102,56 @@ defmodule WikWeb.Components.MembershipTagging do
     """
   end
 
+  attr :dimension_key, :string, required: true
+  attr :distribution, :map, required: true
+  attr :chart_testid, :string, required: true
+  attr :numbers?, :boolean, default: false
+
+  def distribution_chart(assigns) do
+    dimension = Dimensions.get!("membership", assigns.dimension_key)
+
+    max_count =
+      assigns.distribution
+      |> Map.values()
+      |> Enum.max(fn -> 0 end)
+      |> max(1)
+
+    average = average_from_distribution(assigns.distribution)
+
+    assigns =
+      assigns
+      |> assign(:dimension, dimension)
+      |> assign(:max_count, max_count)
+      |> assign(:average, average)
+
+    ~H"""
+    <div data-testid={@chart_testid}>
+      <h3 class="font-semibold flex justify-between items-center mb-2">
+        <span>{@dimension.label}</span>
+        <div class="opacity-40 flex items-center gap-0.5">
+          <span class="text-lg">~</span>
+          <span class="text-xs">{@average}</span>
+        </div>
+      </h3>
+
+      <div class="space-y-1">
+        <div class="grid h-24 grid-cols-10 items-end gap-1">
+          <div :for={level <- 1..10} class="flex h-full items-end">
+            <div
+              class="w-full rounded-t-sm transition-all"
+              style={bar_style(@distribution[level], @max_count, @dimension.color)}
+            />
+          </div>
+        </div>
+
+        <div :if={@numbers?} class="grid grid-cols-10 gap-1">
+          <div :for={level <- 1..10} class="text-center text-[11px] opacity-40">{level}</div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr :query, :any, required: true
   attr :scope, :map, required: true
   attr :tag, :map, required: true
@@ -487,6 +537,28 @@ defmodule WikWeb.Components.MembershipTagging do
   end
 
   defp meter_value(_level, _max_level), do: 0
+
+  defp bar_style(count, max_level, color) do
+    height_percent = Float.round(count / max_level * 100, 2)
+    "height: #{height_percent}%; background: #{color};"
+  end
+
+  defp average_from_distribution(distribution) do
+    total_count = Enum.sum(Map.values(distribution))
+
+    case total_count do
+      0 ->
+        "n/a"
+
+      _ ->
+        weighted_sum =
+          Enum.reduce(distribution, 0, fn {level, count}, acc ->
+            acc + level * count
+          end)
+
+        :erlang.float_to_binary(weighted_sum / total_count, decimals: 1)
+    end
+  end
 
   attr :description, :string, required: true
 

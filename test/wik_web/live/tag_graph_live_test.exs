@@ -156,9 +156,20 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
     {:ok, beta} = Tags.create_tag("beta", "Beta", nil, scope: scope)
 
-    create_membership_tagging(member_a_membership, alpha, owner_membership, scope)
-    create_membership_tagging(member_b_membership, alpha, owner_membership, scope)
-    create_membership_tagging(member_a_membership, beta, owner_membership, scope)
+    create_membership_tagging(member_a_membership, alpha, owner_membership, scope, %{
+      "interest" => 4,
+      "skill" => 0
+    })
+
+    create_membership_tagging(member_b_membership, alpha, owner_membership, scope, %{
+      "interest" => 7,
+      "skill" => 6
+    })
+
+    create_membership_tagging(member_a_membership, beta, owner_membership, scope, %{
+      "interest" => 3,
+      "skill" => 2
+    })
 
     {:ok, view, _html} =
       conn
@@ -167,6 +178,8 @@ defmodule WikWeb.TagGraphLiveTest do
 
     assert has_element?(view, "#{testid("tag-count-tag-path-#{alpha.id}")}", "2")
     assert has_element?(view, "#{testid("tag-count-tag-path-#{beta.id}")}", "1")
+    assert has_element?(view, testid("tag-interest-chart-tag-path-#{alpha.id}"))
+    assert has_element?(view, testid("tag-skill-chart-tag-path-#{alpha.id}"))
   end
 
   defp add_membership(space, user, type) do
@@ -178,7 +191,13 @@ defmodule WikWeb.TagGraphLiveTest do
     )
   end
 
-  defp create_membership_tagging(target_membership, tag, tagged_by_membership, scope) do
+  defp create_membership_tagging(
+         target_membership,
+         tag,
+         tagged_by_membership,
+         scope,
+         dimensions
+       ) do
     Ash.create!(
       Tagging,
       %{
@@ -186,7 +205,7 @@ defmodule WikWeb.TagGraphLiveTest do
         taggable_type: "membership",
         taggable_id: target_membership.id,
         tagged_by_membership_id: tagged_by_membership.id,
-        dimensions: %{"interest" => 1},
+        dimensions: dimensions,
         description: nil
       },
       authorize?: false,

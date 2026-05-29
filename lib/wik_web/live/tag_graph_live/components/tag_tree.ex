@@ -3,8 +3,9 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   use Phoenix.Component
 
-  alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
+  alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.UI
+  alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
 
   attr :editing?, :boolean, default: false
   attr :space_slug, :string, required: true
@@ -65,12 +66,23 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
     average_interest = format_average(assigns.node.tag.membership_interest_average)
     average_skill = format_average(assigns.node.tag.membership_skill_average)
 
+    interest_distribution =
+      assigns.node.tag.membership_interest_distribution || empty_distribution()
+
+    skill_distribution = assigns.node.tag.membership_skill_distribution || empty_distribution()
+    interest_unspecified_count = assigns.node.tag.membership_interest_unspecified_count || 0
+    skill_unspecified_count = assigns.node.tag.membership_skill_unspecified_count || 0
+
     assigns =
       assigns
       |> assign(:selected?, selected?)
       |> assign(:tagging_count, tagging_count)
       |> assign(:average_interest, average_interest)
       |> assign(:average_skill, average_skill)
+      |> assign(:interest_distribution, interest_distribution)
+      |> assign(:skill_distribution, skill_distribution)
+      |> assign(:interest_unspecified_count, interest_unspecified_count)
+      |> assign(:skill_unspecified_count, skill_unspecified_count)
 
     ~H"""
     <div
@@ -161,19 +173,36 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
           id={"#{@node.dom_id}-members-count-details-modal"}
         >
           <div class={["space-y-4"]}>
-            <h2 class="text-xl">{@node.tag.name}</h2>
-            <div>Members tagged with this tag: {@tagging_count}</div>
-            <dl class={[
-              "grid grid-cols-[auto_1fr]",
-              "[&>dt]:after:content-[':'] [&>dt]:font-semibold [&>dd]:pl-2",
-              "p-2 bg-base-200 rounded"
-            ]}>
-              <dt>Average interest</dt>
-              <dd>{@average_interest}</dd>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl">{@node.tag.name}</h2>
+              <div class="flex gap-4">
+                <div class="indicator p-1">
+                  <.icon name="hero-user-micro" class="opacity-50" />
+                  <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
+                </div>
+                <span :if={false}>members tagged with "{@node.tag.name}"</span>
+              </div>
+            </div>
 
-              <dt>Average skill</dt>
-              <dd>{@average_skill}</dd>
-            </dl>
+            <div class="space-y-4">
+              <div class="bg-base-200 py-4 px-4 rounded-lg">
+                <MembershipTagging.distribution_chart
+                  dimension_key="interest"
+                  distribution={@interest_distribution}
+                  chart_testid={"tag-interest-chart-#{@node.dom_id}"}
+                  numbers?
+                />
+              </div>
+
+              <div class="bg-base-200 py-4 px-4 rounded-lg">
+                <MembershipTagging.distribution_chart
+                  dimension_key="skill"
+                  distribution={@skill_distribution}
+                  chart_testid={"tag-skill-chart-#{@node.dom_id}"}
+                  numbers?
+                />
+              </div>
+            </div>
           </div>
         </UI.modal>
 
@@ -222,8 +251,10 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   defp format_average(nil), do: "n/a"
 
   defp format_average(value) do
-    value
-    |> Decimal.round(1)
-    |> Decimal.to_string(:normal)
+    :erlang.float_to_binary(value, decimals: 1)
+  end
+
+  defp empty_distribution do
+    Map.new(1..10, fn level -> {level, 0} end)
   end
 end

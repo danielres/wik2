@@ -467,8 +467,8 @@ defmodule WikWeb.Components.Event do
       |> assign(:user_parts, schedule_parts(assigns.event, assigns.user_tz))
 
     ~H"""
-    <div class={["space-y-1", @class]}>
-      <.schedule_row parts={@event_parts} tz={@event.tz} />
+    <div class={["space-y-0", @class]}>
+      <.schedule_row parts={@event_parts} tz={@event.tz} tz?={@show_user_tz?} />
       <.schedule_row :if={@show_user_tz?} parts={@user_parts} tz={@user_tz} secondary? />
     </div>
     """
@@ -477,15 +477,16 @@ defmodule WikWeb.Components.Event do
   attr :parts, :map, required: true
   attr :tz, :string, required: true
   attr :secondary?, :boolean, default: false
+  attr :tz?, :boolean, default: true
 
   defp schedule_row(%{parts: %{kind: :timed, same_day?: true}} = assigns) do
     ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1", @secondary? && "opacity-75 text-xs"]}>
+    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1", @secondary? && "opacity-75"]}>
       <span class="font-medium">{@parts.start_date}</span>
       <span>{@parts.start_time}</span>
       <span class="mx-1 opacity-50">to</span>
       <span>{@parts.end_time}</span>
-      <span class="badge badge-sm bg-base-300">{@tz}</span>
+      <span :if={@tz?} class="badge badge-sm bg-base-300">{@tz}</span>
     </div>
     """
   end

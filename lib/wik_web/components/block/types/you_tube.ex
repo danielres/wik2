@@ -7,7 +7,7 @@ defmodule WikWeb.Components.Block.Types.YouTube do
 
   def render(assigns) do
     ~H"""
-    <Embed.wrapper>
+    <Embed.wrapper block={@block}>
       <%= if @block.data["url"] do %>
         <div class={[
           "@lg/block:grid @lg/block:py-4",

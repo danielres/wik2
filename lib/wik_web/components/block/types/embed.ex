@@ -18,10 +18,11 @@ defmodule WikWeb.Components.Block.Types.Embed do
     """
   end
 
+  attr :block, :map, required: true
+  slot :inner_block, required: true
+
   def wrapper(assigns) do
-    # generate random id:
-    id = "embed-#{:crypto.strong_rand_bytes(8) |> Base.url_encode64(padding: false)}"
-    assigns = assign(assigns, :id, id)
+    assigns = assign(assigns, :id, "embed-#{assigns.block.id}")
 
     ~H"""
     <div>

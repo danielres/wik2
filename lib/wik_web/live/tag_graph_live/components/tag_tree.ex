@@ -63,26 +63,18 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   defp tag_node(assigns) do
     selected? = assigns.selected_tag_id == assigns.node.tag.id
     tagging_count = assigns.node.tag.membership_tagging_count || 0
-    average_interest = format_average(assigns.node.tag.membership_interest_average)
-    average_skill = format_average(assigns.node.tag.membership_skill_average)
 
     interest_distribution =
       assigns.node.tag.membership_interest_distribution || empty_distribution()
 
     skill_distribution = assigns.node.tag.membership_skill_distribution || empty_distribution()
-    interest_unspecified_count = assigns.node.tag.membership_interest_unspecified_count || 0
-    skill_unspecified_count = assigns.node.tag.membership_skill_unspecified_count || 0
 
     assigns =
       assigns
       |> assign(:selected?, selected?)
       |> assign(:tagging_count, tagging_count)
-      |> assign(:average_interest, average_interest)
-      |> assign(:average_skill, average_skill)
       |> assign(:interest_distribution, interest_distribution)
       |> assign(:skill_distribution, skill_distribution)
-      |> assign(:interest_unspecified_count, interest_unspecified_count)
-      |> assign(:skill_unspecified_count, skill_unspecified_count)
 
     ~H"""
     <div
@@ -180,7 +172,6 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
                   <.icon name="hero-user-micro" class="opacity-50" />
                   <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
                 </div>
-                <span :if={false}>members tagged with "{@node.tag.name}"</span>
               </div>
             </div>
 
@@ -246,12 +237,6 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       />
     </div>
     """
-  end
-
-  defp format_average(nil), do: "n/a"
-
-  defp format_average(value) do
-    :erlang.float_to_binary(value, decimals: 1)
   end
 
   defp empty_distribution do

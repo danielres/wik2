@@ -154,10 +154,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
           data-testid={"tag-count-#{@node.dom_id}"}
           phx-click={UI.modal_open("#{@node.dom_id}-members-count-details-modal")}
         >
-          <div class="indicator p-1">
-            <.icon name="hero-user-micro" class="opacity-50" />
-            <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
-          </div>
+          <UI.icon_user_with_count count={@tagging_count} />
         </.button>
 
         <UI.modal
@@ -168,10 +165,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             <div class="flex items-center gap-2">
               <h2 class="text-xl">{@node.tag.name}</h2>
               <div class="flex gap-4">
-                <div class="indicator p-1">
-                  <.icon name="hero-user-micro" class="opacity-50" />
-                  <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
-                </div>
+                <UI.icon_user_with_count count={@tagging_count} />
               </div>
             </div>
 

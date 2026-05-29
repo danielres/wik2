@@ -446,10 +446,11 @@ defmodule WikWeb.CoreComponents do
   """
   attr :name, :string, required: true
   attr :class, :any, default: "size-4"
+  attr :style, :string, default: ""
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={["icon", @name, @class]} />
+    <span class={["icon", @name, @class]} style={@style} />
     """
   end
 

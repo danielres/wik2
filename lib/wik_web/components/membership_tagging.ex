@@ -125,7 +125,7 @@ defmodule WikWeb.Components.MembershipTagging do
       |> assign(:average, average)
 
     ~H"""
-    <div data-testid={@chart_testid}>
+    <div data-testid={@chart_testid} class="">
       <h3 class="font-semibold flex justify-between items-center mb-2">
         <span>{@dimension.label}</span>
         <div class="opacity-40 flex items-center gap-0.5">
@@ -134,13 +134,20 @@ defmodule WikWeb.Components.MembershipTagging do
         </div>
       </h3>
 
-      <div class="space-y-1">
+      <div class="space-y-1 mt-5">
         <div class="grid h-24 grid-cols-10 items-end gap-1">
           <div :for={level <- 1..10} class="flex h-full items-end">
             <div
-              class="w-full rounded-t-sm transition-all"
+              class="w-full rounded-t-sm transition-all relative"
               style={bar_style(@distribution[level], @max_count, @dimension.color)}
-            />
+            >
+              <UI.icon_user_with_count
+                :if={@distribution[level] > 0}
+                class="absolute h-0 -top-5"
+                color={@dimension.color}
+                count={@distribution[level]}
+              />
+            </div>
           </div>
         </div>
 

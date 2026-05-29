@@ -4,6 +4,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   use Phoenix.Component
 
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
+  alias WikWeb.Components.UI
 
   attr :editing?, :boolean, default: false
   attr :space_slug, :string, required: true
@@ -61,11 +62,15 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   defp tag_node(assigns) do
     selected? = assigns.selected_tag_id == assigns.node.tag.id
     tagging_count = assigns.node.tag.membership_tagging_count || 0
+    average_interest = format_average(assigns.node.tag.membership_interest_average)
+    average_skill = format_average(assigns.node.tag.membership_skill_average)
 
     assigns =
       assigns
       |> assign(:selected?, selected?)
       |> assign(:tagging_count, tagging_count)
+      |> assign(:average_interest, average_interest)
+      |> assign(:average_skill, average_skill)
 
     ~H"""
     <div
@@ -135,16 +140,42 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
           </div>
         </.link>
 
-        <div
+        <.button
           :if={not @editing? and @tagging_count > 0}
-          class="ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
+          class={[
+            "ml-auto",
+            "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity",
+            "cursor-pointer"
+          ]}
           data-testid={"tag-count-#{@node.dom_id}"}
+          phx-click={UI.modal_open("#{@node.dom_id}-members-count-details-modal")}
         >
           <div class="indicator p-1">
             <.icon name="hero-user-micro" class="opacity-50" />
             <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
           </div>
-        </div>
+        </.button>
+
+        <UI.modal
+          :if={not @editing? and @tagging_count > 0}
+          id={"#{@node.dom_id}-members-count-details-modal"}
+        >
+          <div class={["space-y-4"]}>
+            <h2 class="text-xl">{@node.tag.name}</h2>
+            <div>Members tagged with this tag: {@tagging_count}</div>
+            <dl class={[
+              "grid grid-cols-[auto_1fr]",
+              "[&>dt]:after:content-[':'] [&>dt]:font-semibold [&>dd]:pl-2",
+              "p-2 bg-base-200 rounded"
+            ]}>
+              <dt>Average interest</dt>
+              <dd>{@average_interest}</dd>
+
+              <dt>Average skill</dt>
+              <dd>{@average_skill}</dd>
+            </dl>
+          </div>
+        </UI.modal>
 
         <ActionButtons.wrapper :if={@editing?}>
           <ActionButtons.button
@@ -186,5 +217,13 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       />
     </div>
     """
+  end
+
+  defp format_average(nil), do: "n/a"
+
+  defp format_average(value) do
+    value
+    |> Decimal.round(1)
+    |> Decimal.to_string(:normal)
   end
 end

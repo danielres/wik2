@@ -1,10 +1,12 @@
 defmodule Wik.Tags.GraphQueries do
   alias Ash.Query
+  import Ecto.Query
 
   alias Wik.Repo
   alias Wik.Tags
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
+  alias Wik.Tags.Tagging
 
   require Ash.Query
 
@@ -29,10 +31,20 @@ defmodule Wik.Tags.GraphQueries do
   end
 
   def load_graph(scope) do
+    space_id = tenant_space_id!(scope)
+    tagging_averages_by_tag_id = membership_tagging_averages(space_id)
+
     tags =
       Tag
       |> Query.load(:membership_tagging_count)
       |> Ash.read!(scope: scope, domain: Tags)
+      |> Enum.map(fn tag ->
+        averages = Map.get(tagging_averages_by_tag_id, tag.id, %{})
+
+        tag
+        |> Map.put(:membership_interest_average, Map.get(averages, :interest))
+        |> Map.put(:membership_skill_average, Map.get(averages, :skill))
+      end)
       |> sort_tags()
 
     edges = TagEdge |> Ash.read!(scope: scope, domain: Tags)
@@ -296,6 +308,30 @@ defmodule Wik.Tags.GraphQueries do
       nil -> raise ArgumentError, "scope tenant is required"
       space_id -> space_id
     end
+  end
+
+  defp membership_tagging_averages(space_id) do
+    from(tagging in Tagging,
+      where: tagging.space_id == ^space_id and tagging.taggable_type == "membership",
+      group_by: tagging.tag_id,
+      select: %{
+        tag_id: tagging.tag_id,
+        interest:
+          fragment(
+            "avg(coalesce((?->>'interest')::int, 0))",
+            tagging.dimensions
+          ),
+        skill:
+          fragment(
+            "avg(coalesce((?->>'skill')::int, 0))",
+            tagging.dimensions
+          )
+      }
+    )
+    |> Repo.all()
+    |> Map.new(fn row ->
+      {row.tag_id, %{interest: row.interest, skill: row.skill}}
+    end)
   end
 
   defp sort_tags(tags) do

@@ -211,11 +211,12 @@ defmodule WikWeb.Components.UI do
 
   attr :id, :string, required: true
   attr :full?, :boolean, default: false
+  attr :open?, :boolean, default: false
   slot :inner_block, required: true
 
   def modal(assigns) do
     ~H"""
-    <dialog id={"#{@id}_modal"} class="modal">
+    <dialog id={"#{@id}_modal"} class={["modal", @open? && "modal-open"]}>
       <div
         class={[
           "modal-box",

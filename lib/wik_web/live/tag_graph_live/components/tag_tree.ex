@@ -3,6 +3,8 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   use Phoenix.Component
 
+  alias WikWeb.Components.MembershipTagging
+  alias WikWeb.Components.UI
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
 
   attr :editing?, :boolean, default: false
@@ -60,7 +62,19 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   defp tag_node(assigns) do
     selected? = assigns.selected_tag_id == assigns.node.tag.id
-    assigns = assign(assigns, :selected?, selected?)
+    tagging_count = assigns.node.tag.membership_tagging_count || 0
+
+    interest_distribution =
+      assigns.node.tag.membership_interest_distribution || empty_distribution()
+
+    skill_distribution = assigns.node.tag.membership_skill_distribution || empty_distribution()
+
+    assigns =
+      assigns
+      |> assign(:selected?, selected?)
+      |> assign(:tagging_count, tagging_count)
+      |> assign(:interest_distribution, interest_distribution)
+      |> assign(:skill_distribution, skill_distribution)
 
     ~H"""
     <div
@@ -72,7 +86,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       data-testid={"tag-branch-#{@node.dom_id}"}
       style="--size-field: 0.22rem;"
     >
-      <div class="space flex justify-between gap-2">
+      <div class="group flex justify-between gap-2">
         <div
           :if={@editing?}
           class={[
@@ -86,13 +100,19 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             class={[
               "opacity-30 transition",
               @selected? && "rotate-0 opacity-100",
-              !@selected? && "rotate-135 space-hover:rotate-0 space-hover:opacity-100"
+              !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
             ]}
           />
 
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <span class="truncate">{@node.tag.name}</span>
+              <span
+                class="badge badge-xs badge-ghost shrink-0"
+                data-testid={"tag-count-#{@node.dom_id}"}
+              >
+                {@tagging_count}
+              </span>
             </div>
           </div>
         </div>
@@ -113,7 +133,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             class={[
               "opacity-30 transition",
               @selected? && "rotate-0 opacity-100",
-              !@selected? && "rotate-135 space-hover:rotate-0 space-hover:opacity-100"
+              !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
             ]}
           />
 
@@ -123,6 +143,59 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             </div>
           </div>
         </.link>
+
+        <.button
+          :if={not @editing? and @tagging_count > 0}
+          class={[
+            "ml-auto",
+            "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity",
+            "cursor-pointer"
+          ]}
+          data-testid={"tag-count-#{@node.dom_id}"}
+          phx-click={UI.modal_open("#{@node.dom_id}-members-count-details-modal")}
+        >
+          <div class="indicator p-1">
+            <.icon name="hero-user-micro" class="opacity-50" />
+            <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
+          </div>
+        </.button>
+
+        <UI.modal
+          :if={not @editing? and @tagging_count > 0}
+          id={"#{@node.dom_id}-members-count-details-modal"}
+        >
+          <div class={["space-y-4"]}>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl">{@node.tag.name}</h2>
+              <div class="flex gap-4">
+                <div class="indicator p-1">
+                  <.icon name="hero-user-micro" class="opacity-50" />
+                  <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="bg-base-200 py-4 px-4 rounded-lg">
+                <MembershipTagging.distribution_chart
+                  dimension_key="interest"
+                  distribution={@interest_distribution}
+                  chart_testid={"tag-interest-chart-#{@node.dom_id}"}
+                  numbers?
+                />
+              </div>
+
+              <div class="bg-base-200 py-4 px-4 rounded-lg">
+                <MembershipTagging.distribution_chart
+                  dimension_key="skill"
+                  distribution={@skill_distribution}
+                  chart_testid={"tag-skill-chart-#{@node.dom_id}"}
+                  numbers?
+                />
+              </div>
+            </div>
+          </div>
+        </UI.modal>
 
         <ActionButtons.wrapper :if={@editing?}>
           <ActionButtons.button
@@ -164,5 +237,9 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       />
     </div>
     """
+  end
+
+  defp empty_distribution do
+    Map.new(1..10, fn level -> {level, 0} end)
   end
 end

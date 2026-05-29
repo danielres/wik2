@@ -1,9 +1,12 @@
 defmodule Wik.Tags.GraphQueries do
   alias Ash.Query
+  import Ecto.Query
+
   alias Wik.Repo
   alias Wik.Tags
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
+  alias Wik.Tags.Tagging
 
   require Ash.Query
 
@@ -28,9 +31,24 @@ defmodule Wik.Tags.GraphQueries do
   end
 
   def load_graph(scope) do
+    space_id = tenant_space_id!(scope)
+    tagging_stats_by_tag_id = membership_tagging_stats(space_id)
+
     tags =
       Tag
+      |> Query.load(:membership_tagging_count)
       |> Ash.read!(scope: scope, domain: Tags)
+      |> Enum.map(fn tag ->
+        stats = Map.get(tagging_stats_by_tag_id, tag.id, empty_final_tagging_stats())
+
+        tag
+        |> Map.put(:membership_interest_average, stats.interest_average)
+        |> Map.put(:membership_skill_average, stats.skill_average)
+        |> Map.put(:membership_interest_distribution, stats.interest_distribution)
+        |> Map.put(:membership_skill_distribution, stats.skill_distribution)
+        |> Map.put(:membership_interest_unspecified_count, stats.interest_unspecified_count)
+        |> Map.put(:membership_skill_unspecified_count, stats.skill_unspecified_count)
+      end)
       |> sort_tags()
 
     edges = TagEdge |> Ash.read!(scope: scope, domain: Tags)
@@ -295,6 +313,83 @@ defmodule Wik.Tags.GraphQueries do
       space_id -> space_id
     end
   end
+
+  defp membership_tagging_stats(space_id) do
+    from(tagging in Tagging,
+      where: tagging.space_id == ^space_id and tagging.taggable_type == "membership",
+      select: %{
+        tag_id: tagging.tag_id,
+        interest: fragment("coalesce((?->>'interest')::int, 0)", tagging.dimensions),
+        skill: fragment("coalesce((?->>'skill')::int, 0)", tagging.dimensions)
+      }
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn row, acc ->
+      Map.update(acc, row.tag_id, add_tagging_stats(empty_tagging_stats(), row), fn stats ->
+        add_tagging_stats(stats, row)
+      end)
+    end)
+    |> Map.new(fn {tag_id, stats} -> {tag_id, finalize_tagging_stats(stats)} end)
+  end
+
+  defp empty_tagging_stats do
+    %{
+      interest_sum: 0,
+      interest_count: 0,
+      interest_distribution: empty_distribution(),
+      interest_unspecified_count: 0,
+      skill_sum: 0,
+      skill_count: 0,
+      skill_distribution: empty_distribution(),
+      skill_unspecified_count: 0
+    }
+  end
+
+  defp empty_final_tagging_stats do
+    %{
+      interest_average: nil,
+      interest_distribution: empty_distribution(),
+      interest_unspecified_count: 0,
+      skill_average: nil,
+      skill_distribution: empty_distribution(),
+      skill_unspecified_count: 0
+    }
+  end
+
+  defp empty_distribution do
+    Map.new(1..10, fn level -> {level, 0} end)
+  end
+
+  defp add_tagging_stats(stats, %{interest: interest, skill: skill}) do
+    stats
+    |> add_dimension_stats(:interest, interest)
+    |> add_dimension_stats(:skill, skill)
+  end
+
+  defp add_dimension_stats(stats, dimension, 0) do
+    Map.update!(stats, :"#{dimension}_unspecified_count", &(&1 + 1))
+  end
+
+  defp add_dimension_stats(stats, dimension, level) when level in 1..10 do
+    stats
+    |> Map.update!(:"#{dimension}_sum", &(&1 + level))
+    |> Map.update!(:"#{dimension}_count", &(&1 + 1))
+    |> update_in([:"#{dimension}_distribution", level], &(&1 + 1))
+  end
+
+  defp finalize_tagging_stats(stats) do
+    %{
+      interest_average: average(stats.interest_sum, stats.interest_count),
+      interest_distribution: stats.interest_distribution,
+      interest_unspecified_count: stats.interest_unspecified_count,
+      skill_average: average(stats.skill_sum, stats.skill_count),
+      skill_distribution: stats.skill_distribution,
+      skill_unspecified_count: stats.skill_unspecified_count
+    }
+  end
+
+  defp average(_sum, 0), do: nil
+  defp average(sum, count), do: sum / count
 
   defp sort_tags(tags) do
     Enum.sort_by(tags, fn tag -> {String.downcase(tag.name), tag.name, tag.id} end)

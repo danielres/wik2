@@ -9,6 +9,7 @@ defmodule WikWeb.TagGraphLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
+  alias Wik.Tags.Tagging
 
   test "renders root tags, creates and edits tags, links an existing child, and detaches a branch",
        %{conn: conn} do
@@ -142,12 +143,75 @@ defmodule WikWeb.TagGraphLiveTest do
     assert_redirect(view, path)
   end
 
+  test "renders direct membership tagging counts next to tag names", %{conn: conn} do
+    owner = generate(user())
+    member_a = generate(user())
+    member_b = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    member_a_membership = add_membership(space, member_a, :member)
+    member_b_membership = add_membership(space, member_b, :member)
+    scope = scope(owner, space)
+
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
+    {:ok, beta} = Tags.create_tag("beta", "Beta", nil, scope: scope)
+
+    create_membership_tagging(member_a_membership, alpha, owner_membership, scope, %{
+      "interest" => 4,
+      "skill" => 0
+    })
+
+    create_membership_tagging(member_b_membership, alpha, owner_membership, scope, %{
+      "interest" => 7,
+      "skill" => 6
+    })
+
+    create_membership_tagging(member_a_membership, beta, owner_membership, scope, %{
+      "interest" => 3,
+      "skill" => 2
+    })
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/tags")
+
+    assert has_element?(view, "#{testid("tag-count-tag-path-#{alpha.id}")}", "2")
+    assert has_element?(view, "#{testid("tag-count-tag-path-#{beta.id}")}", "1")
+    assert has_element?(view, testid("tag-interest-chart-tag-path-#{alpha.id}"))
+    assert has_element?(view, testid("tag-skill-chart-tag-path-#{alpha.id}"))
+  end
+
   defp add_membership(space, user, type) do
     Ash.create!(
       Membership,
       %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false,
       domain: Wik.Accounts
+    )
+  end
+
+  defp create_membership_tagging(
+         target_membership,
+         tag,
+         tagged_by_membership,
+         scope,
+         dimensions
+       ) do
+    Ash.create!(
+      Tagging,
+      %{
+        tag_id: tag.id,
+        taggable_type: "membership",
+        taggable_id: target_membership.id,
+        tagged_by_membership_id: tagged_by_membership.id,
+        dimensions: dimensions,
+        description: nil
+      },
+      authorize?: false,
+      domain: Wik.Tags,
+      action: :create,
+      scope: scope
     )
   end
 

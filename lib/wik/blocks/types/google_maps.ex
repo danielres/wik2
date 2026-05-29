@@ -11,8 +11,11 @@ defmodule Wik.Blocks.Types.GoogleMaps do
   defdelegate create_initial_version(block, opts), to: Embed
   defdelegate default_data(), to: Embed
   defdelegate block_to_form_params(block, params, page_tree), to: Embed
-  defdelegate update_block(block, params, opts), to: Embed
   defdelegate version_to_text(block, version, opts), to: Embed
+
+  def update_block(block, params, opts) do
+    Embed.update_block(block, params, opts, &normalize_embed_input/1)
+  end
 
   def validate_data(data) do
     with :ok <- Embed.validate_title(data) do

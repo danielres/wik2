@@ -7,12 +7,11 @@ defmodule WikWeb.Components.Block.Types.GoogleCalendar do
 
   def render(assigns) do
     ~H"""
-    <Embed.wrapper>
+    <Embed.wrapper block={@block}>
       <%= if @block.data["url"] do %>
         <iframe
           class={[
-            "aspect-square @sm/block:aspect-square",
-            "w-full rounded border-0",
+            "w-full h-full rounded ",
             "dark:contrast-80",
             "dark:invert dark:hue-rotate-180"
           ]}

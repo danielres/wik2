@@ -7,7 +7,7 @@ defmodule WikWeb.Components.Block.Types.GoogleMaps do
 
   def render(assigns) do
     ~H"""
-    <Embed.wrapper>
+    <Embed.wrapper block={@block}>
       <%= if @block.data["url"] do %>
         <iframe
           allowfullscreen

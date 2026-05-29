@@ -2,6 +2,7 @@ defmodule WikWeb.Components.Block do
   use WikWeb, :html
 
   alias Wik.Blocks
+  alias Wik.Blocks.Types
   alias Wik.Wiki.PageTree
   alias WikWeb.Components
 
@@ -131,10 +132,13 @@ defmodule WikWeb.Components.Block do
   attr :actions?, :boolean, default: true
 
   def form(assigns) do
+    block = Map.get(assigns, :block, assigns.placement.block)
+
     assigns =
       assigns
-      |> assign_new(:block, fn -> assigns.placement.block end)
-      |> assign(:supports_title?, Blocks.Types.supports_title?(assigns.placement.block.type))
+      |> assign(:block, block)
+      |> assign(:supports_title?, Blocks.Types.supports_title?(block.type))
+      |> assign(:block_form_heading, block_form_heading(block.type))
 
     ~H"""
     <div
@@ -152,6 +156,10 @@ defmodule WikWeb.Components.Block do
           @block.type != :markdown && "p-4"
         ]}
       >
+        <h3 :if={@block_form_heading} class="text-lg">
+          {@block_form_heading}
+        </h3>
+
         <.input
           :if={@supports_title?}
           field={@form[:title]}
@@ -198,6 +206,13 @@ defmodule WikWeb.Components.Block do
 
   defp block_title(_block), do: ""
 
+  defp block_form_heading(type)
+       when type in [:youtube, :soundcloud, :google_calendar, :google_maps] do
+    "#{block_type_label(type)} block"
+  end
+
+  defp block_form_heading(_type), do: nil
+
   defp type_to_module(type) do
     Blocks.Types.modules()
     |> Enum.find_value(fn
@@ -207,5 +222,12 @@ defmodule WikWeb.Components.Block do
           Module.concat([Components.Block.Types, type_name])
         end
     end)
+  end
+
+  defp block_type_label(type) do
+    case Types.available() |> Enum.find(&(&1.type == type)) do
+      %{label: label} -> label
+      nil -> type |> Atom.to_string() |> String.replace("_", " ") |> String.capitalize()
+    end
   end
 end

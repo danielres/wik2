@@ -210,12 +210,19 @@ defmodule WikWeb.Components.UI do
   def modal_close(js \\ %JS{}, id), do: js |> JS.remove_class("modal-open", to: "##{id}_modal")
 
   attr :id, :string, required: true
+  attr :full?, :boolean, default: false
   slot :inner_block, required: true
 
   def modal(assigns) do
     ~H"""
     <dialog id={"#{@id}_modal"} class="modal">
-      <div class="modal-box" phx-click-away={modal_close(@id)}>
+      <div
+        class={[
+          "modal-box",
+          @full? && "w-[100svw] max-w-none h-[calc(100svh-1rem)] px-1 pt-7.5 pb-0.5"
+        ]}
+        phx-click-away={modal_close(@id)}
+      >
         {render_slot(@inner_block)}
 
         <form method="dialog">

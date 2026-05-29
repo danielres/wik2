@@ -219,7 +219,7 @@ defmodule WikWeb.Components.UI do
       <div
         class={[
           "modal-box",
-          @full? && "w-[100svw] h-[calc(100svh-1rem)] px-1 pt-7.5 pb-0.5"
+          @full? && "w-[100svw] max-w-none h-[calc(100svh-1rem)] px-1 pt-7.5 pb-0.5"
         ]}
         phx-click-away={modal_close(@id)}
       >

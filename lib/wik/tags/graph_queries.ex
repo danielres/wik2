@@ -1,5 +1,6 @@
 defmodule Wik.Tags.GraphQueries do
   alias Ash.Query
+
   alias Wik.Repo
   alias Wik.Tags
   alias Wik.Tags.Tag
@@ -30,6 +31,7 @@ defmodule Wik.Tags.GraphQueries do
   def load_graph(scope) do
     tags =
       Tag
+      |> Query.load(:membership_tagging_count)
       |> Ash.read!(scope: scope, domain: Tags)
       |> sort_tags()
 

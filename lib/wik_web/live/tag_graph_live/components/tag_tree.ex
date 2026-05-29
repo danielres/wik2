@@ -60,7 +60,12 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   defp tag_node(assigns) do
     selected? = assigns.selected_tag_id == assigns.node.tag.id
-    assigns = assign(assigns, :selected?, selected?)
+    tagging_count = assigns.node.tag.membership_tagging_count || 0
+
+    assigns =
+      assigns
+      |> assign(:selected?, selected?)
+      |> assign(:tagging_count, tagging_count)
 
     ~H"""
     <div
@@ -72,7 +77,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       data-testid={"tag-branch-#{@node.dom_id}"}
       style="--size-field: 0.22rem;"
     >
-      <div class="space flex justify-between gap-2">
+      <div class="group flex justify-between gap-2">
         <div
           :if={@editing?}
           class={[
@@ -86,13 +91,19 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             class={[
               "opacity-30 transition",
               @selected? && "rotate-0 opacity-100",
-              !@selected? && "rotate-135 space-hover:rotate-0 space-hover:opacity-100"
+              !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
             ]}
           />
 
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <span class="truncate">{@node.tag.name}</span>
+              <span
+                class="badge badge-xs badge-ghost shrink-0"
+                data-testid={"tag-count-#{@node.dom_id}"}
+              >
+                {@tagging_count}
+              </span>
             </div>
           </div>
         </div>
@@ -113,7 +124,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             class={[
               "opacity-30 transition",
               @selected? && "rotate-0 opacity-100",
-              !@selected? && "rotate-135 space-hover:rotate-0 space-hover:opacity-100"
+              !@selected? && "rotate-135 group-hover:rotate-0 group-hover:opacity-100"
             ]}
           />
 
@@ -123,6 +134,17 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             </div>
           </div>
         </.link>
+
+        <div
+          :if={not @editing? and @tagging_count > 0}
+          class="ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
+          data-testid={"tag-count-#{@node.dom_id}"}
+        >
+          <div class="indicator p-1">
+            <.icon name="hero-user-micro" class="opacity-50" />
+            <span class="indicator-item font-bold text-xs top-2 left-3">{@tagging_count}</span>
+          </div>
+        </div>
 
         <ActionButtons.wrapper :if={@editing?}>
           <ActionButtons.button

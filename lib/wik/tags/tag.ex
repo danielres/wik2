@@ -2,6 +2,7 @@ defmodule Wik.Tags.Tag do
   alias Wik.Accounts.Space
   alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Tags.TagEdge
+  alias Wik.Tags.Tagging
 
   use Ash.Resource,
     otp_app: :wik,
@@ -104,6 +105,18 @@ defmodule Wik.Tags.Tag do
     has_many :incoming_edges, TagEdge do
       source_attribute :id
       destination_attribute :child_tag_id
+    end
+  end
+
+  aggregates do
+    count :membership_tagging_count, Tagging do
+      public? true
+
+      filter expr(
+               taggable_type == "membership" and
+                 tag_id == parent(id) and
+                 space_id == parent(space_id)
+             )
     end
   end
 

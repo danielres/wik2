@@ -126,30 +126,33 @@ defmodule WikWeb.Layouts do
         ]}>
           <div class="item flex gap-0.5">
             <.link
+              :if={@view != "wiki/home" and @view != "tree"}
               patch={"/#{@scope.tenant.slug}/wiki"}
-              class={(@view == "wiki/home" or @view == "tree") and "active"}
             >
               <span>Wiki</span>
             </.link>
 
-            <div
+            <button
               :if={@view == "wiki/home" or @view == "tree"}
               class={[
-                "dropdown dropdown-start"
+                (@view == "wiki/home" or @view == "tree") and "active",
+                "dropdown dropdown-start",
+                "cursor-pointer"
               ]}
+              type="button"
             >
-              <div
-                tabindex="0"
-                role="button"
-                class="cursor-pointer opacity-50 hover:opacity-100 transition pl-1"
-              >
-                <.icon name="hero-chevron-down" class="size-2" />
-              </div>
+              <span>Wiki</span>
+              <.icon name="hero-chevron-down" class="size-2 -mr-3" />
 
               <ul
                 tabindex="-1"
                 class={[
-                  "dropdown-content bg-base-300 rounded whitespace-nowrap px-2 py-0.5 z-50 -ml-8 mt-3"
+                  "dropdown-content",
+                  "bg-base-300 rounded-lg",
+                  "border border-base-content/15",
+                  "shadow",
+                  "menu menu-sm",
+                  "min-w-36 mt-3"
                 ]}
               >
                 <li>
@@ -157,13 +160,23 @@ defmodule WikWeb.Layouts do
                     class={[
                       @view == "tree" and "!opacity-80 pointer-events-none"
                     ]}
+                    navigate={~p"/#{@scope.tenant.slug}/wiki/home"}
+                  >
+                    Home
+                  </.link>
+                </li>
+                <li>
+                  <.link
+                    class={[
+                      @view == "tree" and "!opacity-80 pointer-events-none"
+                    ]}
                     navigate={~p"/#{@scope.tenant.slug}/tree"}
                   >
-                    Pages tree
+                    All pages
                   </.link>
                 </li>
               </ul>
-            </div>
+            </button>
           </div>
 
           <.link patch={"/#{@scope.tenant.slug}/tags"} class={["item", @view == "tags" and "active"]}>

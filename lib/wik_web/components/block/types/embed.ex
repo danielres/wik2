@@ -34,6 +34,8 @@ defmodule WikWeb.Components.Block.Types.Embed do
             type="button"
             phx-click={UI.modal_open(@id)}
             class="ml-auto cursor-pointer opacity-30 hover:opacity-100"
+            aria-label="Open fullscreen"
+            title="Open fullscreen"
           >
             <.icon name="hero-arrows-pointing-out-micro" class="opacity-50" />
           </button>

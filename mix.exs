@@ -41,6 +41,9 @@ defmodule Wik.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:oban, "~> 2.0"},
+      {:oban_web, "~> 2.0"},
+      {:ash_oban, "~> 0.8"},
       {:memoize, "~> 1.4"},
       {:iconify_ex, "~> 0.7.2"},
       {:ical, "~> 2.0"},

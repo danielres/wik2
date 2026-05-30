@@ -5,6 +5,7 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Utils.Tz
+  alias WikWeb.Components.Event.Timeline
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
 
@@ -150,7 +151,7 @@ defmodule WikWeb.Components.Event do
   def event_header(assigns) do
     ~H"""
     <h2 class={[
-      "truncate text-base font-medium leading-tight",
+      "text-base font-medium leading-tight",
       "flex-grow",
       "flex items-center gap-2",
       @publication.event.status == :cancelled && "line-through decoration-base-content"
@@ -389,71 +390,15 @@ defmodule WikWeb.Components.Event do
     """
   end
 
-  attr :current_scope, :map, required: true
-  attr :event_publications, :list, required: true
+  attr :current_scope, :map, default: nil
+  attr :event_publications, :list, default: nil
+  attr :grouped_items, :list, default: []
+  attr :timeline_source, :string, default: "both"
+  attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
-  def list(assigns) do
-    ~H"""
-    <div
-      id="event-publications"
-      class="grid gap-1"
-      data-testid="events-timeline"
-    >
-      <div
-        :if={@event_publications == []}
-        id="event-publications-empty"
-        class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
-        data-testid="events-empty"
-      >
-        No upcoming events yet.
-      </div>
-
-      <article
-        :for={publication <- @event_publications}
-        id={"event-publication-#{publication.id}"}
-        data-testid={"event-publication-#{publication.id}"}
-        class={[
-          "rounded-box bg-base-200 p-0 transition overflow-hidden"
-        ]}
-      >
-        <.link
-          patch={event_link_target(@current_scope, publication)}
-          class={[
-            "block p-4 hover:bg-base-300/70 transition",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          ]}
-          data-testid={"event-open-#{publication.id}"}
-        >
-          <div class="min-w-0 space-y-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <.event_header publication={publication} />
-              <.event_status event={publication.event} />
-            </div>
-
-            <div
-              class="truncate text-sm opacity-80"
-              data-testid={"event-schedule-#{publication.id}"}
-            >
-              <.schedule
-                event={publication.event}
-                user_tz={@user_tz}
-              />
-            </div>
-          </div>
-        </.link>
-      </article>
-    </div>
-    """
-  end
-
-  defp event_link_target(%{tenant: %{slug: space_slug}}, publication) do
-    ~p"/#{space_slug}/events?#{%{event: publication.id}}"
-  end
-
-  defp event_link_target(_scope, publication) do
-    ~p"/#{publication.space.slug}/events?#{%{event: publication.id}}"
-  end
+  def list(assigns), do: Timeline.compact_list(assigns)
+  def grouped_timeline(assigns), do: Timeline.grouped_list(assigns)
 
   attr :class, :string, default: nil
   attr :event, :map, required: true
@@ -467,7 +412,7 @@ defmodule WikWeb.Components.Event do
       |> assign(:user_parts, schedule_parts(assigns.event, assigns.user_tz))
 
     ~H"""
-    <div class={["space-y-0", @class]}>
+    <div class={["space-y-0.5", @class]}>
       <.schedule_row parts={@event_parts} tz={@event.tz} tz?={@show_user_tz?} />
       <.schedule_row :if={@show_user_tz?} parts={@user_parts} tz={@user_tz} secondary? />
     </div>
@@ -479,21 +424,22 @@ defmodule WikWeb.Components.Event do
   attr :secondary?, :boolean, default: false
   attr :tz?, :boolean, default: true
 
+  # TODO: dry up
   defp schedule_row(%{parts: %{kind: :timed, same_day?: true}} = assigns) do
     ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1", @secondary? && "opacity-75"]}>
-      <span class="font-medium">{@parts.start_date}</span>
+    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1 text-xs", @secondary? && "opacity-75"]}>
+      <span class="">{@parts.start_date}</span>
       <span>{@parts.start_time}</span>
       <span class="mx-1 opacity-50">to</span>
       <span>{@parts.end_time}</span>
-      <span :if={@tz?} class="badge badge-sm bg-base-300">{@tz}</span>
+      <span :if={@tz?} class="badge badge-xs bg-base-300">{@tz}</span>
     </div>
     """
   end
 
   defp schedule_row(%{parts: %{kind: :timed, same_day?: false}} = assigns) do
     ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1", @secondary? && "opacity-75 text-xs"]}>
+    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1 text-xs", @secondary? && "opacity-75"]}>
       <span class="font-medium">{@parts.start_date}</span>
       <span>{@parts.start_time}</span>
       <span class="mx-1 opacity-50">to</span>
@@ -506,7 +452,7 @@ defmodule WikWeb.Components.Event do
 
   defp schedule_row(%{parts: %{kind: :all_day_single}} = assigns) do
     ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1", @secondary? && "opacity-75 text-xs"]}>
+    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1 text-xs", @secondary? && "opacity-75"]}>
       <span class="font-medium">{@parts.start_date}</span>
       <span class="badge badge-sm bg-base-300">{@tz}</span>
     </div>

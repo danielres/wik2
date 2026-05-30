@@ -41,6 +41,7 @@ defmodule Wik.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:memoize, "~> 1.4"},
       {:iconify_ex, "~> 0.7.2"},
       {:ical, "~> 2.0"},
       {:error_tracker, "~> 0.9"},

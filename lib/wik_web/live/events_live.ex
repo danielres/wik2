@@ -50,8 +50,8 @@ defmodule WikWeb.EventsLive do
 
           <Components.Event.grouped_timeline
             current_scope={@current_scope}
-            external_future_windows={@timeline.future_windows}
             grouped_items={@timeline.grouped_items}
+            load_more_path={@timeline.load_more_path}
             more_external_future?={@timeline.more_external_future?}
             show_external?={@timeline.show_external?}
             user_tz={@active_tz}
@@ -344,6 +344,7 @@ defmodule WikWeb.EventsLive do
           | internal_publications: [],
             internal_items: [],
             external_items: [],
+            load_more_path: nil,
             more_external_future?: false,
             items: [],
             grouped_items: []
@@ -390,6 +391,7 @@ defmodule WikWeb.EventsLive do
       internal_publications: [],
       internal_items: [],
       external_items: [],
+      load_more_path: nil,
       more_external_future?: false,
       items: [],
       grouped_items: []
@@ -406,11 +408,46 @@ defmodule WikWeb.EventsLive do
         timeline.show_external?
       )
 
+    current_scope = socket.assigns.current_scope
+    items = with_timeline_item_paths(items, current_scope, timeline)
+
     assign(socket, :timeline, %{
       timeline
       | items: items,
+        load_more_path: load_more_path(current_scope, timeline),
         grouped_items: TimelinePresenter.grouped_timeline_items(items)
     })
+  end
+
+  defp with_timeline_item_paths(items, current_scope, timeline) do
+    Enum.map(items, fn
+      %{source_type: :internal, publication_id: publication_id} = item ->
+        Map.put(
+          item,
+          :open_path,
+          internal_event_path(
+            current_scope,
+            publication_id,
+            timeline.show_external?,
+            timeline.future_windows
+          )
+        )
+
+      item ->
+        item
+    end)
+  end
+
+  defp load_more_path(current_scope, %{show_external?: true, future_windows: future_windows}) do
+    params = Params.load_more_params(true, future_windows)
+    ~p"/#{current_scope.tenant.slug}/events?#{params}"
+  end
+
+  defp load_more_path(_current_scope, _timeline), do: nil
+
+  defp internal_event_path(current_scope, publication_id, show_external?, future_windows) do
+    params = Params.event_params(publication_id, show_external?, future_windows)
+    ~p"/#{current_scope.tenant.slug}/events?#{params}"
   end
 
   defp select_subscription_modal(socket, subscription_id) do

@@ -3,11 +3,10 @@ defmodule WikWeb.Components.Event.Timeline do
 
   alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event
-  alias WikWeb.EventsLive.Params
 
   attr :current_scope, :map, required: true
-  attr :external_future_windows, :integer, default: 1
   attr :grouped_items, :list, default: []
+  attr :load_more_path, :string, default: nil
   attr :more_external_future?, :boolean, default: false
   attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
@@ -70,14 +69,7 @@ defmodule WikWeb.Components.Event.Timeline do
               >
                 <%= if item.source_type == :internal do %>
                   <.link
-                    patch={
-                      event_link_target(
-                        @current_scope,
-                        item,
-                        @show_external?,
-                        @external_future_windows
-                      )
-                    }
+                    patch={item.open_path}
                     class={[
                       "block p-4 rounded-box",
                       "bg-base-content/6",
@@ -125,7 +117,7 @@ defmodule WikWeb.Components.Event.Timeline do
 
       <div :if={@more_external_future? and @show_external?} class="flex justify-center">
         <.link
-          patch={load_more_link_target(@current_scope, @show_external?, @external_future_windows)}
+          patch={@load_more_path}
           class="btn btn-sm btn-ghost"
           data-testid="events-load-more-future"
         >
@@ -260,31 +252,6 @@ defmodule WikWeb.Components.Event.Timeline do
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
 
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
-
-  defp load_more_link_target(%{tenant: %{slug: space_slug}}, show_external?, future_windows) do
-    params = Params.load_more_params(show_external?, future_windows)
-    ~p"/#{space_slug}/events?#{params}"
-  end
-
-  defp event_link_target(
-         %{tenant: %{slug: space_slug}},
-         %{publication_id: publication_id},
-         show_external?,
-         future_windows
-       ) do
-    params = Params.event_params(publication_id, show_external?, future_windows)
-    ~p"/#{space_slug}/events?#{params}"
-  end
-
-  defp event_link_target(
-         _scope,
-         %{publication_id: publication_id, space_slug: space_slug},
-         show_external?,
-         future_windows
-       ) do
-    params = Params.event_params(publication_id, show_external?, future_windows)
-    ~p"/#{space_slug}/events?#{params}"
-  end
 
   defp legacy_event_link_target(%{tenant: %{slug: space_slug}}, publication) do
     ~p"/#{space_slug}/events?#{%{event: publication.id}}"

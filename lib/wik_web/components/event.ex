@@ -407,6 +407,7 @@ defmodule WikWeb.Components.Event do
   attr :current_scope, :map, default: nil
   attr :event_publications, :list, default: nil
   attr :grouped_items, :list, default: []
+  attr :load_more_path, :string, default: nil
   attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true

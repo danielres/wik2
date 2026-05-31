@@ -49,6 +49,17 @@
       @apply font-bold;
     }
   }
+
+  .toggle {
+    @layer daisyui.l1.l2.l3 {
+      background-color: var(--color-base-300);
+      &:checked,
+      &[aria-checked="true"],
+      &:has(> input:checked) {
+        background-color: var(--color-base-300);
+      }
+    }
+  }
 }
 
 @layer components {

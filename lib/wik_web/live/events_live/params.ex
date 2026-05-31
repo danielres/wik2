@@ -25,7 +25,6 @@ defmodule WikWeb.EventsLive.Params do
   defp parse_show_external?(%{"external" => value}),
     do: value in [true, "true", "on", "1"]
 
-  defp parse_show_external?(%{"source" => source}) when source in ["both", "external"], do: true
   defp parse_show_external?(_params), do: false
 
   defp parse_future_windows(nil), do: 1

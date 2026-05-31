@@ -11,7 +11,8 @@ defmodule WikWeb.EventsLive do
   alias WikWeb.EventsLive
   alias WikWeb.EventsLive.Params
   alias WikWeb.EventsLive.Subscriptions
-  alias WikWeb.EventsLive.TimelineData
+  alias WikWeb.EventsLive.TimelineLoader
+  alias WikWeb.EventsLive.TimelinePresenter
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
 
@@ -336,13 +337,15 @@ defmodule WikWeb.EventsLive do
     timeline = socket.assigns.timeline
 
     with {:ok, loaded_data} <-
-           TimelineData.load(scope,
+           TimelineLoader.load(scope,
              show_external?: timeline.show_external?,
              future_windows: timeline.future_windows
            ) do
+      presented_timeline = TimelinePresenter.build(loaded_data, timeline.show_external?)
+
       socket
-      |> put_loaded_timeline(loaded_data)
-      |> put_loaded_subscriptions(loaded_data)
+      |> put_loaded_timeline(presented_timeline)
+      |> put_loaded_subscriptions(presented_timeline)
     else
       {:error, error} ->
         Log.scoped_error(scope, error, "refresh_page_data failed")
@@ -409,7 +412,7 @@ defmodule WikWeb.EventsLive do
     timeline = socket.assigns.timeline
 
     items =
-      TimelineData.timeline_items(
+      TimelinePresenter.timeline_items(
         timeline.internal_items,
         timeline.external_items,
         timeline.show_external?
@@ -418,7 +421,7 @@ defmodule WikWeb.EventsLive do
     assign(socket, :timeline, %{
       timeline
       | items: items,
-        grouped_items: TimelineData.grouped_timeline_items(items)
+        grouped_items: TimelinePresenter.grouped_timeline_items(items)
     })
   end
 

@@ -1,48 +1,32 @@
-defmodule WikWeb.EventsLive.TimelineData do
-  require Ash.Query
-
-  alias Ash.Query
-  alias Wik.Accounts
-  alias Wik.Events
-  alias Wik.Events.EventPublication
+defmodule WikWeb.EventsLive.TimelinePresenter do
   alias Wik.Events.ExternalCalendar
 
-  @future_window_months 2
+  def build(loaded_data, show_external?) do
+    loaded_subscriptions = ExternalCalendar.load_subscriptions(loaded_data.subscription_records)
 
-  def load(scope, opts \\ []) do
-    show_external? = Keyword.get(opts, :show_external?, false)
-    future_windows = Keyword.get(opts, :future_windows, 1)
+    internal_items =
+      normalize_internal_publications(
+        loaded_data.internal_publications,
+        loaded_data.author_memberships_by_user_id
+      )
 
-    publications_query =
-      EventPublication
-      |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
-      |> Query.load([:published_by, :space, event: [:author, :space]])
+    external_items =
+      normalize_external_events(loaded_data.external_events, loaded_subscriptions)
 
-    with {:ok, space} <-
-           Ash.load(scope.tenant, [event_publications: publications_query], scope: scope),
-         {:ok, author_memberships_by_user_id} <-
-           load_author_memberships_by_user_id(space.event_publications),
-         {:ok, subscriptions} <-
-           Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
-         {:ok, external_events} <- read_external_events(scope, show_external?, future_windows) do
-      loaded_subscriptions = ExternalCalendar.load_subscriptions(subscriptions)
-      external_items = normalize_external_events(external_events, loaded_subscriptions)
+    items = timeline_items(internal_items, external_items, show_external?)
 
-      internal_publications =
-        normalize_internal_publications(space.event_publications, author_memberships_by_user_id)
-
-      {:ok,
-       %{
-         internal_publications: space.event_publications,
-         internal_items: internal_publications,
-         external_items: external_items,
-         more_external_future?: more_external_future?(scope, show_external?, future_windows),
-         subscription_records: loaded_subscriptions.records,
-         subscription_errors_by_id: loaded_subscriptions.errors_by_id,
-         subscription_names_by_id: loaded_subscriptions.names_by_id,
-         subscription_metadata_by_id: loaded_subscriptions.metadata_by_id
-       }}
-    end
+    %{
+      internal_publications: loaded_data.internal_publications,
+      internal_items: internal_items,
+      external_items: external_items,
+      items: items,
+      grouped_items: grouped_timeline_items(items),
+      more_external_future?: loaded_data.more_external_future?,
+      subscription_records: loaded_subscriptions.records,
+      subscription_errors_by_id: loaded_subscriptions.errors_by_id,
+      subscription_names_by_id: loaded_subscriptions.names_by_id,
+      subscription_metadata_by_id: loaded_subscriptions.metadata_by_id
+    }
   end
 
   def timeline_items(internal_items, external_items, show_external?) do
@@ -159,57 +143,6 @@ defmodule WikWeb.EventsLive.TimelineData do
       source_url: nil,
       subscription_id: event.subscription_id
     }
-  end
-
-  defp load_author_memberships_by_user_id([]), do: {:ok, %{}}
-
-  defp load_author_memberships_by_user_id(publications) do
-    space_id = publications |> List.first() |> then(& &1.space.id)
-
-    user_ids =
-      publications
-      |> Enum.map(& &1.event.author.id)
-
-    Accounts.list_memberships_by_user_id(space_id, user_ids)
-  end
-
-  defp read_external_events(_scope, false, _future_windows), do: {:ok, []}
-
-  defp read_external_events(scope, true, future_windows) do
-    today_start = DateTime.new!(Date.utc_today(), ~T[00:00:00], "Etc/UTC")
-    future_window_end = future_window_end(future_windows)
-
-    query =
-      Events.external_events_query()
-      |> Query.filter(starts_at >= ^today_start and starts_at <= ^future_window_end)
-
-    case Ash.read(query, scope: scope) do
-      {:ok, events} -> {:ok, events}
-      {:error, error} -> {:error, error}
-    end
-  end
-
-  defp more_external_future?(_scope, false, _future_windows), do: false
-
-  defp more_external_future?(scope, true, future_windows) do
-    future_window_end = future_window_end(future_windows)
-
-    query =
-      Events.external_events_query()
-      |> Query.filter(starts_at > ^future_window_end)
-      |> Query.limit(1)
-
-    case Ash.read(query, scope: scope) do
-      {:ok, []} -> false
-      {:ok, [_ | _]} -> true
-      {:error, _error} -> false
-    end
-  end
-
-  defp future_window_end(future_windows) do
-    Date.utc_today()
-    |> Date.shift(month: future_windows * @future_window_months)
-    |> DateTime.new!(~T[23:59:59], "Etc/UTC")
   end
 
   defp month_label(year, month) do

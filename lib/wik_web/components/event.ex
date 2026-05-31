@@ -5,6 +5,7 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Utils.Tz
+  alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event.Timeline
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
@@ -263,19 +264,16 @@ defmodule WikWeb.Components.Event do
         </div>
       </div>
 
-      <div class="flex gap-2 items-start">
-        <WikWeb.Components.User.avatar
-          membership={@author_membership}
-          size="sm"
+      <div class="space-y-1">
+        <div class="text-xs uppercase tracking-wide opacity-50">
+          Member
+        </div>
+        <AuthorLine.render
+          avatar_url={@author_membership && @author_membership.avatar_url}
+          display_name={@publication.event.author |> to_string()}
           tenant={@publication.space}
           user={@publication.event.author}
         />
-        <div class="min-w-0">
-          <div class="text-xs uppercase tracking-wide opacity-50">
-            Member
-          </div>
-          <div class="text-sm">{@publication.event.author |> to_string()}</div>
-        </div>
       </div>
 
       <div :if={@publication.event.provenance_policy == :visible}>
@@ -409,7 +407,7 @@ defmodule WikWeb.Components.Event do
   attr :current_scope, :map, default: nil
   attr :event_publications, :list, default: nil
   attr :grouped_items, :list, default: []
-  attr :timeline_source, :string, default: "internal"
+  attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 

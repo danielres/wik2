@@ -211,12 +211,16 @@ defmodule WikWeb.Components.UI do
     """
   end
 
+  attr :class, :string, default: ""
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
   def button_plus(assigns) do
     ~H"""
     <button
-      class="btn btn-accent btn-soft btn-circle btn-xs"
+      class={[
+        "btn btn-accent btn-soft btn-circle btn-xs",
+        @class
+      ]}
       {@rest}
     >
       <.icon name="hero-plus-micro" />

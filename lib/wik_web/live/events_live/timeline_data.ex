@@ -10,7 +10,7 @@ defmodule WikWeb.EventsLive.TimelineData do
   @future_window_months 2
 
   def load(scope, opts \\ []) do
-    source = Keyword.get(opts, :source, "both")
+    show_external? = Keyword.get(opts, :show_external?, false)
     future_windows = Keyword.get(opts, :future_windows, 1)
 
     publications_query =
@@ -24,7 +24,7 @@ defmodule WikWeb.EventsLive.TimelineData do
            load_author_memberships_by_user_id(space.event_publications),
          {:ok, subscriptions} <-
            Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
-         {:ok, external_events} <- read_external_events(scope, source, future_windows) do
+         {:ok, external_events} <- read_external_events(scope, show_external?, future_windows) do
       loaded_subscriptions = ExternalCalendar.load_subscriptions(subscriptions)
       external_items = normalize_external_events(external_events, loaded_subscriptions)
 
@@ -36,7 +36,7 @@ defmodule WikWeb.EventsLive.TimelineData do
          internal_publications: space.event_publications,
          internal_items: internal_publications,
          external_items: external_items,
-         more_external_future?: more_external_future?(scope, source, future_windows),
+         more_external_future?: more_external_future?(scope, show_external?, future_windows),
          subscription_records: loaded_subscriptions.records,
          subscription_errors_by_id: loaded_subscriptions.errors_by_id,
          subscription_names_by_id: loaded_subscriptions.names_by_id,
@@ -45,10 +45,15 @@ defmodule WikWeb.EventsLive.TimelineData do
     end
   end
 
-  def timeline_items(internal_publications, external_items, source) do
-    (internal_publications ++ external_items)
-    |> maybe_filter_items(source)
-    |> Enum.sort_by(&{DateTime.to_unix(&1.starts_at, :microsecond), &1.id})
+  def timeline_items(internal_items, external_items, show_external?) do
+    items =
+      if show_external? do
+        internal_items ++ external_items
+      else
+        internal_items
+      end
+
+    Enum.sort_by(items, &{DateTime.to_unix(&1.starts_at, :microsecond), &1.id})
   end
 
   def grouped_timeline_items(items) do
@@ -168,17 +173,9 @@ defmodule WikWeb.EventsLive.TimelineData do
     Accounts.list_memberships_by_user_id(space_id, user_ids)
   end
 
-  defp maybe_filter_items(items, "internal"),
-    do: Enum.filter(items, &(&1.source_type == :internal))
+  defp read_external_events(_scope, false, _future_windows), do: {:ok, []}
 
-  defp maybe_filter_items(items, "external"),
-    do: Enum.filter(items, &(&1.source_type == :external))
-
-  defp maybe_filter_items(items, _source), do: items
-
-  defp read_external_events(_scope, "internal", _future_windows), do: {:ok, []}
-
-  defp read_external_events(scope, _source, future_windows) do
+  defp read_external_events(scope, true, future_windows) do
     today_start = DateTime.new!(Date.utc_today(), ~T[00:00:00], "Etc/UTC")
     future_window_end = future_window_end(future_windows)
 
@@ -192,9 +189,9 @@ defmodule WikWeb.EventsLive.TimelineData do
     end
   end
 
-  defp more_external_future?(_scope, "internal", _future_windows), do: false
+  defp more_external_future?(_scope, false, _future_windows), do: false
 
-  defp more_external_future?(scope, _source, future_windows) do
+  defp more_external_future?(scope, true, future_windows) do
     future_window_end = future_window_end(future_windows)
 
     query =

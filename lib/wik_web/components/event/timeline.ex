@@ -1,14 +1,15 @@
 defmodule WikWeb.Components.Event.Timeline do
   use WikWeb, :html
 
+  alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event
-  alias WikWeb.Components.User
+  alias WikWeb.EventsLive.RouteParams
 
   attr :current_scope, :map, required: true
   attr :external_future_windows, :integer, default: 1
   attr :grouped_items, :list, default: []
   attr :more_external_future?, :boolean, default: false
-  attr :timeline_source, :string, default: "both"
+  attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
@@ -73,7 +74,7 @@ defmodule WikWeb.Components.Event.Timeline do
                       event_link_target(
                         @current_scope,
                         item,
-                        @timeline_source,
+                        @show_external?,
                         @external_future_windows
                       )
                     }
@@ -122,9 +123,9 @@ defmodule WikWeb.Components.Event.Timeline do
         </section>
       </section>
 
-      <div :if={@more_external_future? and @timeline_source != "internal"} class="flex justify-center">
+      <div :if={@more_external_future? and @show_external?} class="flex justify-center">
         <.link
-          patch={load_more_link_target(@current_scope, @timeline_source, @external_future_windows)}
+          patch={load_more_link_target(@current_scope, @show_external?, @external_future_windows)}
           class="btn btn-sm btn-ghost"
           data-testid="events-load-more-future"
         >
@@ -179,20 +180,11 @@ defmodule WikWeb.Components.Event.Timeline do
               <Event.schedule event={publication.event} user_tz={@user_tz} />
             </div>
 
-            <div class="truncate text-xs opacity-60 flex items-center gap-1">
-              <User.avatar
-                avatar_url={
-                  item_author_avatar_url(%{
-                    author_avatar_url: nil,
-                    author_user: publication.event.author
-                  })
-                }
-                size="xs"
-                tenant={@current_scope.tenant}
-                user={publication.event.author}
-              />
-              {publication.event.author |> to_string()}
-            </div>
+            <AuthorLine.render
+              display_name={publication.event.author |> to_string()}
+              tenant={@current_scope.tenant}
+              user={publication.event.author}
+            />
           </div>
         </.link>
       </article>
@@ -222,19 +214,13 @@ defmodule WikWeb.Components.Event.Timeline do
         <Event.schedule event={@item} user_tz={@user_tz} />
       </div>
 
-      <div
-        :if={present?(@item.author_name)}
-        class="truncate text-xs opacity-60 flex items-center gap-1"
-        data-testid={"internal-event-author-#{@item.id}"}
-      >
-        <User.avatar
-          avatar_url={item_author_avatar_url(@item)}
-          size="xs"
-          tenant={@current_scope.tenant}
-          user={@item.author_user}
-        />
-        {@item.author_name}
-      </div>
+      <AuthorLine.render
+        avatar_url={@item.author_avatar_url}
+        display_name={@item.author_name}
+        tenant={@current_scope.tenant}
+        testid={"internal-event-author-#{@item.id}"}
+        user={@item.author_user}
+      />
 
       <div
         :if={present?(@item.calendar_name)}
@@ -273,40 +259,30 @@ defmodule WikWeb.Components.Event.Timeline do
 
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
 
-  defp item_author_avatar_url(%{author_avatar_url: avatar_url}), do: avatar_url
-
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 
-  defp load_more_link_target(%{tenant: %{slug: space_slug}}, source, future_windows) do
-    params =
-      %{external: source == "both", future_windows: future_windows + 1}
-
+  defp load_more_link_target(%{tenant: %{slug: space_slug}}, show_external?, future_windows) do
+    params = RouteParams.load_more_params(show_external?, future_windows)
     ~p"/#{space_slug}/events?#{params}"
   end
 
   defp event_link_target(
          %{tenant: %{slug: space_slug}},
          %{publication_id: publication_id},
-         source,
+         show_external?,
          future_windows
        ) do
-    params =
-      %{event: publication_id, external: source == "both"}
-      |> maybe_put_future_windows(future_windows)
-
+    params = RouteParams.event_params(publication_id, show_external?, future_windows)
     ~p"/#{space_slug}/events?#{params}"
   end
 
   defp event_link_target(
          _scope,
          %{publication_id: publication_id, space_slug: space_slug},
-         source,
+         show_external?,
          future_windows
        ) do
-    params =
-      %{event: publication_id, external: source == "both"}
-      |> maybe_put_future_windows(future_windows)
-
+    params = RouteParams.event_params(publication_id, show_external?, future_windows)
     ~p"/#{space_slug}/events?#{params}"
   end
 
@@ -317,12 +293,6 @@ defmodule WikWeb.Components.Event.Timeline do
   defp legacy_event_link_target(_scope, publication) do
     ~p"/#{publication.space.slug}/events?#{%{event: publication.id}}"
   end
-
-  defp maybe_put_future_windows(params, future_windows) when future_windows > 1 do
-    Map.put(params, :future_windows, future_windows)
-  end
-
-  defp maybe_put_future_windows(params, _future_windows), do: params
 
   defp present?(value), do: value not in [nil, ""]
 end

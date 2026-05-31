@@ -72,7 +72,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{publication.id}")))
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id}}")
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
     assert has_element?(view, testid("event-detail"))
     assert render(view) =~ "An event description"
     assert render(view) =~ "Community Hall, 123 Example Street"
@@ -397,7 +397,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{space.slug}/events")
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
     assert has_element?(view, testid("events-timeline"))
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
@@ -475,7 +475,7 @@ defmodule WikWeb.EventsLiveTest do
     refute render(view) =~ ~s(name="form[status]")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id}}")
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
     assert has_element?(view, testid("event-detail"))
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -501,7 +501,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{space.slug}/events")
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
     assert render(view) =~ "Community dinner updated"
@@ -931,7 +931,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     assert has_element?(view, testid("events-subscribe-to-calendar-button"))
     assert has_element?(view, testid("events-subscriptions-empty"))
@@ -979,7 +979,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, revisited_view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     assert has_element?(revisited_view, testid("events-subscription-open-#{subscription.id}"))
 
@@ -1006,7 +1006,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     render_click(element(view, testid("events-subscribe-to-calendar-button")))
 
@@ -1059,7 +1059,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     assert has_element?(
              view,
@@ -1084,7 +1084,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     external_event_id = external_event_id(subscription)
 
@@ -1146,7 +1146,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{source: "external"}}")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
 
@@ -1185,9 +1185,10 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{source: "external"}}")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
-    refute has_element?(view, testid(external_event_testid(subscription)))
+    assert external_event_id(subscription) == nil
+    refute render(view) =~ ~s(data-testid="external-event-)
   end
 
   test "expired recurring external events with raw UNTIL are not materialized", %{conn: conn} do
@@ -1218,9 +1219,10 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{source: "external"}}")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
-    refute has_element?(view, testid(external_event_testid(subscription)))
+    assert external_event_id(subscription) == nil
+    refute render(view) =~ ~s(data-testid="external-event-)
   end
 
   test "recurring external events keep their real local wall-clock start time", %{conn: _conn} do
@@ -1287,7 +1289,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     external_event_id = external_event_id(subscription)
 
@@ -1321,7 +1323,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     external_event_testid = external_event_testid(subscription)
 
@@ -1368,7 +1370,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
     assert has_element?(view, testid("events-subscription-detail-dialog"))
@@ -1428,17 +1430,18 @@ defmodule WikWeb.EventsLiveTest do
         order_by: [asc: event.starts_at],
         limit: 1
       )
-      |> Repo.one!()
+      |> Repo.one()
 
-    "external:#{external_event.id}"
+    external_event && "external:#{external_event.id}"
   end
 
   defp external_event_testid(subscription) do
-    "external-event-#{external_event_id(subscription)}"
+    external_event_id(subscription) && "external-event-#{external_event_id(subscription)}"
   end
 
   defp external_event_calendar_name_testid(subscription) do
-    "external-event-calendar-name-#{external_event_id(subscription)}"
+    external_event_id(subscription) &&
+      "external-event-calendar-name-#{external_event_id(subscription)}"
   end
 
   defp sample_ics_calendar do

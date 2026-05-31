@@ -3,19 +3,6 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
 
   alias Wik.Events.ExternalCalendar.Presentation
 
-  def fetch_subscription_cache(subscription, http_get \\ http_get()) do
-    with {:ok, calendar_data} <- fetch_remote_calendar(subscription, http_get) do
-      {:ok,
-       Map.take(calendar_data, [
-         :cached_at,
-         :etag,
-         :cached_name,
-         :cached_tz,
-         :cached_desc
-       ])}
-    end
-  end
-
   def fetch_remote_calendar(subscription, http_get) do
     with {:ok, response} <- http_get.(subscription.ics_url, []),
          200 <- response.status,

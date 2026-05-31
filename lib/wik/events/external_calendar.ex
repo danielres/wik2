@@ -6,25 +6,8 @@ defmodule Wik.Events.ExternalCalendar do
   implementation to focused fetch, sync, and presentation modules.
   """
 
-  alias Wik.Events.ExternalCalendar.Fetch
   alias Wik.Events.ExternalCalendar.Presentation
   alias Wik.Events.ExternalCalendar.Sync
-
-  def fetch_subscription_cache(subscription, http_get \\ Fetch.http_get()) do
-    Fetch.fetch_subscription_cache(subscription, http_get)
-  end
-
-  def fetch_subscription_events(subscription, http_get \\ Fetch.http_get()) do
-    with {:ok, calendar_data} <- Fetch.fetch_remote_calendar(subscription, http_get) do
-      {:ok,
-       Sync.materialized_events(
-         subscription,
-         calendar_data.calendar,
-         calendar_data.cached_name,
-         calendar_data.raw_event_metadata
-       )}
-    end
-  end
 
   defdelegate load_subscriptions(subscriptions, opts \\ []), to: Presentation
   defdelegate display_name(subscription, calendar_name \\ nil), to: Presentation

@@ -1,4 +1,4 @@
-defmodule WikWeb.EventsLive.Subscriptions do
+defmodule WikWeb.EventsLive.SubscriptionState do
   alias Phoenix.Component
   alias Wik.Events.ExternalCalendar
 

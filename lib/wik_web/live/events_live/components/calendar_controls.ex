@@ -5,7 +5,7 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
   alias Wik.Events.ExternalCalendarSubscription
   alias WikWeb.Components
   alias WikWeb.Components.UI
-  alias WikWeb.EventsLive.Subscriptions
+  alias WikWeb.EventsLive.SubscriptionState
 
   attr :timeline, :map, required: true
   attr :subscriptions, :map, required: true
@@ -45,7 +45,7 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
 
         <div class="flex flex-wrap gap-1 items-center">
           <button
-            :for={subscription <- Subscriptions.sorted(@subscriptions)}
+            :for={subscription <- SubscriptionState.sorted(@subscriptions)}
             class={[
               "btn btn-neutral btn-sm cursor-pointer opacity-80 hover:opacity-100 transition-opacity",
               "max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
@@ -57,7 +57,7 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
             <div class="min-w-0">
               <div class="text-xs font-medium truncate flex items-center gap-1">
                 <.icon name="hero-calendar-days-micro" class="opacity-60" />
-                {Subscriptions.display_name(@subscriptions, subscription)}
+                {SubscriptionState.display_name(@subscriptions, subscription)}
               </div>
               <div
                 :if={Map.has_key?(@subscriptions.errors_by_id, subscription.id)}

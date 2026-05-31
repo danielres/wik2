@@ -10,7 +10,7 @@ defmodule WikWeb.EventsLive do
   alias WikWeb.Components.Event.FormState
   alias WikWeb.EventsLive
   alias WikWeb.EventsLive.Params
-  alias WikWeb.EventsLive.Subscriptions
+  alias WikWeb.EventsLive.SubscriptionState
   alias WikWeb.EventsLive.TimelineLoader
   alias WikWeb.EventsLive.TimelinePresenter
 
@@ -22,7 +22,7 @@ defmodule WikWeb.EventsLive do
      socket
      |> assign(modal: nil)
      |> assign(presences: [])
-     |> assign(subscriptions: Subscriptions.empty())
+     |> assign(subscriptions: SubscriptionState.empty())
      |> assign(timeline: empty_timeline())
      |> refresh_page_data()}
   end
@@ -168,7 +168,7 @@ defmodule WikWeb.EventsLive do
   end
 
   def handle_event("external_calendar_subscription_start", _params, socket) do
-    {:noreply, assign(socket, :modal, {:new_subscription, Subscriptions.create_form(), nil})}
+    {:noreply, assign(socket, :modal, {:new_subscription, SubscriptionState.create_form(), nil})}
   end
 
   def handle_event("external_calendar_subscription_show", %{"id" => id}, socket) do
@@ -198,7 +198,7 @@ defmodule WikWeb.EventsLive do
               assign(
                 socket,
                 :modal,
-                {:new_subscription, Subscriptions.create_form(ics_url), error_message(error)}
+                {:new_subscription, SubscriptionState.create_form(ics_url), error_message(error)}
               )
           end
 
@@ -206,7 +206,7 @@ defmodule WikWeb.EventsLive do
           assign(
             socket,
             :modal,
-            {:new_subscription, Subscriptions.create_form(ics_url),
+            {:new_subscription, SubscriptionState.create_form(ics_url),
              Ash.Error.to_error_class(error).message}
           )
 
@@ -214,7 +214,7 @@ defmodule WikWeb.EventsLive do
           assign(
             socket,
             :modal,
-            {:new_subscription, Subscriptions.create_form(ics_url), error_message(error)}
+            {:new_subscription, SubscriptionState.create_form(ics_url), error_message(error)}
           )
       end
 
@@ -225,7 +225,7 @@ defmodule WikWeb.EventsLive do
     scope = socket.assigns.current_scope
 
     socket =
-      case Subscriptions.find(socket.assigns.subscriptions, id) do
+      case SubscriptionState.find(socket.assigns.subscriptions, id) do
         nil ->
           socket
 
@@ -253,7 +253,7 @@ defmodule WikWeb.EventsLive do
     scope = socket.assigns.current_scope
 
     socket =
-      case Subscriptions.find(socket.assigns.subscriptions, id) do
+      case SubscriptionState.find(socket.assigns.subscriptions, id) do
         nil ->
           socket
 
@@ -349,7 +349,7 @@ defmodule WikWeb.EventsLive do
             items: [],
             grouped_items: []
         })
-        |> assign(:subscriptions, Subscriptions.empty())
+        |> assign(:subscriptions, SubscriptionState.empty())
         |> put_flash(:error, "Could not load events")
     end
   end
@@ -369,7 +369,7 @@ defmodule WikWeb.EventsLive do
   defp put_loaded_subscriptions(socket, loaded_data) do
     subscriptions =
       socket.assigns.subscriptions
-      |> Subscriptions.put_loaded_data(loaded_data)
+      |> SubscriptionState.put_loaded_data(loaded_data)
 
     assign(socket, :subscriptions, subscriptions)
   end
@@ -451,8 +451,13 @@ defmodule WikWeb.EventsLive do
   end
 
   defp select_subscription_modal(socket, subscription_id) do
-    subscription = Subscriptions.find(socket.assigns.subscriptions, subscription_id)
-    assign(socket, :modal, {:subscription, subscription, Subscriptions.name_form(subscription)})
+    subscription = SubscriptionState.find(socket.assigns.subscriptions, subscription_id)
+
+    assign(
+      socket,
+      :modal,
+      {:subscription, subscription, SubscriptionState.name_form(subscription)}
+    )
   end
 
   defp sync_modal_with_route(socket, nil) do
@@ -542,12 +547,12 @@ defmodule WikWeb.EventsLive do
       {:subscription, subscription, name_form} ->
         %{
           kind: :subscription,
-          title: Subscriptions.title(assigns.subscriptions, subscription),
+          title: SubscriptionState.title(assigns.subscriptions, subscription),
           dialog_testid: "events-subscription-detail-dialog",
           close_testid: "events-subscription-detail-close",
           subscription: subscription,
           name_form: name_form,
-          metadata: Subscriptions.metadata(assigns.subscriptions, subscription)
+          metadata: SubscriptionState.metadata(assigns.subscriptions, subscription)
         }
 
       nil ->

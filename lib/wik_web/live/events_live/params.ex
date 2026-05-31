@@ -1,4 +1,4 @@
-defmodule WikWeb.EventsLive.RouteParams do
+defmodule WikWeb.EventsLive.Params do
   @moduledoc false
 
   def parse(params) do

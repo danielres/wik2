@@ -3,7 +3,7 @@ defmodule WikWeb.Components.Event.Timeline do
 
   alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event
-  alias WikWeb.EventsLive.RouteParams
+  alias WikWeb.EventsLive.Params
 
   attr :current_scope, :map, required: true
   attr :external_future_windows, :integer, default: 1
@@ -262,7 +262,7 @@ defmodule WikWeb.Components.Event.Timeline do
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 
   defp load_more_link_target(%{tenant: %{slug: space_slug}}, show_external?, future_windows) do
-    params = RouteParams.load_more_params(show_external?, future_windows)
+    params = Params.load_more_params(show_external?, future_windows)
     ~p"/#{space_slug}/events?#{params}"
   end
 
@@ -272,7 +272,7 @@ defmodule WikWeb.Components.Event.Timeline do
          show_external?,
          future_windows
        ) do
-    params = RouteParams.event_params(publication_id, show_external?, future_windows)
+    params = Params.event_params(publication_id, show_external?, future_windows)
     ~p"/#{space_slug}/events?#{params}"
   end
 
@@ -282,7 +282,7 @@ defmodule WikWeb.Components.Event.Timeline do
          show_external?,
          future_windows
        ) do
-    params = RouteParams.event_params(publication_id, show_external?, future_windows)
+    params = Params.event_params(publication_id, show_external?, future_windows)
     ~p"/#{space_slug}/events?#{params}"
   end
 

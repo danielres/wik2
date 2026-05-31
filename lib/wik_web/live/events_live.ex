@@ -9,7 +9,7 @@ defmodule WikWeb.EventsLive do
   alias WikWeb.Components
   alias WikWeb.Components.Event.FormState
   alias WikWeb.EventsLive
-  alias WikWeb.EventsLive.RouteParams
+  alias WikWeb.EventsLive.Params
   alias WikWeb.EventsLive.Subscriptions
   alias WikWeb.EventsLive.TimelineData
 
@@ -81,7 +81,7 @@ defmodule WikWeb.EventsLive do
 
   @impl true
   def handle_params(params, _url, socket) do
-    route_params = RouteParams.parse(params)
+    route_params = Params.parse(params)
 
     socket =
       socket
@@ -140,7 +140,7 @@ defmodule WikWeb.EventsLive do
              action_opts: [scope: current_scope]
            ) do
         {:ok, _event} ->
-          page_params = RouteParams.page_params(timeline.show_external?, timeline.future_windows)
+          page_params = Params.page_params(timeline.show_external?, timeline.future_windows)
 
           socket
           |> assign(:modal, nil)
@@ -162,7 +162,7 @@ defmodule WikWeb.EventsLive do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
 
-    params = RouteParams.page_params(!timeline.show_external?, timeline.future_windows)
+    params = Params.page_params(!timeline.show_external?, timeline.future_windows)
 
     {:noreply, push_patch(socket, to: ~p"/#{current_scope.tenant.slug}/events?#{params}")}
   end
@@ -316,7 +316,7 @@ defmodule WikWeb.EventsLive do
   def handle_info({:event_details, :saved}, socket) do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
-    page_params = RouteParams.page_params(timeline.show_external?, timeline.future_windows)
+    page_params = Params.page_params(timeline.show_external?, timeline.future_windows)
 
     socket =
       socket
@@ -453,7 +453,7 @@ defmodule WikWeb.EventsLive do
     case socket.assigns.modal do
       {:internal_event, _publication} ->
         params =
-          RouteParams.page_params(timeline.show_external?, timeline.future_windows)
+          Params.page_params(timeline.show_external?, timeline.future_windows)
 
         socket
         |> assign(:modal, nil)

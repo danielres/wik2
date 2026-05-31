@@ -2,9 +2,12 @@ defmodule WikWeb.Components.Event.Timeline do
   use WikWeb, :html
 
   alias WikWeb.Components.Event
+  alias WikWeb.Components.User
 
   attr :current_scope, :map, required: true
+  attr :external_future_windows, :integer, default: 1
   attr :grouped_items, :list, default: []
+  attr :more_external_future?, :boolean, default: false
   attr :timeline_source, :string, default: "both"
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
@@ -12,30 +15,6 @@ defmodule WikWeb.Components.Event.Timeline do
   def grouped_list(assigns) do
     ~H"""
     <div class="space-y-6" data-testid="events-timeline">
-      <div>
-        <.link
-          patch={timeline_link_target(@current_scope, "both")}
-          class={timeline_filter_class(@timeline_source == "both")}
-          data-testid="events-filter-both"
-        >
-          Both
-        </.link>
-        <.link
-          patch={timeline_link_target(@current_scope, "internal")}
-          class={timeline_filter_class(@timeline_source == "internal")}
-          data-testid="events-filter-internal"
-        >
-          Internal
-        </.link>
-        <.link
-          patch={timeline_link_target(@current_scope, "external")}
-          class={timeline_filter_class(@timeline_source == "external")}
-          data-testid="events-filter-external"
-        >
-          External
-        </.link>
-      </div>
-
       <div
         :if={@grouped_items == []}
         class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
@@ -47,6 +26,7 @@ defmodule WikWeb.Components.Event.Timeline do
       <section
         :for={year_group <- @grouped_items}
         class="space-y-0"
+        id={"events-year-#{year_group.year}"}
         data-testid={"events-year-#{year_group.year}"}
       >
         <h2 class={["text-xl font-semibold", "sticky top-9 bg-base-100 z-40 pt-4"]}>
@@ -55,11 +35,12 @@ defmodule WikWeb.Components.Event.Timeline do
 
         <section
           :for={month_group <- year_group.months}
+          id={"events-month-#{year_group.year}-#{month_group.month}"}
           data-testid={"events-month-#{year_group.year}-#{month_group.month}"}
           class=""
         >
           <h3 class={[
-            "text-sm font-semibold uppercase tracking-wide text-base-content/70",
+            "text-sm font-semibold uppercase tracking-wide text-base-content/80",
             "sticky top-19 bg-base-100 z-30"
           ]}>
             {month_group.label}
@@ -68,10 +49,11 @@ defmodule WikWeb.Components.Event.Timeline do
           <section
             :for={day_group <- month_group.days}
             class="space-y-3 pt-3"
+            id={"events-day-#{year_group.year}-#{month_group.month}-#{day_group.day}"}
             data-testid={"events-day-#{year_group.year}-#{month_group.month}-#{day_group.day}"}
           >
             <h4 class={[
-              "text-sm font-medium tracking-wide text-base-content/55",
+              "text-sm font-medium tracking-wide text-base-content/70",
               "sticky top-23 bg-base-100 z-20",
               "pb-2"
             ]}>
@@ -87,7 +69,14 @@ defmodule WikWeb.Components.Event.Timeline do
               >
                 <%= if item.source_type == :internal do %>
                   <.link
-                    patch={event_link_target(@current_scope, item)}
+                    patch={
+                      event_link_target(
+                        @current_scope,
+                        item,
+                        @timeline_source,
+                        @external_future_windows
+                      )
+                    }
                     class={[
                       "block p-4 rounded-box",
                       "bg-base-content/6",
@@ -98,7 +87,11 @@ defmodule WikWeb.Components.Event.Timeline do
                     ]}
                     data-testid={"event-open-#{item.publication_id}"}
                   >
-                    <.timeline_item_body item={item} user_tz={@user_tz} />
+                    <.timeline_item_body
+                      current_scope={@current_scope}
+                      item={item}
+                      user_tz={@user_tz}
+                    />
                   </.link>
                 <% else %>
                   <button
@@ -108,7 +101,7 @@ defmodule WikWeb.Components.Event.Timeline do
                       "block p-4 rounded-box",
                       "w-full",
                       "text-left",
-                      "opacity-60",
+                      "opacity-60 hover:opacity-100 transition-opacity",
                       "border-[1.5px] border-dashed border-base-content/30"
                     ]}
                     data-testid={"event-open-#{item.id}"}
@@ -116,7 +109,11 @@ defmodule WikWeb.Components.Event.Timeline do
                     phx-target={@target}
                     phx-value-id={item.id}
                   >
-                    <.timeline_item_body item={item} user_tz={@user_tz} />
+                    <.timeline_item_body
+                      current_scope={@current_scope}
+                      item={item}
+                      user_tz={@user_tz}
+                    />
                   </button>
                 <% end %>
               </article>
@@ -124,6 +121,16 @@ defmodule WikWeb.Components.Event.Timeline do
           </section>
         </section>
       </section>
+
+      <div :if={@more_external_future? and @timeline_source != "internal"} class="flex justify-center">
+        <.link
+          patch={load_more_link_target(@current_scope, @timeline_source, @external_future_windows)}
+          class="btn btn-sm btn-ghost"
+          data-testid="events-load-more-future"
+        >
+          Load more future events
+        </.link>
+      </div>
     </div>
     """
   end
@@ -171,6 +178,21 @@ defmodule WikWeb.Components.Event.Timeline do
             <div class="truncate text-sm opacity-80" data-testid={"event-schedule-#{publication.id}"}>
               <Event.schedule event={publication.event} user_tz={@user_tz} />
             </div>
+
+            <div class="truncate text-xs opacity-60 flex items-center gap-1">
+              <User.avatar
+                avatar_url={
+                  item_author_avatar_url(%{
+                    author_avatar_url: nil,
+                    author_user: publication.event.author
+                  })
+                }
+                size="xs"
+                tenant={@current_scope.tenant}
+                user={publication.event.author}
+              />
+              {publication.event.author |> to_string()}
+            </div>
           </div>
         </.link>
       </article>
@@ -178,6 +200,7 @@ defmodule WikWeb.Components.Event.Timeline do
     """
   end
 
+  attr :current_scope, :map, required: true
   attr :item, :map, required: true
   attr :user_tz, :string, required: true
 
@@ -200,12 +223,36 @@ defmodule WikWeb.Components.Event.Timeline do
       </div>
 
       <div
+        :if={present?(@item.author_name)}
+        class="truncate text-xs opacity-60 flex items-center gap-1"
+        data-testid={"internal-event-author-#{@item.id}"}
+      >
+        <User.avatar
+          avatar_url={item_author_avatar_url(@item)}
+          size="xs"
+          tenant={@current_scope.tenant}
+          user={@item.author_user}
+        />
+        {@item.author_name}
+      </div>
+
+      <div
         :if={present?(@item.calendar_name)}
         class="truncate text-xs opacity-60 flex items-center gap-1"
         data-testid={"external-event-calendar-name-#{@item.id}"}
       >
         <.icon name="hero-calendar-days-micro" class="opacity-60" />
         {@item.calendar_name}
+      </div>
+
+      <div
+        :if={dev?() and present?(@item.external_uid)}
+        class="text-[11px] opacity-45 break-all"
+      >
+        ICS: {@item.external_uid}
+        <span :if={present?(@item.external_recurrence_id)}>
+          {" · "}Recurrence: {@item.external_recurrence_id}
+        </span>
       </div>
     </div>
     """
@@ -226,24 +273,41 @@ defmodule WikWeb.Components.Event.Timeline do
 
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
 
-  defp timeline_filter_class(active?) do
-    [
-      "btn btn-sm",
-      active? && "btn-primary",
-      !active? && "btn-ghost"
-    ]
+  defp item_author_avatar_url(%{author_avatar_url: avatar_url}), do: avatar_url
+
+  defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
+
+  defp load_more_link_target(%{tenant: %{slug: space_slug}}, source, future_windows) do
+    params =
+      %{external: source == "both", future_windows: future_windows + 1}
+
+    ~p"/#{space_slug}/events?#{params}"
   end
 
-  defp timeline_link_target(%{tenant: %{slug: space_slug}}, source) do
-    ~p"/#{space_slug}/events?#{%{source: source}}"
+  defp event_link_target(
+         %{tenant: %{slug: space_slug}},
+         %{publication_id: publication_id},
+         source,
+         future_windows
+       ) do
+    params =
+      %{event: publication_id, external: source == "both"}
+      |> maybe_put_future_windows(future_windows)
+
+    ~p"/#{space_slug}/events?#{params}"
   end
 
-  defp event_link_target(%{tenant: %{slug: space_slug}}, %{publication_id: publication_id}) do
-    ~p"/#{space_slug}/events?#{%{event: publication_id}}"
-  end
+  defp event_link_target(
+         _scope,
+         %{publication_id: publication_id, space_slug: space_slug},
+         source,
+         future_windows
+       ) do
+    params =
+      %{event: publication_id, external: source == "both"}
+      |> maybe_put_future_windows(future_windows)
 
-  defp event_link_target(_scope, %{publication_id: publication_id, space_slug: space_slug}) do
-    ~p"/#{space_slug}/events?#{%{event: publication_id}}"
+    ~p"/#{space_slug}/events?#{params}"
   end
 
   defp legacy_event_link_target(%{tenant: %{slug: space_slug}}, publication) do
@@ -253,6 +317,12 @@ defmodule WikWeb.Components.Event.Timeline do
   defp legacy_event_link_target(_scope, publication) do
     ~p"/#{publication.space.slug}/events?#{%{event: publication.id}}"
   end
+
+  defp maybe_put_future_windows(params, future_windows) when future_windows > 1 do
+    Map.put(params, :future_windows, future_windows)
+  end
+
+  defp maybe_put_future_windows(params, _future_windows), do: params
 
   defp present?(value), do: value not in [nil, ""]
 end

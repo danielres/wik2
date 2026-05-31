@@ -13,6 +13,7 @@ defmodule Wik.Events do
   alias Ash.Query
   alias Wik.Accounts.Space
   alias Wik.Events.Event
+  alias Wik.Events.ExternalEvent
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
   alias Wik.Events.EventPublication.Checks
@@ -26,6 +27,7 @@ defmodule Wik.Events do
   resources do
     resource Event
     resource EventPublication
+    resource ExternalEvent
     resource ExternalCalendarSubscription
   end
 
@@ -33,6 +35,11 @@ defmodule Wik.Events do
     ExternalCalendarSubscription
     |> Query.sort(inserted_at: :asc)
     |> Query.load(:space)
+  end
+
+  def external_events_query do
+    ExternalEvent
+    |> Query.sort(starts_at: :asc)
   end
 
   # relay ======================================================================

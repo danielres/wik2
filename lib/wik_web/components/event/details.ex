@@ -2,6 +2,7 @@ defmodule WikWeb.Components.Event.Details do
   use WikWeb, :live_component
 
   alias AshPhoenix.Form
+  alias Wik.Accounts
   alias Wik.Events
   alias WikWeb.Components.Event
 
@@ -17,6 +18,7 @@ defmodule WikWeb.Components.Event.Details do
       socket
       |> assign(assigns)
       |> maybe_reset_state(publication_changed?)
+      |> maybe_load_author_membership(publication_changed?)
       |> maybe_load_relay_eligibility(publication_changed?)
 
     {:ok, socket}
@@ -28,6 +30,7 @@ defmodule WikWeb.Components.Event.Details do
     <div>
       <Event.event_details
         :if={@mode == :show}
+        author_membership={@author_membership}
         can_edit?={Ash.can?({@publication.event, :update}, @current_scope)}
         can_relay?={@can_relay?}
         publication={@publication}
@@ -156,6 +159,7 @@ defmodule WikWeb.Components.Event.Details do
   defp maybe_reset_state(socket, true) do
     socket
     |> assign(:can_relay?, false)
+    |> assign(:author_membership, nil)
     |> assign(:event_form, nil)
     |> assign(:mode, :show)
     |> assign(:relay_error, nil)
@@ -170,6 +174,18 @@ defmodule WikWeb.Components.Event.Details do
   end
 
   defp maybe_load_relay_eligibility(socket, false), do: socket
+
+  defp maybe_load_author_membership(socket, true) do
+    case Accounts.get_membership(
+           socket.assigns.publication.space,
+           socket.assigns.publication.event.author
+         ) do
+      {:ok, membership} -> assign(socket, :author_membership, membership)
+      {:error, _error} -> assign(socket, :author_membership, nil)
+    end
+  end
+
+  defp maybe_load_author_membership(socket, false), do: socket
 
   defp load_relay_eligibility(socket) do
     case Events.can_relay_event_to_any_space?(

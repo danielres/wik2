@@ -216,7 +216,7 @@ defmodule WikWeb.Components.UI do
   def button_plus(assigns) do
     ~H"""
     <button
-      class="btn btn-accent btn-circle btn-xs"
+      class="btn btn-accent btn-soft btn-circle btn-xs"
       {@rest}
     >
       <.icon name="hero-plus-micro" />

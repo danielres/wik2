@@ -47,15 +47,6 @@ defmodule WikWeb.EventsLive do
           <div class="flex flex-wrap items-start gap-4 justify-between">
             <div class="flex items-center gap-2">
               <Components.CalendarFeed.space_subscribe_button scope={@current_scope} />
-
-              <button
-                :if={Ash.can?({ExternalCalendarSubscription, :create}, @current_scope)}
-                class="btn btn-sm btn-ghost"
-                data-testid="events-subscribe-to-calendar-button"
-                phx-click="external_calendar_subscription_start"
-              >
-                Subscribe to calendar
-              </button>
             </div>
 
             <UI.button_plus
@@ -65,55 +56,73 @@ defmodule WikWeb.EventsLive do
             />
           </div>
 
-          <section class="space-y-3" data-testid="events-subscriptions">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h2 class="text-sm font-semibold">External calendars</h2>
-                <p class="text-xs opacity-60">
-                  ICS feeds subscribed for this space.
-                </p>
-              </div>
-            </div>
-
-            <div
-              :if={@subscriptions.records == []}
-              class="rounded-box border border-dashed border-base-300 bg-base-200/50 p-4 text-sm opacity-70"
-              data-testid="events-subscriptions-empty"
+          <fieldset class="fieldset bg-base-200/50 rounded px-4 py-4">
+            <label class="label cursor-pointer justify-start gap-3">
+              <input
+                type="checkbox"
+                checked={@timeline.source == "both"}
+                class="toggle toggle-xs toggle-primary"
+                data-testid="events-external-toggle"
+                phx-click="toggle_external"
+              />
+              <span class="text-sm">External calendars</span>
+            </label>
+            <section
+              :if={@timeline.source == "both"}
+              class="space-y-3"
+              data-testid="events-subscriptions"
             >
-              No external calendars yet.
-            </div>
-
-            <div :if={@subscriptions.records != []} class="flex flex-wrap gap-2">
-              <button
-                :for={subscription <- Subscriptions.sorted(@subscriptions)}
-                class={[
-                  "btn btn-neutral btn-sm cursor-pointer opacity-80 hover:opacity-100 transition-opacity",
-                  "max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
-                ]}
-                data-testid={"events-subscription-open-#{subscription.id}"}
-                phx-click="external_calendar_subscription_show"
-                phx-value-id={subscription.id}
+              <div
+                :if={@subscriptions.records == []}
+                class="rounded-box border border-dashed border-base-300 bg-base-200/50 p-4 text-sm opacity-70"
+                data-testid="events-subscriptions-empty"
               >
-                <div class="min-w-0">
-                  <div class="text-xs font-medium truncate flex items-center gap-1">
-                    <.icon name="hero-calendar-days-micro" class="opacity-60" />
-                    {Subscriptions.display_name(@subscriptions, subscription)}
+                No external calendars yet.
+              </div>
+
+              <div class="flex flex-wrap gap-2 items-center">
+                <button
+                  :for={subscription <- Subscriptions.sorted(@subscriptions)}
+                  class={[
+                    "btn btn-primary btn-soft btn-sm cursor-pointer opacity-80 hover:opacity-100 transition-opacity",
+                    "max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
+                  ]}
+                  data-testid={"events-subscription-open-#{subscription.id}"}
+                  phx-click="external_calendar_subscription_show"
+                  phx-value-id={subscription.id}
+                >
+                  <div class="min-w-0">
+                    <div class="text-xs font-medium truncate flex items-center gap-1">
+                      <.icon name="hero-calendar-days-micro" class="opacity-60" />
+                      {Subscriptions.display_name(@subscriptions, subscription)}
+                    </div>
+                    <div
+                      :if={Map.has_key?(@subscriptions.errors_by_id, subscription.id)}
+                      class="mt-1 text-xs text-error"
+                      data-testid={"events-subscription-error-#{subscription.id}"}
+                    >
+                      {Map.fetch!(@subscriptions.errors_by_id, subscription.id)}
+                    </div>
                   </div>
-                  <div
-                    :if={Map.has_key?(@subscriptions.errors_by_id, subscription.id)}
-                    class="mt-1 text-xs text-error"
-                    data-testid={"events-subscription-error-#{subscription.id}"}
-                  >
-                    {Map.fetch!(@subscriptions.errors_by_id, subscription.id)}
-                  </div>
-                </div>
-              </button>
-            </div>
-          </section>
+                </button>
+
+                <button
+                  :if={Ash.can?({ExternalCalendarSubscription, :create}, @current_scope)}
+                  data-testid="events-subscribe-to-calendar-button"
+                  phx-click="external_calendar_subscription_start"
+                  class="btn btn-xs btn-circle btn-primary btn-soft"
+                >
+                  <.icon name="hero-plus-micro" />
+                </button>
+              </div>
+            </section>
+          </fieldset>
 
           <Components.Event.grouped_timeline
             current_scope={@current_scope}
+            external_future_windows={@timeline.future_windows}
             grouped_items={@timeline.grouped_items}
+            more_external_future?={@timeline.more_external_future?}
             timeline_source={@timeline.source}
             user_tz={@active_tz}
           />
@@ -126,7 +135,7 @@ defmodule WikWeb.EventsLive do
           testid={modal_dialog_testid(@modal)}
         >
           <:title :if={@modal_title}>
-            <h2 class="text-lg font-medium mb-8">{@modal_title}</h2>
+            {@modal_title}
           </:title>
 
           <.live_component
@@ -193,68 +202,135 @@ defmodule WikWeb.EventsLive do
             </div>
           </.form>
 
-          <div :if={@modal_selected_subscription != nil} class="space-y-6">
-            <div class="p-4 rounded-box space-y-4">
+          <div :if={@modal_selected_subscription != nil} class="space-y-2">
+            <div class="collapse collapse-plus bg-base-content/3 rounded">
+              <input type="checkbox" />
+              <div class="collapse-title label font-bold text-sm">Info</div>
+              <div class="collapse-content text-sm space-y-4">
+                <dl
+                  :if={Subscriptions.metadata(@subscriptions, @modal_selected_subscription).timezone}
+                  class="flex gap-4 items-center"
+                >
+                  <dt class="text-xs uppercase opacity-70">
+                    Timezone:
+                  </dt>
+
+                  <dd class="text-xs">
+                    {Subscriptions.metadata(@subscriptions, @modal_selected_subscription).timezone}
+                  </dd>
+                </dl>
+
+                <dl
+                  :if={Subscriptions.metadata(@subscriptions, @modal_selected_subscription).name}
+                  class="space-y-1"
+                >
+                  <dt class="text-xs uppercase opacity-70">
+                    Original name:
+                  </dt>
+                  <dd class="text-xs leading-tight text-xs bg-base-300/20 p-2 rounded text-base-content/90">
+                    {Subscriptions.metadata(@subscriptions, @modal_selected_subscription).name}
+                  </dd>
+                </dl>
+
+                <dl
+                  :if={
+                    Subscriptions.metadata(@subscriptions, @modal_selected_subscription).description
+                  }
+                  class="space-y-1"
+                >
+                  <dt class="text-xs uppercase opacity-70">
+                    Original description:
+                  </dt>
+                  <dd class="text-xs bg-base-300/20 p-2 rounded text-base-content/90">
+                    <% description =
+                      Subscriptions.metadata(@subscriptions, @modal_selected_subscription).description %>
+                    <div class="whitespace-pre-wrap">{description}</div>
+                  </dd>
+                </dl>
+
+                <dl class="space-y-1">
+                  <dt class="text-xs uppercase opacity-70">Subscription URL:</dt>
+                  <dd>
+                    <input
+                      class="input input-sm w-full border !cursor-text text-base-content/80 rounded bg-base-300/20"
+                      value={@modal_selected_subscription.ics_url}
+                      disabled
+                    />
+                  </dd>
+                </dl>
+              </div>
+            </div>
+
+            <div class="space-y-2 bg-base-content/3 rounded p-4">
               <dl
                 :if={@modal_selected_subscription.cached_at}
                 class="flex gap-4 items-center"
               >
-                <dt class="text-xs uppercase opacity-70">
+                <dt class="label font-bold text-sm">
                   Last updated:
                 </dt>
-                <dd class="text-sm">
-                  <Time.relative_and_precise datetime={@modal_selected_subscription.cached_at} />
-                </dd>
-              </dl>
-
-              <dl class="flex gap-4 items-center">
-                <dt class="text-xs uppercase opacity-70">URL:</dt>
-                <dd class="">
-                  <input
-                    class="input input-sm w-full border"
-                    value={@modal_selected_subscription.ics_url}
-                    disabled
+                <dd class="text-sm flex items-center gap-2">
+                  <Time.relative_and_precise
+                    datetime={@modal_selected_subscription.cached_at}
+                    direction="right"
+                    ago?
                   />
+                  <div class="tooltip tooltip-accent tooltip-xs tooltip-right">
+                    <div class="tooltip-content text-xs">Refresh now</div>
+                    <button
+                      class={["btn btn-circle btn-xs btn-accent btn-ghost"]}
+                      data-testid={"events-subscription-refresh-#{@modal_selected_subscription.id}"}
+                      phx-click="external_calendar_subscription_refresh"
+                      phx-value-id={@modal_selected_subscription.id}
+                      type="button"
+                    >
+                      <.icon name="hero-arrow-path-micro" class="size-3" />
+                    </button>
+                  </div>
                 </dd>
               </dl>
-            </div>
 
-            <.form
-              :if={@modal_subscription_name_form != nil}
-              for={@modal_subscription_name_form}
-              id="events-subscription-name-form"
-              data-testid="events-subscription-name-form"
-              phx-submit="external_calendar_subscription_name_submit"
-            >
-              <div class="space-y-3">
-                <.input field={@modal_subscription_name_form[:id]} type="hidden" />
+              <.form
+                :if={@modal_subscription_name_form != nil}
+                for={@modal_subscription_name_form}
+                id="events-subscription-name-form"
+                data-testid="events-subscription-name-form"
+                phx-submit="external_calendar_subscription_name_submit"
+              >
+                <div class="space-y-3 [&_label]:text-sm">
+                  <.input field={@modal_subscription_name_form[:id]} type="hidden" />
 
-                <.input
-                  field={@modal_subscription_name_form[:custom_name]}
-                  label="Custom name (optional)"
-                />
+                  <.input
+                    field={@modal_subscription_name_form[:custom_name]}
+                    label="Custom name (optional)"
+                    class="input input-sm w-full"
+                  />
 
-                <div class="flex justify-between">
-                  <button
-                    :if={Ash.can?({@modal_selected_subscription, :destroy}, @current_scope)}
-                    class="btn btn-error btn-soft btn-sm"
-                    data-testid={"events-subscription-remove-#{@modal_selected_subscription.id}"}
-                    phx-click="external_calendar_subscription_remove"
-                    phx-value-id={@modal_selected_subscription.id}
-                    type="button"
-                  >
-                    Remove
-                  </button>
-                  <button
-                    type="submit"
-                    class="btn btn-accent btn-soft btn-sm"
-                    data-testid="events-subscription-name-submit"
-                  >
-                    Save
-                  </button>
+                  <div class="flex justify-between">
+                    <div class="flex gap-2">
+                      <button
+                        :if={Ash.can?({@modal_selected_subscription, :destroy}, @current_scope)}
+                        class="btn btn-error btn-soft btn-sm"
+                        data-testid={"events-subscription-remove-#{@modal_selected_subscription.id}"}
+                        phx-click="external_calendar_subscription_remove"
+                        phx-value-id={@modal_selected_subscription.id}
+                        type="button"
+                      >
+                        <.icon name="hero-trash-mini" class="size-3" /> Remove subscription
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      class="btn btn-accent  btn-sm"
+                      data-testid="events-subscription-name-submit"
+                    >
+                      Save
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </.form>
+              </.form>
+            </div>
           </div>
         </Components.Modal.render>
       </Layouts.space>
@@ -264,7 +340,14 @@ defmodule WikWeb.EventsLive do
 
   @impl true
   def handle_params(params, _url, socket) do
-    timeline_source = params["source"] || "both"
+    timeline_source = timeline_source_from_params(params)
+    future_windows = parse_future_windows(params["future_windows"])
+
+    socket =
+      socket
+      |> put_timeline_future_windows(future_windows)
+      |> put_timeline_source(timeline_source)
+      |> refresh_page_data()
 
     publication =
       params["event"] &&
@@ -272,7 +355,6 @@ defmodule WikWeb.EventsLive do
 
     socket =
       socket
-      |> put_timeline_source(timeline_source)
       |> sync_modal_with_route(publication)
 
     {:noreply, socket}
@@ -333,6 +415,24 @@ defmodule WikWeb.EventsLive do
     {:noreply, clear_event_form_modal(socket)}
   end
 
+  def handle_event("toggle_external", _params, socket) do
+    current_scope = socket.assigns.current_scope
+    timeline = socket.assigns.timeline
+
+    source =
+      if timeline.source == "both" do
+        "internal"
+      else
+        "both"
+      end
+
+    params =
+      %{external: source == "both"}
+      |> maybe_put_future_windows(timeline.future_windows)
+
+    {:noreply, push_patch(socket, to: ~p"/#{current_scope.tenant.slug}/events?#{params}")}
+  end
+
   def handle_event("modal_close", _params, socket) do
     {:noreply, close_modal(socket)}
   end
@@ -361,21 +461,24 @@ defmodule WikWeb.EventsLive do
     ics_url = String.trim(ics_url)
 
     socket =
-      with {:ok, cache_attrs} <-
-             ExternalCalendar.fetch_subscription_cache(%ExternalCalendarSubscription{
-               ics_url: ics_url,
-               space_id: scope.tenant.id,
-               space: scope.tenant
-             }),
-           {:ok, _subscription} <-
-             ExternalCalendarSubscription.create(
-               Map.put(cache_attrs, :ics_url, ics_url),
-               scope: scope
-             ) do
-        socket
-        |> assign(:modal, nil)
-        |> refresh_page_data()
-      else
+      case ExternalCalendarSubscription.create(%{ics_url: ics_url}, scope: scope) do
+        {:ok, subscription} ->
+          case ExternalCalendar.sync_subscription(subscription) do
+            {:ok, _subscription} ->
+              socket
+              |> assign(:modal, nil)
+              |> refresh_page_data()
+
+            {:error, error} ->
+              _ = ExternalCalendarSubscription.destroy(subscription, scope: scope)
+
+              assign(
+                socket,
+                :modal,
+                {:new_subscription, Subscriptions.create_form(ics_url), error_message(error)}
+              )
+          end
+
         {:error, %Ash.Error.Invalid{} = error} ->
           assign(
             socket,
@@ -416,6 +519,30 @@ defmodule WikWeb.EventsLive do
               |> refresh_page_data()
 
             {:error, error} ->
+              put_flash(socket, :error, error_message(error))
+          end
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("external_calendar_subscription_refresh", %{"id" => id}, socket) do
+    scope = socket.assigns.current_scope
+
+    socket =
+      case Subscriptions.find(socket.assigns.subscriptions, id) do
+        nil ->
+          socket
+
+        subscription ->
+          case ExternalCalendar.sync_subscription(subscription) do
+            {:ok, _subscription} ->
+              socket
+              |> refresh_page_data()
+              |> select_subscription_modal(id)
+
+            {:error, error} ->
+              Log.scoped_error(scope, error, "external_calendar_subscription_refresh failed")
               put_flash(socket, :error, error_message(error))
           end
       end
@@ -470,8 +597,13 @@ defmodule WikWeb.EventsLive do
 
   defp refresh_page_data(socket) do
     scope = socket.assigns.current_scope
+    timeline = socket.assigns.timeline
 
-    with {:ok, loaded_data} <- TimelineData.load(scope) do
+    with {:ok, loaded_data} <-
+           TimelineData.load(scope,
+             source: timeline.source,
+             future_windows: timeline.future_windows
+           ) do
       socket
       |> put_loaded_timeline(loaded_data)
       |> put_loaded_subscriptions(loaded_data)
@@ -483,7 +615,9 @@ defmodule WikWeb.EventsLive do
         |> assign(:timeline, %{
           socket.assigns.timeline
           | internal_publications: [],
+            internal_items: [],
             external_items: [],
+            more_external_future?: false,
             items: [],
             grouped_items: []
         })
@@ -497,7 +631,9 @@ defmodule WikWeb.EventsLive do
     |> assign(:timeline, %{
       socket.assigns.timeline
       | internal_publications: loaded_data.internal_publications,
-        external_items: loaded_data.external_items
+        internal_items: loaded_data.internal_items,
+        external_items: loaded_data.external_items,
+        more_external_future?: loaded_data.more_external_future?
     })
     |> put_timeline_items()
   end
@@ -516,11 +652,18 @@ defmodule WikWeb.EventsLive do
     |> put_timeline_items()
   end
 
-  defp empty_timeline(source \\ "both") do
+  defp put_timeline_future_windows(socket, future_windows) do
+    assign(socket, :timeline, %{socket.assigns.timeline | future_windows: future_windows})
+  end
+
+  defp empty_timeline(source \\ "internal") do
     %{
       source: source,
+      future_windows: 1,
       internal_publications: [],
+      internal_items: [],
       external_items: [],
+      more_external_future?: false,
       items: [],
       grouped_items: []
     }
@@ -531,7 +674,7 @@ defmodule WikWeb.EventsLive do
 
     items =
       TimelineData.timeline_items(
-        timeline.internal_publications,
+        timeline.internal_items,
         timeline.external_items,
         timeline.source
       )
@@ -569,12 +712,17 @@ defmodule WikWeb.EventsLive do
 
   defp close_modal(socket) do
     current_scope = socket.assigns.current_scope
+    timeline = socket.assigns.timeline
 
     case socket.assigns.modal do
       {:internal_event, _publication} ->
+        params =
+          %{external: timeline.source == "both"}
+          |> maybe_put_future_windows(timeline.future_windows)
+
         socket
         |> assign(:modal, nil)
-        |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events")
+        |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events?#{params}")
 
       _ ->
         assign(socket, :modal, nil)
@@ -657,6 +805,35 @@ defmodule WikWeb.EventsLive do
         nil
     end
   end
+
+  defp parse_future_windows(nil), do: 1
+
+  defp parse_future_windows(value) do
+    case Integer.parse(to_string(value)) do
+      {int, ""} when int > 0 -> int
+      _ -> 1
+    end
+  end
+
+  defp timeline_source_from_params(%{"external" => value}) do
+    if value in [true, "true", "on", "1"] do
+      "both"
+    else
+      "internal"
+    end
+  end
+
+  defp timeline_source_from_params(%{"source" => source}) when source in ["both", "external"],
+    do: "both"
+
+  defp timeline_source_from_params(%{"source" => "internal"}), do: "internal"
+  defp timeline_source_from_params(_params), do: "internal"
+
+  defp maybe_put_future_windows(params, future_windows) when future_windows > 1 do
+    Map.put(params, :future_windows, future_windows)
+  end
+
+  defp maybe_put_future_windows(params, _future_windows), do: params
 
   defp blank_to_nil(value) when value in [nil, ""], do: nil
   defp blank_to_nil(value), do: value

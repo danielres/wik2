@@ -1,6 +1,7 @@
 defmodule WikWeb.EventsLiveTest do
   use WikWeb.ConnCase, async: false
 
+  import Ecto.Query
   import Phoenix.LiveViewTest
   import Wik.TestGenerators
 
@@ -9,6 +10,9 @@ defmodule WikWeb.EventsLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
+  alias Wik.Events.ExternalCalendar
+  alias Wik.Events.ExternalEvent
+  alias Wik.Repo
 
   require Ash.Query
 
@@ -225,7 +229,7 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-detail"))
   end
 
-  test "events timeline groups by year, month, and day and source filters still work", %{
+  test "events timeline groups by year, month, and day and external switch still works", %{
     conn: conn
   } do
     owner = generate(user())
@@ -268,12 +272,14 @@ defmodule WikWeb.EventsLiveTest do
         scope: scope(owner, space)
       )
 
-    external_event_testid = "external-event-external:#{subscription.id}:external-dinner"
+    sync_subscription!(subscription)
+
+    external_event_testid = external_event_testid(subscription)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     assert has_element?(view, testid("events-year-2026"))
     assert has_element?(view, testid("events-month-2026-5"))
@@ -287,23 +293,9 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-publication-#{january_publication.id}"))
     assert has_element?(view, testid(external_event_testid))
 
-    render_click(element(view, testid("events-filter-external")))
+    render_click(element(view, testid("events-external-toggle")))
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{source: "external"}}")
-    assert has_element?(view, testid("events-year-2026"))
-    assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-1"))
-    refute has_element?(view, testid("events-month-2026-5"))
-    refute has_element?(view, testid("events-day-2026-5-10"))
-    refute has_element?(view, testid("events-year-2027"))
-    refute has_element?(view, testid("events-day-2027-1-15"))
-    refute has_element?(view, testid("event-publication-#{may_publication.id}"))
-    refute has_element?(view, testid("event-publication-#{january_publication.id}"))
-    assert has_element?(view, testid(external_event_testid))
-
-    render_click(element(view, testid("events-filter-internal")))
-
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{source: "internal"}}")
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
     assert has_element?(view, testid("events-year-2026"))
     assert has_element?(view, testid("events-month-2026-5"))
     assert has_element?(view, testid("events-day-2026-5-10"))
@@ -315,6 +307,59 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid("events-month-2026-6"))
     refute has_element?(view, testid("events-day-2026-6-1"))
     refute has_element?(view, testid(external_event_testid))
+
+    render_click(element(view, testid("events-external-toggle")))
+
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: true}}")
+    assert has_element?(view, testid("events-month-2026-6"))
+    assert has_element?(view, testid("events-day-2026-6-1"))
+    assert has_element?(view, testid(external_event_testid))
+  end
+
+  test "switching to internal removes all external rows for the swing feed", %{conn: conn} do
+    previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
+
+    Application.put_env(:wik, Wik.Events.ExternalCalendar,
+      http_get: fn _url, _opts ->
+        {:ok, %Req.Response{status: 200, body: File.read!("notes/basic-swing.ics")}}
+      end
+    )
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Events.ExternalCalendar, previous_external_calendar)
+    end)
+
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, _event} =
+      Ash.create(
+        Event,
+        event_attrs(title: "Internal anchor"),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/basic-swing.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+
+    assert render(view) =~ ~s(data-testid="external-event-)
+
+    render_click(element(view, testid("events-external-toggle")))
+
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
+    refute render(view) =~ ~s(data-testid="external-event-)
   end
 
   test "owner can create an event from the modal", %{conn: conn} do
@@ -922,19 +967,19 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid("events-subscription-detail-dialog"))
     assert render(view) =~ "Short name"
 
-    external_event_testid = "external-event-external:#{subscription.id}:external-dinner"
+    external_event_testid = external_event_testid(subscription)
     assert has_element?(view, testid(external_event_testid))
 
     assert has_element?(
              view,
-             testid("external-event-calendar-name-external:#{subscription.id}:external-dinner"),
+             testid(external_event_calendar_name_testid(subscription)),
              "Short name"
            )
 
     {:ok, revisited_view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
 
     assert has_element?(revisited_view, testid("events-subscription-open-#{subscription.id}"))
 
@@ -948,7 +993,7 @@ defmodule WikWeb.EventsLiveTest do
 
     assert has_element?(
              revisited_view,
-             testid("external-event-calendar-name-external:#{subscription.id}:external-dinner"),
+             testid(external_event_calendar_name_testid(subscription)),
              "Short name"
            )
   end
@@ -961,7 +1006,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
 
     render_click(element(view, testid("events-subscribe-to-calendar-button")))
 
@@ -1009,14 +1054,16 @@ defmodule WikWeb.EventsLiveTest do
         scope: scope(owner, space)
       )
 
+    sync_subscription!(subscription)
+
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
 
     assert has_element?(
              view,
-             testid("external-event-calendar-name-external:#{subscription.id}:external-dinner"),
+             testid(external_event_calendar_name_testid(subscription)),
              "https://calendar.example.test/unnamed.ics"
            )
   end
@@ -1032,12 +1079,14 @@ defmodule WikWeb.EventsLiveTest do
         scope: scope(owner, space)
       )
 
+    sync_subscription!(subscription)
+
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events")
+      |> live(~p"/#{space.slug}/events?#{%{source: "both"}}")
 
-    external_event_id = "external:#{subscription.id}:external-dinner"
+    external_event_id = external_event_id(subscription)
 
     render_click(element(view, testid("event-open-#{external_event_id}")))
 
@@ -1046,6 +1095,168 @@ defmodule WikWeb.EventsLiveTest do
     assert render(view) =~ "External dinner"
     assert render(view) =~ "Imported from an external calendar"
     assert render(view) =~ "Community Coordination Calendar"
+  end
+
+  test "external events keep UTC presentation timezone for UTC ICS timestamps", %{conn: _conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+
+    external_event =
+      Events.ExternalEvent
+      |> Ash.Query.filter(subscription_id == ^subscription.id)
+      |> Ash.read_first!(authorize?: false, scope: scope(owner, space))
+
+    assert external_event.tz == "Etc/UTC"
+  end
+
+  test "subscription modal shows original calendar metadata from the feed", %{conn: conn} do
+    previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
+
+    Application.put_env(:wik, Wik.Events.ExternalCalendar,
+      http_get: fn _url, _opts ->
+        {:ok, %Req.Response{status: 200, body: sample_ics_calendar_with_metadata()}}
+      end
+    )
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Events.ExternalCalendar, previous_external_calendar)
+    end)
+
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{source: "external"}}")
+
+    render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
+
+    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert render(view) =~ "Community Coordination Calendar"
+    assert render(view) =~ "Europe/Berlin"
+    assert render(view) =~ "Community events for coordination"
+    assert render(view) =~ "Bring friends"
+  end
+
+  test "expired bounded recurring external events are not materialized", %{conn: conn} do
+    previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
+
+    Application.put_env(:wik, Wik.Events.ExternalCalendar,
+      http_get: fn _url, _opts ->
+        {:ok, %Req.Response{status: 200, body: sample_ics_expired_recurring_calendar()}}
+      end
+    )
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Events.ExternalCalendar, previous_external_calendar)
+    end)
+
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/expired-recurring.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{source: "external"}}")
+
+    refute has_element?(view, testid(external_event_testid(subscription)))
+  end
+
+  test "expired recurring external events with raw UNTIL are not materialized", %{conn: conn} do
+    previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
+
+    Application.put_env(:wik, Wik.Events.ExternalCalendar,
+      http_get: fn _url, _opts ->
+        {:ok, %Req.Response{status: 200, body: sample_ics_expired_until_recurring_calendar()}}
+      end
+    )
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Events.ExternalCalendar, previous_external_calendar)
+    end)
+
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/expired-until-recurring.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{source: "external"}}")
+
+    refute has_element?(view, testid(external_event_testid(subscription)))
+  end
+
+  test "recurring external events keep their real local wall-clock start time", %{conn: _conn} do
+    previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
+
+    Application.put_env(:wik, Wik.Events.ExternalCalendar,
+      http_get: fn _url, _opts ->
+        {:ok, %Req.Response{status: 200, body: sample_ics_future_recurring_calendar()}}
+      end
+    )
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Events.ExternalCalendar, previous_external_calendar)
+    end)
+
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/future-recurring.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+
+    external_event =
+      Events.ExternalEvent
+      |> Ash.Query.filter(subscription_id == ^subscription.id)
+      |> Ash.Query.sort(starts_at: :asc)
+      |> Ash.read_first!(authorize?: false, scope: scope(owner, space))
+
+    assert external_event.tz == "Europe/Berlin"
+    assert external_event.starts_at == ~U[2026-06-04 18:45:00.000000Z]
+    assert external_event.ends_at == ~U[2026-06-04 20:00:00.000000Z]
   end
 
   test "external event modal sanitizes html descriptions and keeps safe links", %{conn: conn} do
@@ -1071,12 +1282,14 @@ defmodule WikWeb.EventsLiveTest do
         scope: scope(owner, space)
       )
 
+    sync_subscription!(subscription)
+
     {:ok, view, _html} =
       conn
       |> log_in(owner)
       |> live(~p"/#{space.slug}/events")
 
-    external_event_id = "external:#{subscription.id}:external-dinner"
+    external_event_id = external_event_id(subscription)
 
     render_click(element(view, testid("event-open-#{external_event_id}")))
 
@@ -1103,12 +1316,14 @@ defmodule WikWeb.EventsLiveTest do
         scope: scope(owner, space)
       )
 
+    sync_subscription!(subscription)
+
     {:ok, view, _html} =
       conn
       |> log_in(owner)
       |> live(~p"/#{space.slug}/events")
 
-    external_event_testid = "external-event-external:#{subscription.id}:external-dinner"
+    external_event_testid = external_event_testid(subscription)
 
     assert has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     assert has_element?(view, testid(external_event_testid))
@@ -1120,6 +1335,48 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     refute has_element?(view, testid(external_event_testid))
     refute has_element?(view, testid("events-subscription-detail-dialog"))
+  end
+
+  test "owner can refresh an external calendar subscription from the modal", %{conn: conn} do
+    previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
+    counter = start_supervised!({Agent, fn -> 0 end})
+
+    Application.put_env(:wik, Wik.Events.ExternalCalendar,
+      http_get: fn _url, _opts ->
+        Agent.update(counter, &(&1 + 1))
+        {:ok, %Req.Response{status: 200, body: sample_ics_calendar()}}
+      end
+    )
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Events.ExternalCalendar, previous_external_calendar)
+    end)
+
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+    assert Agent.get(counter, & &1) == 1
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
+    assert has_element?(view, testid("events-subscription-detail-dialog"))
+
+    render_click(element(view, testid("events-subscription-refresh-#{subscription.id}")))
+
+    assert Agent.get(counter, & &1) == 2
+    assert has_element?(view, testid("events-subscription-detail-dialog"))
   end
 
   defp add_membership(space, user, type) do
@@ -1158,6 +1415,30 @@ defmodule WikWeb.EventsLiveTest do
     conn
     |> init_test_session(%{})
     |> AuthHelpers.store_in_session(user)
+  end
+
+  defp sync_subscription!(subscription) do
+    assert {:ok, _subscription} = ExternalCalendar.sync_subscription(subscription)
+  end
+
+  defp external_event_id(subscription) do
+    external_event =
+      from(event in ExternalEvent,
+        where: event.subscription_id == ^subscription.id,
+        order_by: [asc: event.starts_at],
+        limit: 1
+      )
+      |> Repo.one!()
+
+    "external:#{external_event.id}"
+  end
+
+  defp external_event_testid(subscription) do
+    "external-event-#{external_event_id(subscription)}"
+  end
+
+  defp external_event_calendar_name_testid(subscription) do
+    "external-event-calendar-name-#{external_event_id(subscription)}"
   end
 
   defp sample_ics_calendar do
@@ -1222,6 +1503,91 @@ defmodule WikWeb.EventsLiveTest do
     DTEND:20260601T200000Z
     SUMMARY:External dinner
     DESCRIPTION:West Coast Swing Party\\n<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar&amp;usd=2&amp;usg=AOvVaw1yIVflEmW8GH3zDYw07XmQ" target="_blank">www.werk36.de</a>\\n<script>alert(1)</script><img src="https://www.example.com/x.png" onerror="alert(1)">
+    LOCATION:Riverside Hall
+    STATUS:CONFIRMED
+    END:VEVENT
+    END:VCALENDAR
+    """
+  end
+
+  defp sample_ics_calendar_with_metadata do
+    """
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    PRODID:-//Wik//Events Test//EN
+    X-WR-CALNAME:Community Coordination Calendar
+    X-WR-TIMEZONE:Europe/Berlin
+    X-WR-CALDESC:Community events for coordination\\nBring friends
+    BEGIN:VEVENT
+    UID:external-dinner
+    DTSTAMP:20260529T120000Z
+    DTSTART:20260601T180000Z
+    DTEND:20260601T200000Z
+    SUMMARY:External dinner
+    DESCRIPTION:Imported from an external calendar
+    LOCATION:Riverside Hall
+    STATUS:CONFIRMED
+    END:VEVENT
+    END:VCALENDAR
+    """
+  end
+
+  defp sample_ics_expired_recurring_calendar do
+    """
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    PRODID:-//Wik//Events Test//EN
+    X-WR-CALNAME:Expired Recurring Calendar
+    BEGIN:VEVENT
+    UID:expired-series
+    DTSTAMP:20260529T120000Z
+    DTSTART;TZID=Europe/Berlin:20220609T204500
+    DTEND;TZID=Europe/Berlin:20220609T220000
+    RRULE:FREQ=WEEKLY;WKST=MO;COUNT=5;BYDAY=TH
+    SUMMARY:Expired recurring external event
+    DESCRIPTION:Should not be rematerialized in 2026
+    LOCATION:Riverside Hall
+    STATUS:CONFIRMED
+    END:VEVENT
+    END:VCALENDAR
+    """
+  end
+
+  defp sample_ics_future_recurring_calendar do
+    """
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    PRODID:-//Wik//Events Test//EN
+    X-WR-CALNAME:Future Recurring Calendar
+    BEGIN:VEVENT
+    UID:future-series
+    DTSTAMP:20260529T120000Z
+    DTSTART;TZID=Europe/Berlin:20260604T204500
+    DTEND;TZID=Europe/Berlin:20260604T220000
+    RRULE:FREQ=WEEKLY;WKST=MO;COUNT=2;BYDAY=TH
+    SUMMARY:Future recurring external event
+    DESCRIPTION:Should keep its Berlin-local wall clock time
+    LOCATION:Riverside Hall
+    STATUS:CONFIRMED
+    END:VEVENT
+    END:VCALENDAR
+    """
+  end
+
+  defp sample_ics_expired_until_recurring_calendar do
+    """
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    PRODID:-//Wik//Events Test//EN
+    X-WR-CALNAME:Expired Until Recurring Calendar
+    BEGIN:VEVENT
+    UID:expired-until-series
+    DTSTAMP:20260529T120000Z
+    DTSTART;TZID=Europe/Berlin:20220802T193500
+    DTEND;TZID=Europe/Berlin:20220802T203500
+    RRULE:FREQ=WEEKLY;WKST=MO;UNTIL=20221220;BYDAY=TU
+    SUMMARY:Expired until recurring external event
+    DESCRIPTION:Should not be rematerialized in 2026
     LOCATION:Riverside Hall
     STATUS:CONFIRMED
     END:VEVENT

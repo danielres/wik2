@@ -28,6 +28,35 @@ defmodule WikWeb.Components.Event.ExternalDetailsTest do
     assert html =~ "whitespace-pre-wrap"
   end
 
+  test "render auto-links bare urls in plain text descriptions" do
+    html =
+      render_component(&ExternalDetails.render/1, %{
+        item: %{
+          title: "External dinner",
+          status: :confirmed,
+          description: "More info: https://sabinablumauer.si/blues-dance/\nBring friends",
+          all_day: false,
+          location: nil,
+          calendar_name: nil,
+          source_url: nil,
+          event_url: nil,
+          tz: "Etc/UTC",
+          starts_at: ~U[2026-06-01 18:00:00Z],
+          ends_at: ~U[2026-06-01 20:00:00Z]
+        },
+        user_tz: "Etc/UTC"
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(~s(a[href="https://sabinablumauer.si/blues-dance/"]))
+           |> Enum.any?()
+
+    assert html =~ "Bring friends"
+    assert html =~ "whitespace-pre-wrap"
+  end
+
   test "render sanitizes html descriptions and keeps safe links" do
     html =
       render_component(&ExternalDetails.render/1, %{

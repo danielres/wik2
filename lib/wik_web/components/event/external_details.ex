@@ -51,6 +51,16 @@ defmodule WikWeb.Components.Event.ExternalDetails do
       </div>
 
       <div class="space-y-3">
+        <dl :if={dev?() and present?(@item.external_uid)} class="space-y-1">
+          <dt class="text-xs uppercase tracking-wide opacity-50">ICS event ID</dt>
+          <dd class="text-xs opacity-70 break-all">{@item.external_uid}</dd>
+        </dl>
+
+        <dl :if={dev?() and present?(@item.external_recurrence_id)} class="space-y-1">
+          <dt class="text-xs uppercase tracking-wide opacity-50">ICS recurrence ID</dt>
+          <dd class="text-xs opacity-70 break-all">{@item.external_recurrence_id}</dd>
+        </dl>
+
         <dl :if={present?(@item.calendar_name)} class="space-y-1">
           <dt class="text-xs uppercase tracking-wide opacity-50">Calendar</dt>
           <dd class="text-xs opacity-70">{@item.calendar_name}</dd>
@@ -81,8 +91,8 @@ defmodule WikWeb.Components.Event.ExternalDetails do
 
     ~H"""
     <%= case @description_content do %>
-      <% {:text, description} -> %>
-        <div class="whitespace-pre-wrap text-xs">{description}</div>
+      <% {:text, description_html} -> %>
+        <div class="whitespace-pre-wrap text-xs">{raw(description_html)}</div>
       <% {:html, description_html} -> %>
         <div class={[
           "whitespace-pre-wrap text-xs",
@@ -110,7 +120,7 @@ defmodule WikWeb.Components.Event.ExternalDetails do
        |> clean_link_urls()
        |> open_links_in_new_tab()}
     else
-      {:text, description}
+      {:text, auto_link_plain_text(description)}
     end
   end
 
@@ -138,6 +148,32 @@ defmodule WikWeb.Components.Event.ExternalDetails do
     end)
   end
 
+  defp auto_link_plain_text(text) do
+    Regex.split(~r/(https?:\/\/[^\s<]+)/, text, include_captures: true, trim: false)
+    |> Enum.map_join(&plain_text_part_to_html/1)
+  end
+
+  defp plain_text_part_to_html(part) do
+    if safe_external_url?(part) do
+      href =
+        part
+        |> maybe_unwrap_google_redirect_url()
+        |> Phoenix.HTML.html_escape()
+        |> Phoenix.HTML.safe_to_string()
+
+      label =
+        part
+        |> Phoenix.HTML.html_escape()
+        |> Phoenix.HTML.safe_to_string()
+
+      ~s(<a class="link link-hover underline decoration-dashed underline-offset-2 hover:decoration-solid" href="#{href}" target="_blank" rel="noopener noreferrer">#{label}</a>)
+    else
+      part
+      |> Phoenix.HTML.html_escape()
+      |> Phoenix.HTML.safe_to_string()
+    end
+  end
+
   defp maybe_unwrap_google_redirect_url(url) do
     uri = URI.parse(url)
 
@@ -162,4 +198,6 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         false
     end
   end
+
+  defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 end

@@ -6,7 +6,8 @@ defmodule WikWeb.EventsLive.Subscriptions do
     %{
       records: [],
       errors_by_id: %{},
-      names_by_id: %{}
+      names_by_id: %{},
+      metadata_by_id: %{}
     }
   end
 
@@ -30,7 +31,8 @@ defmodule WikWeb.EventsLive.Subscriptions do
       state
       | records: loaded_data.subscription_records,
         errors_by_id: loaded_data.subscription_errors_by_id,
-        names_by_id: loaded_data.subscription_names_by_id
+        names_by_id: loaded_data.subscription_names_by_id,
+        metadata_by_id: loaded_data.subscription_metadata_by_id
     }
   end
 
@@ -56,6 +58,10 @@ defmodule WikWeb.EventsLive.Subscriptions do
 
   def find(state, id) do
     Enum.find(state.records, &(&1.id == id))
+  end
+
+  def metadata(state, subscription) do
+    Map.get(state.metadata_by_id, subscription.id, %{name: nil, timezone: nil, description: nil})
   end
 
   defp blank_to_nil(value) when value in [nil, ""], do: nil

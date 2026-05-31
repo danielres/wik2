@@ -118,7 +118,7 @@
 :root {
   --font-family: "Nunito Variable";
   font-family: var(--font-family);
-  @apply text-[1.1em] sm:text-[1.175em];
+  @apply text-[1em] sm:text-[1.175em];
 }
 
 :root {

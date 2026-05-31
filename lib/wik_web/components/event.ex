@@ -185,6 +185,7 @@ defmodule WikWeb.Components.Event do
   attr :can_edit?, :boolean, required: true
   attr :can_relay?, :boolean, required: true
   attr :publication, :map, required: true
+  attr :author_membership, :map, default: nil
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
@@ -259,6 +260,21 @@ defmodule WikWeb.Components.Event do
           "border border-base-300 rounded-md bg-base-content/5 px-4 py-2"
         ]}>
           <div class="whitespace-pre-wrap">{@publication.event.description}</div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 items-start">
+        <WikWeb.Components.User.avatar
+          membership={@author_membership}
+          size="sm"
+          tenant={@publication.space}
+          user={@publication.event.author}
+        />
+        <div class="min-w-0">
+          <div class="text-xs uppercase tracking-wide opacity-50">
+            Member
+          </div>
+          <div class="text-sm">{@publication.event.author |> to_string()}</div>
         </div>
       </div>
 
@@ -393,7 +409,7 @@ defmodule WikWeb.Components.Event do
   attr :current_scope, :map, default: nil
   attr :event_publications, :list, default: nil
   attr :grouped_items, :list, default: []
-  attr :timeline_source, :string, default: "both"
+  attr :timeline_source, :string, default: "internal"
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 

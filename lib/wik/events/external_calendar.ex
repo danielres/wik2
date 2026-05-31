@@ -20,7 +20,7 @@ defmodule Wik.Events.ExternalCalendar do
        Sync.materialized_events(
          subscription,
          calendar_data.calendar,
-         calendar_data.cached_calendar_name,
+         calendar_data.cached_name,
          calendar_data.raw_event_metadata
        )}
     end

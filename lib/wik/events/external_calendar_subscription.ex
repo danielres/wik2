@@ -24,7 +24,14 @@ defmodule Wik.Events.ExternalCalendarSubscription do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:ics_url, :cached_body, :cached_at, :etag, :cached_calendar_name]
+      accept [
+        :ics_url,
+        :cached_at,
+        :etag,
+        :cached_name,
+        :cached_tz,
+        :cached_desc
+      ]
     end
 
     update :update_custom_name do
@@ -32,7 +39,14 @@ defmodule Wik.Events.ExternalCalendarSubscription do
     end
 
     update :update_cache do
-      accept [:cached_body, :cached_at, :etag, :last_error, :cached_calendar_name]
+      accept [
+        :cached_at,
+        :etag,
+        :last_error,
+        :cached_name,
+        :cached_tz,
+        :cached_desc
+      ]
     end
   end
 
@@ -78,17 +92,22 @@ defmodule Wik.Events.ExternalCalendarSubscription do
       allow_nil? true
     end
 
-    attribute :cached_body, :string do
-      public? false
-      allow_nil? true
-    end
-
     attribute :cached_at, :utc_datetime_usec do
       public? false
       allow_nil? true
     end
 
-    attribute :cached_calendar_name, :string do
+    attribute :cached_name, :string do
+      public? false
+      allow_nil? true
+    end
+
+    attribute :cached_tz, :string do
+      public? false
+      allow_nil? true
+    end
+
+    attribute :cached_desc, :string do
       public? false
       allow_nil? true
     end

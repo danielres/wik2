@@ -82,16 +82,17 @@ defmodule Wik.Events.ExternalCalendar.Sync do
            upsert_materialized_events(
              subscription,
              calendar_data.calendar,
-             calendar_data.cached_calendar_name,
+             calendar_data.cached_name,
              calendar_data.raw_event_metadata
            ),
          {:ok, updated_subscription} <-
            persist_cache(subscription, %{
-             cached_body: body,
              cached_at: calendar_data.cached_at,
              etag: calendar_data.etag,
              last_error: nil,
-             cached_calendar_name: calendar_data.cached_calendar_name
+             cached_name: calendar_data.cached_name,
+             cached_tz: calendar_data.cached_tz,
+             cached_desc: calendar_data.cached_desc
            }) do
       {:ok, updated_subscription}
     else

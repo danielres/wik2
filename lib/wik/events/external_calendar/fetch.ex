@@ -5,7 +5,14 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
 
   def fetch_subscription_cache(subscription, http_get \\ http_get()) do
     with {:ok, calendar_data} <- fetch_remote_calendar(subscription, http_get) do
-      {:ok, Map.take(calendar_data, [:cached_body, :cached_at, :etag, :cached_calendar_name])}
+      {:ok,
+       Map.take(calendar_data, [
+         :cached_at,
+         :etag,
+         :cached_name,
+         :cached_tz,
+         :cached_desc
+       ])}
     end
   end
 
@@ -28,17 +35,18 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
 
   def parse_calendar(subscription, body, etag) do
     calendar = ICal.from_ics(body)
-    calendar_name = calendar_name(calendar)
+    calendar_metadata = parse_calendar_metadata(body, calendar)
 
     {:ok,
      %{
        calendar: calendar,
-       cached_body: body,
        cached_at: DateTime.utc_now(),
        etag: etag,
-       cached_calendar_name: blank_to_nil(calendar_name),
+       cached_name: calendar_metadata.name,
+       cached_tz: calendar_metadata.timezone,
+       cached_desc: calendar_metadata.description,
        raw_event_metadata: parse_raw_event_metadata(body),
-       display_name: Presentation.display_name(subscription, calendar_name)
+       display_name: Presentation.display_name(subscription, calendar_metadata.name)
      }}
   rescue
     error ->
@@ -66,6 +74,21 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
 
   defp calendar_name(%ICal{name: name}) when is_binary(name), do: name
   defp calendar_name(_calendar), do: nil
+
+  defp parse_calendar_metadata(body, calendar) do
+    unfolded_body = unfold_ics_lines(body)
+
+    %{
+      name:
+        blank_to_nil(calendar_name(calendar)) ||
+          capture_calendar_property(unfolded_body, "X-WR-CALNAME"),
+      timezone: capture_calendar_property(unfolded_body, "X-WR-TIMEZONE"),
+      description:
+        unfolded_body
+        |> capture_calendar_property("X-WR-CALDESC")
+        |> decode_ics_text()
+    }
+  end
 
   defp parse_raw_event_metadata(body) do
     body
@@ -102,6 +125,24 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
       [value] -> value
       _ -> nil
     end
+  end
+
+  defp capture_calendar_property(body, property) do
+    body
+    |> capture_ics_value(~r/^#{Regex.escape(property)}:(.+)$/m)
+    |> blank_to_nil()
+    |> decode_ics_text()
+  end
+
+  defp decode_ics_text(nil), do: nil
+
+  defp decode_ics_text(value) do
+    value
+    |> String.replace("\\n", "\n")
+    |> String.replace("\\N", "\n")
+    |> String.replace("\\,", ",")
+    |> String.replace("\\;", ";")
+    |> blank_to_nil()
   end
 
   defp parse_until_from_rrule(rrule) do

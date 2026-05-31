@@ -108,16 +108,7 @@ defmodule WikWeb.EventsLive.Components do
     """
   end
 
-  attr :modal, :any, required: true
-  attr :modal_title, :string, required: false
-  attr :modal_internal_event, :map, required: false
-  attr :modal_external_event, :map, required: false
-  attr :modal_event_form, :map, required: false
-  attr :modal_new_subscription_form, :map, required: false
-  attr :modal_new_subscription_error, :string, required: false
-  attr :modal_selected_subscription, :map, required: false
-  attr :modal_subscription_name_form, :map, required: false
-  attr :subscriptions, :map, required: true
+  attr :modal_view, :map, required: false
   attr :current_scope, :map, required: true
   attr :active_tz, :string, required: true
 
@@ -125,55 +116,55 @@ defmodule WikWeb.EventsLive.Components do
     ~H"""
     <Components.Modal.render
       cancel="modal_close"
-      cancel_testid={modal_close_testid(@modal)}
-      open?={@modal != nil}
-      testid={modal_dialog_testid(@modal)}
+      cancel_testid={@modal_view && @modal_view.close_testid}
+      open?={@modal_view != nil}
+      testid={@modal_view && @modal_view.dialog_testid}
     >
-      <:title :if={@modal_title}>
-        {@modal_title}
+      <:title :if={@modal_view && @modal_view.title}>
+        {@modal_view.title}
       </:title>
 
       <.live_component
-        :if={@modal_internal_event != nil}
+        :if={@modal_view && @modal_view.kind == :internal_event}
         module={Details}
-        id={"event-details-#{@modal_internal_event.id}"}
+        id={"event-details-#{@modal_view.publication.id}"}
         current_scope={@current_scope}
-        publication={@modal_internal_event}
+        publication={@modal_view.publication}
         user_tz={@active_tz}
       />
 
       <Components.Event.ExternalDetails.render
-        :if={@modal_external_event != nil}
-        item={@modal_external_event}
+        :if={@modal_view && @modal_view.kind == :external_event}
+        item={@modal_view.item}
         user_tz={@active_tz}
       />
 
       <Components.Event.event_form
-        :if={@modal_event_form != nil}
-        form={@modal_event_form}
+        :if={@modal_view && @modal_view.kind == :event_form}
+        form={@modal_view.form}
         user_tz={@active_tz}
       />
 
       <.form
-        :if={@modal_new_subscription_form != nil}
-        for={@modal_new_subscription_form}
+        :if={@modal_view && @modal_view.kind == :new_subscription}
+        for={@modal_view.form}
         id="events-subscription-form"
         data-testid="events-subscription-form"
         phx-submit="external_calendar_subscription_submit"
       >
         <div class="space-y-4">
           <.input
-            field={@modal_new_subscription_form[:ics_url]}
+            field={@modal_view.form[:ics_url]}
             label="ICS URL"
             placeholder="https://example.com/calendar.ics"
           />
 
           <p
-            :if={@modal_new_subscription_error not in [nil, ""]}
+            :if={@modal_view.error not in [nil, ""]}
             class="text-sm text-error"
             data-testid="events-subscription-form-error"
           >
-            {@modal_new_subscription_error}
+            {@modal_view.error}
           </p>
 
           <div class="flex justify-end gap-2">
@@ -197,47 +188,36 @@ defmodule WikWeb.EventsLive.Components do
         </div>
       </.form>
 
-      <div :if={@modal_selected_subscription != nil} class="space-y-2">
+      <div :if={@modal_view && @modal_view.kind == :subscription} class="space-y-2">
         <div class="collapse collapse-plus bg-base-content/3 rounded">
           <input type="checkbox" />
           <div class="collapse-title label font-bold text-sm">Info</div>
           <div class="collapse-content text-sm space-y-4">
-            <dl
-              :if={Subscriptions.metadata(@subscriptions, @modal_selected_subscription).timezone}
-              class="flex gap-4 items-center"
-            >
+            <dl :if={@modal_view.metadata.timezone} class="flex gap-4 items-center">
               <dt class="text-xs uppercase opacity-70">
                 Timezone:
               </dt>
 
               <dd class="text-xs">
-                {Subscriptions.metadata(@subscriptions, @modal_selected_subscription).timezone}
+                {@modal_view.metadata.timezone}
               </dd>
             </dl>
 
-            <dl
-              :if={Subscriptions.metadata(@subscriptions, @modal_selected_subscription).name}
-              class="space-y-1"
-            >
+            <dl :if={@modal_view.metadata.name} class="space-y-1">
               <dt class="text-xs uppercase opacity-70">
                 Original name:
               </dt>
               <dd class="text-xs leading-tight text-xs bg-base-300/20 p-2 rounded text-base-content/90">
-                {Subscriptions.metadata(@subscriptions, @modal_selected_subscription).name}
+                {@modal_view.metadata.name}
               </dd>
             </dl>
 
-            <dl
-              :if={Subscriptions.metadata(@subscriptions, @modal_selected_subscription).description}
-              class="space-y-1"
-            >
+            <dl :if={@modal_view.metadata.description} class="space-y-1">
               <dt class="text-xs uppercase opacity-70">
                 Original description:
               </dt>
               <dd class="text-xs bg-base-300/20 p-2 rounded text-base-content/90">
-                <% description =
-                  Subscriptions.metadata(@subscriptions, @modal_selected_subscription).description %>
-                <div class="whitespace-pre-wrap">{description}</div>
+                <div class="whitespace-pre-wrap">{@modal_view.metadata.description}</div>
               </dd>
             </dl>
 
@@ -246,7 +226,7 @@ defmodule WikWeb.EventsLive.Components do
               <dd>
                 <input
                   class="input input-sm w-full border !cursor-text text-base-content/80 rounded bg-base-300/20"
-                  value={@modal_selected_subscription.ics_url}
+                  value={@modal_view.subscription.ics_url}
                   disabled
                 />
               </dd>
@@ -255,16 +235,13 @@ defmodule WikWeb.EventsLive.Components do
         </div>
 
         <div class="space-y-2 bg-base-content/3 rounded p-4">
-          <dl
-            :if={@modal_selected_subscription.cached_at}
-            class="flex gap-4 items-center"
-          >
+          <dl :if={@modal_view.subscription.cached_at} class="flex gap-4 items-center">
             <dt class="label font-bold text-sm">
               Last updated:
             </dt>
             <dd class="text-sm flex items-center gap-2">
               <Time.relative_and_precise
-                datetime={@modal_selected_subscription.cached_at}
+                datetime={@modal_view.subscription.cached_at}
                 direction="right"
                 ago?
               />
@@ -272,9 +249,9 @@ defmodule WikWeb.EventsLive.Components do
                 <div class="tooltip-content text-xs">Refresh now</div>
                 <button
                   class={["btn btn-circle btn-xs btn-accent btn-ghost"]}
-                  data-testid={"events-subscription-refresh-#{@modal_selected_subscription.id}"}
+                  data-testid={"events-subscription-refresh-#{@modal_view.subscription.id}"}
                   phx-click="external_calendar_subscription_refresh"
-                  phx-value-id={@modal_selected_subscription.id}
+                  phx-value-id={@modal_view.subscription.id}
                   type="button"
                 >
                   <.icon name="hero-arrow-path-micro" class="size-3" />
@@ -284,17 +261,17 @@ defmodule WikWeb.EventsLive.Components do
           </dl>
 
           <.form
-            :if={@modal_subscription_name_form != nil}
-            for={@modal_subscription_name_form}
+            :if={@modal_view.name_form != nil}
+            for={@modal_view.name_form}
             id="events-subscription-name-form"
             data-testid="events-subscription-name-form"
             phx-submit="external_calendar_subscription_name_submit"
           >
             <div class="space-y-3 [&_label]:text-sm">
-              <.input field={@modal_subscription_name_form[:id]} type="hidden" />
+              <.input field={@modal_view.name_form[:id]} type="hidden" />
 
               <.input
-                field={@modal_subscription_name_form[:custom_name]}
+                field={@modal_view.name_form[:custom_name]}
                 label="Custom name (optional)"
                 class="input input-sm w-full"
               />
@@ -302,11 +279,11 @@ defmodule WikWeb.EventsLive.Components do
               <div class="flex justify-between">
                 <div class="flex gap-2">
                   <button
-                    :if={Ash.can?({@modal_selected_subscription, :destroy}, @current_scope)}
+                    :if={Ash.can?({@modal_view.subscription, :destroy}, @current_scope)}
                     class="btn btn-error btn-soft btn-sm"
-                    data-testid={"events-subscription-remove-#{@modal_selected_subscription.id}"}
+                    data-testid={"events-subscription-remove-#{@modal_view.subscription.id}"}
                     phx-click="external_calendar_subscription_remove"
-                    phx-value-id={@modal_selected_subscription.id}
+                    phx-value-id={@modal_view.subscription.id}
                     type="button"
                   >
                     <.icon name="hero-trash-mini" class="size-3" /> Remove subscription
@@ -328,20 +305,4 @@ defmodule WikWeb.EventsLive.Components do
     </Components.Modal.render>
     """
   end
-
-  defp modal_dialog_testid({:subscription, _subscription, _name_form}),
-    do: "events-subscription-detail-dialog"
-
-  defp modal_dialog_testid({:new_subscription, _form, _error}),
-    do: "events-subscription-modal-dialog"
-
-  defp modal_dialog_testid(_modal), do: "event-modal-dialog"
-
-  defp modal_close_testid({:subscription, _subscription, _name_form}),
-    do: "events-subscription-detail-close"
-
-  defp modal_close_testid({:new_subscription, _form, _error}),
-    do: "events-subscription-modal-close"
-
-  defp modal_close_testid(_modal), do: "event-modal-close"
 end

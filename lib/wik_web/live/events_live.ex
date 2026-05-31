@@ -29,10 +29,7 @@ defmodule WikWeb.EventsLive do
 
   @impl true
   def render(assigns) do
-    assigns =
-      assigns
-      |> assign_modal_assigns()
-      |> then(&assign(&1, :modal_title, modal_title(&1)))
+    assigns = assign(assigns, :modal_view, modal_view(assigns))
 
     ~H"""
     <Layouts.app
@@ -64,16 +61,7 @@ defmodule WikWeb.EventsLive do
         <EventsLive.Components.modal
           active_tz={@active_tz}
           current_scope={@current_scope}
-          modal={@modal}
-          modal_event_form={@modal_event_form}
-          modal_external_event={@modal_external_event}
-          modal_internal_event={@modal_internal_event}
-          modal_new_subscription_error={@modal_new_subscription_error}
-          modal_new_subscription_form={@modal_new_subscription_form}
-          modal_selected_subscription={@modal_selected_subscription}
-          modal_subscription_name_form={@modal_subscription_name_form}
-          modal_title={@modal_title}
-          subscriptions={@subscriptions}
+          modal_view={@modal_view}
         />
       </Layouts.space>
     </Layouts.app>
@@ -471,59 +459,61 @@ defmodule WikWeb.EventsLive do
   defp route_event_modal?({:external_event, _item}), do: true
   defp route_event_modal?(_modal), do: false
 
-  defp assign_modal_assigns(assigns) do
-    modal = assigns.modal
-
-    assigns
-    |> assign(:modal_event_form, modal_event_form(modal))
-    |> assign(:modal_internal_event, modal_internal_event(modal))
-    |> assign(:modal_external_event, modal_external_event(modal))
-    |> assign(:modal_new_subscription_form, modal_new_subscription_form(modal))
-    |> assign(:modal_new_subscription_error, modal_new_subscription_error(modal))
-    |> assign(:modal_selected_subscription, modal_selected_subscription(modal))
-    |> assign(:modal_subscription_name_form, modal_subscription_name_form(modal))
-  end
-
   defp modal_event_form(%{assigns: %{modal: modal}}), do: modal_event_form(modal)
   defp modal_event_form({:event_form, form}), do: form
   defp modal_event_form(_modal), do: nil
 
-  defp modal_internal_event({:internal_event, publication}), do: publication
-  defp modal_internal_event(_modal), do: nil
+  defp modal_view(assigns) do
+    case assigns.modal do
+      {:event_form, form} ->
+        %{
+          kind: :event_form,
+          title: if(form.source.type == :create, do: "Create event", else: "Edit event"),
+          dialog_testid: "event-modal-dialog",
+          close_testid: "event-modal-close",
+          form: form
+        }
 
-  defp modal_external_event({:external_event, item}), do: item
-  defp modal_external_event(_modal), do: nil
+      {:internal_event, publication} ->
+        %{
+          kind: :internal_event,
+          title: nil,
+          dialog_testid: "event-modal-dialog",
+          close_testid: "event-modal-close",
+          publication: publication
+        }
 
-  defp modal_new_subscription_form({:new_subscription, form, _error}), do: form
-  defp modal_new_subscription_form(_modal), do: nil
+      {:external_event, item} ->
+        %{
+          kind: :external_event,
+          title: nil,
+          dialog_testid: "event-modal-dialog",
+          close_testid: "event-modal-close",
+          item: item
+        }
 
-  defp modal_new_subscription_error({:new_subscription, _form, error}), do: error
-  defp modal_new_subscription_error(_modal), do: nil
+      {:new_subscription, form, error} ->
+        %{
+          kind: :new_subscription,
+          title: "Subscribe to calendar",
+          dialog_testid: "events-subscription-modal-dialog",
+          close_testid: "events-subscription-modal-close",
+          form: form,
+          error: error
+        }
 
-  defp modal_selected_subscription(%{assigns: %{modal: modal}}),
-    do: modal_selected_subscription(modal)
+      {:subscription, subscription, name_form} ->
+        %{
+          kind: :subscription,
+          title: Subscriptions.title(assigns.subscriptions, subscription),
+          dialog_testid: "events-subscription-detail-dialog",
+          close_testid: "events-subscription-detail-close",
+          subscription: subscription,
+          name_form: name_form,
+          metadata: Subscriptions.metadata(assigns.subscriptions, subscription)
+        }
 
-  defp modal_selected_subscription({:subscription, subscription, _name_form}), do: subscription
-  defp modal_selected_subscription(_modal), do: nil
-
-  defp modal_subscription_name_form({:subscription, _subscription, name_form}), do: name_form
-  defp modal_subscription_name_form(_modal), do: nil
-
-  defp modal_title(assigns) do
-    cond do
-      assigns.modal_event_form != nil ->
-        if(assigns.modal_event_form.source.type == :create,
-          do: "Create event",
-          else: "Edit event"
-        )
-
-      assigns.modal_new_subscription_form != nil ->
-        "Subscribe to calendar"
-
-      assigns.modal_selected_subscription != nil ->
-        Subscriptions.title(assigns.subscriptions, assigns.modal_selected_subscription)
-
-      true ->
+      nil ->
         nil
     end
   end

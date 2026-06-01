@@ -122,35 +122,55 @@ defmodule Wik.Events.ExternalCalendar.Sync do
       materialized_events(subscription, calendar, calendar_name, raw_event_metadata)
       |> Enum.map(&Map.put(&1, :last_seen_at, seen_at))
 
-    Repo.transaction(fn ->
-      if attrs != [] do
-        Repo.insert_all(
-          ExternalEvent,
-          attrs,
-          on_conflict: {:replace_all_except, [:id, :inserted_at]},
-          conflict_target: [
-            :space_id,
-            :subscription_id,
-            :external_uid,
-            :external_occurrence_key
-          ]
-        )
+    try do
+      case Repo.transaction(fn ->
+             if attrs != [] do
+               Repo.insert_all(
+                 ExternalEvent,
+                 attrs,
+                 on_conflict: {:replace_all_except, [:id, :inserted_at]},
+                 conflict_target: [
+                   :space_id,
+                   :subscription_id,
+                   :external_uid,
+                   :external_occurrence_key
+                 ]
+               )
+             end
+
+             keep_occurrences =
+               attrs
+               |> Enum.map(&{&1.external_uid, &1.external_occurrence_key})
+               |> MapSet.new()
+
+             from(event in ExternalEvent, where: event.subscription_id == ^subscription.id)
+             |> Repo.all()
+             |> Enum.reject(fn event ->
+               MapSet.member?(
+                 keep_occurrences,
+                 {event.external_uid, event.external_occurrence_key}
+               )
+             end)
+             |> Enum.reduce_while(:ok, fn event, :ok ->
+               case Repo.delete(event) do
+                 {:ok, _deleted_event} ->
+                   {:cont, :ok}
+
+                 {:error, error} ->
+                   Repo.rollback(error)
+               end
+             end)
+           end) do
+        {:ok, _result} ->
+          :ok
+
+        {:error, error} ->
+          {:error, "Failed to persist external events: #{format_transaction_error(error)}"}
       end
-
-      keep_occurrences =
-        attrs
-        |> Enum.map(&{&1.external_uid, &1.external_occurrence_key})
-        |> MapSet.new()
-
-      from(event in ExternalEvent, where: event.subscription_id == ^subscription.id)
-      |> Repo.all()
-      |> Enum.reject(fn event ->
-        MapSet.member?(keep_occurrences, {event.external_uid, event.external_occurrence_key})
-      end)
-      |> Enum.each(&Repo.delete!/1)
-    end)
-
-    :ok
+    rescue
+      error ->
+        {:error, "Failed to persist external events: #{Exception.message(error)}"}
+    end
   end
 
   defp materialized_events_for_uid(subscription, events, calendar_name, raw_event_metadata) do
@@ -318,6 +338,10 @@ defmodule Wik.Events.ExternalCalendar.Sync do
 
   defp blank_to_nil(value) when value in [nil, ""], do: nil
   defp blank_to_nil(value), do: value
+
+  defp format_transaction_error(%{errors: _errors} = error), do: Exception.message(error)
+  defp format_transaction_error(error) when is_binary(error), do: error
+  defp format_transaction_error(error), do: inspect(error)
 
   defp external_status(nil), do: :published
   defp external_status(:confirmed), do: :published

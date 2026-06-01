@@ -1,13 +1,15 @@
 defmodule Wik.Events.ExternalCalendar.Presentation do
   @moduledoc false
 
+  alias Utils.Values
+
   def load_subscriptions(subscriptions, _opts \\ []) do
     %{
       records: subscriptions,
       errors_by_id:
         subscriptions
         |> Enum.flat_map(fn subscription ->
-          case blank_to_nil(subscription.last_error) do
+          case Values.blank_to_nil(subscription.last_error) do
             nil -> []
             error -> [{subscription.id, error}]
           end
@@ -16,7 +18,7 @@ defmodule Wik.Events.ExternalCalendar.Presentation do
       names_by_id:
         subscriptions
         |> Enum.flat_map(fn subscription ->
-          case blank_to_nil(subscription.cached_name) do
+          case Values.blank_to_nil(subscription.cached_name) do
             nil -> []
             name -> [{subscription.id, name}]
           end
@@ -34,10 +36,10 @@ defmodule Wik.Events.ExternalCalendar.Presentation do
   def display_name(subscription, calendar_name \\ nil)
 
   def display_name(subscription, calendar_name) do
-    case blank_to_nil(subscription.custom_name) do
+    case Values.blank_to_nil(subscription.custom_name) do
       nil ->
-        blank_to_nil(calendar_name) ||
-          blank_to_nil(subscription.cached_name) ||
+        Values.blank_to_nil(calendar_name) ||
+          Values.blank_to_nil(subscription.cached_name) ||
           subscription.ics_url
 
       custom_name ->
@@ -47,12 +49,9 @@ defmodule Wik.Events.ExternalCalendar.Presentation do
 
   defp calendar_metadata(subscription) do
     %{
-      name: blank_to_nil(subscription.cached_name),
-      timezone: blank_to_nil(subscription.cached_tz),
-      description: blank_to_nil(subscription.cached_desc)
+      name: Values.blank_to_nil(subscription.cached_name),
+      timezone: Values.blank_to_nil(subscription.cached_tz),
+      description: Values.blank_to_nil(subscription.cached_desc)
     }
   end
-
-  defp blank_to_nil(value) when value in [nil, ""], do: nil
-  defp blank_to_nil(value), do: value
 end

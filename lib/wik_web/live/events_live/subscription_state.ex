@@ -1,5 +1,6 @@
 defmodule WikWeb.EventsLive.SubscriptionState do
   alias Phoenix.Component
+  alias Utils.Values
   alias Wik.Events.ExternalCalendar
 
   def empty do
@@ -50,7 +51,7 @@ defmodule WikWeb.EventsLive.SubscriptionState do
   def title(_state, nil), do: "Unnamed calendar"
 
   def title(state, subscription) do
-    case display_name(state, subscription) |> blank_to_nil() do
+    case display_name(state, subscription) |> Values.blank_to_nil() do
       nil -> "Unnamed calendar"
       name -> name
     end
@@ -63,7 +64,4 @@ defmodule WikWeb.EventsLive.SubscriptionState do
   def metadata(state, subscription) do
     Map.get(state.metadata_by_id, subscription.id, %{name: nil, timezone: nil, description: nil})
   end
-
-  defp blank_to_nil(value) when value in [nil, ""], do: nil
-  defp blank_to_nil(value), do: value
 end

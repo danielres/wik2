@@ -3,6 +3,7 @@ defmodule WikWeb.EventsLive do
 
   alias AshPhoenix.Form
   alias Utils.Log
+  alias Utils.Values
   alias Wik.Events.ExternalCalendar
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Locations
@@ -286,7 +287,7 @@ defmodule WikWeb.EventsLive do
            {:ok, _updated_subscription} <-
              ExternalCalendarSubscription.update_custom_name(
                subscription,
-               %{custom_name: blank_to_nil(custom_name)},
+               %{custom_name: Values.blank_to_nil(custom_name)},
                scope: scope
              ) do
         socket
@@ -559,9 +560,6 @@ defmodule WikWeb.EventsLive do
         nil
     end
   end
-
-  defp blank_to_nil(value) when value in [nil, ""], do: nil
-  defp blank_to_nil(value), do: value
 
   defp error_message(%Ash.Error.Forbidden{}), do: "You are not allowed to manage subscriptions"
 

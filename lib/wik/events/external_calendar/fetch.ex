@@ -1,6 +1,7 @@
 defmodule Wik.Events.ExternalCalendar.Fetch do
   @moduledoc false
 
+  alias Utils.Values
   alias Wik.Events.ExternalCalendar.Presentation
 
   def fetch_remote_calendar(subscription, http_get) do
@@ -41,7 +42,7 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
   end
 
   def refresh_request_options(subscription) do
-    case blank_to_nil(subscription.etag) do
+    case Values.blank_to_nil(subscription.etag) do
       nil -> []
       etag -> [headers: [{"if-none-match", etag}]]
     end
@@ -51,7 +52,7 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
     response
     |> Req.Response.get_header("etag")
     |> List.first()
-    |> blank_to_nil()
+    |> Values.blank_to_nil()
   end
 
   def http_get do
@@ -67,7 +68,7 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
 
     %{
       name:
-        blank_to_nil(calendar_name(calendar)) ||
+        Values.blank_to_nil(calendar_name(calendar)) ||
           capture_calendar_property(unfolded_body, "X-WR-CALNAME"),
       timezone: capture_calendar_property(unfolded_body, "X-WR-TIMEZONE"),
       description:
@@ -117,7 +118,7 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
   defp capture_calendar_property(body, property) do
     body
     |> capture_ics_value(~r/^#{Regex.escape(property)}:(.+)$/m)
-    |> blank_to_nil()
+    |> Values.blank_to_nil()
     |> decode_ics_text()
   end
 
@@ -129,7 +130,7 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
     |> String.replace("\\N", "\n")
     |> String.replace("\\,", ",")
     |> String.replace("\\;", ";")
-    |> blank_to_nil()
+    |> Values.blank_to_nil()
   end
 
   defp parse_until_from_rrule(rrule) do
@@ -175,7 +176,4 @@ defmodule Wik.Events.ExternalCalendar.Fetch do
   end
 
   defp parse_ics_until(_value), do: nil
-
-  defp blank_to_nil(value) when value in [nil, ""], do: nil
-  defp blank_to_nil(value), do: value
 end

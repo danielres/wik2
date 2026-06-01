@@ -5,6 +5,7 @@ defmodule Wik.Events.ExternalCalendar.Sync do
 
   require Logger
 
+  alias Utils.Values
   alias Wik.Events.ExternalCalendar.Fetch
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.ExternalEvent
@@ -299,10 +300,10 @@ defmodule Wik.Events.ExternalCalendar.Sync do
       all_day: all_day?,
       tz: timezone_for_event(event),
       status: external_status(event.status),
-      location: blank_to_nil(event.location),
-      description: blank_to_nil(event.description),
-      event_url: blank_to_nil(event.url),
-      calendar_name: blank_to_nil(calendar_name)
+      location: Values.blank_to_nil(event.location),
+      description: Values.blank_to_nil(event.description),
+      event_url: Values.blank_to_nil(event.url),
+      calendar_name: Values.blank_to_nil(calendar_name)
     }
   end
 
@@ -338,9 +339,6 @@ defmodule Wik.Events.ExternalCalendar.Sync do
     Map.get(raw_event_metadata, event.uid || fallback_uid(event))
   end
 
-  defp blank_to_nil(value) when value in [nil, ""], do: nil
-  defp blank_to_nil(value), do: value
-
   defp format_transaction_error(%{errors: _errors} = error), do: Exception.message(error)
   defp format_transaction_error(error) when is_binary(error), do: error
   defp format_transaction_error(error), do: inspect(error)
@@ -363,7 +361,7 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   defp external_status(:cancelled), do: :cancelled
 
   defp timezone_for_event(%ICal.Event{dtstart: %DateTime{time_zone: tz}}),
-    do: blank_to_nil(tz) || @default_tz
+    do: Values.blank_to_nil(tz) || @default_tz
 
   defp timezone_for_event(_event), do: @default_tz
 

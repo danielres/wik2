@@ -881,6 +881,40 @@ defmodule WikWeb.EventsLiveTest do
     assert html =~ "Etc/UTC"
   end
 
+  test "does not render both timezones when wall-clock times are equivalent", %{conn: conn} do
+    owner = generate(user())
+    member = generate(user(tz: "Europe/Amsterdam"))
+    space = generate(space(author: owner))
+
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+
+    {:ok, _event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          title: "European dinner",
+          starts_on: "2026-05-12",
+          starts_at_time: "18:00",
+          ends_on: "2026-05-12",
+          ends_at_time: "20:00",
+          tz: "Europe/Berlin"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/#{space.slug}/events")
+
+    html = render(view)
+    refute html =~ "Europe/Berlin"
+    refute html =~ "Europe/Amsterdam"
+  end
+
   test "edit form timezone picker reflects the event timezone", %{conn: conn} do
     owner = generate(user())
     space = generate(space(author: owner))

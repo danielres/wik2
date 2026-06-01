@@ -420,11 +420,14 @@ defmodule WikWeb.Components.Event do
   attr :user_tz, :string, required: true
 
   def schedule(assigns) do
+    event_parts = schedule_parts(assigns.event, assigns.event.tz)
+    user_parts = schedule_parts(assigns.event, assigns.user_tz)
+
     assigns =
       assigns
-      |> assign(:event_parts, schedule_parts(assigns.event, assigns.event.tz))
-      |> assign(:show_user_tz?, assigns.user_tz != assigns.event.tz)
-      |> assign(:user_parts, schedule_parts(assigns.event, assigns.user_tz))
+      |> assign(:event_parts, event_parts)
+      |> assign(:user_parts, user_parts)
+      |> assign(:show_user_tz?, event_parts != user_parts)
 
     ~H"""
     <div class={["space-y-0.5", @class]}>

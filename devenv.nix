@@ -10,6 +10,7 @@
     with pkgs;
     [
       #
+      beam27Packages.expert
       git
       lefthook
       nodejs_24

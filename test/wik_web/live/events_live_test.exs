@@ -354,12 +354,12 @@ defmodule WikWeb.EventsLiveTest do
       |> log_in(owner)
       |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
-    assert render(view) =~ ~s(data-testid="external-event-)
+    assert has_element?(view, ~s([data-testid^="external-event-"]))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
-    refute render(view) =~ ~s(data-testid="external-event-)
+    refute has_element?(view, ~s([data-testid^="external-event-"]))
   end
 
   test "owner can create an event from the modal", %{conn: conn} do
@@ -1188,7 +1188,7 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     assert external_event_id(subscription) == nil
-    refute render(view) =~ ~s(data-testid="external-event-)
+    refute has_element?(view, ~s([data-testid^="external-event-"]))
   end
 
   test "expired recurring external events with raw UNTIL are not materialized", %{conn: conn} do
@@ -1222,7 +1222,7 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     assert external_event_id(subscription) == nil
-    refute render(view) =~ ~s(data-testid="external-event-)
+    refute has_element?(view, ~s([data-testid^="external-event-"]))
   end
 
   test "recurring external events keep their real local wall-clock start time", %{conn: _conn} do

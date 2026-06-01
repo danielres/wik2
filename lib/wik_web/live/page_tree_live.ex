@@ -31,7 +31,7 @@ defmodule WikWeb.PageTreeLive do
           <%= if @editing? do %>
             <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
           <% else %>
-            <UI.button_edit
+            <UI.button_unlock
               phx-click="toggle_edit_mode"
               data-testid="tag-edit-mode-toggle"
             />

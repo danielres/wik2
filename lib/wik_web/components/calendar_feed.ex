@@ -58,6 +58,7 @@ defmodule WikWeb.Components.CalendarFeed do
         class="btn btn-circle btn-xs"
         phx-click={UI.modal_open(@id)}
         data-testid={@testid}
+        type="button"
       >
         <.icon name="hero-signal-micro" />
       </button>

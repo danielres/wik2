@@ -7,6 +7,23 @@
 # General application configuration
 import Config
 
+config :ash_oban, pro?: false
+
+config :wik, Oban,
+  engine: Oban.Engines.Basic,
+  notifier: Oban.Notifiers.Postgres,
+  queues: [default: 10],
+  repo: Wik.Repo,
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       # every day at 09:00
+       {"0 9 * * *", Wik.Events.Workers.RefreshExternalCalendars},
+       # every day at 21:00
+       {"0 21 * * *", Wik.Events.Workers.RefreshExternalCalendars}
+     ]}
+  ]
+
 config :error_tracker, repo: Wik.Repo, otp_app: :wik, enabled: true
 config :cinder, default_theme: "daisy_ui"
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
@@ -61,6 +78,7 @@ config :spark,
 
 config :wik,
   ecto_repos: [Wik.Repo],
+  show_external_event_debug_ids?: false,
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
     Wik.Access,

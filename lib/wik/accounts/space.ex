@@ -2,6 +2,7 @@ defmodule Wik.Accounts.Space do
   alias Wik.Access.Source
   alias Wik.Accounts.Space.Changes
   alias Wik.Accounts.Space.Checks
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
   alias Wik.Accounts.User
   alias Wik.Accounts.Membership
@@ -98,6 +99,10 @@ defmodule Wik.Accounts.Space do
     has_many :event_publications, EventPublication do
       source_attribute :id
       destination_attribute :target_space_id
+    end
+
+    has_many :external_calendar_subscriptions, ExternalCalendarSubscription do
+      destination_attribute :space_id
     end
 
     many_to_many :users, User do

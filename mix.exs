@@ -5,7 +5,7 @@ defmodule Wik.MixProject do
     [
       app: :wik,
       version: "0.1.0",
-      elixir: "~> 1.15",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -41,6 +41,10 @@ defmodule Wik.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:oban, "~> 2.0"},
+      {:oban_web, "~> 2.0"},
+      {:ash_oban, "~> 0.8"},
+      {:memoize, "~> 1.4"},
       {:iconify_ex, "~> 0.7.2"},
       {:ical, "~> 2.0"},
       {:error_tracker, "~> 0.9"},

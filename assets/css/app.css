@@ -49,6 +49,17 @@
       @apply font-bold;
     }
   }
+
+  .toggle {
+    @layer daisyui.l1.l2.l3 {
+      background-color: var(--color-base-300);
+      &:checked,
+      &[aria-checked="true"],
+      &:has(> input:checked) {
+        background-color: var(--color-base-300);
+      }
+    }
+  }
 }
 
 @layer components {
@@ -118,7 +129,7 @@
 :root {
   --font-family: "Nunito Variable";
   font-family: var(--font-family);
-  @apply text-[1.1em] sm:text-[1.175em];
+  @apply text-[1em] sm:text-[1.175em];
 }
 
 :root {

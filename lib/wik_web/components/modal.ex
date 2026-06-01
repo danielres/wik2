@@ -32,14 +32,13 @@ defmodule WikWeb.Components.Modal do
           !@full_height? and "max-h-[calc(100svh-4rem)]",
           @full_height? and "h-[calc(100svh-4rem)]",
           "mx-4",
-          "overflow-hidden",
           "grid grid-rows-[auto_1fr]"
         ]}
         phx-click-away={@cancel}
         phx-mounted={JS.focus_first(to: "form")}
         phx-target={assigns[:"phx-target"]}
       >
-        <h3 class="mb-2">
+        <h3 class="mb-2 text-lg font-bold">
           {render_slot(@title)}
         </h3>
 

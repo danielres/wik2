@@ -136,6 +136,7 @@ defmodule WikWeb.Layouts do
               :if={@view == "wiki/home" or @view == "tree"}
               class={[
                 (@view == "wiki/home" or @view == "tree") and "active",
+                "flex items-center gap-0.5",
                 "dropdown dropdown-start",
                 "cursor-pointer"
               ]}

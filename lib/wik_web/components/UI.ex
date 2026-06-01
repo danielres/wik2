@@ -1,4 +1,6 @@
 defmodule WikWeb.Components.UI do
+  import Iconify
+
   use WikWeb, :html
 
   attr :count, :integer, required: true
@@ -181,6 +183,33 @@ defmodule WikWeb.Components.UI do
     """
   end
 
+  attr :rest, :global
+
+  def button_relay(assigns) do
+    ~H"""
+    <button
+      aria-label="Relay event"
+      title="Relay event"
+      class={["btn btn-sm btn-circle btn-accent btn-soft"]}
+    >
+      <.iconify icon="mdi:share" class="size-5" />
+    </button>
+    """
+  end
+
+  attr :rest, :global
+
+  def button_edit(assigns) do
+    ~H"""
+    <button
+      class={["btn btn-sm btn-circle btn-accent btn-soft"]}
+      {@rest}
+    >
+      <.icon name="hero-pencil-micro" />
+    </button>
+    """
+  end
+
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
   def button_ok(assigns) do
@@ -196,7 +225,7 @@ defmodule WikWeb.Components.UI do
 
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
-  def button_edit(assigns) do
+  def button_unlock(assigns) do
     ~H"""
     <button
       class={[
@@ -211,12 +240,17 @@ defmodule WikWeb.Components.UI do
     """
   end
 
+  attr :class, :string, default: ""
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
   def button_plus(assigns) do
     ~H"""
     <button
-      class="btn btn-accent btn-circle btn-xs"
+      class={[
+        "btn btn-accent btn-soft btn-circle btn-xs",
+        @class
+      ]}
+      type="button"
       {@rest}
     >
       <.icon name="hero-plus-micro" />

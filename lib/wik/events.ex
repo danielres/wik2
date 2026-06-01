@@ -7,9 +7,14 @@ defmodule Wik.Events do
     ]
 
   import Ecto.Query, only: [from: 2]
+  require Ash.Expr
+  require Ash.Query
 
+  alias Ash.Query
   alias Wik.Accounts.Space
   alias Wik.Events.Event
+  alias Wik.Events.ExternalEvent
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
   alias Wik.Events.EventPublication.Checks
   alias Wik.Events.Feeds
@@ -22,6 +27,19 @@ defmodule Wik.Events do
   resources do
     resource Event
     resource EventPublication
+    resource ExternalEvent
+    resource ExternalCalendarSubscription
+  end
+
+  def external_calendar_subscriptions_query do
+    ExternalCalendarSubscription
+    |> Query.sort(inserted_at: :asc)
+    |> Query.load(:space)
+  end
+
+  def external_events_query do
+    ExternalEvent
+    |> Query.sort(starts_at: :asc)
   end
 
   # relay ======================================================================

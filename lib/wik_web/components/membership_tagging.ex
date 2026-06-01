@@ -362,7 +362,7 @@ defmodule WikWeb.Components.MembershipTagging do
       </div>
 
       <div :if={@editable?} class="flex justify-end gap-2">
-        <UI.button_edit
+        <UI.button_unlock
           data-testid={"member-tagging-edit-#{@tagging.tag_id}"}
           phx-click="tagging_edit_start"
           phx-value-tag_id={@tagging.tag_id}

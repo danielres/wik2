@@ -11,12 +11,17 @@ defmodule Wik.Application do
       WikWeb.Telemetry,
       Wik.Repo,
       {Ecto.Migrator, repos: Application.fetch_env!(:wik, :ecto_repos), skip: skip_migrations?()},
-      {DNSCluster, query: Application.get_env(:wik, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Wik.PubSub},
-      WikWeb.Presence,
+      {Oban,
+       AshOban.config(
+         Application.fetch_env!(:wik, :ash_domains),
+         Application.fetch_env!(:wik, Oban)
+       )},
       # Start a worker by calling: Wik.Worker.start_link(arg)
       # {Wik.Worker, arg},
       # Start to serve requests, typically the last entry
+      {DNSCluster, query: Application.get_env(:wik, :dns_cluster_query) || :ignore},
+      {Phoenix.PubSub, name: Wik.PubSub},
+      WikWeb.Presence,
       WikWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :wik]}
     ]

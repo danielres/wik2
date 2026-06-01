@@ -10,7 +10,8 @@
     with pkgs;
     [
       #
-      beam27Packages.expert
+      beam27Packages.elixir-ls
+      emmet-language-server
       git
       lefthook
       nodejs_24
@@ -34,7 +35,7 @@
     enable = true;
   };
 
-  # needed by expert lsp:
+  # needed by elixir-ls:
   languages.erlang = {
     enable = true;
   };

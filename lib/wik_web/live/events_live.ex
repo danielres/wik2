@@ -94,17 +94,45 @@ defmodule WikWeb.EventsLive do
   def handle_event("event_create_start", _params, socket) do
     current_scope = socket.assigns.current_scope
     active_tz = socket.assigns.active_tz
+    form = FormState.new(current_scope, active_tz)
 
-    {:noreply, assign(socket, :modal, {:event_form, FormState.new(current_scope, active_tz)})}
+    {:noreply, assign(socket, :modal, {:event_form, form, FormState.show_end_date?(form)})}
   end
 
   def handle_event("event_form_validate", %{"form" => params}, socket) do
+    show_end_date? = modal_event_form_show_end_date?(socket)
+
+    params =
+      FormState.normalize_hidden_end_date_params(
+        modal_event_form(socket),
+        params,
+        show_end_date?
+      )
+
     form =
       socket
       |> modal_event_form()
       |> FormState.validate(params)
 
-    {:noreply, assign(socket, :modal, {:event_form, form})}
+    {:noreply,
+     assign(
+       socket,
+       :modal,
+       {:event_form, form, show_end_date? || FormState.show_end_date?(form)}
+     )}
+  end
+
+  def handle_event("event_form_end_date_add", _params, socket) do
+    {:noreply, put_modal_event_form_show_end_date(socket, true)}
+  end
+
+  def handle_event("event_form_end_date_remove", _params, socket) do
+    form =
+      socket
+      |> modal_event_form()
+      |> FormState.collapse_end_date()
+
+    {:noreply, assign(socket, :modal, {:event_form, form, false})}
   end
 
   def handle_event("location_search", %{"q" => query}, socket) do
@@ -123,6 +151,14 @@ defmodule WikWeb.EventsLive do
   def handle_event("event_form_submit", %{"form" => params}, socket) do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
+    show_end_date? = modal_event_form_show_end_date?(socket)
+
+    params =
+      FormState.normalize_hidden_end_date_params(
+        modal_event_form(socket),
+        params,
+        show_end_date?
+      )
 
     socket =
       case Form.submit(modal_event_form(socket),
@@ -138,7 +174,11 @@ defmodule WikWeb.EventsLive do
           |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events?#{page_params}")
 
         {:error, form} ->
-          assign(socket, :modal, {:event_form, form})
+          assign(
+            socket,
+            :modal,
+            {:event_form, form, show_end_date? || FormState.show_end_date?(form)}
+          )
       end
 
     {:noreply, socket}
@@ -475,7 +515,7 @@ defmodule WikWeb.EventsLive do
 
   defp clear_event_form_modal(socket) do
     case socket.assigns.modal do
-      {:event_form, _form} -> assign(socket, :modal, nil)
+      {:event_form, _form, _show_end_date?} -> assign(socket, :modal, nil)
       _ -> socket
     end
   end
@@ -503,18 +543,35 @@ defmodule WikWeb.EventsLive do
   defp route_event_modal?(_modal), do: false
 
   defp modal_event_form(%{assigns: %{modal: modal}}), do: modal_event_form(modal)
-  defp modal_event_form({:event_form, form}), do: form
+  defp modal_event_form({:event_form, form, _show_end_date?}), do: form
   defp modal_event_form(_modal), do: nil
+
+  defp modal_event_form_show_end_date?(%{assigns: %{modal: modal}}),
+    do: modal_event_form_show_end_date?(modal)
+
+  defp modal_event_form_show_end_date?({:event_form, _form, show_end_date?}), do: show_end_date?
+  defp modal_event_form_show_end_date?(_modal), do: false
+
+  defp put_modal_event_form_show_end_date(socket, show_end_date?) do
+    case socket.assigns.modal do
+      {:event_form, form, _current_show_end_date?} ->
+        assign(socket, :modal, {:event_form, form, show_end_date?})
+
+      _ ->
+        socket
+    end
+  end
 
   defp modal_view(assigns) do
     case assigns.modal do
-      {:event_form, form} ->
+      {:event_form, form, show_end_date?} ->
         %{
           kind: :event_form,
           title: if(form.source.type == :create, do: "Create event", else: "Edit event"),
           dialog_testid: "event-modal-dialog",
           close_testid: "event-modal-close",
-          form: form
+          form: form,
+          show_end_date?: show_end_date?
         }
 
       {:internal_event, publication} ->

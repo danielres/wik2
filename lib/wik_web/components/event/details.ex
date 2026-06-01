@@ -41,6 +41,7 @@ defmodule WikWeb.Components.Event.Details do
       <Event.event_form
         :if={@mode == :edit}
         form={@event_form}
+        show_end_date?={@show_end_date?}
         target={@myself}
         user_tz={@user_tz}
       />
@@ -62,23 +63,60 @@ defmodule WikWeb.Components.Event.Details do
     socket =
       socket
       |> assign(:mode, :edit)
-      |> assign(
-        :event_form,
-        Event.FormState.edit(socket.assigns.publication.event, socket.assigns.current_scope)
-      )
+      |> then(fn socket ->
+        event_form =
+          Event.FormState.edit(socket.assigns.publication.event, socket.assigns.current_scope)
+
+        socket
+        |> assign(:event_form, event_form)
+        |> assign(:show_end_date?, Event.FormState.show_end_date?(event_form))
+      end)
 
     {:noreply, socket}
   end
 
   def handle_event("event_form_validate", %{"form" => params}, socket) do
+    params =
+      Event.FormState.normalize_hidden_end_date_params(
+        socket.assigns.event_form,
+        params,
+        socket.assigns.show_end_date?
+      )
+
+    event_form = Event.FormState.validate(socket.assigns.event_form, params)
+
     socket =
       socket
-      |> assign(:event_form, Event.FormState.validate(socket.assigns.event_form, params))
+      |> assign(:event_form, event_form)
+      |> assign(
+        :show_end_date?,
+        socket.assigns.show_end_date? || Event.FormState.show_end_date?(event_form)
+      )
 
     {:noreply, socket}
   end
 
+  def handle_event("event_form_end_date_add", _params, socket) do
+    {:noreply, assign(socket, :show_end_date?, true)}
+  end
+
+  def handle_event("event_form_end_date_remove", _params, socket) do
+    event_form = Event.FormState.collapse_end_date(socket.assigns.event_form)
+
+    {:noreply,
+     socket
+     |> assign(:event_form, event_form)
+     |> assign(:show_end_date?, false)}
+  end
+
   def handle_event("event_form_submit", %{"form" => params}, socket) do
+    params =
+      Event.FormState.normalize_hidden_end_date_params(
+        socket.assigns.event_form,
+        params,
+        socket.assigns.show_end_date?
+      )
+
     socket =
       case Form.submit(socket.assigns.event_form,
              params: params,
@@ -99,6 +137,7 @@ defmodule WikWeb.Components.Event.Details do
     socket =
       socket
       |> assign(:event_form, nil)
+      |> assign(:show_end_date?, false)
       |> assign(:mode, :show)
 
     {:noreply, socket}
@@ -161,6 +200,7 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:can_relay?, false)
     |> assign(:author_membership, nil)
     |> assign(:event_form, nil)
+    |> assign(:show_end_date?, false)
     |> assign(:mode, :show)
     |> assign(:relay_error, nil)
     |> assign(:relay_form, nil)

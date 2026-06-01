@@ -210,11 +210,11 @@ defmodule WikWeb.Components.Event.Timeline do
       </div>
 
       <AuthorLine.render
-        avatar_url={@item.author_avatar_url}
-        display_name={@item.author_name}
+        avatar_url={@item.author && @item.author.avatar_url}
+        display_name={@item.author && @item.author.display_name}
         tenant={@current_scope.tenant}
         testid={"internal-event-author-#{@item.id}"}
-        user={@item.author_user}
+        user={@item.author && @item.author.user}
       />
 
       <div

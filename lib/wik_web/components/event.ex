@@ -4,6 +4,7 @@ defmodule WikWeb.Components.Event do
   use Phoenix.Component
   use WikWeb, :html
 
+  alias Wik.Accounts
   alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event.Schedule
   alias WikWeb.Components.Event.Timeline
@@ -231,6 +232,9 @@ defmodule WikWeb.Components.Event do
   attr :user_tz, :string, required: true
 
   def event_details(assigns) do
+    author = Accounts.present_membership(assigns.author_membership)
+    assigns = assign(assigns, :author, author)
+
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
       <div class="float-right flex flex-col items-start gap-2">
@@ -302,10 +306,10 @@ defmodule WikWeb.Components.Event do
           Member
         </div>
         <AuthorLine.render
-          avatar_url={@author_membership && @author_membership.avatar_url}
-          display_name={@publication.event.author |> to_string()}
+          avatar_url={@author.avatar_url}
+          display_name={@author.display_name}
           tenant={@publication.space}
-          user={@publication.event.author}
+          user={@author.user || @publication.event.author}
         />
       </div>
 

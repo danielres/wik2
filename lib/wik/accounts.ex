@@ -39,6 +39,7 @@ defmodule Wik.Accounts do
   alias Wik.Accounts.Membership
   alias Wik.Repo
   alias Wik.Accounts.User
+  alias Utils.Values
 
   # TODO: rename to: list_user_owned_spaces
   def list_owned_spaces(%User{id: user_id}) do
@@ -73,7 +74,7 @@ defmodule Wik.Accounts do
   def get_membership(space_id, user_id) when is_binary(space_id) and is_binary(user_id) do
     Membership
     |> Ash.Query.filter(space_id == ^space_id and user_id == ^user_id)
-    |> Ash.Query.load([:user, :avatar_url])
+    |> Ash.Query.load([:avatar_url, user: [:external_identities]])
     |> Ash.read_one(authorize?: false, domain: __MODULE__)
   end
 
@@ -112,7 +113,7 @@ defmodule Wik.Accounts do
       {{:ok, _uuid}, _user_ids} ->
         Membership
         |> Ash.Query.filter(space_id == ^space_id and user_id in ^normalized_user_ids)
-        |> Ash.Query.load([:user, :avatar_url])
+        |> Ash.Query.load([:avatar_url, user: [:external_identities]])
         |> Ash.read(authorize?: false, domain: __MODULE__)
     end
   end
@@ -162,8 +163,32 @@ defmodule Wik.Accounts do
        when is_binary(username) and username != "",
        do: username
 
-  defp present_membership_display_name(_username, %User{} = user), do: to_string(user)
+  defp present_membership_display_name(_username, %User{} = user) do
+    user
+    |> external_identity_display_name()
+    |> Values.blank_to_nil()
+    |> case do
+      nil -> user |> to_string() |> Values.blank_to_nil()
+      display_name -> display_name
+    end
+  end
+
   defp present_membership_display_name(_username, _user), do: nil
+
+  defp external_identity_display_name(%User{external_identities: identities})
+       when is_list(identities) do
+    identities
+    |> Enum.find_value(fn identity ->
+      identity.username
+      |> Values.blank_to_nil()
+      |> case do
+        nil -> identity.display_name |> Values.blank_to_nil()
+        username -> username
+      end
+    end)
+  end
+
+  defp external_identity_display_name(_user), do: nil
 
   defp memberships_with_usernames(space_id) do
     Membership

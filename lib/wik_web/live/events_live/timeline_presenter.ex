@@ -1,4 +1,5 @@
 defmodule WikWeb.EventsLive.TimelinePresenter do
+  alias Wik.Accounts
   alias Wik.Events.ExternalCalendar
 
   def build(loaded_data, show_external?) do
@@ -79,6 +80,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   defp normalize_internal_publication(publication, author_memberships_by_user_id) do
     event = publication.event
     membership = Map.get(author_memberships_by_user_id, event.author.id)
+    author = Accounts.present_membership(membership)
 
     %{
       id: "internal:#{publication.id}",
@@ -98,9 +100,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       external_recurrence_id: nil,
       space_slug: publication.space.slug,
       source_name: publication.space.name,
-      author_name: publication.event.author |> to_string(),
-      author_user: publication.event.author,
-      author_avatar_url: membership && membership.avatar_url,
+      author: %{author | user: author.user || publication.event.author},
       calendar_name: nil,
       source_url: nil,
       subscription_id: nil
@@ -137,9 +137,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       external_recurrence_id: event.external_recurrence_id,
       space_slug: nil,
       source_name: nil,
-      author_name: nil,
-      author_user: nil,
-      author_avatar_url: nil,
+      author: nil,
       calendar_name: calendar_name,
       source_url: nil,
       subscription_id: event.subscription_id

@@ -78,7 +78,7 @@ defmodule WikWeb.Components.Event.Timeline do
                       "border-[1.5px] border-base-content/20",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     ]}
-                    data-testid={"event-open-#{item.publication_id}"}
+                    data-testid={"event-open-#{item.publication.id}"}
                   >
                     <.timeline_item_body
                       current_scope={@current_scope}
@@ -197,16 +197,16 @@ defmodule WikWeb.Components.Event.Timeline do
       <div class="flex flex-wrap items-center gap-2">
         <h2 class={[
           "text-base font-medium leading-tight",
-          @item.status == :cancelled && "line-through decoration-base-content"
+          @item.event.status == :cancelled && "line-through decoration-base-content"
         ]}>
-          {@item.title}
+          {@item.event.title}
         </h2>
 
-        <Event.event_status event={@item} />
+        <Event.event_status event={@item.event} />
       </div>
 
       <div class="truncate text-sm opacity-80" data-testid={timeline_schedule_testid(@item)}>
-        <Event.schedule event={@item} grouped_date={@grouped_date} user_tz={@user_tz} />
+        <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
       <AuthorLine.render
@@ -239,18 +239,18 @@ defmodule WikWeb.Components.Event.Timeline do
     """
   end
 
-  defp timeline_dom_id(%{source_type: :internal, publication_id: publication_id}),
-    do: "event-publication-#{publication_id}"
+  defp timeline_dom_id(%{source_type: :internal, publication: publication}),
+    do: "event-publication-#{publication.id}"
 
   defp timeline_dom_id(item), do: "external-event-#{item.id}"
 
-  defp timeline_testid(%{source_type: :internal, publication_id: publication_id}),
-    do: "event-publication-#{publication_id}"
+  defp timeline_testid(%{source_type: :internal, publication: publication}),
+    do: "event-publication-#{publication.id}"
 
   defp timeline_testid(item), do: "external-event-#{item.id}"
 
-  defp timeline_schedule_testid(%{source_type: :internal, publication_id: publication_id}),
-    do: "event-schedule-#{publication_id}"
+  defp timeline_schedule_testid(%{source_type: :internal, publication: publication}),
+    do: "event-schedule-#{publication.id}"
 
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
 

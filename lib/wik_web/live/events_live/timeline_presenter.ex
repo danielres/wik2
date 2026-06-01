@@ -38,19 +38,19 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
         internal_items
       end
 
-    Enum.sort_by(items, &{DateTime.to_unix(&1.starts_at, :microsecond), &1.id})
+    Enum.sort_by(items, &{DateTime.to_unix(&1.event.starts_at, :microsecond), &1.id})
   end
 
   def grouped_timeline_items(items) do
     items
-    |> Enum.group_by(&DateTime.to_date(&1.starts_at).year)
+    |> Enum.group_by(&DateTime.to_date(&1.event.starts_at).year)
     |> Enum.sort_by(fn {year, _items} -> year end)
     |> Enum.map(fn {year, year_items} ->
       %{
         year: year,
         months:
           year_items
-          |> Enum.group_by(&DateTime.to_date(&1.starts_at).month)
+          |> Enum.group_by(&DateTime.to_date(&1.event.starts_at).month)
           |> Enum.sort_by(fn {month, _items} -> month end)
           |> Enum.map(fn {month, month_items} ->
             %{
@@ -58,7 +58,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
               label: month_label(year, month),
               days:
                 month_items
-                |> Enum.group_by(&DateTime.to_date(&1.starts_at))
+                |> Enum.group_by(&DateTime.to_date(&1.event.starts_at))
                 |> Enum.sort_by(fn {date, _items} -> date end)
                 |> Enum.map(fn {date, day_items} ->
                   %{
@@ -85,16 +85,8 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     %{
       id: "internal:#{publication.id}",
       source_type: :internal,
-      title: event.title,
-      starts_at: event.starts_at,
-      ends_at: event.ends_at,
-      all_day: event.all_day,
-      tz: event.tz,
-      status: event.status,
-      location: event.location,
-      description: event.description,
-      publication_id: publication.id,
-      publication_type: publication.publication_type,
+      event: event,
+      publication: publication,
       event_url: nil,
       external_uid: nil,
       external_recurrence_id: nil,
@@ -122,16 +114,8 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     %{
       id: "external:#{event.id}",
       source_type: :external,
-      title: event.title,
-      starts_at: event.starts_at,
-      ends_at: event.ends_at,
-      all_day: event.all_day,
-      tz: event.tz,
-      status: event.status,
-      location: event.location,
-      description: event.description,
-      publication_id: nil,
-      publication_type: nil,
+      event: event,
+      publication: nil,
       event_url: event.event_url,
       external_uid: event.external_uid,
       external_recurrence_id: event.external_recurrence_id,

@@ -462,13 +462,13 @@ defmodule WikWeb.EventsLive do
 
   defp with_timeline_item_paths(items, current_scope, timeline) do
     Enum.map(items, fn
-      %{source_type: :internal, publication_id: publication_id} = item ->
+      %{source_type: :internal, publication: publication} = item ->
         Map.put(
           item,
           :open_path,
           internal_event_path(
             current_scope,
-            publication_id,
+            publication.id,
             timeline.show_external?,
             timeline.future_windows
           )

@@ -33,11 +33,6 @@ defmodule Wik.Events.ExternalCalendar.Presentation do
 
   def display_name(subscription, calendar_name \\ nil)
 
-  def display_name(calendar_name, subscription)
-      when is_binary(calendar_name) or is_nil(calendar_name) do
-    display_name(subscription, calendar_name)
-  end
-
   def display_name(subscription, calendar_name) do
     case blank_to_nil(subscription.custom_name) do
       nil ->

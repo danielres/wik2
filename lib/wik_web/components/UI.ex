@@ -196,7 +196,7 @@ defmodule WikWeb.Components.UI do
 
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
-  def button_edit(assigns) do
+  def button_unlock(assigns) do
     ~H"""
     <button
       class={[

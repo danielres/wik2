@@ -58,7 +58,7 @@ defmodule WikWeb.SpaceLive do
           <%= if @editing? do %>
             <UI.button_ok phx-click="toggle_edit_mode" />
           <% else %>
-            <UI.button_edit phx-click="toggle_edit_mode" />
+            <UI.button_unlock phx-click="toggle_edit_mode" />
           <% end %>
         </:actions>
 

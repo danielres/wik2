@@ -42,7 +42,7 @@ defmodule Wik.Access.TelegramSourceClaimTest do
                Telegram.claim_source_with_new_space(
                  source.id,
                  %{
-                   "description" => "Created from Telegram space #{source.title}",
+                   "description" => "Created from Telegram group #{source.title}",
                    "name" => source.title,
                    "slug" => "wiktest-local-space-1"
                  },
@@ -75,7 +75,7 @@ defmodule Wik.Access.TelegramSourceClaimTest do
                Telegram.claim_source_with_new_space(
                  source.id,
                  %{
-                   "description" => "Created from Telegram space #{source.title}",
+                   "description" => "Created from Telegram group #{source.title}",
                    "name" => source.title,
                    "slug" => "wiktest-local-space-1"
                  },
@@ -106,7 +106,7 @@ defmodule Wik.Access.TelegramSourceClaimTest do
                Telegram.claim_source_with_new_space(
                  source.id,
                  %{
-                   "description" => "Created from Telegram space #{source.title}",
+                   "description" => "Created from Telegram group #{source.title}",
                    "name" => source.title,
                    "slug" => "wiktest-local-space-1"
                  },

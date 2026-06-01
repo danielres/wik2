@@ -46,7 +46,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
   def claimable_sources(assigns) do
     ~H"""
     <div :if={@claimable_sources == []} class="opacity-70" data-testid="telegram-sources-empty">
-      No claimable Telegram spaces found.
+      No claimable Telegram groups found.
     </div>
 
     <div :if={@claimable_sources != []} class="">
@@ -64,7 +64,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
                 "flex items-center gap-2 justify-center"
               ]}>
                 <.icon name="hero-check-circle-mini" class="w-6 h-6 text-accent" />
-                <span>Telegram space detected</span>
+                <span>Telegram group detected</span>
               </h2>
 
               <div class="bg-accent/70 p-4 border border-base-100 rounded-box space-y-4 max-w-md mx-auto">
@@ -153,7 +153,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
       <:title>Create space</:title>
 
       <div class="mb-4 rounded-box border border-base-300 bg-base-100/70 px-4 py-3 text-sm opacity-80">
-        Telegram space: {@create_space_source.title}
+        Telegram group: {@create_space_source.title}
       </div>
 
       <Components.Space.form
@@ -174,7 +174,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
 
       source ->
         params = %{
-          "description" => "Created from Telegram space #{source.title}",
+          "description" => "Created from Telegram group #{source.title}",
           "name" => source.title
         }
 
@@ -251,7 +251,7 @@ defmodule WikWeb.Auth.TelegramSourcesLive do
       {:error, _error} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Could not claim Telegram space")}
+         |> put_flash(:error, "Could not claim Telegram group")}
     end
   end
 

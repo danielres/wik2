@@ -39,6 +39,7 @@ defmodule WikWeb.EventsLive.Components.Modal do
       <Components.Event.event_form
         :if={@modal_view && @modal_view.kind == :event_form}
         form={@modal_view.form}
+        show_end_date?={@modal_view.show_end_date?}
         user_tz={@active_tz}
       />
 

@@ -12,6 +12,7 @@ defmodule WikWeb.Components.Event do
   alias WikWeb.Components.UI
 
   attr :form, Phoenix.HTML.Form, required: true
+  attr :show_end_date?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
@@ -39,14 +40,52 @@ defmodule WikWeb.Components.Event do
             label="Start date"
             type="date"
           />
+          <div class="fieldset">
+            <label>
+              <div class="group label cursor-pointer flex items-center gap-2">
+                <button
+                  :if={@show_end_date?}
+                  type="button"
+                  class="cursor-pointer opacity-50 group-hover:opacity-100 group-hover:text-error transition -mt-0.5"
+                  data-testid="event-form-end-date-remove"
+                  phx-click="event_form_end_date_remove"
+                  phx-target={@target}
+                >
+                  <.icon name="hero-x-circle-micro" />
+                </button>
 
-          <.input
-            field={@form[:ends_on]}
-            errors={if @all_day?, do: errors_for(@form, :ends_at), else: []}
-            id="event-ends-on"
-            label="End date"
-            type="date"
-          />
+                <button
+                  :if={not @show_end_date?}
+                  type="button"
+                  class="cursor-pointer opacity-50 group-hover:opacity-100 group-hover:text-accent transition -mt-0.5"
+                  data-testid="event-form-end-date-add"
+                  phx-click="event_form_end_date_add"
+                  phx-target={@target}
+                >
+                  <.icon name="hero-plus-circle-micro" />
+                </button>
+
+                <span class="group-hover:text-base-content/80 transition">End date</span>
+              </div>
+
+              <.input
+                :if={@show_end_date? and false}
+                field={@form[:ends_on]}
+                errors={if @all_day?, do: errors_for(@form, :ends_at), else: []}
+                id="event-ends-on"
+                type="date"
+              />
+
+              <input
+                :if={@show_end_date?}
+                type="date"
+                name="form[ends_on]"
+                id="event-ends-on"
+                value={Phoenix.HTML.Form.input_value(@form, :ends_on)}
+                class="w-full input"
+              />
+            </label>
+          </div>
         </div>
 
         <.input field={@form[:all_day]} label="All-day event" type="checkbox" />

@@ -378,6 +378,7 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-tz-picker"))
     assert has_element?(view, testid("event-location-picker"))
     refute render(view) =~ ~s(name="form[location_text]")
+    render_click(element(view, testid("event-form-end-date-add")))
 
     render_submit(
       form(view, testid("event-form"),
@@ -419,6 +420,7 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
+    render_click(element(view, testid("event-form-end-date-add")))
 
     render_submit(
       form(view, testid("event-form"),
@@ -479,6 +481,7 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-detail"))
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
+    render_click(element(view, testid("event-form-end-date-add")))
     assert has_element?(view, testid("event-form"))
     assert render(view) =~ ~s(name="form[status]")
 
@@ -533,6 +536,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
+    render_click(element(view, testid("event-form-end-date-add")))
 
     render_submit(
       form(view, testid("event-form"),
@@ -598,6 +602,67 @@ defmodule WikWeb.EventsLiveTest do
     html = render(view)
     assert html =~ ~r/id="event-starts-at-time"[^>]*value="18:30(?::00)?"/
     assert html =~ ~r/id="event-ends-at-time"[^>]*value="20:45(?::00)?"/
+  end
+
+  test "create form hides end date by default and lets the user add it", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    render_click(element(view, testid("events-create-button")))
+
+    assert has_element?(view, testid("event-form-end-date-add"))
+    refute has_element?(view, "#event-ends-on")
+
+    render_click(element(view, testid("event-form-end-date-add")))
+
+    assert has_element?(view, "#event-ends-on")
+    assert has_element?(view, testid("event-form-end-date-remove"))
+  end
+
+  test "removing end date collapses it and resets it to the start date", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    render_click(element(view, testid("events-create-button")))
+    render_click(element(view, testid("event-form-end-date-add")))
+
+    render_change(
+      form(view, testid("event-form"),
+        form: %{
+          "title" => "",
+          "description" => "",
+          "location" => "",
+          "all_day" => "false",
+          "starts_on" => "2026-05-13",
+          "starts_at_time" => "14:00",
+          "ends_on" => "2026-05-14",
+          "ends_at_time" => "16:00",
+          "relay_policy" => "internal_only",
+          "provenance_policy" => "visible",
+          "tz" => "Etc/UTC"
+        }
+      )
+    )
+
+    render_click(element(view, testid("event-form-end-date-remove")))
+
+    refute has_element?(view, "#event-ends-on")
+
+    render_click(element(view, testid("event-form-end-date-add")))
+
+    assert has_element?(view, "#event-ends-on[value='2026-05-13']")
   end
 
   test "edit form preloads all-day event schedule values", %{conn: conn} do
@@ -677,6 +742,7 @@ defmodule WikWeb.EventsLiveTest do
     refute render(view) =~ origin_space.name
 
     render_click(element(view, testid("events-create-button")))
+    render_click(element(view, testid("event-form-end-date-add")))
 
     render_change(
       form(view, testid("event-form"),
@@ -749,6 +815,7 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
+    render_click(element(view, testid("event-form-end-date-add")))
 
     render_change(
       form(view, testid("event-form"),

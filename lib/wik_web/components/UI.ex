@@ -191,6 +191,7 @@ defmodule WikWeb.Components.UI do
       aria-label="Relay event"
       title="Relay event"
       class={["btn btn-sm btn-circle btn-accent btn-soft"]}
+      {@rest}
     >
       <.iconify icon="mdi:share" class="size-5" />
     </button>

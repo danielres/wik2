@@ -82,6 +82,7 @@ defmodule WikWeb.Components.Event.Timeline do
                   >
                     <.timeline_item_body
                       current_scope={@current_scope}
+                      grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
                       item={item}
                       user_tz={@user_tz}
                     />
@@ -104,6 +105,7 @@ defmodule WikWeb.Components.Event.Timeline do
                   >
                     <.timeline_item_body
                       current_scope={@current_scope}
+                      grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
                       item={item}
                       user_tz={@user_tz}
                     />
@@ -185,6 +187,7 @@ defmodule WikWeb.Components.Event.Timeline do
   end
 
   attr :current_scope, :map, required: true
+  attr :grouped_date, :any, default: nil
   attr :item, :map, required: true
   attr :user_tz, :string, required: true
 
@@ -203,7 +206,7 @@ defmodule WikWeb.Components.Event.Timeline do
       </div>
 
       <div class="truncate text-sm opacity-80" data-testid={timeline_schedule_testid(@item)}>
-        <Event.schedule event={@item} user_tz={@user_tz} />
+        <Event.schedule event={@item} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
       <AuthorLine.render

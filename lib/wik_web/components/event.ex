@@ -4,8 +4,8 @@ defmodule WikWeb.Components.Event do
   use Phoenix.Component
   use WikWeb, :html
 
-  alias Utils.Tz
   alias WikWeb.Components.Event.AuthorLine
+  alias WikWeb.Components.Event.Schedule
   alias WikWeb.Components.Event.Timeline
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
@@ -417,105 +417,10 @@ defmodule WikWeb.Components.Event do
 
   attr :class, :string, default: nil
   attr :event, :map, required: true
+  attr :grouped_date, :any, default: nil
   attr :user_tz, :string, required: true
 
-  def schedule(assigns) do
-    event_parts = schedule_parts(assigns.event, assigns.event.tz)
-    user_parts = schedule_parts(assigns.event, assigns.user_tz)
-
-    assigns =
-      assigns
-      |> assign(:event_parts, event_parts)
-      |> assign(:user_parts, user_parts)
-      |> assign(:show_user_tz?, event_parts != user_parts)
-
-    ~H"""
-    <div class={["space-y-0.5", @class]}>
-      <.schedule_row parts={@event_parts} tz={@event.tz} tz?={@show_user_tz?} />
-      <.schedule_row :if={@show_user_tz?} parts={@user_parts} tz={@user_tz} secondary? />
-    </div>
-    """
-  end
-
-  attr :parts, :map, required: true
-  attr :tz, :string, required: true
-  attr :secondary?, :boolean, default: false
-  attr :tz?, :boolean, default: true
-
-  defp schedule_row(assigns) do
-    ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1 text-xs", @secondary? && "opacity-75"]}>
-      <%= case {@parts.kind, Map.get(@parts, :same_day?)} do %>
-        <% {:timed, true} -> %>
-          <span>{@parts.start_date}</span>
-          <span>{@parts.start_time}</span>
-          <span class="mx-1 opacity-50">to</span>
-          <span>{@parts.end_time}</span>
-        <% {:timed, false} -> %>
-          <span class="font-medium">{@parts.start_date}</span>
-          <span>{@parts.start_time}</span>
-          <span class="mx-1 opacity-50">to</span>
-          <span class="font-medium">{@parts.end_date}</span>
-          <span>{@parts.end_time}</span>
-        <% {:all_day_single, _} -> %>
-          <span class="font-medium">{@parts.start_date}</span>
-        <% {:all_day_range, _} -> %>
-          <span class="font-medium">{@parts.start_date}</span>
-          <span class="mx-1 opacity-50">to</span>
-          <span class="font-medium">{@parts.end_date}</span>
-      <% end %>
-
-      <span :if={@tz?} class="badge badge-xs bg-base-300">
-        {@tz}
-      </span>
-    </div>
-    """
-  end
-
-  defp schedule_parts(event, tz) do
-    if event.all_day do
-      all_day_schedule_parts(event, tz)
-    else
-      timed_schedule_parts(event, tz)
-    end
-  end
-
-  defp timed_schedule_parts(event, tz) do
-    starts_at = Tz.to_local!(event.starts_at, tz)
-    ends_at = Tz.to_local!(event.ends_at, tz)
-
-    %{
-      kind: :timed,
-      same_day?: Date.compare(DateTime.to_date(starts_at), DateTime.to_date(ends_at)) == :eq,
-      start_date: Calendar.strftime(starts_at, "%Y-%m-%d"),
-      start_time: Calendar.strftime(starts_at, "%H:%M"),
-      end_date: Calendar.strftime(ends_at, "%Y-%m-%d"),
-      end_time: Calendar.strftime(ends_at, "%H:%M")
-    }
-  end
-
-  defp all_day_schedule_parts(event, tz) do
-    start_date = event.starts_at |> Tz.to_local!(tz) |> DateTime.to_date()
-
-    end_date =
-      case event.ends_at do
-        nil -> nil
-        ends_at -> ends_at |> Tz.to_local!(tz) |> DateTime.to_date()
-      end
-
-    if is_nil(end_date) or Date.compare(start_date, end_date) == :eq do
-      %{
-        kind: :all_day_single,
-        start_date: Calendar.strftime(start_date, "%Y-%m-%d")
-      }
-    else
-      %{
-        kind: :all_day_range,
-        start_date: Calendar.strftime(start_date, "%Y-%m-%d"),
-        end_date: Calendar.strftime(end_date, "%Y-%m-%d")
-      }
-    end
-  end
+  def schedule(assigns), do: Schedule.render(assigns)
 
   defp provenance_policy_options do
     [

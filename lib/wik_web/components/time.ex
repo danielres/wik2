@@ -26,7 +26,7 @@ defmodule WikWeb.Components.Time do
     <span>
       <span
         class={[
-          "underline decoration-dashed underline-offset-4 cursor-help",
+          "underline decoration-dashed underline-offset-4",
           @bg_class,
           "opacity-60 hover:opacity-100 transition-opacity",
           "whitespace-nowrap",

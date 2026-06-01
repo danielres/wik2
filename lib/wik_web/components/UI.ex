@@ -1,4 +1,6 @@
 defmodule WikWeb.Components.UI do
+  import Iconify
+
   use WikWeb, :html
 
   attr :count, :integer, required: true
@@ -177,6 +179,33 @@ defmodule WikWeb.Components.UI do
       {@rest}
     >
       <.icon name="hero-plus-micro" />
+    </button>
+    """
+  end
+
+  attr :rest, :global
+
+  def button_relay(assigns) do
+    ~H"""
+    <button
+      aria-label="Relay event"
+      title="Relay event"
+      class={["btn btn-sm btn-circle btn-accent btn-soft"]}
+    >
+      <.iconify icon="mdi:share" class="size-5" />
+    </button>
+    """
+  end
+
+  attr :rest, :global
+
+  def button_edit(assigns) do
+    ~H"""
+    <button
+      class={["btn btn-sm btn-circle btn-accent btn-soft"]}
+      {@rest}
+    >
+      <.icon name="hero-pencil-micro" />
     </button>
     """
   end

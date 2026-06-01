@@ -9,6 +9,7 @@ defmodule WikWeb.Components.Event do
   alias WikWeb.Components.Event.Timeline
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
+  alias WikWeb.Components.UI
 
   attr :form, Phoenix.HTML.Form, required: true
   attr :target, :any, default: nil
@@ -193,29 +194,22 @@ defmodule WikWeb.Components.Event do
   def event_details(assigns) do
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
-      <div class="float-right flex flex-col items-start gap-1">
-        <button
+      <div class="float-right flex flex-col items-start gap-2">
+        <UI.button_edit
           :if={@can_edit?}
-          class={["btn btn-sm btn-circle btn-accent"]}
           data-testid={"event-detail-edit-#{@publication.id}"}
           phx-click="event_detail_edit_start"
           phx-value-publication_id={@publication.id}
           phx-target={@target}
-        >
-          <.icon name="hero-pencil-square-micro" class="size-4" />
-        </button>
-        <button
+        />
+
+        <UI.button_relay
           :if={@can_relay?}
-          aria-label="Relay event"
-          title="Relay event"
-          class={["btn btn-sm btn-circle btn-accent"]}
           data-testid={"event-detail-relay-#{@publication.id}"}
           phx-click="event_detail_relay_start"
           phx-target={@target}
           phx-value-publication_id={@publication.id}
-        >
-          <.iconify icon="mdi:share" class="size-5" />
-        </button>
+        />
       </div>
 
       <div class="">

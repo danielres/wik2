@@ -221,6 +221,7 @@ defmodule WikWeb.Components.UI do
         "btn btn-accent btn-soft btn-circle btn-xs",
         @class
       ]}
+      type="button"
       {@rest}
     >
       <.icon name="hero-plus-micro" />

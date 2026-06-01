@@ -53,6 +53,7 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
             data-testid={"events-subscription-open-#{subscription.id}"}
             phx-click="external_calendar_subscription_show"
             phx-value-id={subscription.id}
+            type="button"
           >
             <div class="min-w-0">
               <div class="text-xs font-medium truncate flex items-center gap-1">

@@ -143,6 +143,8 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         href
         |> String.replace("&amp;", "&")
         |> maybe_unwrap_google_redirect_url()
+        |> Phoenix.HTML.html_escape()
+        |> Phoenix.HTML.safe_to_string()
 
       ~s(<a#{before}href="#{cleaned_href}"#{trailing}>)
     end)

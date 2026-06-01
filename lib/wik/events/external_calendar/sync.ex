@@ -3,6 +3,8 @@ defmodule Wik.Events.ExternalCalendar.Sync do
 
   import Ecto.Query, only: [from: 2]
 
+  require Logger
+
   alias Wik.Events.ExternalCalendar.Fetch
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.ExternalEvent
@@ -36,7 +38,7 @@ defmodule Wik.Events.ExternalCalendar.Sync do
 
   def sync_all_subscriptions(opts \\ []) do
     Repo.all(ExternalCalendarSubscription)
-    |> Task.async_stream(&sync_subscription(&1, opts), timeout: :infinity)
+    |> Task.async_stream(&sync_subscription_safely(&1, opts), timeout: :infinity)
     |> Stream.run()
 
     :ok
@@ -342,6 +344,18 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   defp format_transaction_error(%{errors: _errors} = error), do: Exception.message(error)
   defp format_transaction_error(error) when is_binary(error), do: error
   defp format_transaction_error(error), do: inspect(error)
+
+  defp sync_subscription_safely(subscription, opts) do
+    sync_subscription(subscription, opts)
+  rescue
+    error ->
+      Logger.error(
+        "external calendar sync crashed for subscription #{subscription.id}: " <>
+          Exception.format(:error, error, __STACKTRACE__)
+      )
+
+      {:error, subscription.id, Exception.message(error)}
+  end
 
   defp external_status(nil), do: :published
   defp external_status(:confirmed), do: :published

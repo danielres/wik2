@@ -95,6 +95,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       publication_type: publication.publication_type,
       event_url: nil,
       external_uid: nil,
+      external_recurrence_id: nil,
       space_slug: publication.space.slug,
       source_name: publication.space.name,
       author_name: publication.event.author |> to_string(),

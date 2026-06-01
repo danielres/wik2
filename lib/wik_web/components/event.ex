@@ -439,48 +439,32 @@ defmodule WikWeb.Components.Event do
   attr :secondary?, :boolean, default: false
   attr :tz?, :boolean, default: true
 
-  # TODO: dry up
-  defp schedule_row(%{parts: %{kind: :timed, same_day?: true}} = assigns) do
+  defp schedule_row(assigns) do
     ~H"""
     <div class={["flex flex-wrap items-center gap-x-1 gap-y-1 text-xs", @secondary? && "opacity-75"]}>
-      <span class="">{@parts.start_date}</span>
-      <span>{@parts.start_time}</span>
-      <span class="mx-1 opacity-50">to</span>
-      <span>{@parts.end_time}</span>
-      <span :if={@tz?} class="badge badge-xs bg-base-300">{@tz}</span>
-    </div>
-    """
-  end
+      <%= case {@parts.kind, Map.get(@parts, :same_day?)} do %>
+        <% {:timed, true} -> %>
+          <span>{@parts.start_date}</span>
+          <span>{@parts.start_time}</span>
+          <span class="mx-1 opacity-50">to</span>
+          <span>{@parts.end_time}</span>
+        <% {:timed, false} -> %>
+          <span class="font-medium">{@parts.start_date}</span>
+          <span>{@parts.start_time}</span>
+          <span class="mx-1 opacity-50">to</span>
+          <span class="font-medium">{@parts.end_date}</span>
+          <span>{@parts.end_time}</span>
+        <% {:all_day_single, _} -> %>
+          <span class="font-medium">{@parts.start_date}</span>
+        <% {:all_day_range, _} -> %>
+          <span class="font-medium">{@parts.start_date}</span>
+          <span class="mx-1 opacity-50">to</span>
+          <span class="font-medium">{@parts.end_date}</span>
+      <% end %>
 
-  defp schedule_row(%{parts: %{kind: :timed, same_day?: false}} = assigns) do
-    ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1 text-xs", @secondary? && "opacity-75"]}>
-      <span class="font-medium">{@parts.start_date}</span>
-      <span>{@parts.start_time}</span>
-      <span class="mx-1 opacity-50">to</span>
-      <span class="font-medium">{@parts.end_date}</span>
-      <span>{@parts.end_time}</span>
-      <span class="badge badge-sm bg-base-300">{@tz}</span>
-    </div>
-    """
-  end
-
-  defp schedule_row(%{parts: %{kind: :all_day_single}} = assigns) do
-    ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1 text-xs", @secondary? && "opacity-75"]}>
-      <span class="font-medium">{@parts.start_date}</span>
-      <span class="badge badge-sm bg-base-300">{@tz}</span>
-    </div>
-    """
-  end
-
-  defp schedule_row(%{parts: %{kind: :all_day_range}} = assigns) do
-    ~H"""
-    <div class={["flex flex-wrap items-center gap-x-1 gap-y-1", @secondary? && "opacity-75 text-xs"]}>
-      <span class="font-medium">{@parts.start_date}</span>
-      <span class="mx-1 opacity-50">to</span>
-      <span class="font-medium">{@parts.end_date}</span>
-      <span class="badge badge-sm bg-base-300">{@tz}</span>
+      <span :if={@tz?} class="badge badge-xs bg-base-300">
+        {@tz}
+      </span>
     </div>
     """
   end

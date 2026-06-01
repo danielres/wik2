@@ -7,7 +7,7 @@ defmodule WikWeb.Components.Time do
   attr :datetime, :any, required: true
   attr :ago?, :boolean, default: false
   attr :direction, :string, default: "bottom"
-  attr :bg_class, :string, default: "transparent"
+  attr :bg_class, :string, default: "bg-transparent"
   attr :tooltip_variant_class, :string, default: ""
 
   def relative_and_precise(assigns) do

@@ -43,6 +43,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     user_ids =
       publications
       |> Enum.map(& &1.event.author.id)
+      |> Enum.uniq()
 
     Accounts.list_memberships_by_user_id(space_id, user_ids)
   end

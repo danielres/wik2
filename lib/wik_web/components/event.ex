@@ -28,7 +28,7 @@ defmodule WikWeb.Components.Event do
       phx-target={@target}
     >
       <div class="space-y-3">
-        <.input field={@form[:title]} label="Title" />
+        <.input field={@form[:title]} label="Title" phx-hook="CapitalizeFirstLetter" />
 
         <div class="grid gap-3 sm:grid-cols-2">
           <.input

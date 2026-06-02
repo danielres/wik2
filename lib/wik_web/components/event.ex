@@ -126,25 +126,12 @@ defmodule WikWeb.Components.Event do
 
         <.input field={@form[:description]} label="Description" type="textarea" />
 
-        <div class={[
-          "grid gap-3 sm:grid-cols-2",
-          "bg-base-200 px-4 py-2 rounded-box",
-          "my-8"
-        ]}>
-          <.input
-            field={@form[:relay_policy]}
-            label="Relay policy"
-            type="select"
-            options={relay_policy_options()}
-          />
-
-          <.input
-            field={@form[:provenance_policy]}
-            label="Provenance"
-            type="select"
-            options={provenance_policy_options()}
-          />
-        </div>
+        <.input
+          field={@form[:relay_policy]}
+          label="Relay policy"
+          type="select"
+          options={relay_policy_options()}
+        />
 
         <.input
           :if={@form.source.type == :update}
@@ -228,7 +215,7 @@ defmodule WikWeb.Components.Event do
   attr :can_relay?, :boolean, required: true
   attr :publication, :map, required: true
   attr :author_membership, :map, default: nil
-  attr :relayer_membership, :map, default: nil
+  attr :show_origin_space?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
@@ -318,33 +305,18 @@ defmodule WikWeb.Components.Event do
         />
       </div>
 
-      <div :if={@publication.event.provenance_policy == :visible}>
+      <div :if={
+        @publication.publication_type == :relay and
+          (@show_origin_space? or @publication.relay_note not in [nil, ""])
+      }>
         <div class="text-xs uppercase tracking-wide opacity-50">
-          Context
+          Relayed event
         </div>
 
-        <div class={[
-          ""
-        ]}>
-          <span class="badge badge-soft">by {@publication.event.author |> to_string()}</span>
-          <span :if={@publication.publication_type == :origin} class="badge badge-soft">
-            in {@publication.event.space.name}
+        <div>
+          <span class="badge badge-soft badge-sm">
+            from: {@publication.event.space.name}
           </span>
-          <span :if={@publication.publication_type == :relay} class="badge badge-soft">
-            from {@publication.event.space.name}
-          </span>
-          <div
-            :if={@publication.publication_type == :relay and @relayer_membership}
-            class="inline-flex items-center gap-1 align-middle"
-          >
-            <span class="badge badge-soft">relayed by</span>
-            <User.identity
-              avatar_size="xs"
-              class="badge badge-soft gap-1.5 text-xs"
-              link?={true}
-              membership={@relayer_membership}
-            />
-          </div>
         </div>
 
         <p
@@ -473,13 +445,6 @@ defmodule WikWeb.Components.Event do
 
   def schedule(assigns), do: Schedule.render(assigns)
 
-  defp provenance_policy_options do
-    [
-      {"Show origin and relay context", "visible"},
-      {"Hide origin and relay context", "hidden"}
-    ]
-  end
-
   defp status_options do
     [
       {"Draft", "draft"},
@@ -491,8 +456,8 @@ defmodule WikWeb.Components.Event do
   defp relay_policy_options do
     [
       {"Internal only", "internal_only"},
-      {"Admins can relay to spaces", "admins_only_spaces"},
-      {"Members can relay to spaces", "members_to_spaces"}
+      {"Only admins can relay to other spaces", "admins_only_spaces"},
+      {"All members can relay to other spaces", "members_to_spaces"}
     ]
   end
 end

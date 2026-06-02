@@ -31,7 +31,6 @@ defmodule WikWeb.CalendarFeedControllerTest do
     assert response(conn, 200) =~ "BEGIN:VCALENDAR"
     assert response(conn, 200) =~ "SUMMARY:Shared dinner"
     assert response(conn, 200) =~ "Visible in: #{space.name}"
-    assert response(conn, 200) =~ "From: #{space.name}"
     assert get_resp_header(conn, "content-type") == ["text/calendar; charset=utf-8"]
   end
 
@@ -69,8 +68,6 @@ defmodule WikWeb.CalendarFeedControllerTest do
 
     assert response(conn, 200) =~ "Visible in: #{origin_space.name}"
     assert response(conn, 200) =~ "Visible in: #{target_space.name}"
-    assert response(conn, 200) =~ "From: #{origin_space.name}"
-    assert response(conn, 200) =~ "Relayed by: #{owner}"
     assert response(conn, 200) =~ "Relay note: Worth sharing"
   end
 
@@ -189,7 +186,6 @@ defmodule WikWeb.CalendarFeedControllerTest do
       ends_at_time: "20:00",
       ends_on: "2026-05-10",
       location: "Community Hall, 123 Example Street",
-      provenance_policy: :visible,
       relay_policy: :internal_only,
       starts_at_time: "18:00",
       starts_on: "2026-05-10",

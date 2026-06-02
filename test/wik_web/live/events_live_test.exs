@@ -319,7 +319,7 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-month-2026-5"))
     assert has_element?(view, testid("events-day-2026-5-10"))
     assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-1"))
+    assert has_element?(view, testid("events-day-2026-6-3"))
     assert has_element?(view, testid("events-year-2027"))
     assert has_element?(view, testid("events-month-2027-1"))
     assert has_element?(view, testid("events-day-2027-1-15"))
@@ -339,14 +339,14 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-publication-#{may_publication.id}"))
     assert has_element?(view, testid("event-publication-#{january_publication.id}"))
     refute has_element?(view, testid("events-month-2026-6"))
-    refute has_element?(view, testid("events-day-2026-6-1"))
+    refute has_element?(view, testid("events-day-2026-6-3"))
     refute has_element?(view, testid(external_event_testid))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: true}}")
     assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-1"))
+    assert has_element?(view, testid("events-day-2026-6-3"))
     assert has_element?(view, testid(external_event_testid))
   end
 
@@ -426,7 +426,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:00",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -468,7 +467,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:00",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -531,7 +529,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:30",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "status" => "cancelled",
           "tz" => "Etc/UTC"
         }
@@ -584,7 +581,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:30",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "status" => "published",
           "tz" => "Etc/UTC"
         }
@@ -684,7 +680,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -735,7 +730,7 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, "#event-ends-at-time")
   end
 
-  test "all-day toggle keeps timed values and provenance hidden suppresses relay context", %{
+  test "all-day toggle keeps timed values stable and relay context respects origin membership", %{
     conn: conn
   } do
     owner = generate(user())
@@ -753,7 +748,6 @@ defmodule WikWeb.EventsLiveTest do
         Event,
         event_attrs(
           title: "Quiet walk",
-          provenance_policy: :hidden,
           relay_policy: :admins_only_spaces
         ),
         action: :create,
@@ -788,7 +782,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -804,7 +797,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -822,7 +814,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -861,7 +852,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -877,7 +867,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -896,7 +885,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -914,7 +902,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -932,7 +919,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -1531,7 +1517,6 @@ defmodule WikWeb.EventsLiveTest do
       ends_at_time: "20:00",
       ends_on: "2026-05-10",
       location: "Community Hall, 123 Example Street",
-      provenance_policy: :visible,
       relay_policy: :internal_only,
       starts_at_time: "18:00",
       starts_on: "2026-05-10",
@@ -1598,8 +1583,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1617,8 +1602,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1637,8 +1622,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:West Coast Swing Party\\n<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar&amp;usd=2&amp;usg=AOvVaw1yIVflEmW8GH3zDYw07XmQ" target="_blank">www.werk36.de</a>\\n<script>alert(1)</script><img src="https://www.example.com/x.png" onerror="alert(1)">
     LOCATION:Riverside Hall
@@ -1659,8 +1644,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall

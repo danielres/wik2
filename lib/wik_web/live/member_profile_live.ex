@@ -4,6 +4,7 @@ defmodule WikWeb.MemberProfileLive do
 
   import Cinder.Refresh
 
+  alias Phoenix.LiveView
   alias Utils.Log
   alias Wik.Access
   alias Wik.Accounts
@@ -14,6 +15,12 @@ defmodule WikWeb.MemberProfileLive do
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
+
+  @tagging_sorts %{
+    "tag.name" => :asc,
+    "interest_level" => :desc,
+    "skill_level" => :desc
+  }
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
@@ -27,6 +34,7 @@ defmodule WikWeb.MemberProfileLive do
        editable?: false,
        membership: nil,
        selected_tag_slug: nil,
+       selected_tagging_sort: "interest_level",
        subscribed_space_id: nil,
        subscribed_target_id: nil,
        taggings: [],
@@ -136,6 +144,7 @@ defmodule WikWeb.MemberProfileLive do
             </div>
 
             <MembershipTagging.list
+              active_sort={@selected_tagging_sort}
               membership={@membership}
               query={@taggings_query}
               scope={@current_scope}
@@ -202,6 +211,22 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   @impl true
+  def handle_event("tagging_sort", %{"sort" => sort}, socket)
+      when is_map_key(@tagging_sorts, sort) do
+    LiveView.send_update(Cinder.LiveComponent,
+      id: "member-taggings",
+      sort_by: [{sort, Map.fetch!(@tagging_sorts, sort)}],
+      current_page: 1,
+      after_keyset: nil,
+      before_keyset: nil,
+      user_has_interacted: true
+    )
+
+    {:noreply, assign(socket, :selected_tagging_sort, sort)}
+  end
+
+  def handle_event("tagging_sort", _params, socket), do: {:noreply, socket}
+
   def handle_event("tagging_create_start", _params, socket) do
     {:noreply,
      assign(socket, :tagging_modal, new_tagging_modal(:create, form: init_tagging_form(nil)))}

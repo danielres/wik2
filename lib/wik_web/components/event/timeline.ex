@@ -257,11 +257,11 @@ defmodule WikWeb.Components.Event.Timeline do
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 
   defp legacy_event_link_target(%{tenant: %{slug: space_slug}}, publication) do
-    ~p"/#{space_slug}/events?#{%{event: publication.id}}"
+    ~p"/#{space_slug}/events?#{%{event: publication.event_id}}"
   end
 
   defp legacy_event_link_target(_scope, publication) do
-    ~p"/#{publication.space.slug}/events?#{%{event: publication.id}}"
+    ~p"/#{publication.space.slug}/events?#{%{event: publication.event_id}}"
   end
 
   defp present?(value), do: value not in [nil, ""]

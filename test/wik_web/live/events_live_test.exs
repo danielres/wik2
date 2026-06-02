@@ -72,7 +72,11 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{publication.id}")))
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
+    assert_patch(
+      view,
+      ~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}"
+    )
+
     assert has_element?(view, testid("event-detail"))
     assert render(view) =~ "An event description"
     assert render(view) =~ "Community Hall, 123 Example Street"
@@ -111,7 +115,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(member)
-      |> live(~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
+      |> live(~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}")
 
     assert has_element?(view, ~s(a[href="/#{space.slug}/wiki/members/owner-ada"]))
   end
@@ -141,7 +145,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.event_id}}")
 
     assert has_element?(view, testid("event-detail-relay-#{publication.id}"))
 
@@ -166,7 +170,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, internal_view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: internal_publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: internal_publication.event_id}}")
 
     refute has_element?(internal_view, testid("event-detail-relay-#{internal_publication.id}"))
   end
@@ -196,7 +200,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.event_id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
 
@@ -252,7 +256,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.event_id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
     assert has_element?(view, testid("event-relay-form"))
@@ -509,7 +513,12 @@ defmodule WikWeb.EventsLiveTest do
     refute render(view) =~ ~s(name="form[status]")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
+
+    assert_patch(
+      view,
+      ~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}"
+    )
+
     assert has_element?(view, testid("event-detail"))
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -1030,7 +1039,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{space.slug}/events?#{%{event: publication.event_id}}")
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 

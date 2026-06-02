@@ -287,7 +287,7 @@ defmodule WikWeb.Components.Event do
 
         <div class={[
           "text-sm leading-6",
-          "border border-base-300 rounded-md bg-base-content/5 px-4 py-2"
+          "rounded-md bg-base-content/5 px-4 py-2"
         ]}>
           <div class="whitespace-pre-wrap">{@publication.event.description}</div>
         </div>
@@ -295,7 +295,7 @@ defmodule WikWeb.Components.Event do
 
       <div class="space-y-1">
         <div class="text-xs uppercase tracking-wide opacity-50">
-          Member
+          By
         </div>
         <User.identity
           avatar_size="xs"
@@ -305,26 +305,44 @@ defmodule WikWeb.Components.Event do
         />
       </div>
 
-      <div :if={
-        @publication.publication_type == :relay and
-          (@show_origin_space? or @publication.relay_note not in [nil, ""])
-      }>
-        <div class="text-xs uppercase tracking-wide opacity-50">
-          Relayed event
+      <div
+        :if={
+          @publication.publication_type == :relay and
+            (@show_origin_space? or @publication.relay_note not in [nil, ""])
+        }
+        class="space-y-6"
+      >
+        <div :if={@show_origin_space?}>
+          <div class="text-xs uppercase tracking-wide opacity-50">
+            Relayed from
+          </div>
+
+          <.link
+            :if={@show_origin_space?}
+            navigate={
+              ~p"/#{@publication.event.space.slug}/events?external=false&event=#{@publication.event.id}"
+            }
+            class="badge badge-soft badge-sm"
+          >
+            {@publication.event.space.name}
+          </.link>
         </div>
 
-        <div>
-          <span class="badge badge-soft badge-sm">
-            from: {@publication.event.space.name}
-          </span>
-        </div>
+        <div :if={
+          @publication.publication_type == :relay and @publication.relay_note not in [nil, ""]
+        }>
+          <div class="text-xs uppercase tracking-wide opacity-50">
+            Extra notes by {@author.display_name}
+          </div>
 
-        <p
-          :if={@publication.publication_type == :relay and @publication.relay_note not in [nil, ""]}
-          class="mt-3 text-sm opacity-70"
-        >
-          {@publication.relay_note}
-        </p>
+          <div class={[
+            "text-sm leading-6",
+            "mt-1",
+            "rounded-md bg-base-content/5 px-4 py-2"
+          ]}>
+            {@publication.relay_note}
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -386,7 +404,7 @@ defmodule WikWeb.Components.Event do
           <.input
             field={@relay_form[:relay_note]}
             id="event-relay-note"
-            label="Relay note"
+            label="Extra notes"
             type="textarea"
           />
 

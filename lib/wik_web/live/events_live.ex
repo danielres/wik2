@@ -81,7 +81,10 @@ defmodule WikWeb.EventsLive do
 
     publication =
       params["event"] &&
-        Enum.find(socket.assigns.timeline.internal_publications, &(&1.id == params["event"]))
+        Enum.find(
+          socket.assigns.timeline.internal_publications,
+          &(&1.event_id == params["event"])
+        )
 
     socket =
       socket
@@ -468,7 +471,7 @@ defmodule WikWeb.EventsLive do
           :open_path,
           internal_event_path(
             current_scope,
-            publication.id,
+            publication.event_id,
             timeline.show_external?,
             timeline.future_windows
           )
@@ -486,8 +489,8 @@ defmodule WikWeb.EventsLive do
 
   defp load_more_path(_current_scope, _timeline), do: nil
 
-  defp internal_event_path(current_scope, publication_id, show_external?, future_windows) do
-    params = Params.event_params(publication_id, show_external?, future_windows)
+  defp internal_event_path(current_scope, event_id, show_external?, future_windows) do
+    params = Params.event_params(event_id, show_external?, future_windows)
     ~p"/#{current_scope.tenant.slug}/events?#{params}"
   end
 

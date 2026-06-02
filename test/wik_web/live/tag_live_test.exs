@@ -124,6 +124,53 @@ defmodule WikWeb.TagLiveTest do
     assert has_element?(view, testid("tag-member-tagging-interest-#{first_tagging.id}"))
     assert has_element?(view, testid("tag-member-tagging-skill-#{third_tagging.id}"))
     assert has_element?(view, testid("tag-member-tagging-description-#{first_tagging.id}"))
+    assert has_element?(view, testid("tag-member-tagging-sort-controls"))
+
+    assert has_element?(
+             view,
+             testid("tag-member-tagging-sort-interest") <> ~s([aria-pressed="true"])
+           )
+
+    refute has_element?(view, ~s(.cinder-list button[phx-click="toggle_sort"]))
+
+    html = render(view)
+
+    assert index_of_testid(html, "tag-member-tagging-member-#{first_tagging.id}") <
+             index_of_testid(html, "tag-member-tagging-member-#{second_tagging.id}")
+
+    assert index_of_testid(html, "tag-member-tagging-member-#{second_tagging.id}") <
+             index_of_testid(html, "tag-member-tagging-member-#{third_tagging.id}")
+
+    render_click(element(view, testid("tag-member-tagging-sort-skill")))
+    render_async(view)
+
+    assert has_element?(
+             view,
+             testid("tag-member-tagging-sort-skill") <> ~s([aria-pressed="true"])
+           )
+
+    refute has_element?(
+             view,
+             testid("tag-member-tagging-sort-interest") <> ~s([aria-pressed="true"])
+           )
+
+    html = render(view)
+
+    assert index_of_testid(html, "tag-member-tagging-member-#{third_tagging.id}") <
+             index_of_testid(html, "tag-member-tagging-member-#{first_tagging.id}")
+
+    render_click(element(view, testid("tag-member-tagging-sort-username")))
+    render_async(view)
+
+    assert has_element?(
+             view,
+             testid("tag-member-tagging-sort-username") <> ~s([aria-pressed="true"])
+           )
+
+    refute has_element?(
+             view,
+             testid("tag-member-tagging-sort-skill") <> ~s([aria-pressed="true"])
+           )
 
     html = render(view)
 

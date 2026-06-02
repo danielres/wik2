@@ -36,8 +36,7 @@ defmodule WikWeb.Components.MembershipTagging do
           type="button"
           class={[
             "btn btn-sm transition duration-150 btn-neutral",
-            @active_sort != "tag.name" && "opacity-40",
-            @active_sort == "tag.name" && ""
+            @active_sort != "tag.name" && "opacity-40"
           ]}
           aria-pressed={@active_sort == "tag.name"}
           data-member-tagging-sort="tag.name"
@@ -53,8 +52,7 @@ defmodule WikWeb.Components.MembershipTagging do
           type="button"
           class={[
             "btn btn-sm transition duration-150 btn-neutral",
-            @active_sort != "interest_level" && "opacity-40",
-            @active_sort == "interest_level" && ""
+            @active_sort != "interest_level" && "opacity-40"
           ]}
           aria-pressed={@active_sort == "interest_level"}
           data-member-tagging-sort="interest_level"
@@ -70,8 +68,7 @@ defmodule WikWeb.Components.MembershipTagging do
           type="button"
           class={[
             "btn btn-sm transition duration-150 btn-neutral",
-            @active_sort != "skill_level" && "opacity-40",
-            @active_sort == "skill_level" && ""
+            @active_sort != "skill_level" && "opacity-40"
           ]}
           aria-pressed={@active_sort == "skill_level"}
           data-member-tagging-sort="skill_level"
@@ -218,6 +215,7 @@ defmodule WikWeb.Components.MembershipTagging do
     """
   end
 
+  attr :active_sort, :string, required: true
   attr :query, :any, required: true
   attr :scope, :map, required: true
   attr :tag, :map, required: true
@@ -235,6 +233,60 @@ defmodule WikWeb.Components.MembershipTagging do
       class="overflow-hidden"
       data-testid="tag-member-taggings-table"
     >
+      <div
+        class="mb-3 flex items-center justify-end gap-2"
+        data-testid="tag-member-tagging-sort-controls"
+      >
+        <button
+          id="tag-member-tagging-sort-username"
+          type="button"
+          class={[
+            "btn btn-sm transition btn-neutral",
+            @active_sort != "target_membership.username" && "opacity-40"
+          ]}
+          aria-pressed={@active_sort == "target_membership.username"}
+          data-member-tagging-sort="target_membership.username"
+          data-testid="tag-member-tagging-sort-username"
+          phx-click="member_tagging_sort"
+          phx-value-sort="target_membership.username"
+        >
+          <.icon name="hero-arrow-down-mini" class="size-3 -mr-1.5" />
+          <span>Aa</span>
+        </button>
+        <button
+          id="tag-member-tagging-sort-interest"
+          type="button"
+          class={[
+            "btn btn-sm transition btn-neutral",
+            @active_sort != "interest_level" && "opacity-40"
+          ]}
+          aria-pressed={@active_sort == "interest_level"}
+          data-member-tagging-sort="interest_level"
+          data-testid="tag-member-tagging-sort-interest"
+          phx-click="member_tagging_sort"
+          phx-value-sort="interest_level"
+        >
+          <div style={"background: #{@interest_dimension.color}"} class="size-2.5 rounded-full" />
+          {@interest_dimension.label}
+        </button>
+        <button
+          id="tag-member-tagging-sort-skill"
+          type="button"
+          class={[
+            "btn btn-sm transition btn-neutral",
+            @active_sort != "skill_level" && "opacity-40"
+          ]}
+          aria-pressed={@active_sort == "skill_level"}
+          data-member-tagging-sort="skill_level"
+          data-testid="tag-member-tagging-sort-skill"
+          phx-click="member_tagging_sort"
+          phx-value-sort="skill_level"
+        >
+          <div style={"background: #{@skill_dimension.color}"} class="size-2.5 rounded-full" />
+          {@skill_dimension.label}
+        </button>
+      </div>
+
       <Cinder.collection
         layout={:list}
         id="tag-member-taggings"
@@ -242,6 +294,7 @@ defmodule WikWeb.Components.MembershipTagging do
         query={@query}
         scope={@scope}
         show_filters={true}
+        show_sort={false}
         sort_mode="exclusive"
         theme={DenseNoSortIcons}
       >

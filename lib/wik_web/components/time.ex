@@ -33,8 +33,7 @@ defmodule WikWeb.Components.Time do
           "tooltip tooltip-delayed tooltip-xs",
           @direction_class,
           @tooltip_variant_class,
-          "cursor-default",
-          "text-xs"
+          "cursor-pointer"
         ]}
         style="--tt-off: calc(100% + 0.1rem);"
       >

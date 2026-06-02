@@ -198,11 +198,7 @@ defmodule WikWeb.HomeLive do
       case Accounts.list_memberships_by_user_id(space.id, user_ids) do
         {:ok, memberships_by_user_id} ->
           Enum.reduce(memberships_by_user_id, acc, fn {user_id, membership}, space_acc ->
-            Map.put(
-              space_acc,
-              {space.id, user_id},
-              Accounts.present_membership(membership)
-            )
+            Map.put(space_acc, {space.id, user_id}, membership)
           end)
 
         {:error, _error} ->

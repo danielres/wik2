@@ -26,7 +26,11 @@ defmodule WikWeb.Components.Block.Info do
 
       <dt class="opacity-60">Created</dt>
       <dd data-testid="block-info-inserted-at">
-        {@placement.block.inserted_at |> Utils.Time.precise()}
+        <Components.Time.relative_and_precise
+          datetime={@placement.block.inserted_at}
+          direction="right"
+          ago?
+        />
       </dd>
 
       <dt class="opacity-60">By</dt>

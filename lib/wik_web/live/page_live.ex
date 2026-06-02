@@ -21,6 +21,7 @@ defmodule WikWeb.PageLive do
       socket
       |> assign(
         add_block_modal_open?: false,
+        author_membership: nil,
         add_block_position: "bottom",
         block_history_placement: nil,
         block_info_placement: nil,
@@ -59,6 +60,7 @@ defmodule WikWeb.PageLive do
     socket =
       socket
       |> PageState.load_path(path, title_path: title_path)
+      |> load_page_author_membership()
       |> Presence.track_in_liveview(url)
       |> Locks.assign_locks()
 
@@ -218,4 +220,19 @@ defmodule WikWeb.PageLive do
   defp load_block_info_placement(placement, scope) do
     placement |> Ash.load([block: [:author, :placements]], scope: scope)
   end
+
+  defp load_page_author_membership(
+         %{assigns: %{current_scope: scope, page: %{author: author}}} = socket
+       ) do
+    case Wik.Accounts.get_membership(scope.tenant, author) do
+      {:ok, membership} ->
+        assign(socket, :author_membership, membership)
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "load_page_author_membership failed")
+        assign(socket, :author_membership, nil)
+    end
+  end
+
+  defp load_page_author_membership(socket), do: assign(socket, :author_membership, nil)
 end

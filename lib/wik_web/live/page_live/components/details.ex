@@ -4,9 +4,9 @@ defmodule WikWeb.PageLive.Components.Details do
   """
   use WikWeb, :html
 
-  alias Wik.Accounts
   alias WikWeb.Components
 
+  attr :author_membership, :map, default: nil
   attr :tenant_context, :map, default: nil
   attr :scope, :map, required: true
   attr :node, :map, required: true
@@ -16,10 +16,6 @@ defmodule WikWeb.PageLive.Components.Details do
   slot :inner_block, required: true
 
   def render(assigns) do
-    {:ok, author_membership} = Accounts.get_membership(assigns.scope.tenant, assigns.page.author)
-
-    assigns = assign(assigns, :author_membership, author_membership)
-
     ~H"""
     <details class="space" open={@open?}>
       <summary class={[
@@ -51,6 +47,7 @@ defmodule WikWeb.PageLive.Components.Details do
         <div class="font-bold">By:</div>
         <div class="flex items-center gap-2">
           <Components.User.identity
+            :if={@author_membership}
             avatar_size="xs"
             class="gap-2"
             link?={true}

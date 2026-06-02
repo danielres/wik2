@@ -23,6 +23,7 @@ defmodule WikWeb.PageLive do
         add_block_modal_open?: false,
         author_membership: nil,
         add_block_position: "bottom",
+        block_info_author_membership: nil,
         block_history_placement: nil,
         block_info_placement: nil,
         can_manage_page?: false,
@@ -158,24 +159,32 @@ defmodule WikWeb.PageLive do
       {:ok, placement} ->
         case load_block_info_placement(placement, scope) do
           {:ok, placement} ->
-            {:noreply, socket |> assign(block_info_placement: placement)}
+            {:noreply,
+             socket
+             |> assign(block_info_placement: placement)
+             |> assign(
+               :block_info_author_membership,
+               load_block_info_author_membership(placement, scope)
+             )}
 
           {:error, error} ->
             Utils.Log.scoped_error(scope, error, "load_block_info_placement failed")
-            {:noreply, socket |> assign(block_info_placement: nil)}
+
+            {:noreply,
+             socket |> assign(block_info_placement: nil, block_info_author_membership: nil)}
         end
 
       {:error, :not_found} ->
         {:noreply,
          socket
          |> Phoenix.LiveView.put_flash(:error, "That block is no longer available")
-         |> assign(block_info_placement: nil)}
+         |> assign(block_info_placement: nil, block_info_author_membership: nil)}
     end
   end
 
   @impl true
   def handle_event("hide_block_info", _params, socket) do
-    {:noreply, socket |> assign(block_info_placement: nil)}
+    {:noreply, socket |> assign(block_info_placement: nil, block_info_author_membership: nil)}
   end
 
   @impl true
@@ -219,6 +228,17 @@ defmodule WikWeb.PageLive do
 
   defp load_block_info_placement(placement, scope) do
     placement |> Ash.load([block: [:author, :placements]], scope: scope)
+  end
+
+  defp load_block_info_author_membership(placement, scope) do
+    case Wik.Accounts.get_membership(scope.tenant, placement.block.author) do
+      {:ok, membership} ->
+        membership
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "load_block_info_author_membership failed")
+        nil
+    end
   end
 
   defp load_page_author_membership(

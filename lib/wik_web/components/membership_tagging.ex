@@ -35,7 +35,7 @@ defmodule WikWeb.Components.MembershipTagging do
           id="member-tagging-sort-tag"
           type="button"
           class={[
-            "btn btn-sm transition duration-150 btn-neutral",
+            "btn btn-sm transition btn-neutral",
             @active_sort != "tag.name" && "opacity-40"
           ]}
           aria-pressed={@active_sort == "tag.name"}
@@ -51,7 +51,7 @@ defmodule WikWeb.Components.MembershipTagging do
           id="member-tagging-sort-interest"
           type="button"
           class={[
-            "btn btn-sm transition duration-150 btn-neutral",
+            "btn btn-sm transition btn-neutral",
             @active_sort != "interest_level" && "opacity-40"
           ]}
           aria-pressed={@active_sort == "interest_level"}
@@ -67,7 +67,7 @@ defmodule WikWeb.Components.MembershipTagging do
           id="member-tagging-sort-skill"
           type="button"
           class={[
-            "btn btn-sm transition duration-150 btn-neutral",
+            "btn btn-sm transition btn-neutral",
             @active_sort != "skill_level" && "opacity-40"
           ]}
           aria-pressed={@active_sort == "skill_level"}

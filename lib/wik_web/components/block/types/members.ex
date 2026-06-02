@@ -49,17 +49,7 @@ defmodule WikWeb.Components.Block.Types.Members do
              Ash.can?({membership, :update_membership_type}, @scope)) &&
             "border border-accent/50 hover:border-accent"
         ]}>
-          <.link
-            :if={!@actions?}
-            navigate={Components.User.membership_profile_path(membership)}
-            class="flex justify-between"
-          >
-            <.member_row_content membership={membership} />
-          </.link>
-
-          <div :if={@actions?} class="flex justify-between">
-            <.member_row_content membership={membership} />
-          </div>
+          <.member_row membership={membership} actions?={@actions?} />
 
           <button
             :if={
@@ -101,6 +91,27 @@ defmodule WikWeb.Components.Block.Types.Members do
   end
 
   attr :membership, :map, required: true
+
+  attr :actions?, :boolean, required: true
+
+  defp member_row(assigns) do
+    assigns =
+      assign(assigns, :profile_path, Components.User.membership_profile_path(assigns.membership))
+
+    ~H"""
+    <.link
+      :if={!@actions? and @profile_path}
+      navigate={@profile_path}
+      class="flex justify-between"
+    >
+      <.member_row_content membership={@membership} />
+    </.link>
+
+    <div :if={@actions? or @profile_path in [nil, ""]} class="flex justify-between">
+      <.member_row_content membership={@membership} />
+    </div>
+    """
+  end
 
   defp member_row_content(assigns) do
     ~H"""

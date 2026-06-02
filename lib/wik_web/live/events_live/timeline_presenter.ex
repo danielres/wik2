@@ -1,4 +1,5 @@
 defmodule WikWeb.EventsLive.TimelinePresenter do
+  alias Wik.Accounts
   alias Wik.Events.ExternalCalendar
 
   def build(loaded_data, show_external?) do
@@ -29,6 +30,26 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     }
   end
 
+  def internal_item(publication, membership) do
+    event = publication.event
+
+    %{
+      id: "internal:#{publication.id}",
+      source_type: :internal,
+      event: event,
+      publication: publication,
+      event_url: nil,
+      external_uid: nil,
+      external_recurrence_id: nil,
+      space_slug: publication.space.slug,
+      source_name: publication.space.name,
+      author: Accounts.present_membership(membership),
+      calendar_name: nil,
+      source_url: nil,
+      subscription_id: nil
+    }
+  end
+
   def timeline_items(internal_items, external_items, show_external?) do
     items =
       if show_external? do
@@ -37,19 +58,19 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
         internal_items
       end
 
-    Enum.sort_by(items, &{DateTime.to_unix(&1.starts_at, :microsecond), &1.id})
+    Enum.sort_by(items, &{DateTime.to_unix(&1.event.starts_at, :microsecond), &1.id})
   end
 
   def grouped_timeline_items(items) do
     items
-    |> Enum.group_by(&DateTime.to_date(&1.starts_at).year)
+    |> Enum.group_by(&DateTime.to_date(&1.event.starts_at).year)
     |> Enum.sort_by(fn {year, _items} -> year end)
     |> Enum.map(fn {year, year_items} ->
       %{
         year: year,
         months:
           year_items
-          |> Enum.group_by(&DateTime.to_date(&1.starts_at).month)
+          |> Enum.group_by(&DateTime.to_date(&1.event.starts_at).month)
           |> Enum.sort_by(fn {month, _items} -> month end)
           |> Enum.map(fn {month, month_items} ->
             %{
@@ -57,7 +78,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
               label: month_label(year, month),
               days:
                 month_items
-                |> Enum.group_by(&DateTime.to_date(&1.starts_at))
+                |> Enum.group_by(&DateTime.to_date(&1.event.starts_at))
                 |> Enum.sort_by(fn {date, _items} -> date end)
                 |> Enum.map(fn {date, day_items} ->
                   %{
@@ -79,32 +100,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   defp normalize_internal_publication(publication, author_memberships_by_user_id) do
     event = publication.event
     membership = Map.get(author_memberships_by_user_id, event.author.id)
-
-    %{
-      id: "internal:#{publication.id}",
-      source_type: :internal,
-      title: event.title,
-      starts_at: event.starts_at,
-      ends_at: event.ends_at,
-      all_day: event.all_day,
-      tz: event.tz,
-      status: event.status,
-      location: event.location,
-      description: event.description,
-      publication_id: publication.id,
-      publication_type: publication.publication_type,
-      event_url: nil,
-      external_uid: nil,
-      external_recurrence_id: nil,
-      space_slug: publication.space.slug,
-      source_name: publication.space.name,
-      author_name: publication.event.author |> to_string(),
-      author_user: publication.event.author,
-      author_avatar_url: membership && membership.avatar_url,
-      calendar_name: nil,
-      source_url: nil,
-      subscription_id: nil
-    }
+    internal_item(publication, membership)
   end
 
   defp normalize_external_events(events, loaded_subscriptions) do
@@ -122,24 +118,14 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     %{
       id: "external:#{event.id}",
       source_type: :external,
-      title: event.title,
-      starts_at: event.starts_at,
-      ends_at: event.ends_at,
-      all_day: event.all_day,
-      tz: event.tz,
-      status: event.status,
-      location: event.location,
-      description: event.description,
-      publication_id: nil,
-      publication_type: nil,
+      event: event,
+      publication: nil,
       event_url: event.event_url,
       external_uid: event.external_uid,
       external_recurrence_id: event.external_recurrence_id,
       space_slug: nil,
       source_name: nil,
-      author_name: nil,
-      author_user: nil,
-      author_avatar_url: nil,
+      author: nil,
       calendar_name: calendar_name,
       source_url: nil,
       subscription_id: event.subscription_id

@@ -28,7 +28,6 @@ defmodule Wik.Events.Event do
         :all_day,
         :description,
         :location,
-        :provenance_policy,
         :relay_policy,
         :tz,
         :title
@@ -61,7 +60,6 @@ defmodule Wik.Events.Event do
         :all_day,
         :description,
         :location,
-        :provenance_policy,
         :relay_policy,
         :status,
         :tz,
@@ -143,13 +141,6 @@ defmodule Wik.Events.Event do
     attribute :location, :string do
       public? true
       allow_nil? false
-    end
-
-    attribute :provenance_policy, :atom do
-      constraints one_of: [:visible, :hidden]
-      public? true
-      allow_nil? false
-      default :visible
     end
 
     attribute :relay_policy, :atom do

@@ -3,8 +3,10 @@ defmodule WikWeb.PageLive.Components.Details do
   Renders a date and time in a human-friendly format.
   """
   use WikWeb, :html
+
   alias WikWeb.Components
 
+  attr :author_membership, :map, default: nil
   attr :tenant_context, :map, default: nil
   attr :scope, :map, required: true
   attr :node, :map, required: true
@@ -44,13 +46,13 @@ defmodule WikWeb.PageLive.Components.Details do
 
         <div class="font-bold">By:</div>
         <div class="flex items-center gap-2">
-          <Components.User.avatar
-            membership={@tenant_context && @tenant_context[:current_membership]}
-            tenant={@scope.tenant}
-            size="sm"
-            link?
+          <Components.User.identity
+            :if={@author_membership}
+            avatar_size="xs"
+            class="gap-2"
+            link?={true}
+            membership={@author_membership}
           />
-          <span>{@page.author |> to_string()}</span>
         </div>
       </div>
     </details>

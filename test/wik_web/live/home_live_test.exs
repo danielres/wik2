@@ -110,7 +110,6 @@ defmodule WikWeb.HomeLiveTest do
       ends_at_time: "20:00",
       ends_on: "2026-05-10",
       location: "Community Hall, 123 Example Street",
-      provenance_policy: :visible,
       relay_policy: :internal_only,
       starts_at_time: "18:00",
       starts_on: "2026-05-10",

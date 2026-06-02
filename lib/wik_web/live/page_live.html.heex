@@ -47,9 +47,18 @@
             />
           </:prepend>
 
-          <UI.page_title class="opacity-90 hover:opacity-100 transition-opacity">
-            {@node.title}
-          </UI.page_title>
+          <PageLive.Components.Details.render
+            author_membership={@author_membership}
+            tenant_context={@tenant_context}
+            scope={@current_scope}
+            node={@node}
+            page={@page}
+            open?={false}
+          >
+            <UI.page_title class="opacity-90 hover:opacity-100 transition-opacity">
+              {@node.title}
+            </UI.page_title>
+          </PageLive.Components.Details.render>
         </UI.page_head>
 
         <div class={[
@@ -118,6 +127,7 @@
 
         <PageLive.Components.BlockInfoModal.render
           :if={@block_info_placement}
+          author_membership={@block_info_author_membership}
           placement={@block_info_placement}
           scope={@current_scope}
         />

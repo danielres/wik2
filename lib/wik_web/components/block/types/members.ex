@@ -28,7 +28,7 @@ defmodule WikWeb.Components.Block.Types.Members do
       layout={:list}
       page_size={[default: 10]}
       query={@query}
-      query_opts={[load: [:avatar_url, :user]]}
+      query_opts={[load: [:avatar_url, :space, :user]]}
       scope={@scope}
       show_filters={false}
       theme={WikWeb.Cinder.Themes.Dense}
@@ -49,50 +49,7 @@ defmodule WikWeb.Components.Block.Types.Members do
              Ash.can?({membership, :update_membership_type}, @scope)) &&
             "border border-accent/50 hover:border-accent"
         ]}>
-          <div>
-            <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2">
-              <Components.User.avatar
-                link?
-                membership={membership}
-                size="lg"
-                tenant={@scope.tenant}
-              />
-
-              <div class="text-xs">{membership.user |> to_string()}</div>
-
-              <div class="">
-                <span class={["badge badge-sm bg-base-300 text-xs text"]}>
-                  <span>{membership.type |> Atom.to_string() |> String.capitalize()}</span>
-                </span>
-              </div>
-            </div>
-
-            <div class="flex justify-end">
-              <span
-                class={[
-                  "badge badge-sm px-2 bg-base-200",
-                  "whitespace-nowrap",
-                  "tooltip tooltip-left tooltip-delayed",
-                  "cursor-default",
-                  "text-base-content/40"
-                ]}
-                data-tip={"Member since #{Utils.Time.precise(membership.inserted_at)}"}
-              >
-                {Utils.Time.relative(membership.inserted_at)}
-              </span>
-            </div>
-          </div>
-
-          <.link
-            :if={!@actions?}
-            navigate={
-              Components.User.resolved_profile_path(%{
-                membership: membership,
-                tenant: @scope.tenant
-              })
-            }
-          >
-          </.link>
+          <.member_row membership={membership} actions?={@actions?} />
 
           <button
             :if={
@@ -129,6 +86,61 @@ defmodule WikWeb.Components.Block.Types.Members do
     ~H"""
     <div class="text-sm opacity-70">
       This block renders the current space members.
+    </div>
+    """
+  end
+
+  attr :membership, :map, required: true
+
+  attr :actions?, :boolean, required: true
+
+  defp member_row(assigns) do
+    assigns =
+      assign(assigns, :profile_path, Components.User.membership_profile_path(assigns.membership))
+
+    ~H"""
+    <.link
+      :if={!@actions? and @profile_path}
+      navigate={@profile_path}
+      class="flex justify-between"
+    >
+      <.member_row_content membership={@membership} />
+    </.link>
+
+    <div :if={@actions? or @profile_path in [nil, ""]} class="flex justify-between">
+      <.member_row_content membership={@membership} />
+    </div>
+    """
+  end
+
+  defp member_row_content(assigns) do
+    ~H"""
+    <Components.User.identity
+      avatar_size="lg"
+      class="gap-2 text-xs"
+      membership={@membership}
+    />
+
+    <div class="text-end">
+      <div>
+        <span class={["badge badge-sm bg-base-300 text-xs text"]}>
+          <span>{@membership.type |> Atom.to_string() |> String.capitalize()}</span>
+        </span>
+      </div>
+      <div>
+        <span
+          class={[
+            "badge badge-sm px-2 bg-base-200",
+            "whitespace-nowrap",
+            "tooltip tooltip-left tooltip-delayed",
+            "cursor-default",
+            "text-base-content/40"
+          ]}
+          data-tip={"Member since #{Utils.Time.precise(@membership.inserted_at)}"}
+        >
+          {Utils.Time.relative(@membership.inserted_at)}
+        </span>
+      </div>
     </div>
     """
   end

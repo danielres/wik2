@@ -15,7 +15,6 @@ defmodule WikWeb.Components.Presences do
       id={"online-user-#{presence.id}"}
     >
       <Components.User.avatar
-        link?={false}
         membership={Map.get(presence, :membership)}
         tenant={@tenant}
         size="sm"

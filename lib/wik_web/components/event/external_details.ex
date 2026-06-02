@@ -8,6 +8,8 @@ defmodule WikWeb.Components.Event.ExternalDetails do
   attr :user_tz, :string, required: true
 
   def render(assigns) do
+    assigns = assign(assigns, :event, item_event(assigns.item))
+
     ~H"""
     <div class="space-y-5" data-testid="external-event-detail">
       <div>
@@ -15,29 +17,29 @@ defmodule WikWeb.Components.Event.ExternalDetails do
           <h2 class={[
             "truncate text-base font-medium leading-tight",
             "flex-grow",
-            @item.status == :cancelled && "line-through decoration-base-content"
+            @event.status == :cancelled && "line-through decoration-base-content"
           ]}>
-            {@item.title}
+            {@event.title}
           </h2>
 
-          <Event.event_status event={@item} />
+          <Event.event_status event={@event} />
         </div>
 
         <div class="grid grid-cols-[1fr_auto] gap-4">
           <div>
-            <Event.schedule class="text-sm opacity-70" event={@item} user_tz={@user_tz} />
+            <Event.schedule class="text-sm opacity-70" event={@event} user_tz={@user_tz} />
           </div>
         </div>
       </div>
 
-      <div :if={present?(@item.location)} class="flex gap-2 items-start">
+      <div :if={present?(@event.location)} class="flex gap-2 items-start">
         <.icon name="hero-map-pin-mini" class="mt-0.5" />
         <div class="min-w-0">
-          <div class="text-sm">{@item.location}</div>
+          <div class="text-sm">{@event.location}</div>
         </div>
       </div>
 
-      <div :if={present?(@item.description)}>
+      <div :if={present?(@event.description)}>
         <div class="text-xs uppercase tracking-wide opacity-50">
           Description
         </div>
@@ -46,7 +48,7 @@ defmodule WikWeb.Components.Event.ExternalDetails do
           "text-sm leading-6",
           "border border-base-300 rounded-md bg-base-content/5 px-4 py-2"
         ]}>
-          <.description description={@item.description} />
+          <.description description={@event.description} />
         </div>
       </div>
 
@@ -202,4 +204,7 @@ defmodule WikWeb.Components.Event.ExternalDetails do
   end
 
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
+
+  defp item_event(%{event: event}), do: event
+  defp item_event(item), do: item
 end

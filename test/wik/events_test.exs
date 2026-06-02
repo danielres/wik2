@@ -36,17 +36,6 @@ defmodule Wik.EventsTest do
       assert publication.target_space_id == space.id
     end
 
-    test "preserves the configured provenance policy" do
-      owner = generate(user())
-      space = generate(space(author: owner))
-      add_membership(space, owner, :owner)
-
-      attrs = event_attrs(provenance_policy: :hidden)
-
-      assert {:ok, event} = Ash.create(Event, attrs, action: :create, scope: scope(owner, space))
-      assert event.provenance_policy == :hidden
-    end
-
     test "allows all-day events to preserve an end time" do
       owner = generate(user())
       space = generate(space(author: owner))
@@ -612,7 +601,6 @@ defmodule Wik.EventsTest do
       ends_at_time: "20:00",
       ends_on: "2026-05-10",
       location: "Community Hall, 123 Example Street",
-      provenance_policy: :visible,
       relay_policy: :internal_only,
       starts_at_time: "18:00",
       starts_on: "2026-05-10",

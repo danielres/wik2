@@ -3,7 +3,6 @@ defmodule WikWeb.PageLive.Components.BlockHistoryModal do
 
   alias WikWeb.Components
   alias WikWeb.Components.Block.Types.Markdown
-  alias WikWeb.Components.User
 
   attr :page_tree, :map, required: true
   attr :nav_target, :any, default: nil
@@ -38,21 +37,18 @@ defmodule WikWeb.PageLive.Components.BlockHistoryModal do
                 "flex items-center gap-2"
               ]}
             >
-              <User.avatar
-                tenant={@scope.tenant}
-                user={@selected_version.author}
-                size="md"
-                tooltip_direction="right"
-                tooltip?
+              <Components.User.identity
+                link?
+                membership={@selected_version.author_membership}
+                avatar_size="sm"
+                class="text-sm"
+                testid="block-history-author-name"
               />
-              <span data-testid="block-history-author-name" class="truncate sr-only">
-                {@selected_version.author |> to_string()}
-              </span>
             </div>
 
             <div class={[
               "justify-self-center",
-              "py-1 px-2 rounded-full bg-accent/80 text-accent-content",
+              "py-0.5 px-1 rounded-full bg-accent/80 text-accent-content",
               "flex items-center"
             ]}>
               <button
@@ -125,13 +121,14 @@ defmodule WikWeb.PageLive.Components.BlockHistoryModal do
             <span
               data-testid="block-history-timestamp"
               class={[
-                "justify-self-end"
+                "justify-self-end",
+                "text-sm font-regular"
               ]}
             >
               <WikWeb.Components.Time.relative_and_precise
                 datetime={@selected_version.inserted_at}
                 direction="left"
-                bg_class="bg-base-300"
+                ago?
               />
             </span>
           </div>

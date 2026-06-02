@@ -13,8 +13,8 @@ defmodule WikWeb.EventsLive.Params do
     |> maybe_put_future_windows(future_windows)
   end
 
-  def event_params(publication_id, show_external?, future_windows) do
-    %{event: publication_id, external: show_external?}
+  def event_params(event_id, show_external?, future_windows) do
+    %{event: event_id, external: show_external?}
     |> maybe_put_future_windows(future_windows)
   end
 

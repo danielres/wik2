@@ -4,12 +4,13 @@ defmodule WikWeb.Components.Event do
   use Phoenix.Component
   use WikWeb, :html
 
-  alias WikWeb.Components.Event.AuthorLine
+  alias Wik.Accounts
   alias WikWeb.Components.Event.Schedule
   alias WikWeb.Components.Event.Timeline
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
   alias WikWeb.Components.UI
+  alias WikWeb.Components.User
 
   attr :form, Phoenix.HTML.Form, required: true
   attr :show_end_date?, :boolean, default: false
@@ -125,25 +126,12 @@ defmodule WikWeb.Components.Event do
 
         <.input field={@form[:description]} label="Description" type="textarea" />
 
-        <div class={[
-          "grid gap-3 sm:grid-cols-2",
-          "bg-base-200 px-4 py-2 rounded-box",
-          "my-8"
-        ]}>
-          <.input
-            field={@form[:relay_policy]}
-            label="Relay policy"
-            type="select"
-            options={relay_policy_options()}
-          />
-
-          <.input
-            field={@form[:provenance_policy]}
-            label="Provenance"
-            type="select"
-            options={provenance_policy_options()}
-          />
-        </div>
+        <.input
+          field={@form[:relay_policy]}
+          label="Relay policy"
+          type="select"
+          options={relay_policy_options()}
+        />
 
         <.input
           :if={@form.source.type == :update}
@@ -227,10 +215,20 @@ defmodule WikWeb.Components.Event do
   attr :can_relay?, :boolean, required: true
   attr :publication, :map, required: true
   attr :author_membership, :map, default: nil
+  attr :relayer_membership, :map, default: nil
+  attr :show_origin_space?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
   def event_details(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :author,
+        Accounts.present_membership(assigns.author_membership)
+      )
+      |> assign(:relayer, Accounts.present_membership(assigns.relayer_membership))
+
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
       <div class="float-right flex flex-col items-start gap-2">
@@ -291,7 +289,7 @@ defmodule WikWeb.Components.Event do
 
         <div class={[
           "text-sm leading-6",
-          "border border-base-300 rounded-md bg-base-content/5 px-4 py-2"
+          "rounded-md bg-base-content/5 px-4 py-2"
         ]}>
           <div class="whitespace-pre-wrap">{@publication.event.description}</div>
         </div>
@@ -299,42 +297,54 @@ defmodule WikWeb.Components.Event do
 
       <div class="space-y-1">
         <div class="text-xs uppercase tracking-wide opacity-50">
-          Member
+          By
         </div>
-        <AuthorLine.render
-          avatar_url={@author_membership && @author_membership.avatar_url}
-          display_name={@publication.event.author |> to_string()}
-          tenant={@publication.space}
-          user={@publication.event.author}
+        <User.identity
+          avatar_size="xs"
+          class="text-xs opacity-60"
+          link?={true}
+          membership={@author}
         />
       </div>
 
-      <div :if={@publication.event.provenance_policy == :visible}>
-        <div class="text-xs uppercase tracking-wide opacity-50">
-          Context
+      <div
+        :if={
+          @publication.publication_type == :relay and
+            (@show_origin_space? or @publication.relay_note not in [nil, ""])
+        }
+        class="space-y-6"
+      >
+        <div :if={@show_origin_space?}>
+          <div class="text-xs uppercase tracking-wide opacity-50">
+            Relayed from
+          </div>
+
+          <.link
+            :if={@show_origin_space?}
+            navigate={
+              ~p"/#{@publication.event.space.slug}/events?external=false&event=#{@publication.event.id}"
+            }
+            class="badge badge-soft badge-sm"
+          >
+            {@publication.event.space.name}
+          </.link>
         </div>
 
-        <div class={[
-          ""
-        ]}>
-          <span class="badge badge-soft">by {@publication.event.author |> to_string()}</span>
-          <span :if={@publication.publication_type == :origin} class="badge badge-soft">
-            in {@publication.event.space.name}
-          </span>
-          <span :if={@publication.publication_type == :relay} class="badge badge-soft">
-            from {@publication.event.space.name}
-          </span>
-          <span :if={@publication.publication_type == :relay} class="badge badge-soft">
-            relayed by {@publication.published_by |> to_string()}
-          </span>
-        </div>
+        <div :if={
+          @publication.publication_type == :relay and @publication.relay_note not in [nil, ""]
+        }>
+          <div class="text-xs uppercase tracking-wide opacity-50">
+            Extra notes by {@relayer.display_name}
+          </div>
 
-        <p
-          :if={@publication.publication_type == :relay and @publication.relay_note not in [nil, ""]}
-          class="mt-3 text-sm opacity-70"
-        >
-          {@publication.relay_note}
-        </p>
+          <div class={[
+            "text-sm leading-6",
+            "mt-1",
+            "rounded-md bg-base-content/5 px-4 py-2"
+          ]}>
+            {@publication.relay_note}
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -396,7 +406,7 @@ defmodule WikWeb.Components.Event do
           <.input
             field={@relay_form[:relay_note]}
             id="event-relay-note"
-            label="Relay note"
+            label="Extra notes"
             type="textarea"
           />
 
@@ -438,7 +448,7 @@ defmodule WikWeb.Components.Event do
   end
 
   attr :current_scope, :map, default: nil
-  attr :event_publications, :list, default: nil
+  attr :items, :list, default: []
   attr :grouped_items, :list, default: []
   attr :load_more_path, :string, default: nil
   attr :show_external?, :boolean, default: false
@@ -455,13 +465,6 @@ defmodule WikWeb.Components.Event do
 
   def schedule(assigns), do: Schedule.render(assigns)
 
-  defp provenance_policy_options do
-    [
-      {"Show origin and relay context", "visible"},
-      {"Hide origin and relay context", "hidden"}
-    ]
-  end
-
   defp status_options do
     [
       {"Draft", "draft"},
@@ -473,8 +476,8 @@ defmodule WikWeb.Components.Event do
   defp relay_policy_options do
     [
       {"Internal only", "internal_only"},
-      {"Admins can relay to spaces", "admins_only_spaces"},
-      {"Members can relay to spaces", "members_to_spaces"}
+      {"Only admins can relay to other spaces", "admins_only_spaces"},
+      {"All members can relay to other spaces", "members_to_spaces"}
     ]
   end
 end

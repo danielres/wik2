@@ -61,7 +61,6 @@ defmodule WikWeb.Components.Block do
           "flex items-center gap-1"
         ]}>
           <WikWeb.Components.User.avatar
-            link?
             membership={@lock[:membership]}
             tenant={@scope.tenant}
             size="xs"

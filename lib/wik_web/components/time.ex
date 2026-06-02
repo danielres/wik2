@@ -4,10 +4,11 @@ defmodule WikWeb.Components.Time do
   """
   use WikWeb, :html
 
-  attr :datetime, :any, required: true
   attr :ago?, :boolean, default: false
-  attr :direction, :string, default: "bottom"
   attr :bg_class, :string, default: "bg-transparent"
+  attr :class, :string, default: ""
+  attr :datetime, :any, required: true
+  attr :direction, :string, default: "bottom"
   attr :tooltip_variant_class, :string, default: ""
 
   def relative_and_precise(assigns) do
@@ -33,8 +34,8 @@ defmodule WikWeb.Components.Time do
           "tooltip tooltip-delayed tooltip-xs",
           @direction_class,
           @tooltip_variant_class,
-          "cursor-default",
-          "text-xs"
+          "cursor-pointer",
+          @class
         ]}
         style="--tt-off: calc(100% + 0.1rem);"
       >

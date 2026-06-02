@@ -1,8 +1,8 @@
 defmodule WikWeb.Components.Event.Timeline do
   use WikWeb, :html
 
-  alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event
+  alias WikWeb.Components.User
 
   attr :current_scope, :map, required: true
   attr :grouped_items, :list, default: []
@@ -78,7 +78,7 @@ defmodule WikWeb.Components.Event.Timeline do
                       "border-[1.5px] border-base-content/20",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     ]}
-                    data-testid={"event-open-#{item.publication_id}"}
+                    data-testid={"event-open-#{item.publication.id}"}
                   >
                     <.timeline_item_body
                       current_scope={@current_scope}
@@ -130,7 +130,7 @@ defmodule WikWeb.Components.Event.Timeline do
     """
   end
 
-  attr :event_publications, :list, default: []
+  attr :items, :list, default: []
   attr :current_scope, :map, required: true
   attr :user_tz, :string, required: true
 
@@ -142,7 +142,7 @@ defmodule WikWeb.Components.Event.Timeline do
       data-testid="events-timeline"
     >
       <div
-        :if={@event_publications == []}
+        :if={@items == []}
         id="event-publications-empty"
         class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
         data-testid="events-empty"
@@ -151,34 +151,33 @@ defmodule WikWeb.Components.Event.Timeline do
       </div>
 
       <article
-        :for={publication <- @event_publications}
-        id={"event-publication-#{publication.id}"}
-        data-testid={"event-publication-#{publication.id}"}
+        :for={item <- @items}
+        id={"event-publication-#{item.publication.id}"}
+        data-testid={"event-publication-#{item.publication.id}"}
         class="rounded-box bg-base-200 p-0 transition overflow-hidden"
       >
         <.link
-          patch={legacy_event_link_target(@current_scope, publication)}
+          patch={legacy_event_link_target(@current_scope, item.publication)}
           class={[
             "block p-4 hover:bg-base-300/70 transition",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           ]}
-          data-testid={"event-open-#{publication.id}"}
+          data-testid={"event-open-#{item.publication.id}"}
         >
           <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
-              <Event.event_header publication={publication} />
-              <Event.event_status event={publication.event} />
+              <Event.event_header publication={item.publication} />
+              <Event.event_status event={item.publication.event} />
             </div>
 
-            <div class="truncate text-sm opacity-80" data-testid={"event-schedule-#{publication.id}"}>
-              <Event.schedule event={publication.event} user_tz={@user_tz} />
+            <div
+              class="truncate text-sm opacity-80"
+              data-testid={"event-schedule-#{item.publication.id}"}
+            >
+              <Event.schedule event={item.publication.event} user_tz={@user_tz} />
             </div>
 
-            <AuthorLine.render
-              display_name={publication.event.author |> to_string()}
-              tenant={@current_scope.tenant}
-              user={publication.event.author}
-            />
+            <User.identity avatar_size="xs" class="text-xs opacity-60" membership={item.author} />
           </div>
         </.link>
       </article>
@@ -197,24 +196,25 @@ defmodule WikWeb.Components.Event.Timeline do
       <div class="flex flex-wrap items-center gap-2">
         <h2 class={[
           "text-base font-medium leading-tight",
-          @item.status == :cancelled && "line-through decoration-base-content"
+          @item.event.status == :cancelled && "line-through decoration-base-content"
         ]}>
-          {@item.title}
+          {@item.event.title}
         </h2>
 
-        <Event.event_status event={@item} />
+        <Event.event_status event={@item.event} />
       </div>
 
       <div class="truncate text-sm opacity-80" data-testid={timeline_schedule_testid(@item)}>
-        <Event.schedule event={@item} grouped_date={@grouped_date} user_tz={@user_tz} />
+        <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
-      <AuthorLine.render
-        avatar_url={@item.author_avatar_url}
-        display_name={@item.author_name}
-        tenant={@current_scope.tenant}
+      <User.identity
+        :if={@item.source_type == :internal}
+        avatar_size="xs"
+        class="text-xs opacity-60"
+        link?={false}
+        membership={@item.author}
         testid={"internal-event-author-#{@item.id}"}
-        user={@item.author_user}
       />
 
       <div
@@ -239,29 +239,29 @@ defmodule WikWeb.Components.Event.Timeline do
     """
   end
 
-  defp timeline_dom_id(%{source_type: :internal, publication_id: publication_id}),
-    do: "event-publication-#{publication_id}"
+  defp timeline_dom_id(%{source_type: :internal, publication: publication}),
+    do: "event-publication-#{publication.id}"
 
   defp timeline_dom_id(item), do: "external-event-#{item.id}"
 
-  defp timeline_testid(%{source_type: :internal, publication_id: publication_id}),
-    do: "event-publication-#{publication_id}"
+  defp timeline_testid(%{source_type: :internal, publication: publication}),
+    do: "event-publication-#{publication.id}"
 
   defp timeline_testid(item), do: "external-event-#{item.id}"
 
-  defp timeline_schedule_testid(%{source_type: :internal, publication_id: publication_id}),
-    do: "event-schedule-#{publication_id}"
+  defp timeline_schedule_testid(%{source_type: :internal, publication: publication}),
+    do: "event-schedule-#{publication.id}"
 
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
 
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 
   defp legacy_event_link_target(%{tenant: %{slug: space_slug}}, publication) do
-    ~p"/#{space_slug}/events?#{%{event: publication.id}}"
+    ~p"/#{space_slug}/events?#{%{event: publication.event_id}}"
   end
 
   defp legacy_event_link_target(_scope, publication) do
-    ~p"/#{publication.space.slug}/events?#{%{event: publication.id}}"
+    ~p"/#{publication.space.slug}/events?#{%{event: publication.event_id}}"
   end
 
   defp present?(value), do: value not in [nil, ""]

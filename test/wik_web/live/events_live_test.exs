@@ -72,7 +72,11 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{publication.id}")))
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
+    assert_patch(
+      view,
+      ~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}"
+    )
+
     assert has_element?(view, testid("event-detail"))
     assert render(view) =~ "An event description"
     assert render(view) =~ "Community Hall, 123 Example Street"
@@ -80,6 +84,40 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-location-google-maps-link"))
     assert render(view) =~ "https://www.google.com/maps/search/"
     assert render(view) =~ "Community+Hall%2C+123+Example+Street"
+  end
+
+  test "event details author links to the member profile", %{
+    conn: conn
+  } do
+    owner = generate(user())
+    member = generate(user())
+    space = generate(space(author: owner))
+
+    owner_membership = add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+
+    set_username(owner_membership, "owner-ada")
+
+    {:ok, _event} =
+      Ash.create(Event, event_attrs(title: "Shared dinner"),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    [publication] =
+      Ash.read!(
+        Wik.Events.EventPublication,
+        authorize?: false,
+        scope: scope(owner, space)
+      )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}")
+
+    assert has_element?(view, ~s(a[href="/#{space.slug}/wiki/members/owner-ada"]))
   end
 
   test "relay button appears only when there is an eligible target space", %{conn: conn} do
@@ -107,7 +145,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.event_id}}")
 
     assert has_element?(view, testid("event-detail-relay-#{publication.id}"))
 
@@ -132,7 +170,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, internal_view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: internal_publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: internal_publication.event_id}}")
 
     refute has_element?(internal_view, testid("event-detail-relay-#{internal_publication.id}"))
   end
@@ -162,7 +200,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.event_id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
 
@@ -218,7 +256,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{origin_space.slug}/events?#{%{event: publication.event_id}}")
 
     render_click(element(view, testid("event-detail-relay-#{publication.id}")))
     assert has_element?(view, testid("event-relay-form"))
@@ -285,7 +323,7 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-month-2026-5"))
     assert has_element?(view, testid("events-day-2026-5-10"))
     assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-1"))
+    assert has_element?(view, testid("events-day-2026-6-3"))
     assert has_element?(view, testid("events-year-2027"))
     assert has_element?(view, testid("events-month-2027-1"))
     assert has_element?(view, testid("events-day-2027-1-15"))
@@ -305,14 +343,14 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-publication-#{may_publication.id}"))
     assert has_element?(view, testid("event-publication-#{january_publication.id}"))
     refute has_element?(view, testid("events-month-2026-6"))
-    refute has_element?(view, testid("events-day-2026-6-1"))
+    refute has_element?(view, testid("events-day-2026-6-3"))
     refute has_element?(view, testid(external_event_testid))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: true}}")
     assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-1"))
+    assert has_element?(view, testid("events-day-2026-6-3"))
     assert has_element?(view, testid(external_event_testid))
   end
 
@@ -392,7 +430,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:00",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -434,7 +471,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:00",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -477,7 +513,12 @@ defmodule WikWeb.EventsLiveTest do
     refute render(view) =~ ~s(name="form[status]")
 
     render_click(element(view, testid("event-open-#{publication.id}")))
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
+
+    assert_patch(
+      view,
+      ~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}"
+    )
+
     assert has_element?(view, testid("event-detail"))
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
@@ -497,7 +538,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:30",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "status" => "cancelled",
           "tz" => "Etc/UTC"
         }
@@ -550,7 +590,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-12",
           "ends_at_time" => "20:30",
           "relay_policy" => "admins_only_spaces",
-          "provenance_policy" => "visible",
           "status" => "published",
           "tz" => "Etc/UTC"
         }
@@ -650,7 +689,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -701,7 +739,7 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, "#event-ends-at-time")
   end
 
-  test "all-day toggle keeps timed values and provenance hidden suppresses relay context", %{
+  test "all-day toggle keeps timed values stable and relay context respects origin membership", %{
     conn: conn
   } do
     owner = generate(user())
@@ -719,7 +757,6 @@ defmodule WikWeb.EventsLiveTest do
         Event,
         event_attrs(
           title: "Quiet walk",
-          provenance_policy: :hidden,
           relay_policy: :admins_only_spaces
         ),
         action: :create,
@@ -754,7 +791,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -770,7 +806,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -788,7 +823,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -827,7 +861,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -843,7 +876,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -862,7 +894,6 @@ defmodule WikWeb.EventsLiveTest do
           "starts_on" => "2026-05-13",
           "ends_on" => "2026-05-14",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -880,7 +911,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -898,7 +928,6 @@ defmodule WikWeb.EventsLiveTest do
           "ends_on" => "2026-05-14",
           "ends_at_time" => "16:00",
           "relay_policy" => "internal_only",
-          "provenance_policy" => "visible",
           "tz" => "Etc/UTC"
         }
       )
@@ -1010,7 +1039,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{event: publication.id}}")
+      |> live(~p"/#{space.slug}/events?#{%{event: publication.event_id}}")
 
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 
@@ -1497,7 +1526,6 @@ defmodule WikWeb.EventsLiveTest do
       ends_at_time: "20:00",
       ends_on: "2026-05-10",
       location: "Community Hall, 123 Example Street",
-      provenance_policy: :visible,
       relay_policy: :internal_only,
       starts_at_time: "18:00",
       starts_on: "2026-05-10",
@@ -1564,8 +1592,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1583,8 +1611,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1603,8 +1631,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:West Coast Swing Party\\n<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar&amp;usd=2&amp;usg=AOvVaw1yIVflEmW8GH3zDYw07XmQ" target="_blank">www.werk36.de</a>\\n<script>alert(1)</script><img src="https://www.example.com/x.png" onerror="alert(1)">
     LOCATION:Riverside Hall
@@ -1625,8 +1653,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260601T180000Z
-    DTEND:20260601T200000Z
+    DTSTART:20260603T180000Z
+    DTEND:20260603T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1697,5 +1725,13 @@ defmodule WikWeb.EventsLiveTest do
     END:VEVENT
     END:VCALENDAR
     """
+  end
+
+  defp set_username(membership, username) do
+    Ash.update!(membership, %{username: username},
+      action: :set_username,
+      authorize?: false,
+      domain: Wik.Accounts
+    )
   end
 end

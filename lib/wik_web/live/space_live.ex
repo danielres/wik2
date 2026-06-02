@@ -68,7 +68,7 @@ defmodule WikWeb.SpaceLive do
         ]}>
           <div class="space-y-8">
             <UI.page_head>
-              <UI.page_title>{@current_scope.tenant.name |> String.capitalize()}</UI.page_title>
+              <UI.page_title>{@current_scope.tenant |> to_string()}</UI.page_title>
               <span class="badge badge-xs badge-ghost font-mono text-base-content/50">
                 /{@space.slug}
               </span>

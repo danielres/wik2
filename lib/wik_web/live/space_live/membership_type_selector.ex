@@ -10,16 +10,20 @@ defmodule WikWeb.SpaceLive.MembershipTypeSelector do
     ~H"""
     <div class="space-y-4">
       <div class="space-y-1">
-        <p class="text-sm">
-          <span class="opacity-70">Update the role for</span>
+        <p class="">
+          <span class="label font-bold">Update the role for</span>
 
-          <span class="font-bold text-base-content">{@membership.user |> to_string()}</span>.
+          <WikWeb.Components.User.identity
+            membership={@membership}
+            avatar_size="sm"
+            class="gap-2 font-bold text-base-content inline-flex align-middle"
+          />
         </p>
       </div>
 
       <.form for={@form} id="membership-type-form" phx-submit={@event_submit}>
         <fieldset class="space-y-2">
-          <legend class="text-sm font-medium opacity-80 mb-2">Available roles</legend>
+          <legend class="label font-bold">Available roles</legend>
 
           <label
             :for={type <- @type_options}

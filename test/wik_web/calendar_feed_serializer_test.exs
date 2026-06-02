@@ -68,8 +68,6 @@ defmodule Wik.Events.Feeds.SerializerTest do
 
     assert ics =~ "DESCRIPTION:Bring food\\n\\nVisible in: berlin-hackers"
     assert ics =~ "Visible in: community-kitchen"
-    assert ics =~ "From: "
-    assert ics =~ "Relayed by: ada"
     assert ics =~ "Relay note: Worth sharing"
   end
 

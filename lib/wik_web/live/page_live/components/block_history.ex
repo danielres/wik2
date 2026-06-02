@@ -1,6 +1,7 @@
 defmodule WikWeb.PageLive.Components.BlockHistory do
   use WikWeb, :live_component
 
+  alias Wik.Accounts
   alias Wik.Blocks
   alias WikWeb.PageLive.Components.BlockHistoryModal
 
@@ -121,14 +122,26 @@ defmodule WikWeb.PageLive.Components.BlockHistory do
   defp assign_selected_version(socket, block, version, scope) do
     case Blocks.version_to_text(block, version, scope: scope) do
       {:ok, selected_text} ->
+        selected_version =
+          version
+          |> Map.from_struct()
+          |> Map.put(:author_membership, resolve_author_membership(scope.tenant, version.author))
+
         assign(socket,
           selected_text: selected_text,
-          selected_version: version
+          selected_version: selected_version
         )
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "block version_to_text failed")
         socket
+    end
+  end
+
+  defp resolve_author_membership(space, author) do
+    case Accounts.get_membership(space, author) do
+      {:ok, membership} -> membership
+      {:error, _error} -> nil
     end
   end
 end

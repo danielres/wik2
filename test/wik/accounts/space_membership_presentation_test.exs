@@ -61,33 +61,50 @@ defmodule Wik.Accounts.SpaceMembershipPresentationTest do
     assert memberships[second_user.id].avatar_url == "https://telegram.example/second.png"
   end
 
-  test "present_membership extracts the UI-facing membership fields" do
-    user = generate(user())
+  test "present_membership prefers membership username, then external identity username, then external identity display name" do
     space = generate(space())
-    add_membership(space, user, :member, username: "member-name")
-    %{identity: identity} = grant_active_telegram_access(space, user)
+
+    username_user = generate(user(email: nil))
+    display_name_user = generate(user(email: nil))
+
+    add_membership(space, username_user, :member)
+    add_membership(space, display_name_user, :member)
+
+    %{identity: username_identity} = grant_active_telegram_access(space, username_user)
 
     assert {:ok, _identity} =
              Ash.update(
-               identity,
-               %{avatar_url: "https://telegram.example/member.png"},
+               username_identity,
+               %{username: "telegram-user", display_name: "Telegram User"},
                action: :update,
                authorize?: false,
                domain: Wik.Access
              )
 
-    assert {:ok, loaded_membership} = Accounts.get_membership(space, user)
+    %{identity: display_name_identity} = grant_active_telegram_access(space, display_name_user)
 
-    assert %{
-             avatar_url: "https://telegram.example/member.png",
-             user: presented_user,
-             username: "member-name"
-           } =
-             Accounts.present_membership(loaded_membership)
+    assert {:ok, _identity} =
+             Ash.update(
+               display_name_identity,
+               %{username: nil, display_name: "Only Display Name"},
+               action: :update,
+               authorize?: false,
+               domain: Wik.Access
+             )
 
-    assert presented_user.id == user.id
+    assert {:ok, username_membership} = Accounts.get_membership(space, username_user)
+    assert {:ok, display_name_membership} = Accounts.get_membership(space, display_name_user)
 
-    assert %{avatar_url: nil, user: nil, username: nil} = Accounts.present_membership(nil)
+    assert username_membership.user.external_identities != []
+    assert display_name_membership.user.external_identities != []
+
+    assert Accounts.present_membership(%{username_membership | username: "space-username"}).display_name ==
+             "space-username"
+
+    assert Accounts.present_membership(username_membership).display_name == "telegram-user"
+
+    assert Accounts.present_membership(display_name_membership).display_name ==
+             "Only Display Name"
   end
 
   defp add_membership(space, user, type, opts \\ []) do

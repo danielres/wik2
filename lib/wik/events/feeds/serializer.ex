@@ -104,36 +104,20 @@ defmodule Wik.Events.Feeds.Serializer do
   defp publication_context_lines(event, publication) do
     lines = ["Visible in: #{publication.space.name}"]
 
-    if event.provenance_policy == :visible do
-      lines
-      |> maybe_append_origin_line(publication)
-      |> maybe_append_relayed_by_line(publication)
-      |> maybe_append_relay_note_line(publication)
-    else
-      lines
-    end
+    lines
+    |> maybe_append_relay_note_line(event, publication)
   end
 
-  defp maybe_append_origin_line(
+  defp maybe_append_relay_note_line(
          lines,
-         %{publication_type: publication_type, event: %{space: space}}
+         _event,
+         %{publication_type: :relay, relay_note: relay_note}
        )
-       when publication_type in [:origin, :relay] do
-    lines ++ ["From: #{space.name}"]
-  end
-
-  defp maybe_append_relayed_by_line(lines, %{publication_type: :relay, published_by: published_by}) do
-    lines ++ ["Relayed by: #{published_by}"]
-  end
-
-  defp maybe_append_relayed_by_line(lines, _publication), do: lines
-
-  defp maybe_append_relay_note_line(lines, %{publication_type: :relay, relay_note: relay_note})
        when relay_note not in [nil, ""] do
     lines ++ ["Relay note: #{relay_note}"]
   end
 
-  defp maybe_append_relay_note_line(lines, _publication), do: lines
+  defp maybe_append_relay_note_line(lines, _event, _publication), do: lines
 
   defp blank_to_nil(nil), do: nil
   defp blank_to_nil(""), do: nil

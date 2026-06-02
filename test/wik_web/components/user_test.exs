@@ -37,19 +37,26 @@ defmodule WikWeb.Components.UserTest do
     refute html =~ "hero-user"
   end
 
-  test "avatar image links to the profile when link and tenant are provided" do
+  test "identity links to the profile when the membership has a space" do
     user = generate(user(email: "ada@example.com"))
+    space = generate(space())
 
     html =
-      render_component(&User.avatar/1, %{
-        avatar_url: "https://telegram.example/avatar.png",
+      render_component(&User.identity/1, %{
+        avatar_size: "sm",
         link?: true,
-        profile_path: "/cool-stuff/wiki/members/ada",
-        user: user
+        membership: %{
+          avatar_url: "https://telegram.example/avatar.png",
+          display_name: "ada",
+          space: space,
+          user: user,
+          username: "ada"
+        }
       })
 
-    assert html =~ ~s(href="/cool-stuff/wiki/members/ada")
+    assert html =~ ~s(href="/#{space.slug}/wiki/members/ada")
     assert html =~ ~s(src="https://telegram.example/avatar.png")
+    assert html =~ "ada"
   end
 
   test "avatar initials prefer the provided username" do
@@ -81,21 +88,15 @@ defmodule WikWeb.Components.UserTest do
     refute html =~ "hero-user"
   end
 
-  test "avatar derives the profile path from membership and tenant when linking" do
-    space = generate(space())
-    user = generate(user(email: "ada@example.com"))
-
+  test "avatar does not link when given a membership" do
     html =
       render_component(&User.avatar/1, %{
-        link?: true,
         membership: %{
           avatar_url: "https://telegram.example/avatar.png",
-          user: user,
           username: "ada"
-        },
-        tenant: space
+        }
       })
 
-    assert html =~ ~s(href="/#{space.slug}/wiki/members/ada")
+    refute html =~ "href="
   end
 end

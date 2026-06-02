@@ -7,6 +7,7 @@ defmodule WikWeb.HomeLive do
   alias Wik.Events
   alias WikWeb.Components
   alias WikWeb.Components.UI
+  alias WikWeb.EventsLive.TimelinePresenter
   alias Utils.Log
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
@@ -70,7 +71,7 @@ defmodule WikWeb.HomeLive do
             <:body>
               <Components.Event.list
                 current_scope={@current_scope}
-                event_publications={@event_publications}
+                items={@event_items}
                 user_tz={@active_tz}
               />
             </:body>
@@ -130,7 +131,7 @@ defmodule WikWeb.HomeLive do
     scope = socket.assigns.current_scope
 
     socket
-    |> assign(event_publications: list_aggregate_event_publications(scope))
+    |> assign(event_items: list_aggregate_event_items(scope))
     |> assign(spaces: scope |> list_spaces())
     |> assign(form: scope |> init_form())
   end
@@ -157,15 +158,52 @@ defmodule WikWeb.HomeLive do
     end
   end
 
-  defp list_aggregate_event_publications(nil), do: []
+  defp list_aggregate_event_items(nil), do: []
 
-  defp list_aggregate_event_publications(scope) do
+  defp list_aggregate_event_items(scope) do
     with {:ok, entries} <- Events.list_aggregate_feed_events(scope.actor) do
-      Enum.map(entries, fn entry -> List.first(entry.publications) end)
+      entries
+      |> Enum.map(fn entry -> List.first(entry.publications) end)
+      |> with_author_memberships()
     else
       err ->
         Log.scoped_error(scope, err, "list_aggregate_feed_events failed")
         []
     end
+  end
+
+  defp with_author_memberships(publications) do
+    publications
+    |> author_memberships_by_space_and_user()
+    |> then(fn memberships_by_space_and_user ->
+      Enum.map(publications, fn publication ->
+        TimelinePresenter.internal_item(
+          publication,
+          Map.get(memberships_by_space_and_user, {
+            publication.space.id,
+            publication.event.author.id
+          })
+        )
+      end)
+    end)
+  end
+
+  defp author_memberships_by_space_and_user(publications) do
+    publications
+    |> Enum.group_by(& &1.space.id)
+    |> Enum.reduce(%{}, fn {_space_id, space_publications}, acc ->
+      space = List.first(space_publications).space
+      user_ids = Enum.map(space_publications, & &1.event.author.id) |> Enum.uniq()
+
+      case Accounts.list_memberships_by_user_id(space.id, user_ids) do
+        {:ok, memberships_by_user_id} ->
+          Enum.reduce(memberships_by_user_id, acc, fn {user_id, membership}, space_acc ->
+            Map.put(space_acc, {space.id, user_id}, membership)
+          end)
+
+        {:error, _error} ->
+          acc
+      end
+    end)
   end
 end

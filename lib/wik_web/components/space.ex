@@ -61,7 +61,6 @@ defmodule WikWeb.Components.Space do
           navigate={~p"/#{space.slug}/wiki"}
         >
           {space.name}
-          <span class="font-thin">{space.author |> to_string}</span>
         </.link>
 
         <span :if={@spaces == []} class="opacity-70">

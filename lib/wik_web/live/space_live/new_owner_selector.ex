@@ -38,7 +38,11 @@ defmodule WikWeb.SpaceLive.NewOwnerSelector do
           phx-click={@event_transfer_ownership}
           phx-value-target_membership_id={membership.id}
         >
-          <span>{membership.user |> to_string()}</span>
+          <WikWeb.Components.User.identity
+            membership={membership}
+            avatar_size="sm"
+            class="gap-2"
+          />
 
           <span class={[
             "flex flex-wrap gap-1",

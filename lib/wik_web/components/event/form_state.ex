@@ -107,7 +107,6 @@ defmodule WikWeb.Components.Event.FormState do
       "ends_at_time" => Phoenix.HTML.Form.input_value(form, :ends_at_time),
       "ends_on" => Phoenix.HTML.Form.input_value(form, :ends_on),
       "location" => Phoenix.HTML.Form.input_value(form, :location),
-      "provenance_policy" => Phoenix.HTML.Form.input_value(form, :provenance_policy),
       "relay_policy" => Phoenix.HTML.Form.input_value(form, :relay_policy),
       "starts_at_time" => Phoenix.HTML.Form.input_value(form, :starts_at_time),
       "starts_on" => Phoenix.HTML.Form.input_value(form, :starts_on),

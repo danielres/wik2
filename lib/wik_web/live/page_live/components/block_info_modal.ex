@@ -3,6 +3,7 @@ defmodule WikWeb.PageLive.Components.BlockInfoModal do
 
   alias WikWeb.Components
 
+  attr :author_membership, :map, default: nil
   attr :placement, :map, required: true
   attr :scope, :map, required: true
 
@@ -16,7 +17,11 @@ defmodule WikWeb.PageLive.Components.BlockInfoModal do
     >
       <:title>Block info</:title>
 
-      <Components.Block.Info.render placement={@placement} scope={@scope} />
+      <Components.Block.Info.render
+        author_membership={@author_membership}
+        placement={@placement}
+        scope={@scope}
+      />
     </Components.Modal.render>
     """
   end

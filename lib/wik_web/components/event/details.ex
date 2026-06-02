@@ -19,6 +19,8 @@ defmodule WikWeb.Components.Event.Details do
       |> assign(assigns)
       |> maybe_reset_state(publication_changed?)
       |> maybe_load_author_membership(publication_changed?)
+      |> maybe_load_relayer_membership(publication_changed?)
+      |> maybe_load_origin_space_visibility(publication_changed?)
       |> maybe_load_relay_eligibility(publication_changed?)
 
     {:ok, socket}
@@ -34,6 +36,8 @@ defmodule WikWeb.Components.Event.Details do
         can_edit?={Ash.can?({@publication.event, :update}, @current_scope)}
         can_relay?={@can_relay?}
         publication={@publication}
+        relayer_membership={@relayer_membership}
+        show_origin_space?={@show_origin_space?}
         target={@myself}
         user_tz={@user_tz}
       />
@@ -202,6 +206,8 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:event_form, nil)
     |> assign(:show_end_date?, false)
     |> assign(:mode, :show)
+    |> assign(:relayer_membership, nil)
+    |> assign(:show_origin_space?, false)
     |> assign(:relay_error, nil)
     |> assign(:relay_form, nil)
     |> assign(:relay_target_spaces, [])
@@ -226,6 +232,36 @@ defmodule WikWeb.Components.Event.Details do
   end
 
   defp maybe_load_author_membership(socket, false), do: socket
+
+  defp maybe_load_relayer_membership(socket, true) do
+    case socket.assigns.publication do
+      %{publication_type: :relay, published_by: published_by, space: space} ->
+        case Accounts.get_membership(space, published_by) do
+          {:ok, membership} -> assign(socket, :relayer_membership, membership)
+          {:error, _error} -> assign(socket, :relayer_membership, nil)
+        end
+
+      _publication ->
+        assign(socket, :relayer_membership, nil)
+    end
+  end
+
+  defp maybe_load_relayer_membership(socket, false), do: socket
+
+  defp maybe_load_origin_space_visibility(socket, true) do
+    case socket.assigns.publication do
+      %{publication_type: :relay, event: %{space: origin_space}} ->
+        case Accounts.get_membership(origin_space, socket.assigns.current_scope.actor) do
+          {:ok, membership} -> assign(socket, :show_origin_space?, not is_nil(membership))
+          {:error, _error} -> assign(socket, :show_origin_space?, false)
+        end
+
+      _publication ->
+        assign(socket, :show_origin_space?, false)
+    end
+  end
+
+  defp maybe_load_origin_space_visibility(socket, false), do: socket
 
   defp load_relay_eligibility(socket) do
     case Events.can_relay_event_to_any_space?(

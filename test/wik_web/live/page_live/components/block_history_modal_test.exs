@@ -3,6 +3,8 @@ defmodule WikWeb.PageLive.Components.BlockHistoryModalTest do
 
   import Phoenix.LiveViewTest, only: [render_component: 2]
 
+  alias Wik.Accounts.Membership
+  alias Wik.Accounts.Space
   alias Wik.Accounts.User
   alias WikWeb.PageLive.Components.BlockHistoryModal
   alias Wik.Wiki.PageTree
@@ -18,7 +20,11 @@ defmodule WikWeb.PageLive.Components.BlockHistoryModalTest do
           id: "version-2",
           revision: 2,
           inserted_at: ~U[2026-05-01 15:00:00Z],
-          author: %User{id: "user-1", email: "one@example.com"}
+          author_membership: %Membership{
+            user: %User{id: "user-1", email: "one@example.com"},
+            username: "one",
+            space: %Space{slug: "space"}
+          }
         },
         total_versions: 2
       })

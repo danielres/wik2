@@ -219,14 +219,12 @@ defmodule WikWeb.Components.MembershipTagging do
                   class="flex items-center gap-3"
                   data-testid={"tag-member-tagging-member-#{tagging.id}"}
                 >
-                  <User.avatar
+                  <User.identity
+                    avatar_size="sm"
+                    class="gap-3 text-sm"
+                    link?={false}
                     membership={tagging.target_membership}
-                    size="sm"
-                    tenant={@scope.tenant}
                   />
-                  <div class="min-w-0">
-                    <div class="truncate">{tagging.target_membership.username}</div>
-                  </div>
                 </div>
               </div>
 
@@ -268,11 +266,28 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :link?, :boolean, default: true
 
   def tagging_title(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :profile_path,
+        if(assigns.link?, do: User.membership_profile_path(assigns.membership))
+      )
+
     ~H"""
     <div class="items-center gap-2 grid grid-cols-[1fr_auto_1fr]">
       <div class="flex justify-end">
+        <.link :if={@profile_path} navigate={@profile_path}>
+          <User.avatar
+            membership={@membership}
+            size="lg"
+            tenant={@tenant}
+            tooltip?
+            tooltip_direction="left"
+          />
+        </.link>
+
         <User.avatar
-          link?={@link?}
+          :if={@profile_path in [nil, ""]}
           membership={@membership}
           size="lg"
           tenant={@tenant}

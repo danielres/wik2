@@ -30,6 +30,26 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     }
   end
 
+  def internal_item(publication, membership) do
+    event = publication.event
+
+    %{
+      id: "internal:#{publication.id}",
+      source_type: :internal,
+      event: event,
+      publication: publication,
+      event_url: nil,
+      external_uid: nil,
+      external_recurrence_id: nil,
+      space_slug: publication.space.slug,
+      source_name: publication.space.name,
+      author: Accounts.present_membership(membership),
+      calendar_name: nil,
+      source_url: nil,
+      subscription_id: nil
+    }
+  end
+
   def timeline_items(internal_items, external_items, show_external?) do
     items =
       if show_external? do
@@ -80,23 +100,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   defp normalize_internal_publication(publication, author_memberships_by_user_id) do
     event = publication.event
     membership = Map.get(author_memberships_by_user_id, event.author.id)
-    author = Accounts.present_membership(membership)
-
-    %{
-      id: "internal:#{publication.id}",
-      source_type: :internal,
-      event: event,
-      publication: publication,
-      event_url: nil,
-      external_uid: nil,
-      external_recurrence_id: nil,
-      space_slug: publication.space.slug,
-      source_name: publication.space.name,
-      author: %{author | user: author.user || publication.event.author},
-      calendar_name: nil,
-      source_url: nil,
-      subscription_id: nil
-    }
+    internal_item(publication, membership)
   end
 
   defp normalize_external_events(events, loaded_subscriptions) do

@@ -1,10 +1,10 @@
 defmodule WikWeb.Components.User do
   use WikWeb, :html
 
+  alias Wik.Accounts
+
   attr :avatar_url, :string, default: nil
-  attr :link?, :boolean, default: false
   attr :membership, :map, default: nil
-  attr :profile_path, :string, default: nil
   attr :size, :string, default: "md"
   attr :tenant, :map, default: nil
   attr :tooltip?, :boolean, default: false
@@ -36,7 +36,6 @@ defmodule WikWeb.Components.User do
     assigns =
       assigns
       |> assign(:resolved_avatar_url, resolved_avatar_url(assigns))
-      |> assign(:resolved_profile_path, resolved_profile_path(assigns))
       |> assign(:resolved_user, resolved_user(assigns))
       |> assign(:resolved_username, resolved_username(assigns))
       |> assign(tooltip_direction_class: tooltip_direction_class)
@@ -61,24 +60,7 @@ defmodule WikWeb.Components.User do
           @resolved_avatar_url == nil && "bg-base-300 text-xs grid place-items-center",
           @size_class
         ]}>
-          <.link
-            :if={@link? and @resolved_profile_path != nil}
-            navigate={@resolved_profile_path}
-            class={[
-              "size-full grid place-items-center",
-              "opacity-80 hover:opacity-100 transition"
-            ]}
-          >
-            <.avatar_content
-              avatar_url={@resolved_avatar_url}
-              tenant={@tenant}
-              username={@resolved_username}
-              user={@resolved_user}
-            />
-          </.link>
-
           <.avatar_content
-            :if={not (@link? and @resolved_profile_path != nil)}
             avatar_url={@resolved_avatar_url}
             tenant={@tenant}
             username={@resolved_username}
@@ -90,6 +72,63 @@ defmodule WikWeb.Components.User do
       <div :if={@tooltip?} class="tooltip-content text-xs">
         {@resolved_user |> to_string()}
       </div>
+    </div>
+    """
+  end
+
+  attr :avatar_size, :string, default: "xs"
+  attr :class, :string, default: nil
+  attr :link?, :boolean, default: false
+  attr :membership, :map, required: true
+  attr :testid, :string, default: nil
+  attr :tooltip?, :boolean, default: false
+  attr :tooltip_direction, :string, default: "left"
+
+  def identity(assigns) do
+    membership = normalize_identity_membership(assigns.membership)
+
+    assigns =
+      assigns
+      |> assign(:membership, membership)
+      |> assign(
+        :profile_path,
+        if(assigns.link?, do: membership_profile_path(membership))
+      )
+
+    ~H"""
+    <.link
+      :if={@profile_path}
+      navigate={@profile_path}
+      class={[
+        "flex items-center gap-1 truncate opacity-80 hover:opacity-100 transition",
+        @class
+      ]}
+      data-testid={@testid}
+    >
+      <.avatar
+        membership={@membership}
+        size={@avatar_size}
+        tooltip?={@tooltip?}
+        tooltip_direction={@tooltip_direction}
+      />
+      {@membership.display_name}
+    </.link>
+
+    <div
+      :if={@profile_path in [nil, ""]}
+      class={[
+        "flex items-center gap-1 truncate",
+        @class
+      ]}
+      data-testid={@testid}
+    >
+      <.avatar
+        membership={@membership}
+        size={@avatar_size}
+        tooltip?={@tooltip?}
+        tooltip_direction={@tooltip_direction}
+      />
+      {@membership.display_name}
     </div>
     """
   end
@@ -144,11 +183,7 @@ defmodule WikWeb.Components.User do
 
   defp resolved_avatar_url(assigns), do: assigns.avatar_url
 
-  def resolved_profile_path(%{profile_path: profile_path}) when is_binary(profile_path),
-    do: profile_path
-
-  def resolved_profile_path(%{membership: membership, tenant: %{slug: tenant_slug}})
-      when not is_nil(membership) do
+  def membership_profile_path(%{space: %{slug: tenant_slug}} = membership) do
     case Map.get(membership, :username) do
       username when is_binary(username) and username != "" ->
         "/#{tenant_slug}/wiki/members/#{username}"
@@ -158,7 +193,7 @@ defmodule WikWeb.Components.User do
     end
   end
 
-  def resolved_profile_path(_assigns), do: nil
+  def membership_profile_path(_membership), do: nil
 
   defp resolved_user(%{membership: membership}) when not is_nil(membership) do
     Map.get(membership, :user)
@@ -171,4 +206,7 @@ defmodule WikWeb.Components.User do
   end
 
   defp resolved_username(assigns), do: assigns.username
+
+  defp normalize_identity_membership(%{display_name: _display_name} = membership), do: membership
+  defp normalize_identity_membership(membership), do: Accounts.present_membership(membership)
 end

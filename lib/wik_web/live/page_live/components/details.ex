@@ -3,6 +3,8 @@ defmodule WikWeb.PageLive.Components.Details do
   Renders a date and time in a human-friendly format.
   """
   use WikWeb, :html
+
+  alias Wik.Accounts
   alias WikWeb.Components
 
   attr :tenant_context, :map, default: nil
@@ -14,6 +16,10 @@ defmodule WikWeb.PageLive.Components.Details do
   slot :inner_block, required: true
 
   def render(assigns) do
+    {:ok, author_membership} = Accounts.get_membership(assigns.scope.tenant, assigns.page.author)
+
+    assigns = assign(assigns, :author_membership, author_membership)
+
     ~H"""
     <details class="space" open={@open?}>
       <summary class={[
@@ -44,13 +50,12 @@ defmodule WikWeb.PageLive.Components.Details do
 
         <div class="font-bold">By:</div>
         <div class="flex items-center gap-2">
-          <Components.User.avatar
-            membership={@tenant_context && @tenant_context[:current_membership]}
-            tenant={@scope.tenant}
-            size="sm"
-            link?
+          <Components.User.identity
+            avatar_size="xs"
+            class="gap-2"
+            link?={true}
+            membership={@author_membership}
           />
-          <span>{@page.author |> to_string()}</span>
         </div>
       </div>
     </details>

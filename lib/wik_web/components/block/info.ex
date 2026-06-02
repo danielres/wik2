@@ -5,6 +5,7 @@ defmodule WikWeb.Components.Block.Info do
   alias Wik.Wiki.PageTree
   alias WikWeb.Components
 
+  attr :author_membership, :map, required: true
   attr :placement, :map, required: true
   attr :scope, :map, required: true
 
@@ -30,12 +31,12 @@ defmodule WikWeb.Components.Block.Info do
 
       <dt class="opacity-60">By</dt>
       <dd data-testid="block-info-author" class="flex items-center gap-2">
-        <Components.User.avatar
-          link?
-          tenant={@scope.tenant}
-          user={@placement.block.author}
+        <Components.User.identity
+          avatar_size="sm"
+          class="gap-2"
+          link?={true}
+          membership={@author_membership}
         />
-        {@placement.block.author |> to_string()}
       </dd>
     </dl>
 

@@ -68,13 +68,15 @@ defmodule Wik.Accounts do
   def tenant_to_space_id(space_slug) when is_binary(space_slug), do: space_slug_to_id(space_slug)
   def tenant_to_space_id(_), do: nil
 
+  def get_membership(space_or_space_id, user_or_user_id)
+
   def get_membership(%Space{id: space_id}, %User{id: user_id}),
     do: get_membership(space_id, user_id)
 
   def get_membership(space_id, user_id) when is_binary(space_id) and is_binary(user_id) do
     Membership
     |> Ash.Query.filter(space_id == ^space_id and user_id == ^user_id)
-    |> Ash.Query.load([:avatar_url, user: [:external_identities]])
+    |> Ash.Query.load(membership_load())
     |> Ash.read_one(authorize?: false, domain: __MODULE__)
   end
 
@@ -87,11 +89,13 @@ defmodule Wik.Accounts do
       when is_binary(space_id) and is_binary(username) and username != "" do
     Membership
     |> Ash.Query.filter(space_id == ^space_id and username == ^username)
-    |> Ash.Query.load([:user, :avatar_url])
+    |> Ash.Query.load(membership_load())
     |> Ash.read_one(authorize?: false, domain: __MODULE__)
   end
 
   def get_membership_by_username(_space_id, _username), do: {:ok, nil}
+
+  def list_memberships(space_or_space_id, user_ids)
 
   def list_memberships(%Space{id: space_id}, user_ids),
     do: list_memberships(space_id, user_ids)
@@ -113,7 +117,7 @@ defmodule Wik.Accounts do
       {{:ok, _uuid}, _user_ids} ->
         Membership
         |> Ash.Query.filter(space_id == ^space_id and user_id in ^normalized_user_ids)
-        |> Ash.Query.load([:avatar_url, user: [:external_identities]])
+        |> Ash.Query.load(membership_load())
         |> Ash.read(authorize?: false, domain: __MODULE__)
     end
   end
@@ -151,13 +155,14 @@ defmodule Wik.Accounts do
     %{
       avatar_url: avatar_url,
       display_name: present_membership_display_name(username, user),
+      space: Map.get(membership, :space),
       user: user,
       username: username
     }
   end
 
   def present_membership(_membership),
-    do: %{avatar_url: nil, display_name: nil, user: nil, username: nil}
+    do: %{avatar_url: nil, display_name: nil, space: nil, user: nil, username: nil}
 
   defp present_membership_display_name(username, _user)
        when is_binary(username) and username != "",
@@ -196,4 +201,6 @@ defmodule Wik.Accounts do
     |> Ash.Query.sort(username: :asc)
     |> Ash.read!(authorize?: false, domain: __MODULE__)
   end
+
+  defp membership_load, do: [:space, :avatar_url, user: [:external_identities]]
 end

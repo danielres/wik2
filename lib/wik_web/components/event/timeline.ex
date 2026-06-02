@@ -1,8 +1,8 @@
 defmodule WikWeb.Components.Event.Timeline do
   use WikWeb, :html
 
-  alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event
+  alias WikWeb.Components.User
 
   attr :current_scope, :map, required: true
   attr :grouped_items, :list, default: []
@@ -130,7 +130,7 @@ defmodule WikWeb.Components.Event.Timeline do
     """
   end
 
-  attr :event_publications, :list, default: []
+  attr :items, :list, default: []
   attr :current_scope, :map, required: true
   attr :user_tz, :string, required: true
 
@@ -142,7 +142,7 @@ defmodule WikWeb.Components.Event.Timeline do
       data-testid="events-timeline"
     >
       <div
-        :if={@event_publications == []}
+        :if={@items == []}
         id="event-publications-empty"
         class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
         data-testid="events-empty"
@@ -151,34 +151,33 @@ defmodule WikWeb.Components.Event.Timeline do
       </div>
 
       <article
-        :for={publication <- @event_publications}
-        id={"event-publication-#{publication.id}"}
-        data-testid={"event-publication-#{publication.id}"}
+        :for={item <- @items}
+        id={"event-publication-#{item.publication.id}"}
+        data-testid={"event-publication-#{item.publication.id}"}
         class="rounded-box bg-base-200 p-0 transition overflow-hidden"
       >
         <.link
-          patch={legacy_event_link_target(@current_scope, publication)}
+          patch={legacy_event_link_target(@current_scope, item.publication)}
           class={[
             "block p-4 hover:bg-base-300/70 transition",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           ]}
-          data-testid={"event-open-#{publication.id}"}
+          data-testid={"event-open-#{item.publication.id}"}
         >
           <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
-              <Event.event_header publication={publication} />
-              <Event.event_status event={publication.event} />
+              <Event.event_header publication={item.publication} />
+              <Event.event_status event={item.publication.event} />
             </div>
 
-            <div class="truncate text-sm opacity-80" data-testid={"event-schedule-#{publication.id}"}>
-              <Event.schedule event={publication.event} user_tz={@user_tz} />
+            <div
+              class="truncate text-sm opacity-80"
+              data-testid={"event-schedule-#{item.publication.id}"}
+            >
+              <Event.schedule event={item.publication.event} user_tz={@user_tz} />
             </div>
 
-            <AuthorLine.render
-              display_name={publication.event.author |> to_string()}
-              tenant={@current_scope.tenant}
-              user={publication.event.author}
-            />
+            <User.identity avatar_size="xs" class="text-xs opacity-60" membership={item.author} />
           </div>
         </.link>
       </article>
@@ -209,12 +208,13 @@ defmodule WikWeb.Components.Event.Timeline do
         <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
-      <AuthorLine.render
-        avatar_url={@item.author && @item.author.avatar_url}
-        display_name={@item.author && @item.author.display_name}
-        tenant={@current_scope.tenant}
+      <User.identity
+        :if={@item.source_type == :internal}
+        avatar_size="xs"
+        class="text-xs opacity-60"
+        link?={false}
+        membership={@item.author}
         testid={"internal-event-author-#{@item.id}"}
-        user={@item.author && @item.author.user}
       />
 
       <div

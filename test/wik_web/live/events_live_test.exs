@@ -82,6 +82,40 @@ defmodule WikWeb.EventsLiveTest do
     assert render(view) =~ "Community+Hall%2C+123+Example+Street"
   end
 
+  test "event details author links to the member profile", %{
+    conn: conn
+  } do
+    owner = generate(user())
+    member = generate(user())
+    space = generate(space(author: owner))
+
+    owner_membership = add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+
+    set_username(owner_membership, "owner-ada")
+
+    {:ok, _event} =
+      Ash.create(Event, event_attrs(title: "Shared dinner"),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    [publication] =
+      Ash.read!(
+        Wik.Events.EventPublication,
+        authorize?: false,
+        scope: scope(owner, space)
+      )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/#{space.slug}/events?#{%{event: publication.id, external: false}}")
+
+    assert has_element?(view, ~s(a[href="/#{space.slug}/wiki/members/owner-ada"]))
+  end
+
   test "relay button appears only when there is an eligible target space", %{conn: conn} do
     owner = generate(user())
     target_owner = generate(user())
@@ -1697,5 +1731,13 @@ defmodule WikWeb.EventsLiveTest do
     END:VEVENT
     END:VCALENDAR
     """
+  end
+
+  defp set_username(membership, username) do
+    Ash.update!(membership, %{username: username},
+      action: :set_username,
+      authorize?: false,
+      domain: Wik.Accounts
+    )
   end
 end

@@ -5,12 +5,12 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Wik.Accounts
-  alias WikWeb.Components.Event.AuthorLine
   alias WikWeb.Components.Event.Schedule
   alias WikWeb.Components.Event.Timeline
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
   alias WikWeb.Components.UI
+  alias WikWeb.Components.User
 
   attr :form, Phoenix.HTML.Form, required: true
   attr :show_end_date?, :boolean, default: false
@@ -228,12 +228,17 @@ defmodule WikWeb.Components.Event do
   attr :can_relay?, :boolean, required: true
   attr :publication, :map, required: true
   attr :author_membership, :map, default: nil
+  attr :relayer_membership, :map, default: nil
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
   def event_details(assigns) do
-    author = Accounts.present_membership(assigns.author_membership)
-    assigns = assign(assigns, :author, author)
+    assigns =
+      assign(
+        assigns,
+        :author,
+        Accounts.present_membership(assigns.author_membership)
+      )
 
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
@@ -305,11 +310,11 @@ defmodule WikWeb.Components.Event do
         <div class="text-xs uppercase tracking-wide opacity-50">
           Member
         </div>
-        <AuthorLine.render
-          avatar_url={@author.avatar_url}
-          display_name={@author.display_name}
-          tenant={@publication.space}
-          user={@author.user || @publication.event.author}
+        <User.identity
+          avatar_size="xs"
+          class="text-xs opacity-60"
+          link?={true}
+          membership={@author}
         />
       </div>
 
@@ -328,9 +333,18 @@ defmodule WikWeb.Components.Event do
           <span :if={@publication.publication_type == :relay} class="badge badge-soft">
             from {@publication.event.space.name}
           </span>
-          <span :if={@publication.publication_type == :relay} class="badge badge-soft">
-            relayed by {@publication.published_by |> to_string()}
-          </span>
+          <div
+            :if={@publication.publication_type == :relay and @relayer_membership}
+            class="inline-flex items-center gap-1 align-middle"
+          >
+            <span class="badge badge-soft">relayed by</span>
+            <User.identity
+              avatar_size="xs"
+              class="badge badge-soft gap-1.5 text-xs"
+              link?={true}
+              membership={@relayer_membership}
+            />
+          </div>
         </div>
 
         <p
@@ -442,7 +456,7 @@ defmodule WikWeb.Components.Event do
   end
 
   attr :current_scope, :map, default: nil
-  attr :event_publications, :list, default: nil
+  attr :items, :list, default: []
   attr :grouped_items, :list, default: []
   attr :load_more_path, :string, default: nil
   attr :show_external?, :boolean, default: false

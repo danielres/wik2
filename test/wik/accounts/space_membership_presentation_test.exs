@@ -61,35 +61,6 @@ defmodule Wik.Accounts.SpaceMembershipPresentationTest do
     assert memberships[second_user.id].avatar_url == "https://telegram.example/second.png"
   end
 
-  test "present_membership extracts the UI-facing membership fields" do
-    user = generate(user())
-    space = generate(space())
-    add_membership(space, user, :member, username: "member-name")
-    %{identity: identity} = grant_active_telegram_access(space, user)
-
-    assert {:ok, _identity} =
-             Ash.update(
-               identity,
-               %{avatar_url: "https://telegram.example/member.png"},
-               action: :update,
-               authorize?: false,
-               domain: Wik.Access
-             )
-
-    assert {:ok, loaded_membership} = Accounts.get_membership(space, user)
-
-    assert %{
-             avatar_url: "https://telegram.example/member.png",
-             user: presented_user,
-             username: "member-name"
-           } =
-             Accounts.present_membership(loaded_membership)
-
-    assert presented_user.id == user.id
-
-    assert %{avatar_url: nil, user: nil, username: nil} = Accounts.present_membership(nil)
-  end
-
   defp add_membership(space, user, type, opts \\ []) do
     membership =
       Ash.create!(

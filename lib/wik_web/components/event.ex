@@ -215,6 +215,7 @@ defmodule WikWeb.Components.Event do
   attr :can_relay?, :boolean, required: true
   attr :publication, :map, required: true
   attr :author_membership, :map, default: nil
+  attr :relayer_membership, :map, default: nil
   attr :show_origin_space?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
@@ -226,6 +227,7 @@ defmodule WikWeb.Components.Event do
         :author,
         Accounts.present_membership(assigns.author_membership)
       )
+      |> assign(:relayer, Accounts.present_membership(assigns.relayer_membership))
 
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
@@ -332,7 +334,7 @@ defmodule WikWeb.Components.Event do
           @publication.publication_type == :relay and @publication.relay_note not in [nil, ""]
         }>
           <div class="text-xs uppercase tracking-wide opacity-50">
-            Extra notes by {@author.display_name}
+            Extra notes by {@relayer.display_name}
           </div>
 
           <div class={[

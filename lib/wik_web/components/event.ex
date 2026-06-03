@@ -5,8 +5,12 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Wik.Accounts
+  alias Wik.Events.ExternalCalendar
+  alias Wik.Tags.Dimensions
+  alias WikWeb.Components.Event.ExternalDetails
   alias WikWeb.Components.Event.Schedule
   alias WikWeb.Components.Event.Timeline
+  alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
   alias WikWeb.Components.UI
@@ -165,6 +169,42 @@ defmodule WikWeb.Components.Event do
     """
   end
 
+  attr :form, Phoenix.HTML.Form, required: true
+  attr :target, :any, default: nil
+
+  def converted_layer_form(assigns) do
+    ~H"""
+    <.form
+      for={@form}
+      id="converted-layer-form"
+      data-testid="converted-layer-form"
+      phx-submit="converted_layer_submit"
+      phx-target={@target}
+    >
+      <div class="space-y-4">
+        <.input field={@form[:title]} label="Local title" />
+        <.input field={@form[:description]} label="Local info" type="textarea" />
+
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            data-testid="converted-layer-cancel"
+            phx-click="converted_layer_cancel"
+            phx-target={@target}
+          >
+            Cancel
+          </button>
+
+          <button type="submit" class="btn btn-accent btn-sm" data-testid="converted-layer-submit">
+            Save
+          </button>
+        </div>
+      </div>
+    </.form>
+    """
+  end
+
   defp errors_for(form, field) do
     form[field].errors
     |> Enum.map(&WikWeb.CoreComponents.translate_error/1)
@@ -178,19 +218,21 @@ defmodule WikWeb.Components.Event do
   attr :publication, :map, required: true
 
   def event_header(assigns) do
+    assigns = assign(assigns, :event, display_event(assigns.publication.event))
+
     ~H"""
     <h2 class={[
       "text-base font-medium leading-tight",
       "flex-grow",
       "flex items-center gap-2",
-      @publication.event.status == :cancelled && "line-through decoration-base-content"
+      @event.status == :cancelled && "line-through decoration-base-content"
     ]}>
       <.iconify
         :if={@publication.publication_type == :relay}
         icon="mdi:share"
         class="text-base-content/30 size-5 -ml-5 absolute"
       />
-      {@publication.event.title}
+      {@event.title}
     </h2>
     """
   end
@@ -215,6 +257,8 @@ defmodule WikWeb.Components.Event do
   attr :can_relay?, :boolean, required: true
   attr :publication, :map, required: true
   attr :author_membership, :map, default: nil
+  attr :current_member_participation, :any, default: nil
+  attr :participations, :list, default: []
   attr :relayer_membership, :map, default: nil
   attr :show_origin_space?, :boolean, default: false
   attr :target, :any, default: nil
@@ -228,6 +272,12 @@ defmodule WikWeb.Components.Event do
         Accounts.present_membership(assigns.author_membership)
       )
       |> assign(:relayer, Accounts.present_membership(assigns.relayer_membership))
+      |> assign(:display_event, display_event(assigns.publication.event))
+      |> assign(:source_external_event, assigns.publication.event.source_external_event)
+      |> assign(
+        :source_external_item,
+        source_external_item(assigns.publication.event.source_external_event)
+      )
 
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
@@ -252,28 +302,28 @@ defmodule WikWeb.Components.Event do
       <div class="">
         <div class="flex justify-between gap-2 mb-4">
           <.event_header publication={@publication} />
-          <.event_status event={@publication.event} />
+          <.event_status event={@display_event} />
         </div>
 
         <div class="grid grid-cols-[1fr_auto] gap-4">
           <div>
             <.schedule
               class="text-sm opacity-70"
-              event={@publication.event}
+              event={@display_event}
               user_tz={@user_tz}
             />
           </div>
         </div>
       </div>
 
-      <div :if={@publication.event.location not in [nil, ""]} class="flex gap-2 items-start">
+      <div :if={@display_event.location not in [nil, ""]} class="flex gap-2 items-start">
         <.icon name="hero-map-pin-mini" class="mt-0.5" />
         <div class="min-w-0">
-          <div class="text-sm">{@publication.event.location}</div>
+          <div class="text-sm">{@display_event.location}</div>
           <.link
             class="link link-hover text-xs opacity-70"
             data-testid="event-location-google-maps-link"
-            href={google_maps_search_url(@publication.event.location)}
+            href={google_maps_search_url(@display_event.location)}
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -282,9 +332,9 @@ defmodule WikWeb.Components.Event do
         </div>
       </div>
 
-      <div>
+      <div :if={@publication.event.description not in [nil, ""]}>
         <div class="text-xs uppercase tracking-wide opacity-50">
-          Description
+          Local info
         </div>
 
         <div class={[
@@ -292,6 +342,66 @@ defmodule WikWeb.Components.Event do
           "rounded-md bg-base-content/5 px-4 py-2"
         ]}>
           <div class="whitespace-pre-wrap">{@publication.event.description}</div>
+        </div>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          class="btn btn-sm btn-ghost"
+          data-testid={"event-detail-interest-#{@publication.id}"}
+          phx-click="event_interest_start"
+          phx-value-id={@publication.id}
+          phx-value-source_type="internal"
+        >
+          {if @current_member_participation, do: "Edit interest", else: "Add interest"}
+        </button>
+      </div>
+
+      <div :if={@participations != []} class="space-y-2">
+        <div class="text-xs uppercase tracking-wide opacity-50">
+          Interest
+        </div>
+
+        <div
+          :for={participation <- @participations}
+          class="flex items-center gap-2 text-sm"
+          data-testid={"event-participation-#{participation.id}"}
+        >
+          <User.identity
+            avatar_size="xs"
+            class="text-xs opacity-70"
+            membership={participation.membership}
+          />
+          <LevelMeter.render
+            dimension={interest_dimension()}
+            label="Interest"
+            level={participation.interest}
+            testid={"event-participation-interest-#{participation.id}"}
+            width_class="w-16"
+          />
+          <div :if={participation.extra_info not in [nil, ""]} class="opacity-70">
+            {participation.extra_info}
+          </div>
+        </div>
+      </div>
+
+      <div :if={@source_external_event} class="space-y-2">
+        <div class="text-xs uppercase tracking-wide opacity-50">
+          Original event
+        </div>
+
+        <div :if={@source_external_event.source_missing_at} class="text-sm text-warning">
+          No longer found in external calendar.
+        </div>
+
+        <div class={[
+          "rounded-box",
+          "p-2",
+          "opacity-70 hover:opacity-100 transition-opacity",
+          "border-[1.5px] border-dashed border-base-content/30"
+        ]}>
+          <ExternalDetails.render item={@source_external_item} user_tz={@user_tz} />
         </div>
       </div>
 
@@ -349,6 +459,37 @@ defmodule WikWeb.Components.Event do
     </div>
     """
   end
+
+  defp display_event(%{source_external_event: %{id: _id} = external_event} = local_event) do
+    %{external_event | title: local_event.title || external_event.title}
+  end
+
+  defp display_event(event), do: event
+
+  defp interest_dimension, do: Dimensions.get!("membership", "interest")
+
+  defp source_external_item(nil), do: nil
+
+  defp source_external_item(external_event) do
+    %{
+      event: external_event,
+      event_url: external_event.event_url,
+      external_uid: external_event.external_uid,
+      external_recurrence_id: external_event.external_recurrence_id,
+      calendar_name: source_external_calendar_name(external_event)
+    }
+  end
+
+  defp source_external_calendar_name(%{subscription: %Ash.NotLoaded{}} = external_event) do
+    external_event.calendar_name
+  end
+
+  defp source_external_calendar_name(%{subscription: subscription} = external_event)
+       when not is_nil(subscription) do
+    ExternalCalendar.display_name(subscription, external_event.calendar_name)
+  end
+
+  defp source_external_calendar_name(external_event), do: external_event.calendar_name
 
   attr :publication, :map, required: true
   attr :relay_error, :string, default: nil

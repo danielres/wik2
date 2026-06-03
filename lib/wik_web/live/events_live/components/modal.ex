@@ -36,12 +36,74 @@ defmodule WikWeb.EventsLive.Components.Modal do
         user_tz={@active_tz}
       />
 
+      <div :if={@modal_view && @modal_view.kind == :external_event} class="mt-4">
+        <button
+          type="button"
+          class="btn btn-sm btn-ghost"
+          data-testid={"external-event-detail-interest-#{@modal_view.item.event.id}"}
+          phx-click="event_interest_start"
+          phx-value-id={@modal_view.item.event.id}
+          phx-value-source_type="external"
+        >
+          Add interest
+        </button>
+      </div>
+
       <Components.Event.event_form
         :if={@modal_view && @modal_view.kind == :event_form}
         form={@modal_view.form}
         show_end_date?={@modal_view.show_end_date?}
         user_tz={@active_tz}
       />
+
+      <.form
+        :if={@modal_view && @modal_view.kind == :event_interest}
+        for={@modal_view.form}
+        id="event-interest-form"
+        data-testid="event-interest-form"
+        phx-submit="event_interest_submit"
+      >
+        <div class="space-y-4">
+          <div>
+            <label class="label" for="event-interest-value">
+              Your interest: how likely are you to join?
+            </label>
+            <input
+              id="event-interest-value"
+              name="interest[interest]"
+              type="range"
+              min="0"
+              max="10"
+              value={Phoenix.HTML.Form.input_value(@modal_view.form, :interest)}
+              class="range range-sm"
+            />
+            <div class="text-xs opacity-70">0 = not likely, 10 = very likely</div>
+          </div>
+
+          <.input
+            field={@modal_view.form[:extra_info]}
+            id="event-interest-extra-info"
+            label="Extra info"
+            placeholder="For example: I'm planning to join around 15:00"
+            type="textarea"
+          />
+
+          <div class="flex justify-end gap-2">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              data-testid="event-interest-cancel"
+              phx-click="event_interest_cancel"
+            >
+              Cancel
+            </button>
+
+            <button type="submit" class="btn btn-accent btn-sm" data-testid="event-interest-submit">
+              Save interest
+            </button>
+          </div>
+        </div>
+      </.form>
 
       <.form
         :if={@modal_view && @modal_view.kind == :new_subscription}

@@ -1,7 +1,9 @@
 defmodule WikWeb.Components.Event.Timeline do
   use WikWeb, :html
 
+  alias Wik.Tags.Dimensions
   alias WikWeb.Components.Event
+  alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.User
 
   attr :current_scope, :map, required: true
@@ -68,48 +70,66 @@ defmodule WikWeb.Components.Event.Timeline do
                 class={[]}
               >
                 <%= if item.source_type == :internal do %>
-                  <.link
-                    patch={item.open_path}
-                    class={[
-                      "block p-4 rounded-box",
-                      "bg-base-content/6",
-                      "hover:bg-base-content/14",
-                      "transition",
-                      "border-[1.5px] border-base-content/20",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    ]}
-                    data-testid={"event-open-#{item.publication.id}"}
-                  >
-                    <.timeline_item_body
-                      current_scope={@current_scope}
-                      grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
-                      item={item}
-                      user_tz={@user_tz}
+                  <div class={[
+                    "rounded-box",
+                    "bg-base-content/6",
+                    "border-[1.5px] border-base-content/20"
+                  ]}>
+                    <.link
+                      patch={item.open_path}
+                      class={[
+                        "block p-4",
+                        "hover:bg-base-content/14",
+                        "transition",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      ]}
+                      data-testid={"event-open-#{item.publication.id}"}
+                    >
+                      <.timeline_item_body
+                        current_scope={@current_scope}
+                        grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
+                        item={item}
+                        user_tz={@user_tz}
+                      />
+                    </.link>
+
+                    <.interest_button
+                      current_member_participation={item.current_member_participation}
+                      source_id={item.publication.id}
+                      source_type="internal"
+                      testid={"event-interest-#{item.publication.id}"}
                     />
-                  </.link>
+                  </div>
                 <% else %>
-                  <button
-                    type="button"
-                    class={[
-                      "cursor-pointer",
-                      "block p-4 rounded-box",
-                      "w-full",
-                      "text-left",
-                      "opacity-60 hover:opacity-100 transition-opacity",
-                      "border-[1.5px] border-dashed border-base-content/30"
-                    ]}
-                    data-testid={"event-open-#{item.id}"}
-                    phx-click="external_event_show"
-                    phx-target={@target}
-                    phx-value-id={item.id}
-                  >
-                    <.timeline_item_body
-                      current_scope={@current_scope}
-                      grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
-                      item={item}
-                      user_tz={@user_tz}
+                  <div class={[
+                    "rounded-box",
+                    "w-full",
+                    "opacity-60 hover:opacity-100 transition-opacity",
+                    "border-[1.5px] border-dashed border-base-content/30"
+                  ]}>
+                    <button
+                      type="button"
+                      class={["cursor-pointer", "block p-4", "w-full", "text-left"]}
+                      data-testid={"event-open-#{item.id}"}
+                      phx-click="external_event_show"
+                      phx-target={@target}
+                      phx-value-id={item.id}
+                    >
+                      <.timeline_item_body
+                        current_scope={@current_scope}
+                        grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
+                        item={item}
+                        user_tz={@user_tz}
+                      />
+                    </button>
+
+                    <.interest_button
+                      current_member_participation={nil}
+                      source_id={item.event.id}
+                      source_type="external"
+                      testid={"external-event-interest-#{item.event.id}"}
                     />
-                  </button>
+                  </div>
                 <% end %>
               </article>
             </div>
@@ -208,15 +228,6 @@ defmodule WikWeb.Components.Event.Timeline do
         <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
-      <User.identity
-        :if={@item.source_type == :internal}
-        avatar_size="xs"
-        class="text-xs opacity-60"
-        link?={false}
-        membership={@item.author}
-        testid={"internal-event-author-#{@item.id}"}
-      />
-
       <div
         :if={present?(@item.calendar_name)}
         class="truncate text-xs opacity-60 flex items-center gap-1"
@@ -224,6 +235,28 @@ defmodule WikWeb.Components.Event.Timeline do
       >
         <.icon name="hero-calendar-days-micro" class="opacity-60" />
         {@item.calendar_name}
+      </div>
+
+      <div :if={@item.participations != []} class="flex flex-wrap items-center gap-2">
+        <div
+          :for={participation <- @item.participations}
+          class="flex items-center gap-1"
+          data-testid={"timeline-event-participation-#{participation.id}"}
+        >
+          <User.identity
+            avatar_size="xs"
+            class="text-xs opacity-70"
+            link?={false}
+            membership={participation.membership}
+          />
+          <LevelMeter.render
+            dimension={interest_dimension()}
+            label="Interest"
+            level={participation.interest}
+            testid={"timeline-event-participation-interest-#{participation.id}"}
+            width_class="w-16"
+          />
+        </div>
       </div>
 
       <div
@@ -254,6 +287,8 @@ defmodule WikWeb.Components.Event.Timeline do
 
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
 
+  defp interest_dimension, do: Dimensions.get!("membership", "interest")
+
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 
   defp legacy_event_link_target(%{tenant: %{slug: space_slug}}, publication) do
@@ -262,6 +297,28 @@ defmodule WikWeb.Components.Event.Timeline do
 
   defp legacy_event_link_target(_scope, publication) do
     ~p"/#{publication.space.slug}/events?#{%{event: publication.event_id}}"
+  end
+
+  attr :current_member_participation, :any, default: nil
+  attr :source_id, :string, required: true
+  attr :source_type, :string, required: true
+  attr :testid, :string, required: true
+
+  defp interest_button(assigns) do
+    ~H"""
+    <div class="p-4 pt-0">
+      <button
+        type="button"
+        class="btn btn-sm btn-ghost"
+        data-testid={@testid}
+        phx-click="event_interest_start"
+        phx-value-id={@source_id}
+        phx-value-source_type={@source_type}
+      >
+        {if @current_member_participation, do: "Edit interest", else: "Add interest"}
+      </button>
+    </div>
+    """
   end
 
   defp present?(value), do: value not in [nil, ""]

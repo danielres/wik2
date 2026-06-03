@@ -4,6 +4,7 @@ defmodule WikWeb.EventsLive do
   alias AshPhoenix.Form
   alias Utils.Log
   alias Utils.Values
+  alias Wik.Events
   alias Wik.Events.ExternalCalendar
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Locations
@@ -209,6 +210,57 @@ defmodule WikWeb.EventsLive do
       Enum.find(socket.assigns.timeline.external_items, &(&1.id == id))
 
     {:noreply, assign(socket, :modal, {:external_event, external_event})}
+  end
+
+  def handle_event("event_interest_start", %{"source_type" => "internal", "id" => id}, socket) do
+    publication = Enum.find(socket.assigns.timeline.internal_publications, &(&1.id == id))
+    item = Enum.find(socket.assigns.timeline.internal_items, &(&1.publication.id == id))
+
+    {:noreply,
+     assign(
+       socket,
+       :modal,
+       {:event_interest, :internal, publication,
+        interest_form(item && item.current_member_participation)}
+     )}
+  end
+
+  def handle_event("event_interest_start", %{"source_type" => "external", "id" => id}, socket) do
+    external_event =
+      socket.assigns.timeline.external_items
+      |> Enum.map(& &1.event)
+      |> Enum.find(&(&1.id == id))
+
+    {:noreply,
+     assign(socket, :modal, {:event_interest, :external, external_event, interest_form()})}
+  end
+
+  def handle_event("event_interest_cancel", _params, socket) do
+    {:noreply, assign(socket, :modal, nil)}
+  end
+
+  def handle_event("event_interest_submit", %{"interest" => params}, socket) do
+    scope = socket.assigns.current_scope
+
+    socket =
+      case socket.assigns.modal do
+        {:event_interest, :internal, publication, _form} ->
+          case Events.record_interest(publication, params, scope: scope) do
+            {:ok, _participation} -> after_interest_saved(socket)
+            {:error, error} -> assign_interest_error(socket, params, error)
+          end
+
+        {:event_interest, :external, external_event, _form} ->
+          case Events.record_external_interest(external_event, params, scope: scope) do
+            {:ok, _result} -> after_interest_saved(socket)
+            {:error, error} -> assign_interest_error(socket, params, error)
+          end
+
+        _modal ->
+          socket
+      end
+
+    {:noreply, socket}
   end
 
   def handle_event("external_calendar_subscription_start", _params, socket) do
@@ -555,6 +607,44 @@ defmodule WikWeb.EventsLive do
   defp modal_event_form_show_end_date?({:event_form, _form, show_end_date?}), do: show_end_date?
   defp modal_event_form_show_end_date?(_modal), do: false
 
+  defp interest_form(participation \\ nil, error \\ nil) do
+    %{
+      "extra_info" => participation && participation.extra_info,
+      "interest" => (participation && participation.interest) || 5
+    }
+    |> interest_form_from_params(error)
+  end
+
+  defp interest_form_from_params(params, error) do
+    form = to_form(params, as: :interest)
+
+    if error do
+      Map.put(form, :errors, interest: {error_message(error), []})
+    else
+      form
+    end
+  end
+
+  defp after_interest_saved(socket) do
+    socket
+    |> assign(:modal, nil)
+    |> refresh_page_data()
+  end
+
+  defp assign_interest_error(socket, params, error) do
+    case socket.assigns.modal do
+      {:event_interest, source_type, source, _form} ->
+        assign(
+          socket,
+          :modal,
+          {:event_interest, source_type, source, interest_form_from_params(params, error)}
+        )
+
+      _modal ->
+        put_flash(socket, :error, error_message(error))
+    end
+  end
+
   defp put_modal_event_form_show_end_date(socket, show_end_date?) do
     case socket.assigns.modal do
       {:event_form, form, _current_show_end_date?} ->
@@ -595,6 +685,17 @@ defmodule WikWeb.EventsLive do
           item: item
         }
 
+      {:event_interest, source_type, source, form} ->
+        %{
+          kind: :event_interest,
+          title: "Your interest",
+          dialog_testid: "event-interest-dialog",
+          close_testid: "event-interest-cancel",
+          form: form,
+          source: source,
+          source_type: source_type
+        }
+
       {:new_subscription, form, error} ->
         %{
           kind: :new_subscription,
@@ -631,5 +732,7 @@ defmodule WikWeb.EventsLive do
   end
 
   defp error_message(error) when is_binary(error), do: error
+  defp error_message(:invalid_interest), do: "Interest must be between 0 and 10"
+  defp error_message(:membership_not_found), do: "Could not find your membership"
   defp error_message(error), do: Exception.message(error)
 end

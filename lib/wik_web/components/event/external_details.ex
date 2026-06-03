@@ -88,7 +88,7 @@ defmodule WikWeb.Components.Event.ExternalDetails do
 
   attr :description, :string, required: true
 
-  defp description(assigns) do
+  def description(assigns) do
     assigns = assign(assigns, :description_content, description_content(assigns.description))
 
     ~H"""

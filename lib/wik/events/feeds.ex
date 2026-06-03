@@ -41,7 +41,11 @@ defmodule Wik.Events.Feeds do
       {"event.inserted_at", :asc},
       {:inserted_at, :asc}
     ])
-    |> Ash.Query.load([:space, :published_by, event: [:author, :space]])
+    |> Ash.Query.load([
+      :space,
+      :published_by,
+      event: [:author, :space, source_external_event: [:subscription]]
+    ])
   end
 
   defp space_feed_publications_query do

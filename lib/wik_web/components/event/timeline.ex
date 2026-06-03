@@ -187,14 +187,14 @@ defmodule WikWeb.Components.Event.Timeline do
           <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
               <Event.event_header publication={item.publication} />
-              <Event.event_status event={item.publication.event} />
+              <Event.event_status event={item.event} />
             </div>
 
             <div
               class="truncate text-sm opacity-80"
               data-testid={"event-schedule-#{item.publication.id}"}
             >
-              <Event.schedule event={item.publication.event} user_tz={@user_tz} />
+              <Event.schedule event={item.event} user_tz={@user_tz} />
             </div>
 
             <User.identity avatar_size="xs" class="text-xs opacity-60" membership={item.author} />

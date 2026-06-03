@@ -6,6 +6,7 @@ defmodule Wik.Events.Event do
   alias Wik.Events.Event.Changes.SetScheduleFromLocalFields
   alias Wik.Events.Event.Validations.Timing
   alias Wik.Events.Event.Validations.Tz
+  alias Wik.Events.ExternalEvent
 
   use Ash.Resource,
     otp_app: :wik,
@@ -53,6 +54,20 @@ defmodule Wik.Events.Event do
       change SetSpaceFromCurrentTenant
       change SetScheduleFromLocalFields
       change CreateOriginPublication
+
+      validate present([:title, :location, :tz, :starts_at])
+    end
+
+    create :create_from_external do
+      accept [
+        :description,
+        :source_external_event_id,
+        :title
+      ]
+
+      change relate_actor(:author, allow_nil?: false)
+      change SetSpaceFromCurrentTenant
+      change CreateOriginPublication
     end
 
     update :update do
@@ -84,6 +99,13 @@ defmodule Wik.Events.Event do
 
       change SetScheduleFromLocalFields
       require_atomic? false
+
+      validate present([:title, :location, :tz, :starts_at])
+    end
+
+    update :update_converted_layer do
+      accept [:description, :title]
+      require_atomic? false
     end
   end
 
@@ -97,8 +119,12 @@ defmodule Wik.Events.Event do
       authorize_if ActorCanReadRelayedEvent
     end
 
-    policy action_type(:create) do
+    policy action(:create) do
       authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
+    end
+
+    policy action(:create_from_external) do
+      authorize_if Space.Checks.ActorIsMemberOfCurrentTenantSpace
     end
 
     policy action_type(:update) do
@@ -110,7 +136,9 @@ defmodule Wik.Events.Event do
     module WikWeb.Endpoint
     prefix "event"
     publish :create, ["space", :space_id]
+    publish :create_from_external, ["space", :space_id]
     publish :update, ["space", :space_id]
+    publish :update_converted_layer, ["space", :space_id]
   end
 
   validations do
@@ -130,7 +158,7 @@ defmodule Wik.Events.Event do
 
     attribute :description, :string do
       public? true
-      allow_nil? false
+      allow_nil? true
     end
 
     attribute :ends_at, :utc_datetime do
@@ -140,7 +168,7 @@ defmodule Wik.Events.Event do
 
     attribute :location, :string do
       public? true
-      allow_nil? false
+      allow_nil? true
     end
 
     attribute :relay_policy, :atom do
@@ -152,12 +180,12 @@ defmodule Wik.Events.Event do
 
     attribute :starts_at, :utc_datetime do
       public? true
-      allow_nil? false
+      allow_nil? true
     end
 
     attribute :tz, :string do
       public? true
-      allow_nil? false
+      allow_nil? true
     end
 
     attribute :status, :atom do
@@ -169,7 +197,7 @@ defmodule Wik.Events.Event do
 
     attribute :title, :string do
       public? true
-      allow_nil? false
+      allow_nil? true
     end
   end
 
@@ -184,8 +212,17 @@ defmodule Wik.Events.Event do
       allow_nil? false
     end
 
+    belongs_to :source_external_event, ExternalEvent do
+      destination_attribute :id
+      allow_nil? true
+    end
+
     has_many :publications, Wik.Events.EventPublication do
       destination_attribute :event_id
     end
+  end
+
+  identities do
+    identity :unique_source_external_event, [:source_external_event_id]
   end
 end

@@ -1,6 +1,7 @@
 defmodule Wik.Events.EventPublication do
   alias Wik.Accounts.Space
   alias Wik.Events.EventPublication.Checks.ActorCanRelayEvent
+  alias Wik.Events.EventPublication.Checks.ActorCanPublishConvertedEvent
   alias Wik.Events.EventPublication.Validations.SpaceMatchesEvent
 
   use Ash.Resource,
@@ -48,6 +49,7 @@ defmodule Wik.Events.EventPublication do
 
     policy action(:publish_to_origin_space) do
       authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
+      authorize_if ActorCanPublishConvertedEvent
     end
 
     policy action(:relay_to_space) do
@@ -103,6 +105,10 @@ defmodule Wik.Events.EventPublication do
     belongs_to :published_by, Wik.Accounts.User do
       destination_attribute :id
       allow_nil? false
+    end
+
+    has_many :participations, Wik.Events.EventParticipation do
+      destination_attribute :publication_id
     end
   end
 

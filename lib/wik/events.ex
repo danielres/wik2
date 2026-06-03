@@ -11,8 +11,11 @@ defmodule Wik.Events do
   require Ash.Query
 
   alias Ash.Query
+  alias Utils.Values
+  alias Wik.Accounts
   alias Wik.Accounts.Space
   alias Wik.Events.Event
+  alias Wik.Events.EventParticipation
   alias Wik.Events.ExternalEvent
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
@@ -26,9 +29,49 @@ defmodule Wik.Events do
 
   resources do
     resource Event
+    resource EventParticipation
     resource EventPublication
     resource ExternalEvent
     resource ExternalCalendarSubscription
+  end
+
+  def record_interest(%EventPublication{} = publication, attrs, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    with {:ok, membership} when not is_nil(membership) <-
+           Accounts.get_membership(publication.target_space_id, scope.actor.id),
+         {:ok, participation_attrs} <- participation_attrs(attrs) do
+      upsert_participation(publication, membership, participation_attrs, opts)
+    else
+      {:ok, nil} -> {:error, :membership_not_found}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def record_external_interest(%ExternalEvent{} = external_event, attrs, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    with {:ok, publication} <- publication_for_external_event(external_event, scope),
+         {:ok, participation} <- record_interest(publication, attrs, opts) do
+      {:ok, %{publication: publication, participation: participation}}
+    end
+  end
+
+  def update_converted_event_layer(%Event{} = event, attrs, opts \\ []) do
+    attrs = %{
+      description:
+        Values.blank_to_nil(Map.get(attrs, :description) || Map.get(attrs, "description")),
+      title: Values.blank_to_nil(Map.get(attrs, :title) || Map.get(attrs, "title"))
+    }
+
+    Ash.update(event, attrs, Keyword.put(opts, :action, :update_converted_layer))
+  end
+
+  def event_participations_query(publication_ids) when is_list(publication_ids) do
+    EventParticipation
+    |> Query.filter(publication_id in ^publication_ids)
+    |> Query.load(membership: [:avatar_url, :user])
+    |> Query.sort([:inserted_at])
   end
 
   def external_calendar_subscriptions_query do
@@ -41,6 +84,101 @@ defmodule Wik.Events do
     ExternalEvent
     |> Query.sort(starts_at: :asc)
   end
+
+  defp publication_for_external_event(%ExternalEvent{} = external_event, scope) do
+    with {:ok, event} <- event_for_external_event(external_event, scope) do
+      origin_publication(event, scope)
+    end
+  end
+
+  defp event_for_external_event(%ExternalEvent{} = external_event, scope) do
+    case get_event_for_external_event(external_event, scope) do
+      {:ok, %Event{} = event} ->
+        {:ok, event}
+
+      {:ok, nil} ->
+        Ash.create(
+          Event,
+          %{description: nil, source_external_event_id: external_event.id, title: nil},
+          action: :create_from_external,
+          scope: scope
+        )
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp get_event_for_external_event(%ExternalEvent{} = external_event, scope) do
+    Event
+    |> Query.filter(source_external_event_id == ^external_event.id)
+    |> Ash.read_one(scope: scope)
+  end
+
+  defp origin_publication(%Event{} = event, scope) do
+    EventPublication
+    |> Query.filter(event_id == ^event.id and target_space_id == ^scope.tenant.id)
+    |> Query.load([
+      :space,
+      :published_by,
+      event: [:author, :space, source_external_event: [:subscription]]
+    ])
+    |> Ash.read_one(scope: scope)
+  end
+
+  defp upsert_participation(publication, membership, attrs, opts) do
+    identity_attrs = %{
+      membership_id: membership.id,
+      publication_id: publication.id
+    }
+
+    case get_participation_by_identity(identity_attrs, Keyword.fetch!(opts, :scope)) do
+      {:ok, nil} ->
+        Ash.create(
+          EventParticipation,
+          Map.merge(identity_attrs, attrs),
+          Keyword.put(opts, :action, :create)
+        )
+
+      {:ok, %EventParticipation{} = participation} ->
+        Ash.update(
+          participation,
+          attrs,
+          Keyword.put(opts, :action, :update_details)
+        )
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp get_participation_by_identity(attrs, scope) do
+    EventParticipation
+    |> Query.filter(
+      publication_id == ^attrs.publication_id and membership_id == ^attrs.membership_id
+    )
+    |> Ash.read_one(scope: scope)
+  end
+
+  defp participation_attrs(attrs) do
+    interest = Map.get(attrs, :interest) || Map.get(attrs, "interest")
+    extra_info = Map.get(attrs, :extra_info) || Map.get(attrs, "extra_info")
+
+    with {:ok, interest} <- parse_interest(interest) do
+      {:ok, %{extra_info: Values.blank_to_nil(extra_info), interest: interest}}
+    end
+  end
+
+  defp parse_interest(value) when is_integer(value) and value in 0..10, do: {:ok, value}
+
+  defp parse_interest(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {interest, ""} when interest in 0..10 -> {:ok, interest}
+      _ -> {:error, :invalid_interest}
+    end
+  end
+
+  defp parse_interest(_value), do: {:error, :invalid_interest}
 
   # relay ======================================================================
 

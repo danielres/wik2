@@ -484,6 +484,96 @@ defmodule WikWeb.EventsLiveTest do
     refute render(view) =~ "Could not save the event"
   end
 
+  test "typing in title does not immediately render unrelated required errors", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    render_click(element(view, testid("events-create-button")))
+    initial_html = render(view)
+    starts_on = input_value!(initial_html, "event-starts-on")
+    starts_at_time = input_value!(initial_html, "event-starts-at-time")
+    ends_at_time = input_value!(initial_html, "event-ends-at-time")
+
+    render_change(view, "event_form_validate", %{
+      "form" => %{
+        "title" => "C",
+        "description" => "",
+        "_unused_description" => "",
+        "location" => "",
+        "_unused_location" => "",
+        "_unused_all_day" => "",
+        "starts_on" => starts_on,
+        "_unused_starts_on" => "",
+        "starts_at_time" => starts_at_time,
+        "_unused_starts_at_time" => "",
+        "ends_at_time" => ends_at_time,
+        "_unused_ends_at_time" => "",
+        "_unused_relay_policy" => "",
+        "tz" => "Etc/UTC",
+        "_unused_tz" => ""
+      }
+    })
+
+    html = render(view)
+
+    refute html =~ "exactly 4 of"
+    refute has_element?(view, "#event-title.input-error")
+
+    refute has_element?(
+             view,
+             ~s(#{testid("event-location-picker")} [data-role="trigger"].input-error)
+           )
+
+    refute has_element?(view, ~s(#{testid("event-tz-picker")} [data-role="trigger"].input-error))
+    refute has_element?(view, "#event-starts-at-time.input-error")
+    refute has_element?(view, "#event-ends-at-time.input-error")
+  end
+
+  test "submitting a timed event without times shows errors under time inputs", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    render_click(element(view, testid("events-create-button")))
+    render_click(element(view, testid("event-form-end-date-add")))
+
+    render_submit(
+      form(view, testid("event-form"),
+        form: %{
+          "title" => "Community dinner",
+          "description" => "",
+          "location" => "Community Hall",
+          "all_day" => "false",
+          "starts_on" => "2026-05-12",
+          "starts_at_time" => "",
+          "ends_on" => "2026-05-12",
+          "ends_at_time" => "",
+          "relay_policy" => "internal_only",
+          "tz" => "Etc/UTC"
+        }
+      )
+    )
+
+    html = render(view)
+
+    refute html =~ "exactly 4 of"
+    assert has_element?(view, "#event-starts-at-time.input-error")
+    assert has_element?(view, "#event-ends-at-time.input-error")
+    refute has_element?(view, "#event-ends-on.input-error")
+    assert html =~ "must be present"
+  end
+
   test "owner can change status only in edit mode inside the detail modal", %{
     conn: conn
   } do
@@ -1533,6 +1623,13 @@ defmodule WikWeb.EventsLiveTest do
       title: "Shared Dinner"
     }
     |> Map.merge(Enum.into(overrides, %{}))
+  end
+
+  defp input_value!(html, id) do
+    case Regex.run(~r/id="#{Regex.escape(id)}"[^>]*value="([^"]*)"/, html) do
+      [_match, value] -> value
+      nil -> flunk("expected input ##{id} to have a value")
+    end
   end
 
   defp scope(actor, tenant) do

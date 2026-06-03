@@ -14,6 +14,8 @@ defmodule Wik.EventParticipationsTest do
   alias Wik.Repo
   alias Wik.Scope
 
+  require Ash.Query
+
   describe "record_interest/3" do
     test "upserts one interest record per publication and member" do
       %{
@@ -61,6 +63,8 @@ defmodule Wik.EventParticipationsTest do
       add_membership(space, owner, :owner)
       add_membership(space, member, :member)
       add_membership(space, other_member, :member)
+      grant_active_telegram_access(space, member)
+      grant_active_telegram_access(space, other_member)
 
       external_event = external_event_fixture(space, owner)
 
@@ -104,6 +108,7 @@ defmodule Wik.EventParticipationsTest do
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
     membership = add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
 
     {:ok, event} =
       Ash.create(Event, event_attrs(), action: :create, scope: scope(owner, space))
@@ -130,10 +135,11 @@ defmodule Wik.EventParticipationsTest do
       )
 
     Repo.insert!(%ExternalEvent{
+      id: Ash.UUIDv7.generate(),
       all_day: false,
       calendar_name: "Community calendar",
       description: "Imported from an external calendar",
-      ends_at: ~U[2026-06-03 20:00:00Z],
+      ends_at: ~U[2026-06-03 20:00:00.000000Z],
       event_url: nil,
       external_occurrence_key: "single",
       external_recurrence_id: nil,
@@ -141,7 +147,7 @@ defmodule Wik.EventParticipationsTest do
       last_seen_at: DateTime.utc_now(),
       location: "Riverside Hall",
       space_id: space.id,
-      starts_at: ~U[2026-06-03 18:00:00Z],
+      starts_at: ~U[2026-06-03 18:00:00.000000Z],
       status: :published,
       subscription_id: subscription.id,
       title: "External dinner",

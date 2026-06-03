@@ -157,7 +157,7 @@ defmodule Wik.Events do
     |> Query.filter(
       publication_id == ^attrs.publication_id and membership_id == ^attrs.membership_id
     )
-    |> Ash.read_one(scope: scope)
+    |> Ash.read_one(scope: scope, authorize?: false)
   end
 
   defp participation_attrs(attrs) do

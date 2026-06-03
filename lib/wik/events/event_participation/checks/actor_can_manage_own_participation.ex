@@ -20,7 +20,7 @@ defmodule Wik.Events.EventParticipation.Checks.ActorCanManageOwnParticipation do
     publication_id = Ash.Subject.get_argument_or_attribute(subject, :publication_id)
 
     with {:ok, true} <- membership_belongs_to_actor?(membership_id, space_id, actor),
-         {:ok, true} <- publication_belongs_to_space?(publication_id, space_id) do
+         {:ok, true} <- publication_belongs_to_space?(publication_id, space_id, tenant) do
       {:ok, true}
     else
       {:ok, false} -> {:ok, false}
@@ -34,9 +34,12 @@ defmodule Wik.Events.EventParticipation.Checks.ActorCanManageOwnParticipation do
     |> Ash.exists(authorize?: false, domain: Accounts)
   end
 
-  defp publication_belongs_to_space?(publication_id, space_id) do
-    EventPublication
-    |> Ash.Query.filter(id == ^publication_id and target_space_id == ^space_id)
-    |> Ash.exists(authorize?: false, domain: Wik.Events)
+  defp publication_belongs_to_space?(publication_id, space_id, tenant) do
+    publication =
+      EventPublication
+      |> Ash.Query.filter(id == ^publication_id)
+      |> Ash.read_one!(authorize?: false, domain: Wik.Events, tenant: tenant)
+
+    {:ok, publication && publication.target_space_id == space_id}
   end
 end

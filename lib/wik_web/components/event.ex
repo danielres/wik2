@@ -40,7 +40,7 @@ defmodule WikWeb.Components.Event do
         <div class="grid gap-3 sm:grid-cols-2">
           <.input
             field={@form[:starts_on]}
-            errors={if @all_day?, do: errors_for(@form, :starts_at), else: []}
+            errors={if @all_day?, do: schedule_errors_for(@form, :starts_at), else: []}
             id="event-starts-on"
             label="Start date"
             type="date"
@@ -76,7 +76,7 @@ defmodule WikWeb.Components.Event do
               <.input
                 :if={@show_end_date? and false}
                 field={@form[:ends_on]}
-                errors={if @all_day?, do: errors_for(@form, :ends_at), else: []}
+                errors={if @all_day?, do: schedule_errors_for(@form, :ends_at), else: []}
                 id="event-ends-on"
                 type="date"
               />
@@ -87,9 +87,13 @@ defmodule WikWeb.Components.Event do
                 name="form[ends_on]"
                 id="event-ends-on"
                 value={Phoenix.HTML.Form.input_value(@form, :ends_on)}
-                class="w-full input"
+                class={[
+                  "w-full input",
+                  end_date_errors_for(@form, @all_day?) != [] && "input-error"
+                ]}
               />
             </label>
+            <.error :for={msg <- end_date_errors_for(@form, @all_day?)}>{msg}</.error>
           </div>
         </div>
 
@@ -98,7 +102,7 @@ defmodule WikWeb.Components.Event do
         <div :if={not @all_day?} class="grid gap-3 sm:grid-cols-2">
           <.input
             field={@form[:starts_at_time]}
-            errors={if @all_day?, do: [], else: errors_for(@form, :starts_at)}
+            errors={if @all_day?, do: [], else: schedule_errors_for(@form, :starts_at)}
             id="event-starts-at-time"
             label="Start time"
             type="time"
@@ -106,7 +110,7 @@ defmodule WikWeb.Components.Event do
 
           <.input
             field={@form[:ends_at_time]}
-            errors={if @all_day?, do: [], else: errors_for(@form, :ends_at)}
+            errors={if @all_day?, do: [], else: schedule_errors_for(@form, :ends_at)}
             id="event-ends-at-time"
             label="End time"
             type="time"
@@ -208,6 +212,25 @@ defmodule WikWeb.Components.Event do
   defp errors_for(form, field) do
     form[field].errors
     |> Enum.map(&WikWeb.CoreComponents.translate_error/1)
+  end
+
+  defp schedule_errors_for(form, field) do
+    if schedule_used?(form) do
+      errors_for(form, field)
+    else
+      []
+    end
+  end
+
+  defp end_date_errors_for(form, true), do: schedule_errors_for(form, :ends_at)
+  defp end_date_errors_for(_form, false), do: []
+
+  defp schedule_used?(form) do
+    form.source.just_submitted? ||
+      Phoenix.Component.used_input?(form[:starts_on]) ||
+      Phoenix.Component.used_input?(form[:starts_at_time]) ||
+      Phoenix.Component.used_input?(form[:ends_on]) ||
+      Phoenix.Component.used_input?(form[:ends_at_time])
   end
 
   defp google_maps_search_url(location) do

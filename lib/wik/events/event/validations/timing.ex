@@ -16,7 +16,7 @@ defmodule Wik.Events.Event.Validations.Timing do
         :ok
 
       not all_day && is_nil(ends_at) ->
-        {:error, fields: [:ends_at], message: "timed events must have an end time"}
+        {:error, fields: [:ends_at], message: "must be present"}
 
       all_day ->
         :ok

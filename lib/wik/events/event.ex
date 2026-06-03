@@ -55,7 +55,10 @@ defmodule Wik.Events.Event do
       change SetScheduleFromLocalFields
       change CreateOriginPublication
 
-      validate present([:title, :location, :tz, :starts_at])
+      validate present(:title)
+      validate present(:location)
+      validate present(:tz)
+      validate present(:starts_at)
     end
 
     create :create_from_external do
@@ -100,7 +103,10 @@ defmodule Wik.Events.Event do
       change SetScheduleFromLocalFields
       require_atomic? false
 
-      validate present([:title, :location, :tz, :starts_at])
+      validate present(:title)
+      validate present(:location)
+      validate present(:tz)
+      validate present(:starts_at)
     end
 
     update :update_converted_layer do

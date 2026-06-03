@@ -39,7 +39,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "tag.name" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "tag.name"}
+          aria-pressed={to_string(@active_sort == "tag.name")}
           data-member-tagging-sort="tag.name"
           data-testid="member-tagging-sort-tag"
           phx-click="tagging_sort"
@@ -55,7 +55,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "interest_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "interest_level"}
+          aria-pressed={to_string(@active_sort == "interest_level")}
           data-member-tagging-sort="interest_level"
           data-testid="member-tagging-sort-interest"
           phx-click="tagging_sort"
@@ -71,7 +71,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "skill_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "skill_level"}
+          aria-pressed={to_string(@active_sort == "skill_level")}
           data-member-tagging-sort="skill_level"
           data-testid="member-tagging-sort-skill"
           phx-click="tagging_sort"
@@ -245,7 +245,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "target_membership.username" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "target_membership.username"}
+          aria-pressed={to_string(@active_sort == "target_membership.username")}
           data-member-tagging-sort="target_membership.username"
           data-testid="tag-member-tagging-sort-username"
           phx-click="member_tagging_sort"
@@ -261,7 +261,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "interest_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "interest_level"}
+          aria-pressed={to_string(@active_sort == "interest_level")}
           data-member-tagging-sort="interest_level"
           data-testid="tag-member-tagging-sort-interest"
           phx-click="member_tagging_sort"
@@ -277,7 +277,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "skill_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "skill_level"}
+          aria-pressed={to_string(@active_sort == "skill_level")}
           data-member-tagging-sort="skill_level"
           data-testid="tag-member-tagging-sort-skill"
           phx-click="member_tagging_sort"

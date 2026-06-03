@@ -3,6 +3,7 @@ defmodule WikWeb.TagLive do
   use WikWeb.Presence.Handlers
 
   alias AshPhoenix.Form
+  alias Phoenix.LiveView
   alias Utils.Log
   alias Wik.Tags
   alias Wik.Tags.GraphQueries
@@ -10,6 +11,12 @@ defmodule WikWeb.TagLive do
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Tag, as: TagComponent
   alias WikWeb.Components.UI
+
+  @member_tagging_sorts %{
+    "target_membership.username" => :asc_nils_last,
+    "interest_level" => :desc,
+    "skill_level" => :desc
+  }
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
@@ -22,6 +29,7 @@ defmodule WikWeb.TagLive do
      socket
      |> assign(editable?: editable?)
      |> assign(editing?: false)
+     |> assign(selected_member_tagging_sort: "interest_level")
      |> assign(tag: nil)
      |> assign(tag_graph: nil)
      |> assign(tag_form: nil)
@@ -60,6 +68,22 @@ defmodule WikWeb.TagLive do
   end
 
   @impl true
+  def handle_event("member_tagging_sort", %{"sort" => sort}, socket)
+      when is_map_key(@member_tagging_sorts, sort) do
+    LiveView.send_update(Cinder.LiveComponent,
+      id: "tag-member-taggings",
+      sort_by: [{sort, Map.fetch!(@member_tagging_sorts, sort)}],
+      current_page: 1,
+      after_keyset: nil,
+      before_keyset: nil,
+      user_has_interacted: true
+    )
+
+    {:noreply, assign(socket, :selected_member_tagging_sort, sort)}
+  end
+
+  def handle_event("member_tagging_sort", _params, socket), do: {:noreply, socket}
+
   def handle_event("toggle_edit_mode", _params, socket) do
     socket = assign(socket, editing?: !socket.assigns.editing?)
     socket = if socket.assigns.editing?, do: open_tag_form(socket), else: close_tag_form(socket)
@@ -156,6 +180,7 @@ defmodule WikWeb.TagLive do
               <h2 class="text-xl font-semibold mb-2">Members</h2>
 
               <MembershipTagging.list_for_tag
+                active_sort={@selected_member_tagging_sort}
                 query={@taggings_query}
                 scope={@current_scope}
                 tag={@tag}

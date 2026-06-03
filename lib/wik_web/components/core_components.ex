@@ -182,16 +182,9 @@ defmodule WikWeb.CoreComponents do
                 multiple pattern placeholder readonly required rows size step)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors =
-      if just_submitted?(field.form.source) or Phoenix.Component.used_input?(field) do
-        field.errors
-      else
-        []
-      end
-
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+    |> assign(:errors, field_errors(field))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> input()
@@ -298,6 +291,17 @@ defmodule WikWeb.CoreComponents do
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
+  end
+
+  def field_errors(%Phoenix.HTML.FormField{} = field) do
+    errors =
+      if just_submitted?(field.form.source) or Phoenix.Component.used_input?(field) do
+        field.errors
+      else
+        []
+      end
+
+    Enum.map(errors, &translate_error(&1))
   end
 
   # Helper used by inputs to generate form errors

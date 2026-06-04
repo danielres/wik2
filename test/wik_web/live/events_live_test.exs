@@ -325,7 +325,7 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-month-2026-5"))
     assert has_element?(view, testid("events-day-2026-5-10"))
     assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-3"))
+    assert has_element?(view, testid("events-day-2026-6-4"))
     assert has_element?(view, testid("events-year-2027"))
     assert has_element?(view, testid("events-month-2027-1"))
     assert has_element?(view, testid("events-day-2027-1-15"))
@@ -345,14 +345,14 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("event-publication-#{may_publication.id}"))
     assert has_element?(view, testid("event-publication-#{january_publication.id}"))
     refute has_element?(view, testid("events-month-2026-6"))
-    refute has_element?(view, testid("events-day-2026-6-3"))
+    refute has_element?(view, testid("events-day-2026-6-4"))
     refute has_element?(view, testid(external_event_testid))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: true}}")
     assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-3"))
+    assert has_element?(view, testid("events-day-2026-6-4"))
     assert has_element?(view, testid(external_event_testid))
   end
 
@@ -1715,8 +1715,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:20260604T180000Z
+    DTEND:20260604T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1734,8 +1734,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:20260604T180000Z
+    DTEND:20260604T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1754,8 +1754,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:20260604T180000Z
+    DTEND:20260604T200000Z
     SUMMARY:External dinner
     DESCRIPTION:West Coast Swing Party\\n<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar&amp;usd=2&amp;usg=AOvVaw1yIVflEmW8GH3zDYw07XmQ" target="_blank">www.werk36.de</a>\\n<script>alert(1)</script><img src="https://www.example.com/x.png" onerror="alert(1)">
     LOCATION:Riverside Hall
@@ -1776,8 +1776,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:20260604T180000Z
+    DTEND:20260604T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall

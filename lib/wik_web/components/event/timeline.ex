@@ -1,7 +1,7 @@
 defmodule WikWeb.Components.Event.Timeline do
   use WikWeb, :html
 
-  alias Wik.Tags.Dimensions
+  alias Wik.Events.Dimensions
   alias WikWeb.Components.Event
   alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.User
@@ -275,7 +275,7 @@ defmodule WikWeb.Components.Event.Timeline do
 
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
 
-  defp interest_dimension, do: Dimensions.get!("membership", "interest")
+  defp interest_dimension, do: Dimensions.get!("participation", "interest")
 
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 

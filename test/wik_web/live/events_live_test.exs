@@ -414,7 +414,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-create-button")))
 
-    assert has_element?(view, testid("event-modal-dialog"))
+    assert has_element?(view, testid("event-form"))
     assert has_element?(view, "#interest_interest")
     assert has_element?(view, "#event-interest-extra-info")
     assert has_element?(view, testid("event-tz-picker"))
@@ -521,30 +521,33 @@ defmodule WikWeb.EventsLiveTest do
     starts_at_time = input_value!(initial_html, "event-starts-at-time")
     ends_at_time = input_value!(initial_html, "event-ends-at-time")
 
-    render_change(view, "event_form_validate", %{
-      "form" => %{
-        "title" => "C",
-        "description" => "",
-        "_unused_description" => "",
-        "location" => "",
-        "_unused_location" => "",
-        "_unused_all_day" => "",
-        "starts_on" => starts_on,
-        "_unused_starts_on" => "",
-        "starts_at_time" => starts_at_time,
-        "_unused_starts_at_time" => "",
-        "ends_at_time" => ends_at_time,
-        "_unused_ends_on" => "",
-        "_unused_ends_at_time" => "",
-        "_unused_relay_policy" => "",
-        "tz" => "Etc/UTC",
-        "_unused_tz" => ""
-      },
-      "interest" => %{
-        "extra_info" => "",
-        "interest" => "5"
+    render_change(
+      element(view, testid("event-form")),
+      %{
+        "form" => %{
+          "title" => "C",
+          "description" => "",
+          "_unused_description" => "",
+          "location" => "",
+          "_unused_location" => "",
+          "_unused_all_day" => "",
+          "starts_on" => starts_on,
+          "_unused_starts_on" => "",
+          "starts_at_time" => starts_at_time,
+          "_unused_starts_at_time" => "",
+          "ends_at_time" => ends_at_time,
+          "_unused_ends_on" => "",
+          "_unused_ends_at_time" => "",
+          "_unused_relay_policy" => "",
+          "tz" => "Etc/UTC",
+          "_unused_tz" => ""
+        },
+        "interest" => %{
+          "extra_info" => "",
+          "interest" => "5"
+        }
       }
-    })
+    )
 
     html = render(view)
 
@@ -1200,7 +1203,7 @@ defmodule WikWeb.EventsLiveTest do
 
     assert has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
     assert render(view) =~ "Community Coordination Calendar"
     assert render(view) =~ "https://calendar.example.test/community.ics"
 
@@ -1210,7 +1213,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    refute has_element?(view, testid("events-subscription-detail-dialog"))
+    refute has_element?(view, testid("events-subscription-name-form"))
     assert render(view) =~ "Short name"
 
     external_event_testid = external_event_testid(subscription)
@@ -1336,7 +1339,6 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{external_event_id}")))
 
-    assert has_element?(view, testid("event-modal-dialog"))
     assert has_element?(view, testid("external-event-detail"))
     assert render(view) =~ "External dinner"
     assert render(view) =~ "Imported from an external calendar"
@@ -1396,7 +1398,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
 
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
     assert render(view) =~ "Community Coordination Calendar"
     assert render(view) =~ "Europe/Berlin"
     assert render(view) =~ "Community events for coordination"
@@ -1576,13 +1578,13 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     assert has_element?(view, testid(external_event_testid))
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
 
     render_click(element(view, testid("events-subscription-remove-#{subscription.id}")))
 
     refute has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     refute has_element?(view, testid(external_event_testid))
-    refute has_element?(view, testid("events-subscription-detail-dialog"))
+    refute has_element?(view, testid("events-subscription-name-form"))
   end
 
   test "owner can refresh an external calendar subscription from the modal", %{conn: conn} do
@@ -1619,12 +1621,12 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
 
     render_click(element(view, testid("events-subscription-refresh-#{subscription.id}")))
 
     assert Agent.get(counter, & &1) == 2
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
   end
 
   defp add_membership(space, user, type) do

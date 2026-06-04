@@ -5,11 +5,11 @@ defmodule WikWeb.EventsLive do
   alias Wik.Locations
   alias WikWeb.Components
   alias WikWeb.EventsLive
-  alias WikWeb.EventsLive.EventForm
-  alias WikWeb.EventsLive.Interest
-  alias WikWeb.EventsLive.ModalView
+  alias WikWeb.EventsLive.Components.EventForm
+  alias WikWeb.EventsLive.Components.InterestForm
+  alias WikWeb.EventsLive.Components.SubscriptionDetails
+  alias WikWeb.EventsLive.Components.SubscriptionForm
   alias WikWeb.EventsLive.Params
-  alias WikWeb.EventsLive.SubscriptionModal
   alias WikWeb.EventsLive.SubscriptionState
   alias WikWeb.EventsLive.TimelineState
 
@@ -28,7 +28,7 @@ defmodule WikWeb.EventsLive do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, :modal_view, ModalView.build(assigns))
+    assigns = assign(assigns, :modal_title, modal_title(assigns.modal, assigns.subscriptions))
 
     ~H"""
     <Layouts.app
@@ -57,15 +57,104 @@ defmodule WikWeb.EventsLive do
           />
         </div>
 
-        <EventsLive.Components.Modal.render
-          active_tz={@active_tz}
-          current_scope={@current_scope}
-          modal_view={@modal_view}
-        />
+        <Components.Modal.render
+          cancel="modal_close"
+          cancel_testid="events-modal-close"
+          open?={@modal != nil}
+        >
+          <:title>
+            {@modal_title}
+          </:title>
+
+          <%= case @modal do %>
+            <% {:internal_event, publication} -> %>
+              <.live_component
+                module={Components.Event.Details}
+                id={"event-details-#{publication.id}"}
+                current_scope={@current_scope}
+                publication={publication}
+                user_tz={@active_tz}
+              />
+            <% {:external_event, item} -> %>
+              <Components.Event.ExternalDetails.render item={item} user_tz={@active_tz} />
+
+              <div class="mt-4">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-ghost"
+                  data-testid={"external-event-detail-interest-#{item.event.id}"}
+                  phx-click="event_interest_start"
+                  phx-value-id={item.event.id}
+                  phx-value-source_type="external"
+                >
+                  Add interest
+                </button>
+              </div>
+            <% :event_form -> %>
+              <.live_component
+                module={EventForm}
+                id="events-event-form"
+                current_scope={@current_scope}
+                user_tz={@active_tz}
+              />
+            <% {:interest, :internal, publication_id} -> %>
+              <% publication =
+                Enum.find(@timeline.internal_publications, &(&1.id == publication_id)) %>
+              <% item =
+                Enum.find(@timeline.internal_items, &(&1.publication.id == publication_id)) %>
+
+              <.live_component
+                module={InterestForm}
+                id="events-interest-form"
+                current_member_participation={item && item.current_member_participation}
+                current_scope={@current_scope}
+                external_event={nil}
+                publication={publication}
+                source_id={publication_id}
+                source_type={:internal}
+              />
+            <% {:interest, :external, external_event_id} -> %>
+              <% external_event =
+                @timeline.external_items
+                |> Enum.map(& &1.event)
+                |> Enum.find(&(&1.id == external_event_id)) %>
+
+              <.live_component
+                module={InterestForm}
+                id="events-interest-form"
+                current_member_participation={nil}
+                current_scope={@current_scope}
+                external_event={external_event}
+                publication={nil}
+                source_id={external_event_id}
+                source_type={:external}
+              />
+            <% {:subscription, :new} -> %>
+              <.live_component
+                module={SubscriptionForm}
+                id="events-subscription-form-content"
+                current_scope={@current_scope}
+              />
+            <% {:subscription, {:show, subscription_id}} -> %>
+              <% subscription = SubscriptionState.find(@subscriptions, subscription_id) %>
+              <% metadata = SubscriptionState.metadata(@subscriptions, subscription) %>
+
+              <.live_component
+                module={SubscriptionDetails}
+                id={"events-subscription-detail-#{subscription_id}"}
+                current_scope={@current_scope}
+                metadata={metadata}
+                subscription={subscription}
+              />
+            <% _ -> %>
+          <% end %>
+        </Components.Modal.render>
       </Layouts.space>
     </Layouts.app>
     """
   end
+
+  # handle_params ==============================================================
 
   @impl true
   def handle_params(params, _url, socket) do
@@ -91,22 +180,9 @@ defmodule WikWeb.EventsLive do
     {:noreply, socket}
   end
 
-  @impl true
-  def handle_event("event_create_start", _params, socket) do
-    {:noreply, EventForm.open(socket)}
-  end
+  # handle_event ===============================================================
 
-  def handle_event("event_form_validate", params, socket) do
-    {:noreply, EventForm.validate(socket, params)}
-  end
-
-  def handle_event("event_form_end_date_add", _params, socket) do
-    {:noreply, EventForm.show_end_date(socket)}
-  end
-
-  def handle_event("event_form_end_date_remove", _params, socket) do
-    {:noreply, EventForm.hide_end_date(socket)}
-  end
+  # LocationPicker -------------------------------------------------------------
 
   def handle_event("location_search", %{"q" => query}, socket) do
     scope = socket.assigns.current_scope
@@ -121,14 +197,17 @@ defmodule WikWeb.EventsLive do
     end
   end
 
-  def handle_event("event_form_submit", params, socket) do
-    {:noreply, EventForm.submit(socket, params)}
+  # Modals ---------------------------------------------------------------------
+
+  # Close
+
+  def handle_event("modal_close", _params, socket) do
+    {:noreply, close_modal(socket)}
   end
 
-  def handle_event("event_form_cancel", _params, socket) do
-    {:noreply, EventForm.cancel(socket)}
-  end
+  # External calendars
 
+  @impl true
   def handle_event("toggle_external", _params, socket) do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
@@ -138,9 +217,15 @@ defmodule WikWeb.EventsLive do
     {:noreply, push_patch(socket, to: ~p"/#{current_scope.tenant.slug}/events?#{params}")}
   end
 
-  def handle_event("modal_close", _params, socket) do
-    {:noreply, close_modal(socket)}
+  def handle_event("external_calendar_subscription_start", _params, socket) do
+    {:noreply, assign(socket, :modal, {:subscription, :new})}
   end
+
+  def handle_event("external_calendar_subscription_show", %{"id" => id}, socket) do
+    {:noreply, assign(socket, :modal, {:subscription, {:show, id}})}
+  end
+
+  # Event details
 
   def handle_event("external_event_show", %{"id" => id}, socket) do
     external_event =
@@ -150,52 +235,26 @@ defmodule WikWeb.EventsLive do
   end
 
   def handle_event("event_interest_start", %{"source_type" => "internal", "id" => id}, socket) do
-    {:noreply, Interest.open_internal(socket, id)}
+    {:noreply, assign(socket, :modal, {:interest, :internal, id})}
   end
 
   def handle_event("event_interest_start", %{"source_type" => "external", "id" => id}, socket) do
-    {:noreply, Interest.open_external(socket, id)}
+    {:noreply, assign(socket, :modal, {:interest, :external, id})}
   end
 
-  def handle_event("event_interest_cancel", _params, socket) do
-    {:noreply, Interest.cancel(socket)}
+  # Internal event creation
+
+  def handle_event("event_create_start", _params, socket) do
+    {:noreply, assign(socket, :modal, :event_form)}
   end
 
-  def handle_event("event_interest_submit", params, socket) do
-    {:noreply, Interest.submit(socket, params)}
+  # handle_info ================================================================
+
+  def handle_info({:events_live, :close}, socket) do
+    {:noreply, close_modal(socket)}
   end
 
-  def handle_event("external_calendar_subscription_start", _params, socket) do
-    {:noreply, SubscriptionModal.new(socket)}
-  end
-
-  def handle_event("external_calendar_subscription_show", %{"id" => id}, socket) do
-    {:noreply, SubscriptionModal.show(socket, id)}
-  end
-
-  def handle_event(
-        "external_calendar_subscription_submit",
-        params,
-        socket
-      ) do
-    {:noreply, SubscriptionModal.submit(socket, params)}
-  end
-
-  def handle_event("external_calendar_subscription_remove", %{"id" => id}, socket) do
-    {:noreply, SubscriptionModal.remove(socket, id)}
-  end
-
-  def handle_event("external_calendar_subscription_refresh", %{"id" => id}, socket) do
-    {:noreply, SubscriptionModal.refresh(socket, id)}
-  end
-
-  def handle_event(
-        "external_calendar_subscription_name_submit",
-        params,
-        socket
-      ) do
-    {:noreply, SubscriptionModal.submit_name(socket, params)}
-  end
+  # Event details
 
   @impl true
   def handle_info({:event_details, :saved}, socket) do
@@ -216,15 +275,76 @@ defmodule WikWeb.EventsLive do
     {:noreply, put_flash(socket, :info, "Event relayed")}
   end
 
-  def refresh_page_data(socket) do
+  # Event creation
+
+  def handle_info({:events_live, {:event_created, _event}}, socket) do
+    current_scope = socket.assigns.current_scope
+    timeline = socket.assigns.timeline
+    page_params = Params.page_params(timeline.show_external?, timeline.future_windows)
+
+    {:noreply,
+     socket
+     |> assign(:modal, nil)
+     |> refresh_page_data()
+     |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events?#{page_params}")}
+  end
+
+  # Interest
+
+  def handle_info({:events_live, {:interest_saved, _result}}, socket) do
+    {:noreply,
+     socket
+     |> assign(:modal, nil)
+     |> refresh_page_data()}
+  end
+
+  # Subscriptions
+
+  def handle_info({:events_live, {:subscription_created, _subscription}}, socket) do
+    {:noreply,
+     socket
+     |> assign(:modal, nil)
+     |> refresh_page_data()}
+  end
+
+  def handle_info({:events_live, {:subscription_removed, _id}}, socket) do
+    {:noreply,
+     socket
+     |> assign(:modal, nil)
+     |> refresh_page_data()}
+  end
+
+  def handle_info({:events_live, {:subscription_updated, _id}}, socket) do
+    {:noreply,
+     socket
+     |> assign(:modal, nil)
+     |> refresh_page_data()}
+  end
+
+  def handle_info({:events_live, {:subscription_refreshed, id}}, socket) do
+    {:noreply,
+     socket
+     |> refresh_page_data()
+     |> assign(:modal, {:subscription, {:show, id}})}
+  end
+
+  # Flash
+
+  def handle_info({:events_live, {:flash, level, message}}, socket) do
+    {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Helpers ====================================================================
+
+  defp refresh_page_data(socket) do
     TimelineState.refresh_page_data(socket)
   end
 
   defp sync_modal_with_route(socket, nil) do
-    if route_event_modal?(socket.assigns.modal) do
-      assign(socket, :modal, nil)
-    else
-      socket
+    case socket.assigns.modal do
+      {:internal_event, _publication} -> assign(socket, :modal, nil)
+      {:external_event, _item} -> assign(socket, :modal, nil)
+      _modal -> socket
     end
   end
 
@@ -250,7 +370,14 @@ defmodule WikWeb.EventsLive do
     end
   end
 
-  defp route_event_modal?({:internal_event, _publication}), do: true
-  defp route_event_modal?({:external_event, _item}), do: true
-  defp route_event_modal?(_modal), do: false
+  defp modal_title(:event_form, _subscriptions), do: "Create event"
+  defp modal_title({:interest, _source_type, _source_id}, _subscriptions), do: "Your interest"
+  defp modal_title({:subscription, :new}, _subscriptions), do: "Subscribe to calendar"
+
+  defp modal_title({:subscription, {:show, subscription_id}}, subscriptions) do
+    subscription = SubscriptionState.find(subscriptions, subscription_id)
+    SubscriptionState.title(subscriptions, subscription)
+  end
+
+  defp modal_title(_modal, _subscriptions), do: nil
 end

@@ -148,10 +148,12 @@ defmodule WikWeb.Components.Event.Details do
              action_opts: [scope: socket.assigns.current_scope]
            ) do
         {:ok, _event} ->
-          _ =
-            Events.record_interest(socket.assigns.publication, interest_params,
-              scope: socket.assigns.current_scope
-            )
+          case Events.record_interest(socket.assigns.publication, interest_params,
+                 scope: socket.assigns.current_scope
+               ) do
+            {:ok, _participation} -> :ok
+            {:error, error} -> send(self(), {:event_details, {:interest_failed, error}})
+          end
 
           send(self(), {:event_details, :saved})
           socket

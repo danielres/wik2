@@ -275,6 +275,16 @@ defmodule WikWeb.EventsLive do
     {:noreply, put_flash(socket, :info, "Event relayed")}
   end
 
+  def handle_info({:event_details, {:interest_failed, error}}, socket) do
+    Log.scoped_error(
+      socket.assigns.current_scope,
+      error,
+      "event interest update after event edit failed"
+    )
+
+    {:noreply, put_flash(socket, :error, "Event saved, but interest could not be updated")}
+  end
+
   # Event creation
 
   def handle_info({:events_live, {:event_created, _event}}, socket) do

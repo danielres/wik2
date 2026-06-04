@@ -184,7 +184,7 @@ defmodule WikWeb.CoreComponents do
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Map.get(assigns, :errors, field_errors(field)))
+    |> assign(:errors, input_errors(assigns, field))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> input()
@@ -302,6 +302,14 @@ defmodule WikWeb.CoreComponents do
       end
 
     Enum.map(errors, &translate_error(&1))
+  end
+
+  defp input_errors(assigns, field) do
+    if Map.has_key?(assigns.__given__, :errors) do
+      assigns.errors
+    else
+      field_errors(field)
+    end
   end
 
   # Helper used by inputs to generate form errors

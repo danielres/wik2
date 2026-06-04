@@ -72,7 +72,7 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
   defp maybe_reset_form(socket) do
     source_key = {socket.assigns.source_type, socket.assigns.source_id}
 
-    if socket.assigns[:source_key] == source_key and socket.assigns[:form] do
+    if socket.assigns[:source_key] == source_key and not is_nil(socket.assigns[:form]) do
       socket
     else
       socket

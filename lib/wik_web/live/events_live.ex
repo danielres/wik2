@@ -371,7 +371,10 @@ defmodule WikWeb.EventsLive do
   end
 
   defp modal_title(:event_form, _subscriptions), do: "Create event"
-  defp modal_title({:interest, _source_type, _source_id}, _subscriptions), do: "Your interest"
+
+  defp modal_title({:interest, _source_type, _source_id}, _subscriptions),
+    do: "Your interest / participation"
+
   defp modal_title({:subscription, :new}, _subscriptions), do: "Subscribe to calendar"
 
   defp modal_title({:subscription, {:show, subscription_id}}, subscriptions) do

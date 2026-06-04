@@ -29,7 +29,11 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
           <Event.interest_fields form={@form} />
 
           <div class="flex justify-end">
-            <button type="submit" class="btn btn-accent btn-sm" data-testid="event-interest-submit">
+            <button
+              type="submit"
+              class="btn btn-accent btn-soft btn-sm"
+              data-testid="event-interest-submit"
+            >
               Save
             </button>
           </div>

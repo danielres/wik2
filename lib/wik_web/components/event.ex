@@ -314,12 +314,13 @@ defmodule WikWeb.Components.Event do
     """
   end
 
+  attr :author_membership, :map, default: nil
   attr :can_edit?, :boolean, required: true
   attr :can_relay?, :boolean, required: true
-  attr :publication, :map, required: true
-  attr :author_membership, :map, default: nil
   attr :current_member_participation, :any, default: nil
+  attr :current_membership, :map, required: true
   attr :participations, :list, default: []
+  attr :publication, :map, required: true
   attr :relayer_membership, :map, default: nil
   attr :show_origin_space?, :boolean, default: false
   attr :target, :any, default: nil
@@ -394,25 +395,39 @@ defmodule WikWeb.Components.Event do
         </div>
       </div>
 
-      <WikWeb.Components.Event.Panel.render title="Interest">
-        <:actions>
-          <button
-            :if={!@current_member_participation}
-            type="button"
-            class="btn btn-xs transition btn-neutral"
-            data-testid={"event-detail-interest-#{@publication.id}"}
-            phx-click="event_interest_start"
-            phx-value-id={@publication.id}
-            phx-value-source_type="internal"
-          >
-            <span>Add</span>
-            <.icon
-              name="hero-plus-circle-micro"
-              class="scale-80"
-              style={"color: #{interest_dimension().color}"}
+      <WikWeb.Components.Event.Panel.render title="Participation">
+        <div
+          :if={!@current_member_participation}
+          class={[
+            "rounded-md bg-base-content/5 px-2 py-1",
+            "mb-2"
+          ]}
+        >
+          <div class={["flex justify-between"]}>
+            <User.identity
+              avatar_size="xs"
+              class="text-xs opacity-70"
+              membership={@current_membership}
             />
-          </button>
-        </:actions>
+
+            <button
+              type="button"
+              class="btn btn-xs transition btn-neutral btn-soft"
+              data-testid={"event-detail-interest-#{@publication.id}"}
+              phx-click="event_interest_start"
+              phx-value-id={@publication.id}
+              phx-value-source_type="internal"
+              style={"color: #{interest_dimension().color}"}
+            >
+              <span>Add</span>
+              <.icon
+                name="hero-plus-circle-micro"
+                class="scale-80"
+                style={"color: #{interest_dimension().color}"}
+              />
+            </button>
+          </div>
+        </div>
 
         <div
           :for={participation <- @participations}
@@ -431,6 +446,19 @@ defmodule WikWeb.Components.Event do
             />
 
             <div class="flex gap-1 items-center">
+              <LevelMeter.render
+                :if={
+                  !@current_member_participation ||
+                    participation.membership_id != @current_member_participation.membership_id
+                }
+                dimension={interest_dimension()}
+                label="Interest"
+                level={participation.interest}
+                testid={"event-participation-interest-#{participation.id}"}
+                width_class="w-10"
+                class="ml-auto mr-2"
+              />
+
               <button
                 :if={
                   @current_member_participation &&

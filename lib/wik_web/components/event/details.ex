@@ -36,6 +36,7 @@ defmodule WikWeb.Components.Event.Details do
         author_membership={@author_membership}
         can_edit?={can_edit_event?(@publication.event, @current_scope)}
         can_relay?={@can_relay?}
+        current_membership={@current_membership}
         current_member_participation={@current_member_participation}
         participations={@participations}
         publication={@publication}
@@ -258,6 +259,7 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:mode, :show)
     |> assign(:relayer_membership, nil)
     |> assign(:show_origin_space?, false)
+    |> assign(:current_membership, nil)
     |> assign(:current_member_participation, nil)
     |> assign(:participations, [])
     |> assign(:relay_error, nil)
@@ -328,6 +330,7 @@ defmodule WikWeb.Components.Event.Details do
       end
 
     assign(socket,
+      current_membership: current_membership,
       current_member_participation:
         current_member_participation(participations, current_membership),
       participations: participations

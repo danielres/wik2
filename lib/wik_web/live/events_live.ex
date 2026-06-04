@@ -100,11 +100,13 @@ defmodule WikWeb.EventsLive do
     active_tz = socket.assigns.active_tz
     form = FormState.new(current_scope, active_tz)
 
-    {:noreply, assign(socket, :modal, {:event_form, form, FormState.show_end_date?(form)})}
+    {:noreply,
+     assign(socket, :modal, {:event_form, form, FormState.show_end_date?(form), interest_form()})}
   end
 
-  def handle_event("event_form_validate", %{"form" => params}, socket) do
+  def handle_event("event_form_validate", %{"form" => params} = all_params, socket) do
     show_end_date? = modal_event_form_show_end_date?(socket)
+    interest_form = interest_form_from_params(Map.get(all_params, "interest", %{}), nil)
 
     params =
       FormState.normalize_hidden_end_date_params(
@@ -122,7 +124,7 @@ defmodule WikWeb.EventsLive do
      assign(
        socket,
        :modal,
-       {:event_form, form, show_end_date? || FormState.show_end_date?(form)}
+       {:event_form, form, show_end_date? || FormState.show_end_date?(form), interest_form}
      )}
   end
 
@@ -136,7 +138,13 @@ defmodule WikWeb.EventsLive do
       |> modal_event_form()
       |> FormState.collapse_end_date()
 
-    {:noreply, assign(socket, :modal, {:event_form, form, false})}
+    case socket.assigns.modal do
+      {:event_form, _current_form, _show_end_date?, interest_form} ->
+        {:noreply, assign(socket, :modal, {:event_form, form, false, interest_form})}
+
+      _modal ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("location_search", %{"q" => query}, socket) do
@@ -152,10 +160,11 @@ defmodule WikWeb.EventsLive do
     end
   end
 
-  def handle_event("event_form_submit", %{"form" => params}, socket) do
+  def handle_event("event_form_submit", %{"form" => params} = all_params, socket) do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
     show_end_date? = modal_event_form_show_end_date?(socket)
+    interest_params = Map.get(all_params, "interest", %{})
 
     params =
       FormState.normalize_hidden_end_date_params(
@@ -169,7 +178,9 @@ defmodule WikWeb.EventsLive do
              params: params,
              action_opts: [scope: current_scope]
            ) do
-        {:ok, _event} ->
+        {:ok, event} ->
+          _ = Events.record_event_interest(event, interest_params, scope: current_scope)
+
           page_params = Params.page_params(timeline.show_external?, timeline.future_windows)
 
           socket
@@ -181,7 +192,8 @@ defmodule WikWeb.EventsLive do
           assign(
             socket,
             :modal,
-            {:event_form, form, show_end_date? || FormState.show_end_date?(form)}
+            {:event_form, form, show_end_date? || FormState.show_end_date?(form),
+             interest_form_from_params(interest_params, nil)}
           )
       end
 
@@ -570,7 +582,7 @@ defmodule WikWeb.EventsLive do
 
   defp clear_event_form_modal(socket) do
     case socket.assigns.modal do
-      {:event_form, _form, _show_end_date?} -> assign(socket, :modal, nil)
+      {:event_form, _form, _show_end_date?, _interest_form} -> assign(socket, :modal, nil)
       _ -> socket
     end
   end
@@ -598,13 +610,15 @@ defmodule WikWeb.EventsLive do
   defp route_event_modal?(_modal), do: false
 
   defp modal_event_form(%{assigns: %{modal: modal}}), do: modal_event_form(modal)
-  defp modal_event_form({:event_form, form, _show_end_date?}), do: form
+  defp modal_event_form({:event_form, form, _show_end_date?, _interest_form}), do: form
   defp modal_event_form(_modal), do: nil
 
   defp modal_event_form_show_end_date?(%{assigns: %{modal: modal}}),
     do: modal_event_form_show_end_date?(modal)
 
-  defp modal_event_form_show_end_date?({:event_form, _form, show_end_date?}), do: show_end_date?
+  defp modal_event_form_show_end_date?({:event_form, _form, show_end_date?, _interest_form}),
+    do: show_end_date?
+
   defp modal_event_form_show_end_date?(_modal), do: false
 
   defp interest_form(participation \\ nil, error \\ nil) do
@@ -647,8 +661,8 @@ defmodule WikWeb.EventsLive do
 
   defp put_modal_event_form_show_end_date(socket, show_end_date?) do
     case socket.assigns.modal do
-      {:event_form, form, _current_show_end_date?} ->
-        assign(socket, :modal, {:event_form, form, show_end_date?})
+      {:event_form, form, _current_show_end_date?, interest_form} ->
+        assign(socket, :modal, {:event_form, form, show_end_date?, interest_form})
 
       _ ->
         socket
@@ -657,13 +671,14 @@ defmodule WikWeb.EventsLive do
 
   defp modal_view(assigns) do
     case assigns.modal do
-      {:event_form, form, show_end_date?} ->
+      {:event_form, form, show_end_date?, interest_form} ->
         %{
           kind: :event_form,
           title: if(form.source.type == :create, do: "Create event", else: "Edit event"),
           dialog_testid: "event-modal-dialog",
           close_testid: "event-modal-close",
           form: form,
+          interest_form: interest_form,
           show_end_date?: show_end_date?
         }
 

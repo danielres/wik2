@@ -307,8 +307,8 @@ defmodule WikWeb.CoreComponents do
   # Helper used by inputs to generate form errors
   def error(assigns) do
     ~H"""
-    <p class="text-content flex items-center gap-2">
-      <.icon name="hero-exclamation-triangle-micro" class="size-5 opacity-60 text-error" />
+    <p class="text-error flex items-center gap-2 text-sm">
+      <.icon name="hero-exclamation-triangle-micro" class="size-5 opacity-80" />
       {render_slot(@inner_block)}
     </p>
     """

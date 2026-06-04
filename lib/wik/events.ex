@@ -48,6 +48,17 @@ defmodule Wik.Events do
     end
   end
 
+  def record_event_interest(%Event{} = event, attrs, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    with {:ok, publication} when not is_nil(publication) <- origin_publication(event, scope) do
+      record_interest(publication, attrs, opts)
+    else
+      {:ok, nil} -> {:error, :publication_not_found}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   def record_external_interest(%ExternalEvent{} = external_event, attrs, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
 

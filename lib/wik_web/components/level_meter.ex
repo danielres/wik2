@@ -6,10 +6,14 @@ defmodule WikWeb.Components.LevelMeter do
   attr :dimension, :map, required: true
   attr :testid, :string, required: true
   attr :width_class, :string, default: "w-24"
+  attr :class, :string, default: ""
 
   def render(assigns) do
     ~H"""
-    <div class="flex items-center gap-1">
+    <div class={[
+      "flex items-center gap-1",
+      @class
+    ]}>
       <div
         class="tooltip leading-none"
         style={"--tt-bg: color-mix(#{@dimension.color} 0%, var(--color-base-300))"}

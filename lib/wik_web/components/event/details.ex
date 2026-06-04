@@ -48,6 +48,7 @@ defmodule WikWeb.Components.Event.Details do
       <Event.event_form
         :if={@mode == :edit}
         form={@event_form}
+        interest_form={@interest_form}
         show_end_date?={@show_end_date?}
         target={@myself}
         user_tz={@user_tz}
@@ -87,6 +88,7 @@ defmodule WikWeb.Components.Event.Details do
 
           socket
           |> assign(:event_form, event_form)
+          |> assign(:interest_form, interest_form(socket.assigns.current_member_participation))
           |> assign(:show_end_date?, Event.FormState.show_end_date?(event_form))
         end)
       end
@@ -94,7 +96,7 @@ defmodule WikWeb.Components.Event.Details do
     {:noreply, socket}
   end
 
-  def handle_event("event_form_validate", %{"form" => params}, socket) do
+  def handle_event("event_form_validate", %{"form" => params} = all_params, socket) do
     params =
       Event.FormState.normalize_hidden_end_date_params(
         socket.assigns.event_form,
@@ -107,6 +109,7 @@ defmodule WikWeb.Components.Event.Details do
     socket =
       socket
       |> assign(:event_form, event_form)
+      |> assign(:interest_form, interest_form_from_params(Map.get(all_params, "interest", %{})))
       |> assign(
         :show_end_date?,
         socket.assigns.show_end_date? || Event.FormState.show_end_date?(event_form)
@@ -128,7 +131,9 @@ defmodule WikWeb.Components.Event.Details do
      |> assign(:show_end_date?, false)}
   end
 
-  def handle_event("event_form_submit", %{"form" => params}, socket) do
+  def handle_event("event_form_submit", %{"form" => params} = all_params, socket) do
+    interest_params = Map.get(all_params, "interest", %{})
+
     params =
       Event.FormState.normalize_hidden_end_date_params(
         socket.assigns.event_form,
@@ -142,11 +147,18 @@ defmodule WikWeb.Components.Event.Details do
              action_opts: [scope: socket.assigns.current_scope]
            ) do
         {:ok, _event} ->
+          _ =
+            Events.record_interest(socket.assigns.publication, interest_params,
+              scope: socket.assigns.current_scope
+            )
+
           send(self(), {:event_details, :saved})
           socket
 
         {:error, form} ->
-          assign(socket, :event_form, form)
+          socket
+          |> assign(:event_form, form)
+          |> assign(:interest_form, interest_form_from_params(interest_params))
       end
 
     {:noreply, socket}
@@ -156,6 +168,7 @@ defmodule WikWeb.Components.Event.Details do
     socket =
       socket
       |> assign(:event_form, nil)
+      |> assign(:interest_form, nil)
       |> assign(:show_end_date?, false)
       |> assign(:mode, :show)
 
@@ -239,6 +252,7 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:can_relay?, false)
     |> assign(:author_membership, nil)
     |> assign(:event_form, nil)
+    |> assign(:interest_form, nil)
     |> assign(:converted_layer_form, nil)
     |> assign(:show_end_date?, false)
     |> assign(:mode, :show)
@@ -275,6 +289,16 @@ defmodule WikWeb.Components.Event.Details do
     }
     |> to_form(as: :converted_layer)
   end
+
+  defp interest_form(participation) do
+    %{
+      "extra_info" => participation && participation.extra_info,
+      "interest" => (participation && participation.interest) || 5
+    }
+    |> interest_form_from_params()
+  end
+
+  defp interest_form_from_params(params), do: to_form(params, as: :interest)
 
   defp maybe_load_author_membership(socket, true) do
     case Accounts.get_membership(

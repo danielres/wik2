@@ -62,7 +62,7 @@ defmodule WikWeb.Components.Event.Timeline do
               {day_group.label}
             </h4>
 
-            <div class="grid gap-1 mb-8">
+            <div class="grid gap-2 mb-8">
               <article
                 :for={item <- day_group.items}
                 id={timeline_dom_id(item)}
@@ -92,13 +92,6 @@ defmodule WikWeb.Components.Event.Timeline do
                         user_tz={@user_tz}
                       />
                     </.link>
-
-                    <.interest_button
-                      current_member_participation={item.current_member_participation}
-                      source_id={item.publication.id}
-                      source_type="internal"
-                      testid={"event-interest-#{item.publication.id}"}
-                    />
                   </div>
                 <% else %>
                   <div class={[
@@ -122,13 +115,6 @@ defmodule WikWeb.Components.Event.Timeline do
                         user_tz={@user_tz}
                       />
                     </button>
-
-                    <.interest_button
-                      current_member_participation={nil}
-                      source_id={item.event.id}
-                      source_type="external"
-                      testid={"external-event-interest-#{item.event.id}"}
-                    />
                   </div>
                 <% end %>
               </article>
@@ -213,7 +199,7 @@ defmodule WikWeb.Components.Event.Timeline do
   defp timeline_item_body(assigns) do
     ~H"""
     <div class="min-w-0 space-y-1">
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2 justify-between">
         <h2 class={[
           "text-base font-medium leading-tight",
           @item.event.status == :cancelled && "line-through decoration-base-content"
@@ -237,24 +223,26 @@ defmodule WikWeb.Components.Event.Timeline do
         {@item.calendar_name}
       </div>
 
-      <div :if={@item.participations != []} class="flex flex-wrap items-center gap-2">
+      <div :if={@item.participations != []} class="flex flex-wrap items-center gap-4">
         <div
           :for={participation <- @item.participations}
-          class="flex items-center gap-1"
+          class="flex items-center gap-2"
           data-testid={"timeline-event-participation-#{participation.id}"}
         >
           <User.identity
             avatar_size="xs"
             class="text-xs opacity-70"
             link?={false}
+            name?={false}
             membership={participation.membership}
           />
+
           <LevelMeter.render
             dimension={interest_dimension()}
             label="Interest"
             level={participation.interest}
             testid={"timeline-event-participation-interest-#{participation.id}"}
-            width_class="w-16"
+            width_class="w-10"
           />
         </div>
       </div>
@@ -297,28 +285,6 @@ defmodule WikWeb.Components.Event.Timeline do
 
   defp legacy_event_link_target(_scope, publication) do
     ~p"/#{publication.space.slug}/events?#{%{event: publication.event_id}}"
-  end
-
-  attr :current_member_participation, :any, default: nil
-  attr :source_id, :string, required: true
-  attr :source_type, :string, required: true
-  attr :testid, :string, required: true
-
-  defp interest_button(assigns) do
-    ~H"""
-    <div class="p-4 pt-0">
-      <button
-        type="button"
-        class="btn btn-sm btn-ghost"
-        data-testid={@testid}
-        phx-click="event_interest_start"
-        phx-value-id={@source_id}
-        phx-value-source_type={@source_type}
-      >
-        {if @current_member_participation, do: "Edit interest", else: "Add interest"}
-      </button>
-    </div>
-    """
   end
 
   defp present?(value), do: value not in [nil, ""]

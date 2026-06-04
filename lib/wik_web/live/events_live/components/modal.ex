@@ -52,6 +52,7 @@ defmodule WikWeb.EventsLive.Components.Modal do
       <Components.Event.event_form
         :if={@modal_view && @modal_view.kind == :event_form}
         form={@modal_view.form}
+        interest_form={@modal_view.interest_form}
         show_end_date?={@modal_view.show_end_date?}
         user_tz={@active_tz}
       />
@@ -64,42 +65,20 @@ defmodule WikWeb.EventsLive.Components.Modal do
         phx-submit="event_interest_submit"
       >
         <div class="space-y-4">
-          <div>
-            <label class="label" for="event-interest-value">
-              Your interest: how likely are you to join?
-            </label>
-            <input
-              id="event-interest-value"
-              name="interest[interest]"
-              type="range"
-              min="0"
-              max="10"
-              value={Phoenix.HTML.Form.input_value(@modal_view.form, :interest)}
-              class="range range-sm"
-            />
-            <div class="text-xs opacity-70">0 = not likely, 10 = very likely</div>
-          </div>
+          <Components.Event.interest_fields form={@modal_view.form} />
 
-          <.input
-            field={@modal_view.form[:extra_info]}
-            id="event-interest-extra-info"
-            label="Extra info"
-            placeholder="For example: I'm planning to join around 15:00"
-            type="textarea"
-          />
-
-          <div class="flex justify-end gap-2">
-            <button
-              type="button"
-              class="btn btn-ghost btn-sm"
-              data-testid="event-interest-cancel"
-              phx-click="event_interest_cancel"
-            >
-              Cancel
-            </button>
+          <div class="flex justify-end">
+            <%!-- <button --%>
+            <%!--   type="button" --%>
+            <%!--   class="btn btn-ghost btn-sm" --%>
+            <%!--   data-testid="event-interest-cancel" --%>
+            <%!--   phx-click="event_interest_cancel" --%>
+            <%!-- > --%>
+            <%!--   Cancel --%>
+            <%!-- </button> --%>
 
             <button type="submit" class="btn btn-accent btn-sm" data-testid="event-interest-submit">
-              Save interest
+              Save
             </button>
           </div>
         </div>

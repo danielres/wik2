@@ -10,6 +10,8 @@ defmodule WikWeb.EventsLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
+  alias Wik.Events.EventParticipation
+  alias Wik.Events.EventPublication
   alias Wik.Events.ExternalCalendar
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
@@ -403,7 +405,7 @@ defmodule WikWeb.EventsLiveTest do
   test "owner can create an event from the modal", %{conn: conn} do
     owner = generate(user())
     space = generate(space(author: owner))
-    add_membership(space, owner, :owner)
+    membership = add_membership(space, owner, :owner)
 
     {:ok, view, _html} =
       conn
@@ -413,6 +415,8 @@ defmodule WikWeb.EventsLiveTest do
     render_click(element(view, testid("events-create-button")))
 
     assert has_element?(view, testid("event-modal-dialog"))
+    assert has_element?(view, "#interest_interest")
+    assert has_element?(view, "#event-interest-extra-info")
     assert has_element?(view, testid("event-tz-picker"))
     assert has_element?(view, testid("event-location-picker"))
     refute render(view) =~ ~s(name="form[location_text]")
@@ -431,6 +435,10 @@ defmodule WikWeb.EventsLiveTest do
           "ends_at_time" => "20:00",
           "relay_policy" => "admins_only_spaces",
           "tz" => "Etc/UTC"
+        },
+        interest: %{
+          "extra_info" => "Joining around 19:00",
+          "interest" => "7"
         }
       )
     )
@@ -440,9 +448,22 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
 
-    assert %Wik.Events.Event{} =
+    assert %Event{} =
+             event =
              Wik.Events.Event
              |> Ash.Query.filter(title == "Community dinner")
+             |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
+
+    publication =
+      EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
+
+    assert %EventParticipation{interest: 7, extra_info: "Joining around 19:00"} =
+             EventParticipation
+             |> Ash.Query.filter(
+               publication_id == ^publication.id and membership_id == ^membership.id
+             )
              |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
   end
 
@@ -513,10 +534,15 @@ defmodule WikWeb.EventsLiveTest do
         "starts_at_time" => starts_at_time,
         "_unused_starts_at_time" => "",
         "ends_at_time" => ends_at_time,
+        "_unused_ends_on" => "",
         "_unused_ends_at_time" => "",
         "_unused_relay_policy" => "",
         "tz" => "Etc/UTC",
         "_unused_tz" => ""
+      },
+      "interest" => %{
+        "extra_info" => "",
+        "interest" => "5"
       }
     })
 

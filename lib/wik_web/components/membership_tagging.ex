@@ -6,6 +6,7 @@ defmodule WikWeb.Components.MembershipTagging do
   alias Wik.Tags.Dimensions
   alias Wik.Tags.Tagging
   alias WikWeb.Components.LevelMeter
+  alias WikWeb.Components.RangeInput
   alias WikWeb.Components.User
   alias WikWeb.Cinder.Themes.DenseNoSortIcons
   alias WikWeb.Components.UI
@@ -552,14 +553,14 @@ defmodule WikWeb.Components.MembershipTagging do
             />
           </div>
 
-          <.range_input
+          <RangeInput.render
             field={@form[:interest_level]}
             dimension={@interest_dimension}
             label={@interest_dimension.label}
             max_level={@interest_dimension.max}
           />
 
-          <.range_input
+          <RangeInput.render
             field={@form[:skill_level]}
             dimension={@skill_dimension}
             label={@skill_dimension.label}
@@ -597,33 +598,33 @@ defmodule WikWeb.Components.MembershipTagging do
     """
   end
 
-  attr :field, :any, required: true
-  attr :label, :string, required: true
-  attr :dimension, :map, required: true
-  attr :max_level, :integer, required: true
-
-  defp range_input(assigns) do
-    ~H"""
-    <div class="space-y-0">
-      <div class="flex items-center justify-between gap-2">
-        <label for={@field.id} class="label font-bold">{@label}</label>
-        <span class="badge badge-sm bg-base-100">{@field.value || "0"}</span>
-      </div>
-
-      <input
-        id={@field.id}
-        name={@field.name}
-        type="range"
-        min="0"
-        max={@max_level}
-        step="1"
-        value={@field.value || "0"}
-        class="range range-xs w-full"
-        style={"color: #{@dimension.color};"}
-      />
-    </div>
-    """
-  end
+  # attr :field, :any, required: true
+  # attr :label, :string, required: true
+  # attr :dimension, :map, required: true
+  # attr :max_level, :integer, required: true
+  #
+  # defp range_input(assigns) do
+  #   ~H"""
+  #   <div class="space-y-0">
+  #     <div class="flex items-center justify-between gap-2">
+  #       <label for={@field.id} class="label font-bold">{@label}</label>
+  #       <span class="badge badge-sm bg-base-100">{@field.value || "0"}</span>
+  #     </div>
+  #
+  #     <input
+  #       id={@field.id}
+  #       name={@field.name}
+  #       type="range"
+  #       min="0"
+  #       max={@max_level}
+  #       step="1"
+  #       value={@field.value || "0"}
+  #       class="range range-xs w-full"
+  #       style={"color: #{@dimension.color};"}
+  #     />
+  #   </div>
+  #   """
+  # end
 
   defp dimension(key), do: Dimensions.get!("membership", key)
 

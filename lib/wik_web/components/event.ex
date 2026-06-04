@@ -5,9 +5,10 @@ defmodule WikWeb.Components.Event do
   use WikWeb, :html
 
   alias Wik.Accounts
+  alias Wik.Events.Dimensions
   alias Wik.Events.ExternalCalendar
-  alias Wik.Tags.Dimensions
   alias WikWeb.Components.Event.ExternalDetails
+  alias WikWeb.Components.RangeInput
   alias WikWeb.Components.Event.Schedule
   alias WikWeb.Components.Event.Timeline
   alias WikWeb.Components.LevelMeter
@@ -17,6 +18,7 @@ defmodule WikWeb.Components.Event do
   alias WikWeb.Components.User
 
   attr :form, Phoenix.HTML.Form, required: true
+  attr :interest_form, Phoenix.HTML.Form, default: nil
   attr :show_end_date?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
@@ -134,20 +136,30 @@ defmodule WikWeb.Components.Event do
 
         <.input field={@form[:description]} label="Description" type="textarea" />
 
-        <.input
-          field={@form[:relay_policy]}
-          label="Relay policy"
-          type="select"
-          options={relay_policy_options()}
-        />
+        <div class={[
+          "border border-base-content/20 bg-base-content/3 rounded p-4",
+          "mt-4"
+        ]}>
+          <.interest_fields :if={@interest_form} form={@interest_form} />
+        </div>
 
-        <.input
-          :if={@form.source.type == :update}
-          field={@form[:status]}
-          label="Status"
-          type="select"
-          options={status_options()}
-        />
+        <div class={[
+          "border border-base-content/20 bg-base-content/3 rounded p-4"
+        ]}>
+          <.input
+            field={@form[:status]}
+            label="Status"
+            type="select"
+            options={status_options()}
+          />
+
+          <.input
+            field={@form[:relay_policy]}
+            label="Relay policy"
+            type="select"
+            options={relay_policy_options()}
+          />
+        </div>
 
         <div class="flex justify-end gap-2 pt-2">
           <button
@@ -170,6 +182,32 @@ defmodule WikWeb.Components.Event do
         </div>
       </div>
     </.form>
+    """
+  end
+
+  attr :form, Phoenix.HTML.Form, required: true
+
+  def interest_fields(assigns) do
+    assigns = assign(assigns, :interest_dimension, interest_dimension())
+
+    ~H"""
+    <div class="space-y-4">
+      <RangeInput.render
+        field={@form[:interest]}
+        dimension={@interest_dimension}
+        label="How likely are you to join?"
+        max_level={@interest_dimension.max}
+      />
+
+      <.input
+        field={@form[:extra_info]}
+        id="event-interest-extra-info"
+        label="Extra info"
+        placeholder="For example: I'm planning to join around 15:00"
+        phx-hook="CapitalizeFirstLetter"
+        type="text"
+      />
+    </div>
     """
   end
 
@@ -268,7 +306,7 @@ defmodule WikWeb.Components.Event do
       :if={@event.status != :published}
       class={[
         "badge badge-sm",
-        @event.status == :cancelled && "bg-error/50 text-error-content"
+        @event.status == :cancelled && "bg-error/80 text-error-content"
       ]}
     >
       {@event.status}
@@ -344,76 +382,99 @@ defmodule WikWeb.Components.Event do
         <div class="min-w-0">
           <div class="text-sm">{@display_event.location}</div>
           <.link
-            class="link link-hover text-xs opacity-70"
+            class="link link-hover text-xs opacity-70 flex items-center gap-0"
             data-testid="event-location-google-maps-link"
             href={google_maps_search_url(@display_event.location)}
             rel="noopener noreferrer"
             target="_blank"
           >
-            Open in Google Maps
+            <span>Open in Google Maps</span>
+            <.icon name="hero-arrow-top-right-on-square-micro" class="scale-80" />
           </.link>
         </div>
       </div>
+      <WikWeb.Components.Event.Panel.render title="Interest">
+        <:actions>
+          <button
+            :if={@current_member_participation}
+            type="button"
+            class={["btn btn-ghost btn-xs btn-circle hover:btn-soft"]}
+            data-testid={"event-detail-interest-#{@publication.id}"}
+            phx-click="event_interest_start"
+            phx-value-id={@publication.id}
+            phx-value-source_type="internal"
+          >
+            <.icon
+              name="hero-pencil-micro"
+              style={"color: #{interest_dimension().color}"}
+            />
+          </button>
 
-      <div :if={@publication.event.description not in [nil, ""]}>
-        <div class="text-xs uppercase tracking-wide opacity-50">
-          Local info
-        </div>
-
-        <div class={[
-          "text-sm leading-6",
-          "rounded-md bg-base-content/5 px-4 py-2"
-        ]}>
-          <div class="whitespace-pre-wrap">{@publication.event.description}</div>
-        </div>
-      </div>
-
-      <div>
-        <button
-          type="button"
-          class="btn btn-sm btn-ghost"
-          data-testid={"event-detail-interest-#{@publication.id}"}
-          phx-click="event_interest_start"
-          phx-value-id={@publication.id}
-          phx-value-source_type="internal"
-        >
-          {if @current_member_participation, do: "Edit interest", else: "Add interest"}
-        </button>
-      </div>
-
-      <div :if={@participations != []} class="space-y-2">
-        <div class="text-xs uppercase tracking-wide opacity-50">
-          Interest
-        </div>
+          <button
+            :if={!@current_member_participation}
+            type="button"
+            class="btn btn-xs transition btn-neutral"
+            data-testid={"event-detail-interest-#{@publication.id}"}
+            phx-click="event_interest_start"
+            phx-value-id={@publication.id}
+            phx-value-source_type="internal"
+          >
+            <span>Add</span>
+            <.icon
+              name="hero-plus-circle-micro"
+              class="scale-80"
+              style={"color: #{interest_dimension().color}"}
+            />
+          </button>
+        </:actions>
 
         <div
           :for={participation <- @participations}
-          class="flex items-center gap-2 text-sm"
           data-testid={"event-participation-#{participation.id}"}
+          class={[
+            "rounded-md bg-base-content/5 px-2 py-1"
+          ]}
         >
-          <User.identity
-            avatar_size="xs"
-            class="text-xs opacity-70"
-            membership={participation.membership}
-          />
-          <LevelMeter.render
-            dimension={interest_dimension()}
-            label="Interest"
-            level={participation.interest}
-            testid={"event-participation-interest-#{participation.id}"}
-            width_class="w-16"
-          />
-          <div :if={participation.extra_info not in [nil, ""]} class="opacity-70">
+          <div class={[
+            "flex justify-between"
+          ]}>
+            <User.identity
+              avatar_size="xs"
+              class="text-xs opacity-70"
+              membership={participation.membership}
+            />
+
+            <LevelMeter.render
+              dimension={interest_dimension()}
+              label="Interest"
+              level={participation.interest}
+              testid={"event-participation-interest-#{participation.id}"}
+              width_class="w-10"
+              class="ml-auto"
+            />
+          </div>
+          <div :if={participation.extra_info not in [nil, ""]} class="opacity-70 text-xs ml-5">
             {participation.extra_info}
           </div>
         </div>
-      </div>
+      </WikWeb.Components.Event.Panel.render>
 
-      <div :if={@source_external_event} class="space-y-2">
-        <div class="text-xs uppercase tracking-wide opacity-50">
-          Original event
+      <WikWeb.Components.Event.Panel.render
+        :if={@publication.event.description not in [nil, ""]}
+        title="Description"
+      >
+        <div class={[
+          "rounded-md bg-base-content/5 px-4 py-2 text-base-content/90",
+          "text-xs leading-6"
+        ]}>
+          <div class="whitespace-pre-wrap">{@publication.event.description}</div>
         </div>
+      </WikWeb.Components.Event.Panel.render>
 
+      <WikWeb.Components.Event.Panel.render
+        :if={@source_external_event}
+        title="Original event"
+      >
         <div :if={@source_external_event.source_missing_at} class="text-sm text-warning">
           No longer found in external calendar.
         </div>
@@ -426,19 +487,16 @@ defmodule WikWeb.Components.Event do
         ]}>
           <ExternalDetails.render item={@source_external_item} user_tz={@user_tz} />
         </div>
-      </div>
+      </WikWeb.Components.Event.Panel.render>
 
-      <div class="space-y-1">
-        <div class="text-xs uppercase tracking-wide opacity-50">
-          By
-        </div>
+      <WikWeb.Components.Event.Panel.render title="By">
         <User.identity
           avatar_size="xs"
           class="text-xs opacity-60"
           link?={true}
           membership={@author}
         />
-      </div>
+      </WikWeb.Components.Event.Panel.render>
 
       <div
         :if={
@@ -489,7 +547,7 @@ defmodule WikWeb.Components.Event do
 
   defp display_event(event), do: event
 
-  defp interest_dimension, do: Dimensions.get!("membership", "interest")
+  defp interest_dimension, do: Dimensions.get!("participation", "interest")
 
   defp source_external_item(nil), do: nil
 

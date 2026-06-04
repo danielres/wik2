@@ -393,23 +393,9 @@ defmodule WikWeb.Components.Event do
           </.link>
         </div>
       </div>
+
       <WikWeb.Components.Event.Panel.render title="Interest">
         <:actions>
-          <button
-            :if={@current_member_participation}
-            type="button"
-            class={["btn btn-ghost btn-xs btn-circle hover:btn-soft"]}
-            data-testid={"event-detail-interest-#{@publication.id}"}
-            phx-click="event_interest_start"
-            phx-value-id={@publication.id}
-            phx-value-source_type="internal"
-          >
-            <.icon
-              name="hero-pencil-micro"
-              style={"color: #{interest_dimension().color}"}
-            />
-          </button>
-
           <button
             :if={!@current_member_participation}
             type="button"
@@ -444,14 +430,33 @@ defmodule WikWeb.Components.Event do
               membership={participation.membership}
             />
 
-            <LevelMeter.render
-              dimension={interest_dimension()}
-              label="Interest"
-              level={participation.interest}
-              testid={"event-participation-interest-#{participation.id}"}
-              width_class="w-10"
-              class="ml-auto"
-            />
+            <div class="flex gap-1 items-center">
+              <button
+                :if={
+                  @current_member_participation &&
+                    participation.membership_id == @current_member_participation.membership_id
+                }
+                type="button"
+                class={["btn btn-ghost btn-xs hover:btn-soft rounded-full"]}
+                data-testid={"event-detail-interest-#{@publication.id}"}
+                phx-click="event_interest_start"
+                phx-value-id={@publication.id}
+                phx-value-source_type="internal"
+              >
+                <.icon
+                  name="hero-pencil-micro"
+                  style={"color: #{interest_dimension().color}"}
+                />
+                <LevelMeter.render
+                  dimension={interest_dimension()}
+                  label="Interest"
+                  level={participation.interest}
+                  testid={"event-participation-interest-#{participation.id}"}
+                  width_class="w-10"
+                  class="ml-auto"
+                />
+              </button>
+            </div>
           </div>
           <div :if={participation.extra_info not in [nil, ""]} class="opacity-70 text-xs ml-5">
             {participation.extra_info}

@@ -52,6 +52,34 @@ defmodule Wik.EventParticipationsTest do
       assert participation.interest == 9
       assert participation.extra_info == nil
     end
+
+    test "removes an existing participation when interest is zero and extra info is blank" do
+      %{
+        member: member,
+        publication: publication,
+        space: space
+      } =
+        internal_event_fixture()
+
+      assert {:ok, %EventParticipation{}} =
+               Events.record_interest(
+                 publication,
+                 %{extra_info: "joining around 15:00", interest: 7},
+                 scope: scope(member, space)
+               )
+
+      assert {:ok, nil} =
+               Events.record_interest(
+                 publication,
+                 %{"extra_info" => "", "interest" => "0"},
+                 scope: scope(member, space)
+               )
+
+      assert {:ok, []} =
+               EventParticipation
+               |> Query.filter(publication_id == ^publication.id)
+               |> Ash.read(scope: scope(member, space))
+    end
   end
 
   describe "record_external_interest/3" do
@@ -99,6 +127,59 @@ defmodule Wik.EventParticipationsTest do
                |> Ash.read(scope: scope(owner, space))
 
       assert Enum.sort(Enum.map(participations, & &1.interest)) == [4, 8]
+    end
+
+    test "does not create a converted event when removing empty external interest" do
+      owner = generate(user())
+      member = generate(user())
+      space = generate(space(author: owner))
+      add_membership(space, owner, :owner)
+      add_membership(space, member, :member)
+      grant_active_telegram_access(space, member)
+
+      external_event = external_event_fixture(space, owner)
+
+      assert {:ok, %{publication: nil, participation: nil}} =
+               Events.record_external_interest(
+                 external_event,
+                 %{interest: 0, extra_info: ""},
+                 scope: scope(member, space)
+               )
+
+      assert {:ok, nil} =
+               Event
+               |> Query.filter(source_external_event_id == ^external_event.id)
+               |> Ash.read_one(scope: scope(owner, space))
+    end
+
+    test "removes an existing external-event participation" do
+      owner = generate(user())
+      member = generate(user())
+      space = generate(space(author: owner))
+      add_membership(space, owner, :owner)
+      add_membership(space, member, :member)
+      grant_active_telegram_access(space, member)
+
+      external_event = external_event_fixture(space, owner)
+
+      assert {:ok, %{publication: publication, participation: %EventParticipation{}}} =
+               Events.record_external_interest(
+                 external_event,
+                 %{interest: 8, extra_info: "picnic after work"},
+                 scope: scope(member, space)
+               )
+
+      assert {:ok, %{publication: ^publication, participation: nil}} =
+               Events.record_external_interest(
+                 external_event,
+                 %{interest: 0, extra_info: ""},
+                 scope: scope(member, space)
+               )
+
+      assert {:ok, []} =
+               EventParticipation
+               |> Query.filter(publication_id == ^publication.id)
+               |> Ash.read(scope: scope(owner, space))
     end
   end
 

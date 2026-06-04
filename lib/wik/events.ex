@@ -62,9 +62,15 @@ defmodule Wik.Events do
   def record_external_interest(%ExternalEvent{} = external_event, attrs, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
 
-    with {:ok, publication} <- publication_for_external_event(external_event, scope),
-         {:ok, participation} <- record_interest(publication, attrs, opts) do
-      {:ok, %{publication: publication, participation: participation}}
+    with {:ok, participation_attrs} <- participation_attrs(attrs) do
+      if remove_interest?(participation_attrs) do
+        remove_external_interest(external_event, attrs, opts)
+      else
+        with {:ok, publication} <- publication_for_external_event(external_event, scope),
+             {:ok, participation} <- record_interest(publication, attrs, opts) do
+          {:ok, %{publication: publication, participation: participation}}
+        end
+      end
     end
   end
 
@@ -99,6 +105,27 @@ defmodule Wik.Events do
   defp publication_for_external_event(%ExternalEvent{} = external_event, scope) do
     with {:ok, event} <- event_for_external_event(external_event, scope) do
       origin_publication(event, scope)
+    end
+  end
+
+  defp remove_external_interest(%ExternalEvent{} = external_event, attrs, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    case get_event_for_external_event(external_event, scope) do
+      {:ok, nil} ->
+        {:ok, %{publication: nil, participation: nil}}
+
+      {:ok, event} ->
+        with {:ok, publication} when not is_nil(publication) <- origin_publication(event, scope),
+             {:ok, participation} <- record_interest(publication, attrs, opts) do
+          {:ok, %{publication: publication, participation: participation}}
+        else
+          {:ok, nil} -> {:ok, %{publication: nil, participation: nil}}
+          {:error, error} -> {:error, error}
+        end
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -145,21 +172,37 @@ defmodule Wik.Events do
 
     case get_participation_by_identity(identity_attrs, Keyword.fetch!(opts, :scope)) do
       {:ok, nil} ->
-        Ash.create(
-          EventParticipation,
-          Map.merge(identity_attrs, attrs),
-          Keyword.put(opts, :action, :create)
-        )
+        if remove_interest?(attrs) do
+          {:ok, nil}
+        else
+          Ash.create(
+            EventParticipation,
+            Map.merge(identity_attrs, attrs),
+            Keyword.put(opts, :action, :create)
+          )
+        end
 
       {:ok, %EventParticipation{} = participation} ->
-        Ash.update(
-          participation,
-          attrs,
-          Keyword.put(opts, :action, :update_details)
-        )
+        if remove_interest?(attrs) do
+          destroy_participation(participation, opts)
+        else
+          Ash.update(
+            participation,
+            attrs,
+            Keyword.put(opts, :action, :update_details)
+          )
+        end
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp destroy_participation(participation, opts) do
+    case Ash.destroy(participation, opts) do
+      :ok -> {:ok, nil}
+      {:ok, _participation} -> {:ok, nil}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -179,6 +222,9 @@ defmodule Wik.Events do
       {:ok, %{extra_info: Values.blank_to_nil(extra_info), interest: interest}}
     end
   end
+
+  defp remove_interest?(%{extra_info: nil, interest: 0}), do: true
+  defp remove_interest?(_attrs), do: false
 
   defp parse_interest(value) when is_integer(value) and value in 0..10, do: {:ok, value}
 

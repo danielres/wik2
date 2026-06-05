@@ -27,15 +27,13 @@ defmodule WikWeb.Auth.SignInLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} context={@context}>
-      <div class="min-h-svh grid place-items-center p-6" data-testid="sign-in-page">
-        <div class="flex w-full max-w-5xl flex-col items-center gap-12">
-          <WikWeb.Components.Telegram.Widgets.login />
+    <div class="min-h-svh grid place-items-center p-6" data-testid="sign-in-page">
+      <div class="flex w-full max-w-5xl flex-col items-center gap-12">
+        <WikWeb.Components.Telegram.Widgets.login />
 
-          <.dev_sign_in :if={@dev_routes?} {assigns} />
-        </div>
+        <.dev_sign_in :if={@dev_routes?} {assigns} />
       </div>
-    </Layouts.app>
+    </div>
     """
   end
 

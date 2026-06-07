@@ -10,6 +10,9 @@ defmodule WikWeb.HomeLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
+  alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Events.ExternalEvent
+  alias Wik.Repo
 
   test "create space modal closes on successful submit", %{conn: conn} do
     user = generate(user())
@@ -95,6 +98,34 @@ defmodule WikWeb.HomeLiveTest do
     assert render(view) =~ "Relay event"
   end
 
+  test "lists converted external events with their original schedule", %{conn: conn} do
+    owner = generate(user())
+    member = generate(user())
+    space = generate(space(author: owner))
+
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+
+    external_event = external_event_fixture(space, owner)
+
+    assert {:ok, _result} =
+             Events.record_external_interest(
+               external_event,
+               %{interest: 7, extra_info: "joining later"},
+               scope: scope(member, space)
+             )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/")
+
+    assert has_element?(view, "[data-testid='events-timeline']")
+    assert render(view) =~ "External dinner"
+    assert render(view) =~ "18:00"
+  end
+
   defp add_membership(space, user, type) do
     Ash.create!(
       Membership,
@@ -117,6 +148,34 @@ defmodule WikWeb.HomeLiveTest do
       title: "Shared Dinner"
     }
     |> Map.merge(Enum.into(overrides, %{}))
+  end
+
+  defp external_event_fixture(space, owner) do
+    {:ok, subscription} =
+      ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    Repo.insert!(%ExternalEvent{
+      id: Ash.UUIDv7.generate(),
+      all_day: false,
+      calendar_name: "Community calendar",
+      description: "Imported from an external calendar",
+      ends_at: ~U[2026-06-03 20:00:00.000000Z],
+      event_url: nil,
+      external_occurrence_key: "single",
+      external_recurrence_id: nil,
+      external_uid: "external-dinner",
+      last_seen_at: DateTime.utc_now(),
+      location: "Riverside Hall",
+      space_id: space.id,
+      starts_at: ~U[2026-06-03 18:00:00.000000Z],
+      status: :published,
+      subscription_id: subscription.id,
+      title: "External dinner",
+      tz: "Etc/UTC"
+    })
   end
 
   defp scope(actor, tenant) do

@@ -5,6 +5,8 @@ defmodule WikWeb.Components.MembershipTagging do
 
   alias Wik.Tags.Dimensions
   alias Wik.Tags.Tagging
+  alias WikWeb.Components.LevelMeter
+  alias WikWeb.Components.RangeInput
   alias WikWeb.Components.User
   alias WikWeb.Cinder.Themes.DenseNoSortIcons
   alias WikWeb.Components.UI
@@ -38,7 +40,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "tag.name" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "tag.name"}
+          aria-pressed={to_string(@active_sort == "tag.name")}
           data-member-tagging-sort="tag.name"
           data-testid="member-tagging-sort-tag"
           phx-click="tagging_sort"
@@ -54,7 +56,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "interest_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "interest_level"}
+          aria-pressed={to_string(@active_sort == "interest_level")}
           data-member-tagging-sort="interest_level"
           data-testid="member-tagging-sort-interest"
           phx-click="tagging_sort"
@@ -70,7 +72,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "skill_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "skill_level"}
+          aria-pressed={to_string(@active_sort == "skill_level")}
           data-member-tagging-sort="skill_level"
           data-testid="member-tagging-sort-skill"
           phx-click="tagging_sort"
@@ -127,7 +129,7 @@ defmodule WikWeb.Components.MembershipTagging do
               </div>
 
               <div>
-                <.level_meter
+                <LevelMeter.render
                   :if={interest_level}
                   dimension={@interest_dimension}
                   label={@interest_dimension.label}
@@ -135,7 +137,7 @@ defmodule WikWeb.Components.MembershipTagging do
                   testid={"member-tagging-interest-#{tagging.tag_id}"}
                 />
 
-                <.level_meter
+                <LevelMeter.render
                   :if={skill_level}
                   dimension={@skill_dimension}
                   label={@skill_dimension.label}
@@ -244,7 +246,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "target_membership.username" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "target_membership.username"}
+          aria-pressed={to_string(@active_sort == "target_membership.username")}
           data-member-tagging-sort="target_membership.username"
           data-testid="tag-member-tagging-sort-username"
           phx-click="member_tagging_sort"
@@ -260,7 +262,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "interest_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "interest_level"}
+          aria-pressed={to_string(@active_sort == "interest_level")}
           data-member-tagging-sort="interest_level"
           data-testid="tag-member-tagging-sort-interest"
           phx-click="member_tagging_sort"
@@ -276,7 +278,7 @@ defmodule WikWeb.Components.MembershipTagging do
             "btn btn-sm transition btn-neutral",
             @active_sort != "skill_level" && "opacity-40"
           ]}
-          aria-pressed={@active_sort == "skill_level"}
+          aria-pressed={to_string(@active_sort == "skill_level")}
           data-member-tagging-sort="skill_level"
           data-testid="tag-member-tagging-sort-skill"
           phx-click="member_tagging_sort"
@@ -341,7 +343,7 @@ defmodule WikWeb.Components.MembershipTagging do
               </div>
 
               <div>
-                <.level_meter
+                <LevelMeter.render
                   :if={interest_level}
                   dimension={@interest_dimension}
                   label={@interest_dimension.label}
@@ -349,7 +351,7 @@ defmodule WikWeb.Components.MembershipTagging do
                   testid={"tag-member-tagging-interest-#{tagging.id}"}
                 />
 
-                <.level_meter
+                <LevelMeter.render
                   :if={skill_level}
                   dimension={@skill_dimension}
                   label={@skill_dimension.label}
@@ -453,7 +455,7 @@ defmodule WikWeb.Components.MembershipTagging do
             {@interest_dimension.label}
           </div>
           <div :if={@interest_level} class="space-y-2">
-            <.level_meter
+            <LevelMeter.render
               dimension={@interest_dimension}
               label={@interest_dimension.label}
               level={@interest_level}
@@ -470,7 +472,7 @@ defmodule WikWeb.Components.MembershipTagging do
             {@skill_dimension.label}
           </div>
           <div :if={@skill_level} class="space-y-2">
-            <.level_meter
+            <LevelMeter.render
               dimension={@skill_dimension}
               label={@skill_dimension.label}
               level={@skill_level}
@@ -551,14 +553,14 @@ defmodule WikWeb.Components.MembershipTagging do
             />
           </div>
 
-          <.range_input
+          <RangeInput.render
             field={@form[:interest_level]}
             dimension={@interest_dimension}
             label={@interest_dimension.label}
             max_level={@interest_dimension.max}
           />
 
-          <.range_input
+          <RangeInput.render
             field={@form[:skill_level]}
             dimension={@skill_dimension}
             label={@skill_dimension.label}
@@ -596,66 +598,33 @@ defmodule WikWeb.Components.MembershipTagging do
     """
   end
 
-  attr :label, :string, required: true
-  attr :level, :integer, required: true
-  attr :dimension, :map, required: true
-  attr :testid, :string, required: true
-  attr :width_class, :string, default: "w-24"
-
-  defp level_meter(assigns) do
-    ~H"""
-    <div class="flex items-center gap-1">
-      <div
-        class="tooltip leading-none"
-        style={"--tt-bg: color-mix(#{@dimension.color} 0%, var(--color-base-300))"}
-      >
-        <div class="tooltip-content">
-          <div class="font-bold text-xs">
-            <span>{@label}:</span>
-            <span>{"#{@level}/#{@dimension.max}"}</span>
-          </div>
-        </div>
-
-        <progress
-          class={["progress", @width_class]}
-          data-testid={@testid}
-          style={"color: #{@dimension.color};"}
-          value={meter_value(@level, @dimension.max)}
-          max="100"
-        >
-        </progress>
-      </div>
-    </div>
-    """
-  end
-
-  attr :field, :any, required: true
-  attr :label, :string, required: true
-  attr :dimension, :map, required: true
-  attr :max_level, :integer, required: true
-
-  defp range_input(assigns) do
-    ~H"""
-    <div class="space-y-0">
-      <div class="flex items-center justify-between gap-2">
-        <label for={@field.id} class="label font-bold">{@label}</label>
-        <span class="badge badge-sm bg-base-100">{@field.value || "0"}</span>
-      </div>
-
-      <input
-        id={@field.id}
-        name={@field.name}
-        type="range"
-        min="0"
-        max={@max_level}
-        step="1"
-        value={@field.value || "0"}
-        class="range range-xs w-full"
-        style={"color: #{@dimension.color};"}
-      />
-    </div>
-    """
-  end
+  # attr :field, :any, required: true
+  # attr :label, :string, required: true
+  # attr :dimension, :map, required: true
+  # attr :max_level, :integer, required: true
+  #
+  # defp range_input(assigns) do
+  #   ~H"""
+  #   <div class="space-y-0">
+  #     <div class="flex items-center justify-between gap-2">
+  #       <label for={@field.id} class="label font-bold">{@label}</label>
+  #       <span class="badge badge-sm bg-base-100">{@field.value || "0"}</span>
+  #     </div>
+  #
+  #     <input
+  #       id={@field.id}
+  #       name={@field.name}
+  #       type="range"
+  #       min="0"
+  #       max={@max_level}
+  #       step="1"
+  #       value={@field.value || "0"}
+  #       class="range range-xs w-full"
+  #       style={"color: #{@dimension.color};"}
+  #     />
+  #   </div>
+  #   """
+  # end
 
   defp dimension(key), do: Dimensions.get!("membership", key)
 
@@ -664,13 +633,6 @@ defmodule WikWeb.Components.MembershipTagging do
   end
 
   defp dimension_level(_tagging, _key), do: nil
-
-  defp meter_value(level, max_level)
-       when is_integer(level) and is_integer(max_level) and max_level > 0 do
-    trunc(level / max_level * 100)
-  end
-
-  defp meter_value(_level, _max_level), do: 0
 
   defp bar_style(count, max_level, color) do
     height_percent = Float.round(count / max_level * 100, 2)

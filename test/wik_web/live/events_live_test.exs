@@ -10,6 +10,8 @@ defmodule WikWeb.EventsLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
+  alias Wik.Events.EventParticipation
+  alias Wik.Events.EventPublication
   alias Wik.Events.ExternalCalendar
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
@@ -312,6 +314,11 @@ defmodule WikWeb.EventsLiveTest do
 
     sync_subscription!(subscription)
 
+    external_event = first_external_event(subscription)
+    external_event_date = DateTime.to_date(external_event.starts_at)
+    external_event_year_testid = timeline_year_testid(external_event_date)
+    external_event_month_testid = timeline_month_testid(external_event_date)
+    external_event_day_testid = timeline_day_testid(external_event_date)
     external_event_testid = external_event_testid(subscription)
 
     {:ok, view, _html} =
@@ -322,8 +329,9 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-year-2026"))
     assert has_element?(view, testid("events-month-2026-5"))
     assert has_element?(view, testid("events-day-2026-5-10"))
-    assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-3"))
+    assert has_element?(view, testid(external_event_year_testid))
+    assert has_element?(view, testid(external_event_month_testid))
+    assert has_element?(view, testid(external_event_day_testid))
     assert has_element?(view, testid("events-year-2027"))
     assert has_element?(view, testid("events-month-2027-1"))
     assert has_element?(view, testid("events-day-2027-1-15"))
@@ -342,15 +350,15 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-day-2027-1-15"))
     assert has_element?(view, testid("event-publication-#{may_publication.id}"))
     assert has_element?(view, testid("event-publication-#{january_publication.id}"))
-    refute has_element?(view, testid("events-month-2026-6"))
-    refute has_element?(view, testid("events-day-2026-6-3"))
+    refute has_element?(view, testid(external_event_month_testid))
+    refute has_element?(view, testid(external_event_day_testid))
     refute has_element?(view, testid(external_event_testid))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: true}}")
-    assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-3"))
+    assert has_element?(view, testid(external_event_month_testid))
+    assert has_element?(view, testid(external_event_day_testid))
     assert has_element?(view, testid(external_event_testid))
   end
 
@@ -403,7 +411,7 @@ defmodule WikWeb.EventsLiveTest do
   test "owner can create an event from the modal", %{conn: conn} do
     owner = generate(user())
     space = generate(space(author: owner))
-    add_membership(space, owner, :owner)
+    membership = add_membership(space, owner, :owner)
 
     {:ok, view, _html} =
       conn
@@ -412,7 +420,9 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-create-button")))
 
-    assert has_element?(view, testid("event-modal-dialog"))
+    assert has_element?(view, testid("event-form"))
+    assert has_element?(view, "#interest_interest")
+    assert has_element?(view, "#event-interest-extra-info")
     assert has_element?(view, testid("event-tz-picker"))
     assert has_element?(view, testid("event-location-picker"))
     refute render(view) =~ ~s(name="form[location_text]")
@@ -431,6 +441,10 @@ defmodule WikWeb.EventsLiveTest do
           "ends_at_time" => "20:00",
           "relay_policy" => "admins_only_spaces",
           "tz" => "Etc/UTC"
+        },
+        interest: %{
+          "extra_info" => "Joining around 19:00",
+          "interest" => "7"
         }
       )
     )
@@ -440,9 +454,22 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
 
-    assert %Wik.Events.Event{} =
+    assert %Event{} =
+             event =
              Wik.Events.Event
              |> Ash.Query.filter(title == "Community dinner")
+             |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
+
+    publication =
+      EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
+
+    assert %EventParticipation{interest: 7, extra_info: "Joining around 19:00"} =
+             EventParticipation
+             |> Ash.Query.filter(
+               publication_id == ^publication.id and membership_id == ^membership.id
+             )
              |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
   end
 
@@ -482,6 +509,99 @@ defmodule WikWeb.EventsLiveTest do
            )
 
     refute render(view) =~ "Could not save the event"
+  end
+
+  test "typing in title does not immediately render unrelated required errors", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    render_click(element(view, testid("events-create-button")))
+    starts_on = input_value!(view, "event-starts-on")
+    starts_at_time = input_value!(view, "event-starts-at-time")
+    ends_at_time = input_value!(view, "event-ends-at-time")
+
+    render_change(
+      element(view, testid("event-form")),
+      %{
+        "form" => %{
+          "title" => "C",
+          "description" => "",
+          "_unused_description" => "",
+          "location" => "",
+          "_unused_location" => "",
+          "_unused_all_day" => "",
+          "starts_on" => starts_on,
+          "_unused_starts_on" => "",
+          "starts_at_time" => starts_at_time,
+          "_unused_starts_at_time" => "",
+          "ends_at_time" => ends_at_time,
+          "_unused_ends_on" => "",
+          "_unused_ends_at_time" => "",
+          "_unused_relay_policy" => "",
+          "tz" => "Etc/UTC",
+          "_unused_tz" => ""
+        },
+        "interest" => %{
+          "extra_info" => "",
+          "interest" => "5"
+        }
+      }
+    )
+
+    refute has_element?(view, "#event-title.input-error")
+
+    refute has_element?(
+             view,
+             ~s(#{testid("event-location-picker")} [data-role="trigger"].input-error)
+           )
+
+    refute has_element?(view, ~s(#{testid("event-tz-picker")} [data-role="trigger"].input-error))
+    refute has_element?(view, "#event-starts-at-time.input-error")
+    refute has_element?(view, "#event-ends-at-time.input-error")
+  end
+
+  test "submitting a timed event without times shows errors under time inputs", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    render_click(element(view, testid("events-create-button")))
+    render_click(element(view, testid("event-form-end-date-add")))
+
+    render_submit(
+      form(view, testid("event-form"),
+        form: %{
+          "title" => "Community dinner",
+          "description" => "",
+          "location" => "Community Hall",
+          "all_day" => "false",
+          "starts_on" => "2026-05-12",
+          "starts_at_time" => "",
+          "ends_on" => "2026-05-12",
+          "ends_at_time" => "",
+          "relay_policy" => "internal_only",
+          "tz" => "Etc/UTC"
+        }
+      )
+    )
+
+    html = render(view)
+
+    assert has_element?(view, "#event-starts-at-time.input-error")
+    assert has_element?(view, "#event-ends-at-time.input-error")
+    refute has_element?(view, "#event-ends-on.input-error")
+    assert html =~ "must be present"
   end
 
   test "owner can change status only in edit mode inside the detail modal", %{
@@ -1084,7 +1204,7 @@ defmodule WikWeb.EventsLiveTest do
 
     assert has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
     assert render(view) =~ "Community Coordination Calendar"
     assert render(view) =~ "https://calendar.example.test/community.ics"
 
@@ -1094,7 +1214,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    refute has_element?(view, testid("events-subscription-detail-dialog"))
+    refute has_element?(view, testid("events-subscription-name-form"))
     assert render(view) =~ "Short name"
 
     external_event_testid = external_event_testid(subscription)
@@ -1220,7 +1340,6 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("event-open-#{external_event_id}")))
 
-    assert has_element?(view, testid("event-modal-dialog"))
     assert has_element?(view, testid("external-event-detail"))
     assert render(view) =~ "External dinner"
     assert render(view) =~ "Imported from an external calendar"
@@ -1280,7 +1399,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
 
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
     assert render(view) =~ "Community Coordination Calendar"
     assert render(view) =~ "Europe/Berlin"
     assert render(view) =~ "Community events for coordination"
@@ -1387,8 +1506,19 @@ defmodule WikWeb.EventsLiveTest do
       |> Ash.read_first!(authorize?: false, scope: scope(owner, space))
 
     assert external_event.tz == "Europe/Berlin"
-    assert external_event.starts_at == ~U[2026-06-04 18:45:00.000000Z]
-    assert external_event.ends_at == ~U[2026-06-04 20:00:00.000000Z]
+
+    expected_starts_at =
+      sample_ics_future_date()
+      |> DateTime.new!(~T[20:45:00], "Europe/Berlin")
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    expected_ends_at =
+      sample_ics_future_date()
+      |> DateTime.new!(~T[22:00:00], "Europe/Berlin")
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    assert DateTime.compare(external_event.starts_at, expected_starts_at) == :eq
+    assert DateTime.compare(external_event.ends_at, expected_ends_at) == :eq
   end
 
   test "external event modal sanitizes html descriptions and keeps safe links", %{conn: conn} do
@@ -1460,13 +1590,13 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     assert has_element?(view, testid(external_event_testid))
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
 
     render_click(element(view, testid("events-subscription-remove-#{subscription.id}")))
 
     refute has_element?(view, testid("events-subscription-open-#{subscription.id}"))
     refute has_element?(view, testid(external_event_testid))
-    refute has_element?(view, testid("events-subscription-detail-dialog"))
+    refute has_element?(view, testid("events-subscription-name-form"))
   end
 
   test "owner can refresh an external calendar subscription from the modal", %{conn: conn} do
@@ -1503,12 +1633,12 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
 
     render_click(element(view, testid("events-subscription-refresh-#{subscription.id}")))
 
     assert Agent.get(counter, & &1) == 2
-    assert has_element?(view, testid("events-subscription-detail-dialog"))
+    assert has_element?(view, testid("events-subscription-name-form"))
   end
 
   defp add_membership(space, user, type) do
@@ -1535,6 +1665,21 @@ defmodule WikWeb.EventsLiveTest do
     |> Map.merge(Enum.into(overrides, %{}))
   end
 
+  defp input_value!(view, id) do
+    selector = "input##{id}"
+
+    assert has_element?(view, selector), "expected input ##{id} to exist"
+
+    case view
+         |> element(selector)
+         |> render()
+         |> LazyHTML.from_fragment()
+         |> LazyHTML.attribute("value") do
+      [value] -> value
+      [] -> flunk("expected input ##{id} to have a value")
+    end
+  end
+
   defp scope(actor, tenant) do
     %Wik.Scope{actor: actor, tenant: tenant}
   end
@@ -1552,14 +1697,24 @@ defmodule WikWeb.EventsLiveTest do
     assert {:ok, _subscription} = ExternalCalendar.sync_subscription(subscription)
   end
 
+  defp timeline_year_testid(%Date{} = date), do: "events-year-#{date.year}"
+
+  defp timeline_month_testid(%Date{} = date), do: "events-month-#{date.year}-#{date.month}"
+
+  defp timeline_day_testid(%Date{} = date),
+    do: "events-day-#{date.year}-#{date.month}-#{date.day}"
+
+  defp first_external_event(subscription) do
+    from(event in ExternalEvent,
+      where: event.subscription_id == ^subscription.id,
+      order_by: [asc: event.starts_at],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   defp external_event_id(subscription) do
-    external_event =
-      from(event in ExternalEvent,
-        where: event.subscription_id == ^subscription.id,
-        order_by: [asc: event.starts_at],
-        limit: 1
-      )
-      |> Repo.one()
+    external_event = first_external_event(subscription)
 
     external_event && "external:#{external_event.id}"
   end
@@ -1571,6 +1726,17 @@ defmodule WikWeb.EventsLiveTest do
   defp external_event_calendar_name_testid(subscription) do
     external_event_id(subscription) &&
       "external-event-calendar-name-#{external_event_id(subscription)}"
+  end
+
+  defp sample_ics_future_date do
+    date = Date.utc_today() |> Date.add(30)
+    Date.add(date, rem(4 - Date.day_of_week(date) + 7, 7))
+  end
+
+  defp sample_ics_future_date_compact do
+    sample_ics_future_date()
+    |> Date.to_iso8601()
+    |> String.replace("-", "")
   end
 
   defp sample_ics_calendar do
@@ -1592,8 +1758,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1611,8 +1777,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1631,8 +1797,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:West Coast Swing Party\\n<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar&amp;usd=2&amp;usg=AOvVaw1yIVflEmW8GH3zDYw07XmQ" target="_blank">www.werk36.de</a>\\n<script>alert(1)</script><img src="https://www.example.com/x.png" onerror="alert(1)">
     LOCATION:Riverside Hall
@@ -1653,8 +1819,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260603T180000Z
-    DTEND:20260603T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1694,8 +1860,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:future-series
     DTSTAMP:20260529T120000Z
-    DTSTART;TZID=Europe/Berlin:20260604T204500
-    DTEND;TZID=Europe/Berlin:20260604T220000
+    DTSTART;TZID=Europe/Berlin:#{sample_ics_future_date_compact()}T204500
+    DTEND;TZID=Europe/Berlin:#{sample_ics_future_date_compact()}T220000
     RRULE:FREQ=WEEKLY;WKST=MO;COUNT=2;BYDAY=TH
     SUMMARY:Future recurring external event
     DESCRIPTION:Should keep its Berlin-local wall clock time

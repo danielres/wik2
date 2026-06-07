@@ -1,7 +1,9 @@
 defmodule WikWeb.Components.Event.Timeline do
   use WikWeb, :html
 
+  alias Wik.Events.Dimensions
   alias WikWeb.Components.Event
+  alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.User
 
   attr :current_scope, :map, required: true
@@ -60,7 +62,7 @@ defmodule WikWeb.Components.Event.Timeline do
               {day_group.label}
             </h4>
 
-            <div class="grid gap-1 mb-8">
+            <div class="grid gap-2 mb-8">
               <article
                 :for={item <- day_group.items}
                 id={timeline_dom_id(item)}
@@ -68,48 +70,52 @@ defmodule WikWeb.Components.Event.Timeline do
                 class={[]}
               >
                 <%= if item.source_type == :internal do %>
-                  <.link
-                    patch={item.open_path}
-                    class={[
-                      "block p-4 rounded-box",
-                      "bg-base-content/6",
-                      "hover:bg-base-content/14",
-                      "transition",
-                      "border-[1.5px] border-base-content/20",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    ]}
-                    data-testid={"event-open-#{item.publication.id}"}
-                  >
-                    <.timeline_item_body
-                      current_scope={@current_scope}
-                      grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
-                      item={item}
-                      user_tz={@user_tz}
-                    />
-                  </.link>
+                  <div class={[
+                    "rounded-box",
+                    "bg-base-content/6",
+                    "border-[1.5px] border-base-content/20"
+                  ]}>
+                    <.link
+                      patch={item.open_path}
+                      class={[
+                        "block p-4",
+                        "hover:bg-base-content/14",
+                        "transition",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      ]}
+                      data-testid={"event-open-#{item.publication.id}"}
+                    >
+                      <.timeline_item_body
+                        current_scope={@current_scope}
+                        grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
+                        item={item}
+                        user_tz={@user_tz}
+                      />
+                    </.link>
+                  </div>
                 <% else %>
-                  <button
-                    type="button"
-                    class={[
-                      "cursor-pointer",
-                      "block p-4 rounded-box",
-                      "w-full",
-                      "text-left",
-                      "opacity-60 hover:opacity-100 transition-opacity",
-                      "border-[1.5px] border-dashed border-base-content/30"
-                    ]}
-                    data-testid={"event-open-#{item.id}"}
-                    phx-click="external_event_show"
-                    phx-target={@target}
-                    phx-value-id={item.id}
-                  >
-                    <.timeline_item_body
-                      current_scope={@current_scope}
-                      grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
-                      item={item}
-                      user_tz={@user_tz}
-                    />
-                  </button>
+                  <div class={[
+                    "rounded-box",
+                    "w-full",
+                    "opacity-60 hover:opacity-100 transition-opacity",
+                    "border-[1.5px] border-dashed border-base-content/30"
+                  ]}>
+                    <button
+                      type="button"
+                      class={["cursor-pointer", "block p-4", "w-full", "text-left"]}
+                      data-testid={"event-open-#{item.id}"}
+                      phx-click="external_event_show"
+                      phx-target={@target}
+                      phx-value-id={item.id}
+                    >
+                      <.timeline_item_body
+                        current_scope={@current_scope}
+                        grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
+                        item={item}
+                        user_tz={@user_tz}
+                      />
+                    </button>
+                  </div>
                 <% end %>
               </article>
             </div>
@@ -167,14 +173,14 @@ defmodule WikWeb.Components.Event.Timeline do
           <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
               <Event.event_header publication={item.publication} />
-              <Event.event_status event={item.publication.event} />
+              <Event.event_status event={item.event} />
             </div>
 
             <div
               class="truncate text-sm opacity-80"
               data-testid={"event-schedule-#{item.publication.id}"}
             >
-              <Event.schedule event={item.publication.event} user_tz={@user_tz} />
+              <Event.schedule event={item.event} user_tz={@user_tz} />
             </div>
 
             <User.identity avatar_size="xs" class="text-xs opacity-60" membership={item.author} />
@@ -193,7 +199,7 @@ defmodule WikWeb.Components.Event.Timeline do
   defp timeline_item_body(assigns) do
     ~H"""
     <div class="min-w-0 space-y-1">
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2 justify-between">
         <h2 class={[
           "text-base font-medium leading-tight",
           @item.event.status == :cancelled && "line-through decoration-base-content"
@@ -208,15 +214,6 @@ defmodule WikWeb.Components.Event.Timeline do
         <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
-      <User.identity
-        :if={@item.source_type == :internal}
-        avatar_size="xs"
-        class="text-xs opacity-60"
-        link?={false}
-        membership={@item.author}
-        testid={"internal-event-author-#{@item.id}"}
-      />
-
       <div
         :if={present?(@item.calendar_name)}
         class="truncate text-xs opacity-60 flex items-center gap-1"
@@ -224,6 +221,30 @@ defmodule WikWeb.Components.Event.Timeline do
       >
         <.icon name="hero-calendar-days-micro" class="opacity-60" />
         {@item.calendar_name}
+      </div>
+
+      <div :if={@item.participations != []} class="flex flex-wrap items-center gap-4">
+        <div
+          :for={participation <- @item.participations}
+          class="flex items-center gap-2"
+          data-testid={"timeline-event-participation-#{participation.id}"}
+        >
+          <User.identity
+            avatar_size="xs"
+            class="text-xs opacity-70"
+            link?={false}
+            name?={false}
+            membership={participation.membership}
+          />
+
+          <LevelMeter.render
+            dimension={interest_dimension()}
+            label="Interest"
+            level={participation.interest}
+            testid={"timeline-event-participation-interest-#{participation.id}"}
+            width_class="w-10"
+          />
+        </div>
       </div>
 
       <div
@@ -253,6 +274,8 @@ defmodule WikWeb.Components.Event.Timeline do
     do: "event-schedule-#{publication.id}"
 
   defp timeline_schedule_testid(item), do: "external-event-schedule-#{item.id}"
+
+  defp interest_dimension, do: Dimensions.get!("participation", "interest")
 
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
 

@@ -18,7 +18,7 @@ defmodule WikWeb.Components.LocationPicker do
       assigns
       |> assign(:display_value, value || "")
       |> assign(:enabled?, Locations.enabled?())
-      |> assign(:errors, Enum.map(assigns.field.errors, &CoreComponents.translate_error/1))
+      |> assign(:errors, CoreComponents.field_errors(assigns.field))
 
     ~H"""
     <Combobox.field

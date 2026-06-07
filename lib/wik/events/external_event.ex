@@ -116,6 +116,11 @@ defmodule Wik.Events.ExternalEvent do
       allow_nil? false
       public? false
     end
+
+    attribute :source_missing_at, :utc_datetime_usec do
+      allow_nil? true
+      public? true
+    end
   end
 
   relationships do
@@ -128,6 +133,10 @@ defmodule Wik.Events.ExternalEvent do
       source_attribute :subscription_id
       destination_attribute :id
       allow_nil? false
+    end
+
+    has_one :linked_event, Wik.Events.Event do
+      destination_attribute :source_external_event_id
     end
   end
 

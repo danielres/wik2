@@ -22,6 +22,7 @@ defmodule WikWeb.Components.Event.Details do
       |> maybe_load_relayer_membership(publication_changed?)
       |> maybe_load_origin_space_visibility(publication_changed?)
       |> maybe_load_relay_eligibility(publication_changed?)
+      |> maybe_load_participations(publication_changed?)
 
     {:ok, socket}
   end
@@ -33,8 +34,11 @@ defmodule WikWeb.Components.Event.Details do
       <Event.event_details
         :if={@mode == :show}
         author_membership={@author_membership}
-        can_edit?={Ash.can?({@publication.event, :update}, @current_scope)}
+        can_edit?={can_edit_event?(@publication.event, @current_scope)}
         can_relay?={@can_relay?}
+        current_membership={@current_membership}
+        current_member_participation={@current_member_participation}
+        participations={@participations}
         publication={@publication}
         relayer_membership={@relayer_membership}
         show_origin_space?={@show_origin_space?}
@@ -45,9 +49,17 @@ defmodule WikWeb.Components.Event.Details do
       <Event.event_form
         :if={@mode == :edit}
         form={@event_form}
+        interest_form={@interest_form}
         show_end_date?={@show_end_date?}
         target={@myself}
         user_tz={@user_tz}
+      />
+
+      <Event.local_overlay_form
+        :if={@mode == :local_overlay}
+        error={@local_overlay_error}
+        form={@local_overlay_form}
+        target={@myself}
       />
 
       <Event.relay_form
@@ -65,21 +77,29 @@ defmodule WikWeb.Components.Event.Details do
   @impl true
   def handle_event("event_detail_edit_start", _params, socket) do
     socket =
-      socket
-      |> assign(:mode, :edit)
-      |> then(fn socket ->
-        event_form =
-          Event.FormState.edit(socket.assigns.publication.event, socket.assigns.current_scope)
-
+      if converted_event?(socket.assigns.publication.event) do
         socket
-        |> assign(:event_form, event_form)
-        |> assign(:show_end_date?, Event.FormState.show_end_date?(event_form))
-      end)
+        |> assign(:mode, :local_overlay)
+        |> assign(:local_overlay_form, local_overlay_form(socket.assigns.publication.event))
+        |> assign(:local_overlay_error, nil)
+      else
+        socket
+        |> assign(:mode, :edit)
+        |> then(fn socket ->
+          event_form =
+            Event.FormState.edit(socket.assigns.publication.event, socket.assigns.current_scope)
+
+          socket
+          |> assign(:event_form, event_form)
+          |> assign(:interest_form, interest_form(socket.assigns.current_member_participation))
+          |> assign(:show_end_date?, Event.FormState.show_end_date?(event_form))
+        end)
+      end
 
     {:noreply, socket}
   end
 
-  def handle_event("event_form_validate", %{"form" => params}, socket) do
+  def handle_event("event_form_validate", %{"form" => params} = all_params, socket) do
     params =
       Event.FormState.normalize_hidden_end_date_params(
         socket.assigns.event_form,
@@ -92,6 +112,7 @@ defmodule WikWeb.Components.Event.Details do
     socket =
       socket
       |> assign(:event_form, event_form)
+      |> assign(:interest_form, interest_form_from_params(Map.get(all_params, "interest", %{})))
       |> assign(
         :show_end_date?,
         socket.assigns.show_end_date? || Event.FormState.show_end_date?(event_form)
@@ -113,7 +134,9 @@ defmodule WikWeb.Components.Event.Details do
      |> assign(:show_end_date?, false)}
   end
 
-  def handle_event("event_form_submit", %{"form" => params}, socket) do
+  def handle_event("event_form_submit", %{"form" => params} = all_params, socket) do
+    interest_params = Map.get(all_params, "interest", %{})
+
     params =
       Event.FormState.normalize_hidden_end_date_params(
         socket.assigns.event_form,
@@ -127,11 +150,20 @@ defmodule WikWeb.Components.Event.Details do
              action_opts: [scope: socket.assigns.current_scope]
            ) do
         {:ok, _event} ->
+          case Events.record_interest(socket.assigns.publication, interest_params,
+                 scope: socket.assigns.current_scope
+               ) do
+            {:ok, _participation} -> :ok
+            {:error, error} -> send(self(), {:event_details, {:interest_failed, error}})
+          end
+
           send(self(), {:event_details, :saved})
           socket
 
         {:error, form} ->
-          assign(socket, :event_form, form)
+          socket
+          |> assign(:event_form, form)
+          |> assign(:interest_form, interest_form_from_params(interest_params))
       end
 
     {:noreply, socket}
@@ -141,10 +173,36 @@ defmodule WikWeb.Components.Event.Details do
     socket =
       socket
       |> assign(:event_form, nil)
+      |> assign(:interest_form, nil)
       |> assign(:show_end_date?, false)
       |> assign(:mode, :show)
 
     {:noreply, socket}
+  end
+
+  def handle_event("local_overlay_submit", %{"local_overlay" => params}, socket) do
+    socket =
+      case Events.update_local_overlay(socket.assigns.publication.event, params,
+             scope: socket.assigns.current_scope
+           ) do
+        {:ok, _event} ->
+          send(self(), {:event_details, :saved})
+          socket
+
+        {:error, error} ->
+          socket
+          |> assign(:local_overlay_form, to_form(params, as: :local_overlay))
+          |> assign(:local_overlay_error, Exception.message(error))
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("local_overlay_cancel", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:mode, :show)
+     |> assign(:local_overlay_error, nil)}
   end
 
   def handle_event("event_detail_relay_start", _params, socket) do
@@ -204,10 +262,16 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:can_relay?, false)
     |> assign(:author_membership, nil)
     |> assign(:event_form, nil)
+    |> assign(:interest_form, nil)
+    |> assign(:local_overlay_error, nil)
+    |> assign(:local_overlay_form, nil)
     |> assign(:show_end_date?, false)
     |> assign(:mode, :show)
     |> assign(:relayer_membership, nil)
     |> assign(:show_origin_space?, false)
+    |> assign(:current_membership, nil)
+    |> assign(:current_member_participation, nil)
+    |> assign(:participations, [])
     |> assign(:relay_error, nil)
     |> assign(:relay_form, nil)
     |> assign(:relay_target_spaces, [])
@@ -221,6 +285,33 @@ defmodule WikWeb.Components.Event.Details do
 
   defp maybe_load_relay_eligibility(socket, false), do: socket
 
+  defp converted_event?(%{source_external_event_id: source_external_event_id}),
+    do: not is_nil(source_external_event_id)
+
+  defp can_edit_event?(event, scope) do
+    action = if converted_event?(event), do: :update_local_overlay, else: :update
+
+    Ash.can?({event, action}, scope)
+  end
+
+  defp local_overlay_form(event) do
+    %{
+      "description" => event.description,
+      "title" => event.title
+    }
+    |> to_form(as: :local_overlay)
+  end
+
+  defp interest_form(participation) do
+    %{
+      "extra_info" => participation && participation.extra_info,
+      "interest" => (participation && participation.interest) || 5
+    }
+    |> interest_form_from_params()
+  end
+
+  defp interest_form_from_params(params), do: to_form(params, as: :interest)
+
   defp maybe_load_author_membership(socket, true) do
     case Accounts.get_membership(
            socket.assigns.publication.space,
@@ -232,6 +323,37 @@ defmodule WikWeb.Components.Event.Details do
   end
 
   defp maybe_load_author_membership(socket, false), do: socket
+
+  defp maybe_load_participations(socket, true) do
+    publication = socket.assigns.publication
+    scope = socket.assigns.current_scope
+
+    participations =
+      [publication.id]
+      |> Events.event_participations_query()
+      |> Ash.read!(scope: scope)
+
+    current_membership =
+      case Accounts.get_membership(scope.tenant.id, scope.actor.id) do
+        {:ok, membership} -> membership
+        {:error, _error} -> nil
+      end
+
+    assign(socket,
+      current_membership: current_membership,
+      current_member_participation:
+        current_member_participation(participations, current_membership),
+      participations: participations
+    )
+  end
+
+  defp maybe_load_participations(socket, false), do: socket
+
+  defp current_member_participation(_participations, nil), do: nil
+
+  defp current_member_participation(participations, current_membership) do
+    Enum.find(participations, &(&1.membership_id == current_membership.id))
+  end
 
   defp maybe_load_relayer_membership(socket, true) do
     case socket.assigns.publication do

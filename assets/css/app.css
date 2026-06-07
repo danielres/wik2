@@ -172,8 +172,8 @@
   --color-success-content: oklch(98% 0.1 130);
   --color-warning: oklch(60% 0.08 83);
   --color-warning-content: oklch(98% 0.1 83);
-  --color-error: oklch(60% 0.1 15);
-  --color-error-content: oklch(98% 0.05 15);
+  --color-error: oklch(60% 0.15 10);
+  --color-error-content: oklch(98% 0.12 10);
 }
 
 [data-color-mode="light"] {

@@ -2,6 +2,7 @@ defmodule WikWeb.Components.TimezonePicker do
   use WikWeb, :html
 
   alias WikWeb.Components.Combobox
+  alias WikWeb.CoreComponents
 
   @default_suggested_values [
     "Europe/Berlin",
@@ -34,7 +35,7 @@ defmodule WikWeb.Components.TimezonePicker do
     assigns =
       assigns
       |> assign(:display_value, display_value)
-      |> assign(:errors, Enum.map(assigns.field.errors, &WikWeb.CoreComponents.translate_error/1))
+      |> assign(:errors, CoreComponents.field_errors(assigns.field))
       |> assign(:options_json, options_json)
       |> assign(:suggested_values_json, Jason.encode!(suggested_values))
 

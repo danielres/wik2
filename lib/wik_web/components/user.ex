@@ -80,6 +80,7 @@ defmodule WikWeb.Components.User do
   attr :class, :string, default: nil
   attr :link?, :boolean, default: false
   attr :membership, :map, required: true
+  attr :name?, :boolean, default: true
   attr :testid, :string, default: nil
   attr :tooltip?, :boolean, default: false
   attr :tooltip_direction, :string, default: "left"
@@ -111,7 +112,7 @@ defmodule WikWeb.Components.User do
         tooltip?={@tooltip?}
         tooltip_direction={@tooltip_direction}
       />
-      {@membership.display_name}
+      <span :if={@name?}>{@membership.display_name}</span>
     </.link>
 
     <div
@@ -128,7 +129,7 @@ defmodule WikWeb.Components.User do
         tooltip?={@tooltip?}
         tooltip_direction={@tooltip_direction}
       />
-      {@membership.display_name}
+      <span :if={@name?}>{@membership.display_name}</span>
     </div>
     """
   end

@@ -182,16 +182,9 @@ defmodule WikWeb.CoreComponents do
                 multiple pattern placeholder readonly required rows size step)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors =
-      if just_submitted?(field.form.source) or Phoenix.Component.used_input?(field) do
-        field.errors
-      else
-        []
-      end
-
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+    |> assign(:errors, input_errors(assigns, field))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> input()
@@ -300,11 +293,30 @@ defmodule WikWeb.CoreComponents do
     """
   end
 
+  def field_errors(%Phoenix.HTML.FormField{} = field) do
+    errors =
+      if just_submitted?(field.form.source) or Phoenix.Component.used_input?(field) do
+        field.errors
+      else
+        []
+      end
+
+    Enum.map(errors, &translate_error(&1))
+  end
+
+  defp input_errors(assigns, field) do
+    if Map.has_key?(assigns.__given__, :errors) do
+      assigns.errors
+    else
+      field_errors(field)
+    end
+  end
+
   # Helper used by inputs to generate form errors
   def error(assigns) do
     ~H"""
-    <p class="text-content flex items-center gap-2">
-      <.icon name="hero-exclamation-triangle-micro" class="size-5 opacity-60 text-error" />
+    <p class="text-error flex items-center gap-2 text-sm">
+      <.icon name="hero-exclamation-triangle-micro" class="size-5 opacity-80" />
       {render_slot(@inner_block)}
     </p>
     """

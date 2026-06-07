@@ -61,7 +61,21 @@ defmodule WikWeb.EventsLive.SubscriptionState do
     Enum.find(state.records, &(&1.id == id))
   end
 
+  def metadata(_state, nil), do: %{name: nil, timezone: nil, description: nil}
+
   def metadata(state, subscription) do
     Map.get(state.metadata_by_id, subscription.id, %{name: nil, timezone: nil, description: nil})
   end
+
+  def error_message(%Ash.Error.Forbidden{}), do: "You are not allowed to manage subscriptions"
+
+  def error_message(%Ash.Error.Invalid{} = error) do
+    case Ash.Error.to_error_class(error) do
+      %{message: message} when is_binary(message) -> message
+      _ -> Exception.message(error)
+    end
+  end
+
+  def error_message(error) when is_binary(error), do: error
+  def error_message(error), do: Exception.message(error)
 end

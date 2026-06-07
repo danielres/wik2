@@ -8,11 +8,17 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     internal_items =
       normalize_internal_publications(
         loaded_data.internal_publications,
-        loaded_data.author_memberships_by_user_id
+        loaded_data.author_memberships_by_user_id,
+        loaded_data.participations_by_publication_id,
+        loaded_data.current_membership
       )
 
     external_items =
-      normalize_external_events(loaded_data.external_events, loaded_subscriptions)
+      normalize_external_events(
+        loaded_data.external_events,
+        loaded_subscriptions,
+        loaded_data.internal_publications
+      )
 
     items = timeline_items(internal_items, external_items, show_external?)
 
@@ -30,13 +36,15 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     }
   end
 
-  def internal_item(publication, membership) do
-    event = publication.event
+  def internal_item(publication, membership, participations \\ [], current_membership \\ nil) do
+    local_event = publication.event
+    event = timeline_event(local_event)
 
     %{
       id: "internal:#{publication.id}",
       source_type: :internal,
       event: event,
+      local_event: local_event,
       publication: publication,
       event_url: nil,
       external_uid: nil,
@@ -45,6 +53,9 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       source_name: publication.space.name,
       author: Accounts.present_membership(membership),
       calendar_name: nil,
+      current_member_participation:
+        current_member_participation(participations, current_membership),
+      participations: participations,
       source_url: nil,
       subscription_id: nil
     }
@@ -93,20 +104,43 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     end)
   end
 
-  defp normalize_internal_publications(publications, author_memberships_by_user_id) do
-    Enum.map(publications, &normalize_internal_publication(&1, author_memberships_by_user_id))
+  defp normalize_internal_publications(
+         publications,
+         author_memberships_by_user_id,
+         participations_by_publication_id,
+         current_membership
+       ) do
+    Enum.map(
+      publications,
+      &normalize_internal_publication(
+        &1,
+        author_memberships_by_user_id,
+        participations_by_publication_id,
+        current_membership
+      )
+    )
   end
 
-  defp normalize_internal_publication(publication, author_memberships_by_user_id) do
+  defp normalize_internal_publication(
+         publication,
+         author_memberships_by_user_id,
+         participations_by_publication_id,
+         current_membership
+       ) do
     event = publication.event
     membership = Map.get(author_memberships_by_user_id, event.author.id)
-    internal_item(publication, membership)
+    participations = Map.get(participations_by_publication_id, publication.id, [])
+
+    internal_item(publication, membership, participations, current_membership)
   end
 
-  defp normalize_external_events(events, loaded_subscriptions) do
+  defp normalize_external_events(events, loaded_subscriptions, internal_publications) do
     subscription_by_id = Map.new(loaded_subscriptions.records, &{&1.id, &1})
+    linked_external_event_ids = linked_external_event_ids(internal_publications)
 
-    Enum.map(events, fn event ->
+    events
+    |> Enum.reject(&MapSet.member?(linked_external_event_ids, &1.id))
+    |> Enum.map(fn event ->
       subscription = Map.get(subscription_by_id, event.subscription_id)
       calendar_name = resolved_calendar_name(event, subscription, loaded_subscriptions)
 
@@ -127,9 +161,30 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       source_name: nil,
       author: nil,
       calendar_name: calendar_name,
+      current_member_participation: nil,
+      participations: [],
       source_url: nil,
       subscription_id: event.subscription_id
     }
+  end
+
+  defp timeline_event(%{source_external_event: %{id: _id} = external_event} = local_event) do
+    %{external_event | title: local_event.title || external_event.title}
+  end
+
+  defp timeline_event(event), do: event
+
+  defp linked_external_event_ids(publications) do
+    publications
+    |> Enum.map(& &1.event.source_external_event_id)
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new()
+  end
+
+  defp current_member_participation(_participations, nil), do: nil
+
+  defp current_member_participation(participations, current_membership) do
+    Enum.find(participations, &(&1.membership_id == current_membership.id))
   end
 
   defp month_label(year, month) do

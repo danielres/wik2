@@ -15,12 +15,20 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     publications_query =
       EventPublication
       |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
-      |> Query.load([:published_by, :space, event: [:author, :space]])
+      |> Query.load([
+        :published_by,
+        :space,
+        event: [:author, :space, source_external_event: [:subscription]]
+      ])
 
     with {:ok, space} <-
            Ash.load(scope.tenant, [event_publications: publications_query], scope: scope),
          {:ok, author_memberships_by_user_id} <-
            load_author_memberships_by_user_id(space.event_publications),
+         {:ok, current_membership} <-
+           Accounts.get_membership(scope.tenant.id, scope.actor.id),
+         {:ok, participations_by_publication_id} <-
+           load_participations_by_publication_id(space.event_publications, scope),
          {:ok, subscriptions} <-
            Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
          {:ok, external_events} <- read_external_events(scope, show_external?, future_windows) do
@@ -28,10 +36,26 @@ defmodule WikWeb.EventsLive.TimelineLoader do
        %{
          internal_publications: space.event_publications,
          author_memberships_by_user_id: author_memberships_by_user_id,
+         current_membership: current_membership,
+         participations_by_publication_id: participations_by_publication_id,
          subscription_records: subscriptions,
          external_events: external_events,
          more_external_future?: more_external_future?(scope, show_external?, future_windows)
        }}
+    end
+  end
+
+  defp load_participations_by_publication_id([], _scope), do: {:ok, %{}}
+
+  defp load_participations_by_publication_id(publications, scope) do
+    publication_ids = Enum.map(publications, & &1.id)
+
+    publication_ids
+    |> Events.event_participations_query()
+    |> Ash.read(scope: scope)
+    |> case do
+      {:ok, participations} -> {:ok, Enum.group_by(participations, & &1.publication_id)}
+      {:error, error} -> {:error, error}
     end
   end
 

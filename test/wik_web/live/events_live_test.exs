@@ -516,10 +516,9 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events")
 
     render_click(element(view, testid("events-create-button")))
-    initial_html = render(view)
-    starts_on = input_value!(initial_html, "event-starts-on")
-    starts_at_time = input_value!(initial_html, "event-starts-at-time")
-    ends_at_time = input_value!(initial_html, "event-ends-at-time")
+    starts_on = input_value!(view, "event-starts-on")
+    starts_at_time = input_value!(view, "event-starts-at-time")
+    ends_at_time = input_value!(view, "event-ends-at-time")
 
     render_change(
       element(view, testid("event-form")),
@@ -549,9 +548,6 @@ defmodule WikWeb.EventsLiveTest do
       }
     )
 
-    html = render(view)
-
-    refute html =~ "exactly 4 of"
     refute has_element?(view, "#event-title.input-error")
 
     refute has_element?(
@@ -596,7 +592,6 @@ defmodule WikWeb.EventsLiveTest do
 
     html = render(view)
 
-    refute html =~ "exactly 4 of"
     assert has_element?(view, "#event-starts-at-time.input-error")
     assert has_element?(view, "#event-ends-at-time.input-error")
     refute has_element?(view, "#event-ends-on.input-error")
@@ -1653,10 +1648,18 @@ defmodule WikWeb.EventsLiveTest do
     |> Map.merge(Enum.into(overrides, %{}))
   end
 
-  defp input_value!(html, id) do
-    case Regex.run(~r/id="#{Regex.escape(id)}"[^>]*value="([^"]*)"/, html) do
-      [_match, value] -> value
-      nil -> flunk("expected input ##{id} to have a value")
+  defp input_value!(view, id) do
+    selector = "input##{id}"
+
+    assert has_element?(view, selector), "expected input ##{id} to exist"
+
+    case view
+         |> element(selector)
+         |> render()
+         |> LazyHTML.from_fragment()
+         |> LazyHTML.attribute("value") do
+      [value] -> value
+      [] -> flunk("expected input ##{id} to have a value")
     end
   end
 

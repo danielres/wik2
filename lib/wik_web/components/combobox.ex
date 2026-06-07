@@ -73,7 +73,11 @@ defmodule WikWeb.Components.Combobox do
           aria-controls={"#{@picker_id}-panel"}
           aria-expanded="false"
           class={[
-            "w-full input flex items-center justify-between text-left cursor-pointer",
+            "input",
+            "h-auto",
+            "flex justify-between items-start py-2 gap-2",
+            "text-left",
+            "cursor-pointer",
             @errors != [] && "input-error"
           ]}
           data-role="trigger"
@@ -81,7 +85,7 @@ defmodule WikWeb.Components.Combobox do
           style={"anchor-name:#{@anchor_name}"}
           type="button"
         >
-          <span class="truncate" data-role="trigger-label">
+          <span class="whitespace-normal" data-role="trigger-label">
             {@display_value}
           </span>
           <.icon class="size-4 opacity-60" name="hero-chevron-up-down-mini" />

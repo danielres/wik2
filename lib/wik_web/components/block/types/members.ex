@@ -123,7 +123,10 @@ defmodule WikWeb.Components.Block.Types.Members do
 
     <div class="text-end">
       <div>
-        <span class={["badge badge-sm bg-base-300 text-xs text"]}>
+        <span
+          class={["badge badge-sm bg-base-300 text-xs text"]}
+          data-testid={"member-row-role-#{@membership.id}"}
+        >
           <span>{@membership.type |> Atom.to_string() |> String.capitalize()}</span>
         </span>
       </div>

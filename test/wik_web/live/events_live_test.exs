@@ -499,6 +499,39 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid("event-publication-#{past_publication.id}"))
   end
 
+  test "grouped timeline keeps multi-day events that end today or later", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    yesterday = Date.utc_today() |> Date.add(-1)
+    tomorrow = Date.utc_today() |> Date.add(1)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_on: Date.to_iso8601(tomorrow),
+          starts_on: Date.to_iso8601(yesterday),
+          title: "Multi-day gathering",
+          tz: "Etc/UTC"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid("event-publication-#{publication.id}"))
+  end
+
   test "switching to internal removes all external rows for the swing feed", %{conn: conn} do
     previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
 

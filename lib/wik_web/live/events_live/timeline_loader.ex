@@ -63,7 +63,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
       event = timeline_event(publication.event)
 
       event_date =
-        event.starts_at
+        (event.ends_at || event.starts_at)
         |> Tz.to_local!(event.tz || "Etc/UTC")
         |> DateTime.to_date()
 

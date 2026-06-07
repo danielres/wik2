@@ -362,6 +362,40 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid(external_event_testid))
   end
 
+  test "all-day events group by their event-local date", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          all_day: true,
+          ends_on: "2026-06-19",
+          starts_on: "2026-06-19",
+          title: "All-day Berlin gathering",
+          tz: "Europe/Berlin"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid("events-day-2026-6-19"))
+    assert has_element?(view, testid("event-publication-#{publication.id}"))
+    refute has_element?(view, testid("events-day-2026-6-18"))
+  end
+
   test "switching to internal removes all external rows for the swing feed", %{conn: conn} do
     previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
 

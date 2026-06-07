@@ -1,4 +1,5 @@
 defmodule WikWeb.EventsLive.TimelinePresenter do
+  alias Utils.Tz
   alias Wik.Accounts
   alias Wik.Events.ExternalCalendar
 
@@ -74,14 +75,14 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
 
   def grouped_timeline_items(items) do
     items
-    |> Enum.group_by(&DateTime.to_date(&1.event.starts_at).year)
+    |> Enum.group_by(&extract_event_local_start_date(&1).year)
     |> Enum.sort_by(fn {year, _items} -> year end)
     |> Enum.map(fn {year, year_items} ->
       %{
         year: year,
         months:
           year_items
-          |> Enum.group_by(&DateTime.to_date(&1.event.starts_at).month)
+          |> Enum.group_by(&extract_event_local_start_date(&1).month)
           |> Enum.sort_by(fn {month, _items} -> month end)
           |> Enum.map(fn {month, month_items} ->
             %{
@@ -89,7 +90,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
               label: month_label(year, month),
               days:
                 month_items
-                |> Enum.group_by(&DateTime.to_date(&1.event.starts_at))
+                |> Enum.group_by(&extract_event_local_start_date/1)
                 |> Enum.sort_by(fn {date, _items} -> date end)
                 |> Enum.map(fn {date, day_items} ->
                   %{
@@ -102,6 +103,12 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
           end)
       }
     end)
+  end
+
+  defp extract_event_local_start_date(%{event: event}) do
+    event.starts_at
+    |> Tz.to_local!(event.tz || "Etc/UTC")
+    |> DateTime.to_date()
   end
 
   defp normalize_internal_publications(

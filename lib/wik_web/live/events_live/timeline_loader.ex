@@ -17,8 +17,12 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     publications_query =
       EventPublication
       |> Query.filter(
-        event.starts_at >= ^yesterday_start or
-          (not is_nil(event.ends_at) and event.ends_at >= ^yesterday_start)
+        (is_nil(event.source_external_event_id) and
+           (event.starts_at >= ^yesterday_start or
+              (not is_nil(event.ends_at) and event.ends_at >= ^yesterday_start))) or
+          (not is_nil(event.source_external_event_id) and
+             (event.source_external_event.starts_at >= ^yesterday_start or
+                event.source_external_event.ends_at >= ^yesterday_start))
       )
       |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
       |> Query.load([
@@ -56,14 +60,19 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     today = Date.utc_today()
 
     Enum.filter(publications, fn publication ->
+      event = timeline_event(publication.event)
+
       event_date =
-        publication.event.starts_at
-        |> Tz.to_local!(publication.event.tz || "Etc/UTC")
+        event.starts_at
+        |> Tz.to_local!(event.tz || "Etc/UTC")
         |> DateTime.to_date()
 
       Date.compare(event_date, today) in [:eq, :gt]
     end)
   end
+
+  defp timeline_event(%{source_external_event: %{id: _id} = external_event}), do: external_event
+  defp timeline_event(event), do: event
 
   defp load_participations_by_publication_id([], _scope), do: {:ok, %{}}
 

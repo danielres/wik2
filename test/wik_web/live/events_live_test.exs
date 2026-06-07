@@ -410,6 +410,38 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid(timeline_day_testid(previous_utc_date)))
   end
 
+  test "converted external-backed events use the source external schedule", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+    external_event = first_external_event(subscription)
+
+    assert {:ok, %{publication: publication}} =
+             Events.record_external_interest(
+               external_event,
+               %{interest: 8, extra_info: "joining"},
+               scope: scope(owner, space)
+             )
+
+    source_date = DateTime.to_date(external_event.starts_at)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid(timeline_day_testid(source_date)))
+    assert has_element?(view, testid("event-publication-#{publication.id}"))
+  end
+
   test "grouped timeline hides past internal events but keeps today's finished events", %{
     conn: conn
   } do

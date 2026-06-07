@@ -715,6 +715,7 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    event_date = future_date_string(30)
 
     {:ok, event} =
       Ash.create(
@@ -758,9 +759,9 @@ defmodule WikWeb.EventsLiveTest do
           "description" => "Bring extra plates",
           "location" => "Community Hall, 123 Example Street",
           "all_day" => "false",
-          "starts_on" => "2026-05-12",
+          "starts_on" => event_date,
           "starts_at_time" => "18:30",
-          "ends_on" => "2026-05-12",
+          "ends_on" => event_date,
           "ends_at_time" => "20:30",
           "relay_policy" => "admins_only_spaces",
           "status" => "cancelled",
@@ -833,14 +834,16 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    starts_on = future_date_string(30)
+    ends_on = future_date_string(31)
 
     {:ok, event} =
       Ash.create(
         Event,
         event_attrs(
-          starts_on: "2026-05-12",
+          starts_on: starts_on,
           starts_at_time: "18:30",
-          ends_on: "2026-05-13",
+          ends_on: ends_on,
           ends_at_time: "20:45"
         ),
         action: :create,
@@ -860,8 +863,8 @@ defmodule WikWeb.EventsLiveTest do
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 
-    assert has_element?(view, "#event-starts-on[value='2026-05-12']")
-    assert has_element?(view, "#event-ends-on[value='2026-05-13']")
+    assert has_element?(view, "#event-starts-on[value='#{starts_on}']")
+    assert has_element?(view, "#event-ends-on[value='#{ends_on}']")
 
     html = render(view)
     assert html =~ ~r/id="event-starts-at-time"[^>]*value="18:30(?::00)?"/
@@ -932,14 +935,16 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    starts_on = future_date_string(30)
+    ends_on = future_date_string(31)
 
     {:ok, event} =
       Ash.create(
         Event,
         event_attrs(
           all_day: true,
-          starts_on: "2026-05-12",
-          ends_on: "2026-05-13"
+          starts_on: starts_on,
+          ends_on: ends_on
         ),
         action: :create,
         scope: scope(owner, space)
@@ -958,8 +963,8 @@ defmodule WikWeb.EventsLiveTest do
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 
-    assert has_element?(view, "#event-starts-on[value='2026-05-12']")
-    assert has_element?(view, "#event-ends-on[value='2026-05-13']")
+    assert has_element?(view, "#event-starts-on[value='#{starts_on}']")
+    assert has_element?(view, "#event-ends-on[value='#{ends_on}']")
     refute has_element?(view, "#event-starts-at-time")
     refute has_element?(view, "#event-ends-at-time")
   end
@@ -1182,9 +1187,9 @@ defmodule WikWeb.EventsLiveTest do
         Event,
         event_attrs(
           title: "Berlin dinner",
-          starts_on: "2026-05-12",
+          starts_on: future_date_string(30),
           starts_at_time: "18:00",
-          ends_on: "2026-05-12",
+          ends_on: future_date_string(30),
           ends_at_time: "20:00",
           tz: "Europe/Berlin"
         ),
@@ -1216,9 +1221,9 @@ defmodule WikWeb.EventsLiveTest do
         Event,
         event_attrs(
           title: "European dinner",
-          starts_on: "2026-05-12",
+          starts_on: future_date_string(30),
           starts_at_time: "18:00",
-          ends_on: "2026-05-12",
+          ends_on: future_date_string(30),
           ends_at_time: "20:00",
           tz: "Europe/Berlin"
         ),
@@ -1245,8 +1250,8 @@ defmodule WikWeb.EventsLiveTest do
       Ash.create(
         Event,
         event_attrs(
-          starts_on: "2026-05-16",
-          ends_on: "2026-05-16",
+          starts_on: future_date_string(30),
+          ends_on: future_date_string(30),
           tz: "Europe/Berlin",
           title: "Berlin event"
         ),
@@ -1759,11 +1764,11 @@ defmodule WikWeb.EventsLiveTest do
       all_day: false,
       description: "An event description",
       ends_at_time: "20:00",
-      ends_on: "2026-05-10",
+      ends_on: future_date_string(30),
       location: "Community Hall, 123 Example Street",
       relay_policy: :internal_only,
       starts_at_time: "18:00",
-      starts_on: "2026-05-10",
+      starts_on: future_date_string(30),
       tz: "Etc/UTC",
       title: "Shared Dinner"
     }

@@ -12,6 +12,10 @@ defmodule Wik.TestGenerators do
   alias Wik.Tags.Tagging
   alias Wik.Wiki.PageTree
 
+  def future_date(offset), do: Date.utc_today() |> Date.add(offset)
+
+  def future_date_string(offset), do: offset |> future_date() |> Date.to_iso8601()
+
   def user(opts \\ []) do
     seed_generator(
       {User,

@@ -212,6 +212,7 @@ defmodule WikWeb.Components.Event do
   end
 
   attr :form, Phoenix.HTML.Form, required: true
+  attr :error, :string, default: nil
   attr :target, :any, default: nil
 
   def converted_layer_form(assigns) do
@@ -226,6 +227,10 @@ defmodule WikWeb.Components.Event do
       <div class="space-y-4">
         <.input field={@form[:title]} label="Local title" />
         <.input field={@form[:description]} label="Local info" type="textarea" />
+
+        <p :if={@error not in [nil, ""]} class="text-sm text-error">
+          {@error}
+        </p>
 
         <div class="flex justify-end gap-2">
           <button

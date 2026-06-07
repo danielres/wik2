@@ -57,6 +57,7 @@ defmodule WikWeb.Components.Event.Details do
 
       <Event.converted_layer_form
         :if={@mode == :converted_layer}
+        error={@converted_layer_error}
         form={@converted_layer_form}
         target={@myself}
       />
@@ -80,6 +81,7 @@ defmodule WikWeb.Components.Event.Details do
         socket
         |> assign(:mode, :converted_layer)
         |> assign(:converted_layer_form, converted_layer_form(socket.assigns.publication.event))
+        |> assign(:converted_layer_error, nil)
       else
         socket
         |> assign(:mode, :edit)
@@ -187,15 +189,20 @@ defmodule WikWeb.Components.Event.Details do
           send(self(), {:event_details, :saved})
           socket
 
-        {:error, _error} ->
-          assign(socket, :converted_layer_form, to_form(params, as: :converted_layer))
+        {:error, error} ->
+          socket
+          |> assign(:converted_layer_form, to_form(params, as: :converted_layer))
+          |> assign(:converted_layer_error, Exception.message(error))
       end
 
     {:noreply, socket}
   end
 
   def handle_event("converted_layer_cancel", _params, socket) do
-    {:noreply, assign(socket, :mode, :show)}
+    {:noreply,
+     socket
+     |> assign(:mode, :show)
+     |> assign(:converted_layer_error, nil)}
   end
 
   def handle_event("event_detail_relay_start", _params, socket) do
@@ -256,6 +263,7 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:author_membership, nil)
     |> assign(:event_form, nil)
     |> assign(:interest_form, nil)
+    |> assign(:converted_layer_error, nil)
     |> assign(:converted_layer_form, nil)
     |> assign(:show_end_date?, false)
     |> assign(:mode, :show)

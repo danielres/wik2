@@ -14,6 +14,10 @@ defmodule Wik.Blocks.BlockVersion do
   postgres do
     table "block_versions"
     repo Wik.Repo
+
+    references do
+      reference :block, on_delete: :delete
+    end
   end
 
   admin do

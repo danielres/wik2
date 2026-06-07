@@ -314,6 +314,11 @@ defmodule WikWeb.EventsLiveTest do
 
     sync_subscription!(subscription)
 
+    external_event = first_external_event(subscription)
+    external_event_date = DateTime.to_date(external_event.starts_at)
+    external_event_year_testid = timeline_year_testid(external_event_date)
+    external_event_month_testid = timeline_month_testid(external_event_date)
+    external_event_day_testid = timeline_day_testid(external_event_date)
     external_event_testid = external_event_testid(subscription)
 
     {:ok, view, _html} =
@@ -324,8 +329,9 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-year-2026"))
     assert has_element?(view, testid("events-month-2026-5"))
     assert has_element?(view, testid("events-day-2026-5-10"))
-    assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-4"))
+    assert has_element?(view, testid(external_event_year_testid))
+    assert has_element?(view, testid(external_event_month_testid))
+    assert has_element?(view, testid(external_event_day_testid))
     assert has_element?(view, testid("events-year-2027"))
     assert has_element?(view, testid("events-month-2027-1"))
     assert has_element?(view, testid("events-day-2027-1-15"))
@@ -344,15 +350,15 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("events-day-2027-1-15"))
     assert has_element?(view, testid("event-publication-#{may_publication.id}"))
     assert has_element?(view, testid("event-publication-#{january_publication.id}"))
-    refute has_element?(view, testid("events-month-2026-6"))
-    refute has_element?(view, testid("events-day-2026-6-4"))
+    refute has_element?(view, testid(external_event_month_testid))
+    refute has_element?(view, testid(external_event_day_testid))
     refute has_element?(view, testid(external_event_testid))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: true}}")
-    assert has_element?(view, testid("events-month-2026-6"))
-    assert has_element?(view, testid("events-day-2026-6-4"))
+    assert has_element?(view, testid(external_event_month_testid))
+    assert has_element?(view, testid(external_event_day_testid))
     assert has_element?(view, testid(external_event_testid))
   end
 
@@ -1500,8 +1506,19 @@ defmodule WikWeb.EventsLiveTest do
       |> Ash.read_first!(authorize?: false, scope: scope(owner, space))
 
     assert external_event.tz == "Europe/Berlin"
-    assert external_event.starts_at == ~U[2026-06-04 18:45:00.000000Z]
-    assert external_event.ends_at == ~U[2026-06-04 20:00:00.000000Z]
+
+    expected_starts_at =
+      sample_ics_future_date()
+      |> DateTime.new!(~T[20:45:00], "Europe/Berlin")
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    expected_ends_at =
+      sample_ics_future_date()
+      |> DateTime.new!(~T[22:00:00], "Europe/Berlin")
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    assert DateTime.compare(external_event.starts_at, expected_starts_at) == :eq
+    assert DateTime.compare(external_event.ends_at, expected_ends_at) == :eq
   end
 
   test "external event modal sanitizes html descriptions and keeps safe links", %{conn: conn} do
@@ -1680,14 +1697,24 @@ defmodule WikWeb.EventsLiveTest do
     assert {:ok, _subscription} = ExternalCalendar.sync_subscription(subscription)
   end
 
+  defp timeline_year_testid(%Date{} = date), do: "events-year-#{date.year}"
+
+  defp timeline_month_testid(%Date{} = date), do: "events-month-#{date.year}-#{date.month}"
+
+  defp timeline_day_testid(%Date{} = date),
+    do: "events-day-#{date.year}-#{date.month}-#{date.day}"
+
+  defp first_external_event(subscription) do
+    from(event in ExternalEvent,
+      where: event.subscription_id == ^subscription.id,
+      order_by: [asc: event.starts_at],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   defp external_event_id(subscription) do
-    external_event =
-      from(event in ExternalEvent,
-        where: event.subscription_id == ^subscription.id,
-        order_by: [asc: event.starts_at],
-        limit: 1
-      )
-      |> Repo.one()
+    external_event = first_external_event(subscription)
 
     external_event && "external:#{external_event.id}"
   end
@@ -1699,6 +1726,17 @@ defmodule WikWeb.EventsLiveTest do
   defp external_event_calendar_name_testid(subscription) do
     external_event_id(subscription) &&
       "external-event-calendar-name-#{external_event_id(subscription)}"
+  end
+
+  defp sample_ics_future_date do
+    date = Date.utc_today() |> Date.add(30)
+    Date.add(date, rem(4 - Date.day_of_week(date) + 7, 7))
+  end
+
+  defp sample_ics_future_date_compact do
+    sample_ics_future_date()
+    |> Date.to_iso8601()
+    |> String.replace("-", "")
   end
 
   defp sample_ics_calendar do
@@ -1720,8 +1758,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260604T180000Z
-    DTEND:20260604T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1739,8 +1777,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260604T180000Z
-    DTEND:20260604T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1759,8 +1797,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260604T180000Z
-    DTEND:20260604T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:West Coast Swing Party\\n<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar&amp;usd=2&amp;usg=AOvVaw1yIVflEmW8GH3zDYw07XmQ" target="_blank">www.werk36.de</a>\\n<script>alert(1)</script><img src="https://www.example.com/x.png" onerror="alert(1)">
     LOCATION:Riverside Hall
@@ -1781,8 +1819,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:external-dinner
     DTSTAMP:20260529T120000Z
-    DTSTART:20260604T180000Z
-    DTEND:20260604T200000Z
+    DTSTART:#{sample_ics_future_date_compact()}T180000Z
+    DTEND:#{sample_ics_future_date_compact()}T200000Z
     SUMMARY:External dinner
     DESCRIPTION:Imported from an external calendar
     LOCATION:Riverside Hall
@@ -1822,8 +1860,8 @@ defmodule WikWeb.EventsLiveTest do
     BEGIN:VEVENT
     UID:future-series
     DTSTAMP:20260529T120000Z
-    DTSTART;TZID=Europe/Berlin:20260604T204500
-    DTEND;TZID=Europe/Berlin:20260604T220000
+    DTSTART;TZID=Europe/Berlin:#{sample_ics_future_date_compact()}T204500
+    DTEND;TZID=Europe/Berlin:#{sample_ics_future_date_compact()}T220000
     RRULE:FREQ=WEEKLY;WKST=MO;COUNT=2;BYDAY=TH
     SUMMARY:Future recurring external event
     DESCRIPTION:Should keep its Berlin-local wall clock time

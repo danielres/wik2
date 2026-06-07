@@ -275,35 +275,41 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    first_event_date = Date.utc_today() |> Date.add(10)
+    second_event_date = Date.utc_today() |> Date.add(220)
 
-    {:ok, may_event} =
-      Ash.create(
-        Event,
-        event_attrs(title: "May gathering"),
-        action: :create,
-        scope: scope(owner, space)
-      )
-
-    {:ok, january_event} =
+    {:ok, first_event} =
       Ash.create(
         Event,
         event_attrs(
-          ends_on: "2027-01-15",
-          starts_on: "2027-01-15",
-          title: "January gathering"
+          ends_on: Date.to_iso8601(first_event_date),
+          starts_on: Date.to_iso8601(first_event_date),
+          title: "First gathering"
         ),
         action: :create,
         scope: scope(owner, space)
       )
 
-    {:ok, may_publication} =
+    {:ok, second_event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_on: Date.to_iso8601(second_event_date),
+          starts_on: Date.to_iso8601(second_event_date),
+          title: "Second gathering"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, first_publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^may_event.id and target_space_id == ^space.id)
+      |> Ash.Query.filter(event_id == ^first_event.id and target_space_id == ^space.id)
       |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
-    {:ok, january_publication} =
+    {:ok, second_publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^january_event.id and target_space_id == ^space.id)
+      |> Ash.Query.filter(event_id == ^second_event.id and target_space_id == ^space.id)
       |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
     {:ok, subscription} =
@@ -320,36 +326,42 @@ defmodule WikWeb.EventsLiveTest do
     external_event_month_testid = timeline_month_testid(external_event_date)
     external_event_day_testid = timeline_day_testid(external_event_date)
     external_event_testid = external_event_testid(subscription)
+    first_event_year_testid = timeline_year_testid(first_event_date)
+    first_event_month_testid = timeline_month_testid(first_event_date)
+    first_event_day_testid = timeline_day_testid(first_event_date)
+    second_event_year_testid = timeline_year_testid(second_event_date)
+    second_event_month_testid = timeline_month_testid(second_event_date)
+    second_event_day_testid = timeline_day_testid(second_event_date)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
       |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
-    assert has_element?(view, testid("events-year-2026"))
-    assert has_element?(view, testid("events-month-2026-5"))
-    assert has_element?(view, testid("events-day-2026-5-10"))
+    assert has_element?(view, testid(first_event_year_testid))
+    assert has_element?(view, testid(first_event_month_testid))
+    assert has_element?(view, testid(first_event_day_testid))
     assert has_element?(view, testid(external_event_year_testid))
     assert has_element?(view, testid(external_event_month_testid))
     assert has_element?(view, testid(external_event_day_testid))
-    assert has_element?(view, testid("events-year-2027"))
-    assert has_element?(view, testid("events-month-2027-1"))
-    assert has_element?(view, testid("events-day-2027-1-15"))
-    assert has_element?(view, testid("event-publication-#{may_publication.id}"))
-    assert has_element?(view, testid("event-publication-#{january_publication.id}"))
+    assert has_element?(view, testid(second_event_year_testid))
+    assert has_element?(view, testid(second_event_month_testid))
+    assert has_element?(view, testid(second_event_day_testid))
+    assert has_element?(view, testid("event-publication-#{first_publication.id}"))
+    assert has_element?(view, testid("event-publication-#{second_publication.id}"))
     assert has_element?(view, testid(external_event_testid))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
-    assert has_element?(view, testid("events-year-2026"))
-    assert has_element?(view, testid("events-month-2026-5"))
-    assert has_element?(view, testid("events-day-2026-5-10"))
-    assert has_element?(view, testid("events-year-2027"))
-    assert has_element?(view, testid("events-month-2027-1"))
-    assert has_element?(view, testid("events-day-2027-1-15"))
-    assert has_element?(view, testid("event-publication-#{may_publication.id}"))
-    assert has_element?(view, testid("event-publication-#{january_publication.id}"))
+    assert has_element?(view, testid(first_event_year_testid))
+    assert has_element?(view, testid(first_event_month_testid))
+    assert has_element?(view, testid(first_event_day_testid))
+    assert has_element?(view, testid(second_event_year_testid))
+    assert has_element?(view, testid(second_event_month_testid))
+    assert has_element?(view, testid(second_event_day_testid))
+    assert has_element?(view, testid("event-publication-#{first_publication.id}"))
+    assert has_element?(view, testid("event-publication-#{second_publication.id}"))
     refute has_element?(view, testid(external_event_month_testid))
     refute has_element?(view, testid(external_event_day_testid))
     refute has_element?(view, testid(external_event_testid))
@@ -366,14 +378,16 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    all_day_date = Date.utc_today() |> Date.add(12)
+    previous_utc_date = Date.add(all_day_date, -1)
 
     {:ok, event} =
       Ash.create(
         Event,
         event_attrs(
           all_day: true,
-          ends_on: "2026-06-19",
-          starts_on: "2026-06-19",
+          ends_on: Date.to_iso8601(all_day_date),
+          starts_on: Date.to_iso8601(all_day_date),
           title: "All-day Berlin gathering",
           tz: "Europe/Berlin"
         ),
@@ -391,9 +405,66 @@ defmodule WikWeb.EventsLiveTest do
       |> log_in(owner)
       |> live(~p"/#{space.slug}/events")
 
-    assert has_element?(view, testid("events-day-2026-6-19"))
+    assert has_element?(view, testid(timeline_day_testid(all_day_date)))
     assert has_element?(view, testid("event-publication-#{publication.id}"))
-    refute has_element?(view, testid("events-day-2026-6-18"))
+    refute has_element?(view, testid(timeline_day_testid(previous_utc_date)))
+  end
+
+  test "grouped timeline hides past internal events but keeps today's finished events", %{
+    conn: conn
+  } do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    yesterday = Date.utc_today() |> Date.add(-1)
+    today = Date.utc_today()
+
+    {:ok, past_event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_on: Date.to_iso8601(yesterday),
+          starts_on: Date.to_iso8601(yesterday),
+          title: "Past gathering",
+          tz: "Etc/UTC"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, today_event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_at_time: "00:01",
+          ends_on: Date.to_iso8601(today),
+          starts_at_time: "00:00",
+          starts_on: Date.to_iso8601(today),
+          title: "Early gathering",
+          tz: "Etc/UTC"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, past_publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^past_event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, today_publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^today_event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid(timeline_day_testid(today)))
+    assert has_element?(view, testid("event-publication-#{today_publication.id}"))
+    refute has_element?(view, testid("event-publication-#{past_publication.id}"))
   end
 
   test "switching to internal removes all external rows for the swing feed", %{conn: conn} do

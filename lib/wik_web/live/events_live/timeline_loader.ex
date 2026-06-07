@@ -2,6 +2,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   require Ash.Query
 
   alias Ash.Query
+  alias Utils.Tz
   alias Wik.Accounts
   alias Wik.Events
   alias Wik.Events.EventPublication
@@ -11,9 +12,14 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   def load(scope, opts \\ []) do
     show_external? = Keyword.get(opts, :show_external?, false)
     future_windows = Keyword.get(opts, :future_windows, 1)
+    yesterday_start = Date.utc_today() |> Date.add(-1) |> DateTime.new!(~T[00:00:00], "Etc/UTC")
 
     publications_query =
       EventPublication
+      |> Query.filter(
+        event.starts_at >= ^yesterday_start or
+          (not is_nil(event.ends_at) and event.ends_at >= ^yesterday_start)
+      )
       |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
       |> Query.load([
         :published_by,
@@ -23,18 +29,19 @@ defmodule WikWeb.EventsLive.TimelineLoader do
 
     with {:ok, space} <-
            Ash.load(scope.tenant, [event_publications: publications_query], scope: scope),
+         publications = upcoming_publications(space.event_publications),
          {:ok, author_memberships_by_user_id} <-
-           load_author_memberships_by_user_id(space.event_publications),
+           load_author_memberships_by_user_id(publications),
          {:ok, current_membership} <-
            Accounts.get_membership(scope.tenant.id, scope.actor.id),
          {:ok, participations_by_publication_id} <-
-           load_participations_by_publication_id(space.event_publications, scope),
+           load_participations_by_publication_id(publications, scope),
          {:ok, subscriptions} <-
            Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
          {:ok, external_events} <- read_external_events(scope, show_external?, future_windows) do
       {:ok,
        %{
-         internal_publications: space.event_publications,
+         internal_publications: publications,
          author_memberships_by_user_id: author_memberships_by_user_id,
          current_membership: current_membership,
          participations_by_publication_id: participations_by_publication_id,
@@ -43,6 +50,19 @@ defmodule WikWeb.EventsLive.TimelineLoader do
          more_external_future?: more_external_future?(scope, show_external?, future_windows)
        }}
     end
+  end
+
+  defp upcoming_publications(publications) do
+    today = Date.utc_today()
+
+    Enum.filter(publications, fn publication ->
+      event_date =
+        publication.event.starts_at
+        |> Tz.to_local!(publication.event.tz || "Etc/UTC")
+        |> DateTime.to_date()
+
+      Date.compare(event_date, today) in [:eq, :gt]
+    end)
   end
 
   defp load_participations_by_publication_id([], _scope), do: {:ok, %{}}

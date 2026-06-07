@@ -210,23 +210,38 @@ defmodule Wik.Events.ExternalCalendar.Sync do
       |> Enum.reject(fn {key, _event} ->
         Enum.any?(base_occurrences, &(&1.external_occurrence_key == key))
       end)
-      |> Enum.map(fn {occurrence_key_value, event} ->
-        starts_at = normalize_datetime!(event.dtstart)
+      |> Enum.flat_map(fn {occurrence_key_value, event} ->
+        case event.dtstart do
+          nil ->
+            log_unscheduled_ics_event(event)
+            []
 
-        materialized_event_attrs(
-          subscription,
-          event,
-          starts_at,
-          calendar_name,
-          occurrence_key_value
-        )
+          dtstart ->
+            starts_at = normalize_datetime!(dtstart)
+
+            [
+              materialized_event_attrs(
+                subscription,
+                event,
+                starts_at,
+                calendar_name,
+                occurrence_key_value
+              )
+            ]
+        end
       end)
 
     base_occurrences ++ override_only_occurrences
   end
 
-  defp occurrences_for_event(%ICal.Event{dtstart: nil}, _override_by_key, _raw_event_metadata),
-    do: []
+  defp occurrences_for_event(
+         %ICal.Event{dtstart: nil} = event,
+         _override_by_key,
+         _raw_event_metadata
+       ) do
+    log_unscheduled_ics_event(event)
+    []
+  end
 
   defp occurrences_for_event(event, override_by_key, raw_event_metadata) do
     horizon_start = recent_past_start()
@@ -344,6 +359,12 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   defp fallback_uid(event) do
     [event.summary || "untitled", inspect(event.dtstart)]
     |> Enum.join(":")
+  end
+
+  defp log_unscheduled_ics_event(event) do
+    Logger.warning(
+      "Skipped unscheduled ICS event uid=#{inspect(event.uid)} summary=#{inspect(event.summary)}"
+    )
   end
 
   defp occurrence_key(%DateTime{} = recurrence) do

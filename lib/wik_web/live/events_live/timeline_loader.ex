@@ -1,4 +1,5 @@
 defmodule WikWeb.EventsLive.TimelineLoader do
+  require Logger
   require Ash.Query
 
   alias Ash.Query
@@ -56,13 +57,30 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     today = Date.utc_today()
 
     Enum.filter(publications, fn publication ->
-      event_date =
-        publication.event.starts_at
-        |> Tz.to_local!(publication.event.tz || "Etc/UTC")
-        |> DateTime.to_date()
+      case publication.event.starts_at do
+        nil ->
+          log_unscheduled_publication(publication)
+          false
 
-      Date.compare(event_date, today) in [:eq, :gt]
+        starts_at ->
+          event_date =
+            starts_at
+            |> Tz.to_local!(publication.event.tz || "Etc/UTC")
+            |> DateTime.to_date()
+
+          Date.compare(event_date, today) in [:eq, :gt]
+      end
     end)
+  end
+
+  defp log_unscheduled_publication(publication) do
+    event = publication.event
+
+    Logger.warning(
+      "Skipped unscheduled event publication publication_id=#{publication.id} event_id=#{event.id}",
+      publication_id: publication.id,
+      event_id: event.id
+    )
   end
 
   defp load_participations_by_publication_id([], _scope), do: {:ok, %{}}

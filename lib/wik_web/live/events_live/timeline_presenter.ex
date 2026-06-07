@@ -2,6 +2,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   alias Utils.Tz
   alias Wik.Accounts
   alias Wik.Events.ExternalCalendar
+  alias WikWeb.EventsLive.TimelineEvent
 
   def build(loaded_data, show_external?) do
     loaded_subscriptions = ExternalCalendar.load_subscriptions(loaded_data.subscription_records)
@@ -39,7 +40,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
 
   def internal_item(publication, membership, participations \\ [], current_membership \\ nil) do
     local_event = publication.event
-    event = timeline_event(local_event)
+    event = TimelineEvent.resolve(local_event)
 
     %{
       id: "internal:#{publication.id}",
@@ -174,12 +175,6 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       subscription_id: event.subscription_id
     }
   end
-
-  defp timeline_event(%{source_external_event: %{id: _id} = external_event} = local_event) do
-    %{external_event | title: local_event.title || external_event.title}
-  end
-
-  defp timeline_event(event), do: event
 
   defp linked_external_event_ids(publications) do
     publications

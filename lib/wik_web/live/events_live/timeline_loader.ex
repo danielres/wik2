@@ -6,6 +6,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   alias Wik.Accounts
   alias Wik.Events
   alias Wik.Events.EventPublication
+  alias WikWeb.EventsLive.TimelineEvent
 
   @future_window_months 2
 
@@ -60,7 +61,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     today = Date.utc_today()
 
     Enum.filter(publications, fn publication ->
-      event = timeline_event(publication.event)
+      event = TimelineEvent.resolve(publication.event)
 
       event_date =
         (event.ends_at || event.starts_at)
@@ -70,9 +71,6 @@ defmodule WikWeb.EventsLive.TimelineLoader do
       Date.compare(event_date, today) in [:eq, :gt]
     end)
   end
-
-  defp timeline_event(%{source_external_event: %{id: _id} = external_event}), do: external_event
-  defp timeline_event(event), do: event
 
   defp load_participations_by_publication_id([], _scope), do: {:ok, %{}}
 

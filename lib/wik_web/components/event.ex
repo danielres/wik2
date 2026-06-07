@@ -215,13 +215,13 @@ defmodule WikWeb.Components.Event do
   attr :error, :string, default: nil
   attr :target, :any, default: nil
 
-  def converted_layer_form(assigns) do
+  def local_overlay_form(assigns) do
     ~H"""
     <.form
       for={@form}
-      id="converted-layer-form"
-      data-testid="converted-layer-form"
-      phx-submit="converted_layer_submit"
+      id="local-overlay-form"
+      data-testid="local-overlay-form"
+      phx-submit="local_overlay_submit"
       phx-target={@target}
     >
       <div class="space-y-4">
@@ -236,14 +236,14 @@ defmodule WikWeb.Components.Event do
           <button
             type="button"
             class="btn btn-ghost btn-sm"
-            data-testid="converted-layer-cancel"
-            phx-click="converted_layer_cancel"
+            data-testid="local-overlay-cancel"
+            phx-click="local_overlay_cancel"
             phx-target={@target}
           >
             Cancel
           </button>
 
-          <button type="submit" class="btn btn-accent btn-sm" data-testid="converted-layer-submit">
+          <button type="submit" class="btn btn-accent btn-sm" data-testid="local-overlay-submit">
             Save
           </button>
         </div>

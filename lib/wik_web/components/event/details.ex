@@ -55,10 +55,10 @@ defmodule WikWeb.Components.Event.Details do
         user_tz={@user_tz}
       />
 
-      <Event.converted_layer_form
-        :if={@mode == :converted_layer}
-        error={@converted_layer_error}
-        form={@converted_layer_form}
+      <Event.local_overlay_form
+        :if={@mode == :local_overlay}
+        error={@local_overlay_error}
+        form={@local_overlay_form}
         target={@myself}
       />
 
@@ -79,9 +79,9 @@ defmodule WikWeb.Components.Event.Details do
     socket =
       if converted_event?(socket.assigns.publication.event) do
         socket
-        |> assign(:mode, :converted_layer)
-        |> assign(:converted_layer_form, converted_layer_form(socket.assigns.publication.event))
-        |> assign(:converted_layer_error, nil)
+        |> assign(:mode, :local_overlay)
+        |> assign(:local_overlay_form, local_overlay_form(socket.assigns.publication.event))
+        |> assign(:local_overlay_error, nil)
       else
         socket
         |> assign(:mode, :edit)
@@ -180,9 +180,9 @@ defmodule WikWeb.Components.Event.Details do
     {:noreply, socket}
   end
 
-  def handle_event("converted_layer_submit", %{"converted_layer" => params}, socket) do
+  def handle_event("local_overlay_submit", %{"local_overlay" => params}, socket) do
     socket =
-      case Events.update_converted_event_layer(socket.assigns.publication.event, params,
+      case Events.update_local_overlay(socket.assigns.publication.event, params,
              scope: socket.assigns.current_scope
            ) do
         {:ok, _event} ->
@@ -191,18 +191,18 @@ defmodule WikWeb.Components.Event.Details do
 
         {:error, error} ->
           socket
-          |> assign(:converted_layer_form, to_form(params, as: :converted_layer))
-          |> assign(:converted_layer_error, Exception.message(error))
+          |> assign(:local_overlay_form, to_form(params, as: :local_overlay))
+          |> assign(:local_overlay_error, Exception.message(error))
       end
 
     {:noreply, socket}
   end
 
-  def handle_event("converted_layer_cancel", _params, socket) do
+  def handle_event("local_overlay_cancel", _params, socket) do
     {:noreply,
      socket
      |> assign(:mode, :show)
-     |> assign(:converted_layer_error, nil)}
+     |> assign(:local_overlay_error, nil)}
   end
 
   def handle_event("event_detail_relay_start", _params, socket) do
@@ -263,8 +263,8 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:author_membership, nil)
     |> assign(:event_form, nil)
     |> assign(:interest_form, nil)
-    |> assign(:converted_layer_error, nil)
-    |> assign(:converted_layer_form, nil)
+    |> assign(:local_overlay_error, nil)
+    |> assign(:local_overlay_form, nil)
     |> assign(:show_end_date?, false)
     |> assign(:mode, :show)
     |> assign(:relayer_membership, nil)
@@ -289,17 +289,17 @@ defmodule WikWeb.Components.Event.Details do
     do: not is_nil(source_external_event_id)
 
   defp can_edit_event?(event, scope) do
-    action = if converted_event?(event), do: :update_converted_layer, else: :update
+    action = if converted_event?(event), do: :update_local_overlay, else: :update
 
     Ash.can?({event, action}, scope)
   end
 
-  defp converted_layer_form(event) do
+  defp local_overlay_form(event) do
     %{
       "description" => event.description,
       "title" => event.title
     }
-    |> to_form(as: :converted_layer)
+    |> to_form(as: :local_overlay)
   end
 
   defp interest_form(participation) do

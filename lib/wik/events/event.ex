@@ -109,7 +109,7 @@ defmodule Wik.Events.Event do
       validate present(:starts_at)
     end
 
-    update :update_converted_layer do
+    update :update_local_overlay do
       accept [:description, :title]
       require_atomic? false
     end
@@ -144,7 +144,7 @@ defmodule Wik.Events.Event do
     publish :create, ["space", :space_id]
     publish :create_from_external, ["space", :space_id]
     publish :update, ["space", :space_id]
-    publish :update_converted_layer, ["space", :space_id]
+    publish :update_local_overlay, ["space", :space_id]
   end
 
   validations do

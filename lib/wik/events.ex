@@ -74,14 +74,14 @@ defmodule Wik.Events do
     end
   end
 
-  def update_converted_event_layer(%Event{} = event, attrs, opts \\ []) do
+  def update_local_overlay(%Event{} = event, attrs, opts \\ []) do
     attrs = %{
       description:
         Values.blank_to_nil(Map.get(attrs, :description) || Map.get(attrs, "description")),
       title: Values.blank_to_nil(Map.get(attrs, :title) || Map.get(attrs, "title"))
     }
 
-    Ash.update(event, attrs, Keyword.put(opts, :action, :update_converted_layer))
+    Ash.update(event, attrs, Keyword.put(opts, :action, :update_local_overlay))
   end
 
   def event_participations_query(publication_ids) when is_list(publication_ids) do

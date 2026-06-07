@@ -61,7 +61,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     today = Date.utc_today()
 
     Enum.filter(publications, fn publication ->
-      event = TimelineEvent.resolve(publication.event)
+      event = TimelineEvent.schedule_event(publication.event)
 
       event_date =
         (event.ends_at || event.starts_at)

@@ -40,7 +40,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
 
   def internal_item(publication, membership, participations \\ [], current_membership \\ nil) do
     local_event = publication.event
-    event = TimelineEvent.resolve(local_event)
+    event = TimelineEvent.display_event(local_event)
 
     %{
       id: "internal:#{publication.id}",

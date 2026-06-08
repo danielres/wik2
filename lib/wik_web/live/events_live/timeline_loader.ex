@@ -56,14 +56,18 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   end
 
   defp upcoming_publications(publications) do
-    today = Date.utc_today()
-
     Enum.filter(publications, fn publication ->
       event = publication.event
+      tz = event.tz || "Etc/UTC"
 
       event_date =
         (event.ends_at || event.starts_at)
-        |> Tz.to_local!(event.tz || "Etc/UTC")
+        |> Tz.to_local!(tz)
+        |> DateTime.to_date()
+
+      today =
+        DateTime.utc_now()
+        |> Tz.to_local!(tz)
         |> DateTime.to_date()
 
       Date.compare(event_date, today) in [:eq, :gt]

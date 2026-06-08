@@ -6,7 +6,6 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   alias Wik.Accounts
   alias Wik.Events
   alias Wik.Events.EventPublication
-  alias WikWeb.EventsLive.TimelineEvent
 
   @future_window_months 2
 
@@ -18,18 +17,14 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     publications_query =
       EventPublication
       |> Query.filter(
-        (is_nil(event.source_external_event_id) and
-           (event.starts_at >= ^yesterday_start or
-              (not is_nil(event.ends_at) and event.ends_at >= ^yesterday_start))) or
-          (not is_nil(event.source_external_event_id) and
-             (event.source_external_event.starts_at >= ^yesterday_start or
-                event.source_external_event.ends_at >= ^yesterday_start))
+        event.starts_at >= ^yesterday_start or
+          (not is_nil(event.ends_at) and event.ends_at >= ^yesterday_start)
       )
       |> Query.sort([{"event.starts_at", :asc}, {:inserted_at, :asc}])
       |> Query.load([
         :published_by,
         :space,
-        event: [:author, :space, source_external_event: [:subscription]]
+        event: [:author, :space]
       ])
 
     with {:ok, space} <-
@@ -43,13 +38,16 @@ defmodule WikWeb.EventsLive.TimelineLoader do
            load_participations_by_publication_id(publications, scope),
          {:ok, subscriptions} <-
            Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
-         {:ok, external_events} <- read_external_events(scope, show_external?, future_windows) do
+         {:ok, external_events} <- read_external_events(scope, future_windows),
+         {:ok, participations_by_external_event_id} <-
+           load_participations_by_external_event_id(external_events, scope) do
       {:ok,
        %{
          internal_publications: publications,
          author_memberships_by_user_id: author_memberships_by_user_id,
          current_membership: current_membership,
          participations_by_publication_id: participations_by_publication_id,
+         participations_by_external_event_id: participations_by_external_event_id,
          subscription_records: subscriptions,
          external_events: external_events,
          more_external_future?: more_external_future?(scope, show_external?, future_windows)
@@ -61,7 +59,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     today = Date.utc_today()
 
     Enum.filter(publications, fn publication ->
-      event = TimelineEvent.schedule_event(publication.event)
+      event = publication.event
 
       event_date =
         (event.ends_at || event.starts_at)
@@ -70,6 +68,20 @@ defmodule WikWeb.EventsLive.TimelineLoader do
 
       Date.compare(event_date, today) in [:eq, :gt]
     end)
+  end
+
+  defp load_participations_by_external_event_id([], _scope), do: {:ok, %{}}
+
+  defp load_participations_by_external_event_id(external_events, scope) do
+    external_event_ids = Enum.map(external_events, & &1.id)
+
+    external_event_ids
+    |> Events.external_event_participations_query()
+    |> Ash.read(scope: scope)
+    |> case do
+      {:ok, participations} -> {:ok, Enum.group_by(participations, & &1.external_event_id)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp load_participations_by_publication_id([], _scope), do: {:ok, %{}}
@@ -99,15 +111,15 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     Accounts.list_memberships_by_user_id(space_id, user_ids)
   end
 
-  defp read_external_events(_scope, false, _future_windows), do: {:ok, []}
-
-  defp read_external_events(scope, true, future_windows) do
+  defp read_external_events(scope, future_windows) do
     today_start = DateTime.new!(Date.utc_today(), ~T[00:00:00], "Etc/UTC")
     future_window_end = future_window_end(future_windows)
 
     query =
       Events.external_events_query()
-      |> Query.filter(starts_at >= ^today_start and starts_at <= ^future_window_end)
+      |> Query.filter(
+        (starts_at >= ^today_start or ends_at >= ^today_start) and starts_at <= ^future_window_end
+      )
 
     case Ash.read(query, scope: scope) do
       {:ok, events} -> {:ok, events}

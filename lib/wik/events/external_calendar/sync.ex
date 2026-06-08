@@ -6,7 +6,6 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   require Logger
 
   alias Utils.Values
-  alias Wik.Events.Event
   alias Wik.Events.ExternalCalendar.Fetch
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.ExternalEvent
@@ -156,19 +155,12 @@ defmodule Wik.Events.ExternalCalendar.Sync do
                )
              end)
              |> Enum.reduce_while(:ok, fn event, :ok ->
-               if linked_external_event?(event) do
-                 case mark_source_missing(event, seen_at) do
-                   {:ok, _event} -> {:cont, :ok}
-                   {:error, error} -> Repo.rollback(error)
-                 end
-               else
-                 case Repo.delete(event) do
-                   {:ok, _deleted_event} ->
-                     {:cont, :ok}
+               case Repo.delete(event) do
+                 {:ok, _deleted_event} ->
+                   {:cont, :ok}
 
-                   {:error, error} ->
-                     Repo.rollback(error)
-                 end
+                 {:error, error} ->
+                   Repo.rollback(error)
                end
              end)
            end) do
@@ -329,21 +321,6 @@ defmodule Wik.Events.ExternalCalendar.Sync do
       calendar_name: Values.blank_to_nil(calendar_name),
       source_missing_at: nil
     }
-  end
-
-  defp linked_external_event?(%ExternalEvent{id: id}) do
-    from(event in Event,
-      where: event.source_external_event_id == type(^id, :binary_id),
-      select: event.id,
-      limit: 1
-    )
-    |> Repo.exists?()
-  end
-
-  defp mark_source_missing(%ExternalEvent{} = event, seen_at) do
-    event
-    |> Ecto.Changeset.change(status: :cancelled, source_missing_at: seen_at)
-    |> Repo.update()
   end
 
   defp persist_cache(subscription, attrs) do

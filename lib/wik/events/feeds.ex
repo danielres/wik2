@@ -44,7 +44,7 @@ defmodule Wik.Events.Feeds do
     |> Ash.Query.load([
       :space,
       :published_by,
-      event: [:author, :space, source_external_event: [:subscription]]
+      event: [:author, :space]
     ])
   end
 

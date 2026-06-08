@@ -55,13 +55,6 @@ defmodule WikWeb.Components.Event.Details do
         user_tz={@user_tz}
       />
 
-      <Event.local_overlay_form
-        :if={@mode == :local_overlay}
-        error={@local_overlay_error}
-        form={@local_overlay_form}
-        target={@myself}
-      />
-
       <Event.relay_form
         :if={@mode == :relay}
         publication={@publication}
@@ -76,25 +69,15 @@ defmodule WikWeb.Components.Event.Details do
 
   @impl true
   def handle_event("event_detail_edit_start", _params, socket) do
-    socket =
-      if converted_event?(socket.assigns.publication.event) do
-        socket
-        |> assign(:mode, :local_overlay)
-        |> assign(:local_overlay_form, local_overlay_form(socket.assigns.publication.event))
-        |> assign(:local_overlay_error, nil)
-      else
-        socket
-        |> assign(:mode, :edit)
-        |> then(fn socket ->
-          event_form =
-            Event.FormState.edit(socket.assigns.publication.event, socket.assigns.current_scope)
+    event_form =
+      Event.FormState.edit(socket.assigns.publication.event, socket.assigns.current_scope)
 
-          socket
-          |> assign(:event_form, event_form)
-          |> assign(:interest_form, interest_form(socket.assigns.current_member_participation))
-          |> assign(:show_end_date?, Event.FormState.show_end_date?(event_form))
-        end)
-      end
+    socket =
+      socket
+      |> assign(:mode, :edit)
+      |> assign(:event_form, event_form)
+      |> assign(:interest_form, interest_form(socket.assigns.current_member_participation))
+      |> assign(:show_end_date?, Event.FormState.show_end_date?(event_form))
 
     {:noreply, socket}
   end
@@ -180,31 +163,6 @@ defmodule WikWeb.Components.Event.Details do
     {:noreply, socket}
   end
 
-  def handle_event("local_overlay_submit", %{"local_overlay" => params}, socket) do
-    socket =
-      case Events.update_local_overlay(socket.assigns.publication.event, params,
-             scope: socket.assigns.current_scope
-           ) do
-        {:ok, _event} ->
-          send(self(), {:event_details, :saved})
-          socket
-
-        {:error, error} ->
-          socket
-          |> assign(:local_overlay_form, to_form(params, as: :local_overlay))
-          |> assign(:local_overlay_error, Exception.message(error))
-      end
-
-    {:noreply, socket}
-  end
-
-  def handle_event("local_overlay_cancel", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:mode, :show)
-     |> assign(:local_overlay_error, nil)}
-  end
-
   def handle_event("event_detail_relay_start", _params, socket) do
     socket =
       socket
@@ -263,8 +221,6 @@ defmodule WikWeb.Components.Event.Details do
     |> assign(:author_membership, nil)
     |> assign(:event_form, nil)
     |> assign(:interest_form, nil)
-    |> assign(:local_overlay_error, nil)
-    |> assign(:local_overlay_form, nil)
     |> assign(:show_end_date?, false)
     |> assign(:mode, :show)
     |> assign(:relayer_membership, nil)
@@ -285,21 +241,8 @@ defmodule WikWeb.Components.Event.Details do
 
   defp maybe_load_relay_eligibility(socket, false), do: socket
 
-  defp converted_event?(%{source_external_event_id: source_external_event_id}),
-    do: not is_nil(source_external_event_id)
-
   defp can_edit_event?(event, scope) do
-    action = if converted_event?(event), do: :update_local_overlay, else: :update
-
-    Ash.can?({event, action}, scope)
-  end
-
-  defp local_overlay_form(event) do
-    %{
-      "description" => event.description,
-      "title" => event.title
-    }
-    |> to_form(as: :local_overlay)
+    Ash.can?({event, :update}, scope)
   end
 
   defp interest_form(participation) do

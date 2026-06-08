@@ -410,7 +410,7 @@ defmodule WikWeb.EventsLiveTest do
     refute has_element?(view, testid(timeline_day_testid(previous_utc_date)))
   end
 
-  test "converted external-backed events use the source external schedule", %{conn: conn} do
+  test "external events with interest appear in the normal timeline", %{conn: conn} do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
@@ -424,7 +424,7 @@ defmodule WikWeb.EventsLiveTest do
     sync_subscription!(subscription)
     external_event = first_external_event(subscription)
 
-    assert {:ok, %{publication: publication}} =
+    assert {:ok, _participation} =
              Events.record_external_interest(
                external_event,
                %{interest: 8, extra_info: "joining"},
@@ -439,7 +439,7 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events")
 
     assert has_element?(view, testid(timeline_day_testid(source_date)))
-    assert has_element?(view, testid("event-publication-#{publication.id}"))
+    assert has_element?(view, testid("external-event-external:#{external_event.id}"))
   end
 
   test "grouped timeline hides past internal events but keeps today's finished events", %{
@@ -1519,6 +1519,63 @@ defmodule WikWeb.EventsLiveTest do
     assert render(view) =~ "External dinner"
     assert render(view) =~ "Imported from an external calendar"
     assert render(view) =~ "Community Coordination Calendar"
+  end
+
+  test "can add interest from a ghost external event modal", %{conn: conn} do
+    owner = generate(user())
+    member = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+    external_event = first_external_event(subscription)
+    external_event_id = external_event_id(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+
+    render_click(element(view, testid("event-open-#{external_event_id}")))
+    render_click(element(view, testid("external-event-detail-interest-#{external_event.id}")))
+
+    assert has_element?(view, testid("event-interest-form"))
+
+    view
+    |> form(testid("event-interest-form"),
+      interest: %{interest: "8", extra_info: "joining later"}
+    )
+    |> render_submit()
+
+    participation =
+      EventParticipation
+      |> Ash.Query.filter(external_event_id == ^external_event.id)
+      |> Ash.read_one!(scope: scope(member, space))
+
+    assert has_element?(view, testid("external-event-#{external_event_id}"))
+
+    assert has_element?(
+             view,
+             "#{testid("external-event-#{external_event_id}")} .border-base-content\\/20"
+           )
+
+    refute has_element?(
+             view,
+             "#{testid("external-event-#{external_event_id}")} .border-dashed"
+           )
+
+    assert has_element?(
+             view,
+             "#{testid("external-event-#{external_event_id}")} #{testid("timeline-event-participation-#{participation.id}")}"
+           )
   end
 
   test "external events keep UTC presentation timezone for UTC ICS timestamps", %{conn: _conn} do

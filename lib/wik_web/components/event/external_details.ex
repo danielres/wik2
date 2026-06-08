@@ -1,8 +1,11 @@
 defmodule WikWeb.Components.Event.ExternalDetails do
   use WikWeb, :html
 
+  alias Wik.Events.Dimensions
   alias WikWeb.Components.Event
   alias WikWeb.Components.Event.ExternalDescriptionScrubber
+  alias WikWeb.Components.LevelMeter
+  alias WikWeb.Components.User
 
   attr :item, :map, required: true
   attr :user_tz, :string, required: true
@@ -51,6 +54,34 @@ defmodule WikWeb.Components.Event.ExternalDetails do
           <.description description={@event.description} />
         </div>
       </div>
+
+      <Event.Panel.render :if={@item.participations != []} title="Participation">
+        <div
+          :for={participation <- @item.participations}
+          data-testid={"external-event-participation-#{participation.id}"}
+          class="rounded-md bg-base-content/5 px-2 py-1"
+        >
+          <div class="flex justify-between">
+            <User.identity
+              avatar_size="xs"
+              class="text-xs opacity-70"
+              membership={participation.membership}
+            />
+
+            <LevelMeter.render
+              dimension={interest_dimension()}
+              label="Interest"
+              level={participation.interest}
+              testid={"external-event-participation-interest-#{participation.id}"}
+              width_class="w-10"
+            />
+          </div>
+
+          <div :if={participation.extra_info not in [nil, ""]} class="opacity-70 text-xs ml-5">
+            {participation.extra_info}
+          </div>
+        </div>
+      </Event.Panel.render>
 
       <div class="space-y-3">
         <dl :if={dev?() and present?(@item.external_uid)} class="space-y-1">
@@ -204,6 +235,8 @@ defmodule WikWeb.Components.Event.ExternalDetails do
   end
 
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
+
+  defp interest_dimension, do: Dimensions.get!("participation", "interest")
 
   defp item_event(%{event: event}), do: event
   defp item_event(item), do: item

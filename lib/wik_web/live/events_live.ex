@@ -80,6 +80,7 @@ defmodule WikWeb.EventsLive do
 
               <div class="mt-4">
                 <button
+                  :if={@tenant_context && @tenant_context.current_membership}
                   type="button"
                   class="btn btn-sm btn-ghost"
                   data-testid={"external-event-detail-interest-#{item.event.id}"}
@@ -89,6 +90,13 @@ defmodule WikWeb.EventsLive do
                 >
                   Add interest
                 </button>
+
+                <p
+                  :if={!(@tenant_context && @tenant_context.current_membership)}
+                  class="text-sm text-error"
+                >
+                  You need to be a member of this space to add interest.
+                </p>
               </div>
             <% :event_form -> %>
               <.live_component
@@ -114,17 +122,15 @@ defmodule WikWeb.EventsLive do
                 source_type={:internal}
               />
             <% {:interest, :external, external_event_id} -> %>
-              <% external_event =
-                @timeline.external_items
-                |> Enum.map(& &1.event)
-                |> Enum.find(&(&1.id == external_event_id)) %>
+              <% item =
+                Enum.find(@timeline.external_items, &(&1.event.id == external_event_id)) %>
 
               <.live_component
                 module={InterestForm}
                 id="events-interest-form"
-                current_member_participation={nil}
+                current_member_participation={item && item.current_member_participation}
                 current_scope={@current_scope}
-                external_event={external_event}
+                external_event={item && item.event}
                 publication={nil}
                 source_id={external_event_id}
                 source_type={:external}

@@ -4,6 +4,7 @@ defmodule Wik.Events.EventParticipation.Checks.ActorCanManageOwnParticipation do
   alias Wik.Accounts
   alias Wik.Accounts.Membership
   alias Wik.Events.EventPublication
+  alias Wik.Events.ExternalEvent
 
   require Ash.Query
 
@@ -18,9 +19,11 @@ defmodule Wik.Events.EventParticipation.Checks.ActorCanManageOwnParticipation do
     space_id = Accounts.tenant_to_space_id(tenant)
     membership_id = Ash.Subject.get_argument_or_attribute(subject, :membership_id)
     publication_id = Ash.Subject.get_argument_or_attribute(subject, :publication_id)
+    external_event_id = Ash.Subject.get_argument_or_attribute(subject, :external_event_id)
 
     with {:ok, true} <- membership_belongs_to_actor?(membership_id, space_id, actor),
-         {:ok, true} <- publication_belongs_to_space?(publication_id, space_id, tenant) do
+         {:ok, true} <-
+           target_belongs_to_space?(publication_id, external_event_id, space_id, tenant) do
       {:ok, true}
     else
       {:ok, false} -> {:ok, false}
@@ -34,6 +37,20 @@ defmodule Wik.Events.EventParticipation.Checks.ActorCanManageOwnParticipation do
     |> Ash.exists(authorize?: false, domain: Accounts)
   end
 
+  defp target_belongs_to_space?(publication_id, nil, space_id, tenant)
+       when not is_nil(publication_id) do
+    publication_belongs_to_space?(publication_id, space_id, tenant)
+  end
+
+  defp target_belongs_to_space?(nil, external_event_id, space_id, tenant)
+       when not is_nil(external_event_id) do
+    external_event_belongs_to_space?(external_event_id, space_id, tenant)
+  end
+
+  defp target_belongs_to_space?(_publication_id, _external_event_id, _space_id, _tenant) do
+    {:ok, false}
+  end
+
   defp publication_belongs_to_space?(publication_id, space_id, tenant) do
     publication =
       EventPublication
@@ -41,5 +58,14 @@ defmodule Wik.Events.EventParticipation.Checks.ActorCanManageOwnParticipation do
       |> Ash.read_one!(authorize?: false, domain: Wik.Events, tenant: tenant)
 
     {:ok, publication && publication.target_space_id == space_id}
+  end
+
+  defp external_event_belongs_to_space?(external_event_id, space_id, tenant) do
+    external_event =
+      ExternalEvent
+      |> Ash.Query.filter(id == ^external_event_id)
+      |> Ash.read_one!(authorize?: false, domain: Wik.Events, tenant: tenant)
+
+    {:ok, external_event && external_event.space_id == space_id}
   end
 end

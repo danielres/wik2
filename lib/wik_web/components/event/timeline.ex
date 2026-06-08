@@ -97,12 +97,31 @@ defmodule WikWeb.Components.Event.Timeline do
                   <div class={[
                     "rounded-box",
                     "w-full",
-                    "opacity-60 hover:opacity-100 transition-opacity",
-                    "border-[1.5px] border-dashed border-base-content/30"
+                    item.participations == [] &&
+                      [
+                        "opacity-60 hover:opacity-100 transition-opacity",
+                        "border-[1.5px] border-dashed border-base-content/30"
+                      ],
+                    item.participations != [] &&
+                      [
+                        "bg-base-content/6",
+                        "border-[1.5px] border-base-content/20"
+                      ]
                   ]}>
                     <button
                       type="button"
-                      class={["cursor-pointer", "block p-4", "w-full", "text-left"]}
+                      class={[
+                        "cursor-pointer",
+                        "block p-4",
+                        "w-full",
+                        "text-left",
+                        item.participations != [] &&
+                          [
+                            "hover:bg-base-content/14",
+                            "transition",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                          ]
+                      ]}
                       data-testid={"event-open-#{item.id}"}
                       phx-click="external_event_show"
                       phx-target={@target}
@@ -158,35 +177,62 @@ defmodule WikWeb.Components.Event.Timeline do
 
       <article
         :for={item <- @items}
-        id={"event-publication-#{item.publication.id}"}
-        data-testid={"event-publication-#{item.publication.id}"}
+        id={timeline_dom_id(item)}
+        data-testid={timeline_testid(item)}
         class="rounded-box bg-base-200 p-0 transition overflow-hidden"
       >
-        <.link
-          patch={legacy_event_link_target(@current_scope, item.publication)}
-          class={[
-            "block p-4 hover:bg-base-300/70 transition",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          ]}
-          data-testid={"event-open-#{item.publication.id}"}
-        >
-          <div class="min-w-0 space-y-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <Event.event_header publication={item.publication} />
-              <Event.event_status event={item.event} />
-            </div>
-
-            <div
-              class="truncate text-sm opacity-80"
-              data-testid={"event-schedule-#{item.publication.id}"}
-            >
-              <Event.schedule event={item.event} user_tz={@user_tz} />
-            </div>
-
-            <User.identity avatar_size="xs" class="text-xs opacity-60" membership={item.author} />
+        <%= if item.source_type == :internal do %>
+          <.link
+            patch={legacy_event_link_target(@current_scope, item.publication)}
+            class={[
+              "block p-4 hover:bg-base-300/70 transition",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            ]}
+            data-testid={"event-open-#{item.publication.id}"}
+          >
+            <.compact_item_body item={item} user_tz={@user_tz} />
+          </.link>
+        <% else %>
+          <div class="block p-4">
+            <.compact_item_body item={item} user_tz={@user_tz} />
           </div>
-        </.link>
+        <% end %>
       </article>
+    </div>
+    """
+  end
+
+  attr :item, :map, required: true
+  attr :user_tz, :string, required: true
+
+  defp compact_item_body(assigns) do
+    ~H"""
+    <div class="min-w-0 space-y-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <%= if @item.source_type == :internal do %>
+          <Event.event_header publication={@item.publication} />
+        <% else %>
+          <h2 class="text-base font-medium leading-tight flex-grow">
+            {@item.event.title}
+          </h2>
+        <% end %>
+        <Event.event_status event={@item.event} />
+      </div>
+
+      <div
+        class="truncate text-sm opacity-80"
+        data-testid={timeline_schedule_testid(@item)}
+      >
+        <Event.schedule event={@item.event} user_tz={@user_tz} />
+      </div>
+
+      <%= if @item.source_type == :internal do %>
+        <User.identity avatar_size="xs" class="text-xs opacity-60" membership={@item.author} />
+      <% else %>
+        <div :if={present?(@item.calendar_name)} class="truncate text-xs opacity-60">
+          {@item.calendar_name}
+        </div>
+      <% end %>
     </div>
     """
   end

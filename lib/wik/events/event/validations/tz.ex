@@ -6,13 +6,9 @@ defmodule Wik.Events.Event.Validations.Tz do
 
   @impl true
   def validate(changeset, _opts, _context) do
-    source_external_event_id = Ash.Changeset.get_attribute(changeset, :source_external_event_id)
     tz = Ash.Changeset.get_attribute(changeset, :tz)
 
     cond do
-      not is_nil(source_external_event_id) ->
-        :ok
-
       Utils.Tz.valid?(tz) ->
         :ok
 

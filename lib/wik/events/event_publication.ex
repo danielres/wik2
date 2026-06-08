@@ -1,7 +1,6 @@
 defmodule Wik.Events.EventPublication do
   alias Wik.Accounts.Space
   alias Wik.Events.EventPublication.Checks.ActorCanRelayEvent
-  alias Wik.Events.EventPublication.Checks.ActorCanPublishConvertedEvent
   alias Wik.Events.EventPublication.Validations.SpaceMatchesEvent
 
   use Ash.Resource,
@@ -49,7 +48,6 @@ defmodule Wik.Events.EventPublication do
 
     policy action(:publish_to_origin_space) do
       authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
-      authorize_if ActorCanPublishConvertedEvent
     end
 
     policy action(:relay_to_space) do

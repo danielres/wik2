@@ -21,7 +21,10 @@ defmodule WikWeb.EventsLive.Params do
         future_windows_param(future_windows)
       ])
 
-  def external_event_query(external_event_id), do: query([{"ext", external_event_id}])
+  def external_event_query(external_event_id), do: external_event_query(external_event_id, 1)
+
+  def external_event_query(external_event_id, future_windows),
+    do: query([{"ext", external_event_id}, future_windows_param(future_windows)])
 
   def load_more_query(show_external?, future_windows),
     do: query([calendars_param(show_external?), {"future_windows", future_windows + 1}])

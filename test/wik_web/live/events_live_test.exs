@@ -1826,6 +1826,50 @@ defmodule WikWeb.EventsLiveTest do
     assert DateTime.compare(external_event.ends_at, expected_ends_at) == :eq
   end
 
+  test "external event links preserve loaded future windows", %{conn: conn} do
+    previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
+
+    Application.put_env(:wik, Wik.Events.ExternalCalendar,
+      http_get: fn _url, _opts ->
+        {:ok, %Req.Response{status: 200, body: sample_ics_future_recurring_calendar()}}
+      end
+    )
+
+    on_exit(fn ->
+      Application.put_env(:wik, Wik.Events.ExternalCalendar, previous_external_calendar)
+    end)
+
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/future-recurring.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+
+    external_event =
+      Events.ExternalEvent
+      |> Ash.Query.filter(subscription_id == ^subscription.id)
+      |> Ash.Query.sort(starts_at: :desc)
+      |> Ash.read_first!(authorize?: false, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?calendars&future_windows=2")
+
+    render_click(element(view, testid("event-open-external:#{external_event.id}")))
+
+    assert_patch(
+      view,
+      ~p"/#{space.slug}/events?#{%{ext: external_event.id, future_windows: 2}}"
+    )
+  end
+
   test "external event modal sanitizes html descriptions and keeps safe links", %{conn: conn} do
     previous_external_calendar = Application.get_env(:wik, Wik.Events.ExternalCalendar, [])
 

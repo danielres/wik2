@@ -343,17 +343,10 @@ defmodule WikWeb.Components.Event do
         testid_prefix="event"
       />
 
-      <WikWeb.Components.Event.Panel.render
-        :if={@publication.event.description not in [nil, ""]}
-        title="Description"
-      >
-        <div class={[
-          "rounded-md bg-base-content/5 px-4 py-2 text-base-content/90",
-          "text-xs leading-6"
-        ]}>
-          <div class="whitespace-pre-wrap">{@publication.event.description}</div>
-        </div>
-      </WikWeb.Components.Event.Panel.render>
+      <WikWeb.Components.Event.Panels.Description.render
+        description={@publication.event.description}
+        format={:plain}
+      />
 
       <WikWeb.Components.Event.Panel.render title="By">
         <User.identity

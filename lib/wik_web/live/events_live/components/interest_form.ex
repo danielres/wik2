@@ -29,7 +29,11 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
         <div class="space-y-4">
           <Event.interest_fields form={@form} />
 
-          <p :if={@error not in [nil, ""]} class="text-sm text-error">
+          <p
+            :if={@error not in [nil, ""]}
+            class="text-sm text-error"
+            data-testid="interest-form-error"
+          >
             {@error}
           </p>
 

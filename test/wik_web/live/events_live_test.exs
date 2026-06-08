@@ -643,6 +643,30 @@ defmodule WikWeb.EventsLiveTest do
              |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
   end
 
+  test "internal event descriptions render plain links as clickable links", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          description: "Links: http://test.com and https://github.com/danielres/wik2/pull/35"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{event: event.id}}")
+
+    assert has_element?(view, ~s(a[href="http://test.com"]))
+    assert has_element?(view, ~s(a[href="https://github.com/danielres/wik2/pull/35"]))
+  end
+
   test "create submit shows field errors without a flash", %{conn: conn} do
     owner = generate(user())
     space = generate(space(author: owner))

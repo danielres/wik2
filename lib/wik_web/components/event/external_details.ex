@@ -43,7 +43,7 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         testid_prefix="external-event"
       />
 
-      <Event.Panels.Description.render description={@event.description} format={:external} />
+      <Event.Panels.Description.render description={@event.description} />
 
       <div class="space-y-3">
         <dl :if={dev?() and present?(@item.external_uid)} class="space-y-1">

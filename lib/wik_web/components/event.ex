@@ -343,10 +343,7 @@ defmodule WikWeb.Components.Event do
         testid_prefix="event"
       />
 
-      <WikWeb.Components.Event.Panels.Description.render
-        description={@publication.event.description}
-        format={:plain}
-      />
+      <WikWeb.Components.Event.Panels.Description.render description={@publication.event.description} />
 
       <WikWeb.Components.Event.Panel.render title="By">
         <User.identity

@@ -85,8 +85,13 @@ defmodule WikWeb.Components.Event.ExternalDetailsTest do
         user_tz: "Etc/UTC"
       })
 
-    assert html =~ ~s(href="https://example.com/?a=1&amp;x=&quot;oops&quot;")
-    refute html =~ ~s(onclick=)
+    link =
+      html
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query("a[href]")
+
+    assert LazyHTML.attribute(link, "href") == ["https://example.com/?a=1&x=\"oops\""]
+    assert LazyHTML.attribute(link, "onclick") == []
   end
 
   defp external_item(attrs) do

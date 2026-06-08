@@ -1584,16 +1584,9 @@ defmodule WikWeb.EventsLiveTest do
       |> Ash.Query.filter(external_event_id == ^external_event.id)
       |> Ash.read_one!(scope: scope(member, space))
 
-    assert has_element?(view, testid("external-event-#{external_event_id}"))
-
     assert has_element?(
              view,
-             "#{testid("external-event-#{external_event_id}")} .border-base-content\\/20"
-           )
-
-    refute has_element?(
-             view,
-             "#{testid("external-event-#{external_event_id}")} .border-dashed"
+             "#{testid("external-event-#{external_event_id}")} [data-state='promoted']"
            )
 
     assert has_element?(

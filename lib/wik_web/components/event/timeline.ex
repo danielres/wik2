@@ -94,20 +94,23 @@ defmodule WikWeb.Components.Event.Timeline do
                     </.link>
                   </div>
                 <% else %>
-                  <div class={[
-                    "rounded-box",
-                    "w-full",
-                    item.participations == [] &&
-                      [
-                        "opacity-60 hover:opacity-100 transition-opacity",
-                        "border-[1.5px] border-dashed border-base-content/30"
-                      ],
-                    item.participations != [] &&
-                      [
-                        "bg-base-content/6",
-                        "border-[1.5px] border-base-content/20"
-                      ]
-                  ]}>
+                  <div
+                    class={[
+                      "rounded-box",
+                      "w-full",
+                      item.participations == [] &&
+                        [
+                          "opacity-60 hover:opacity-100 transition-opacity",
+                          "border-[1.5px] border-dashed border-base-content/30"
+                        ],
+                      item.participations != [] &&
+                        [
+                          "bg-base-content/6",
+                          "border-[1.5px] border-base-content/20"
+                        ]
+                    ]}
+                    data-state={if(item.participations == [], do: "ghost", else: "promoted")}
+                  >
                     <button
                       type="button"
                       class={[

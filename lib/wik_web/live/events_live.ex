@@ -76,28 +76,11 @@ defmodule WikWeb.EventsLive do
                 user_tz={@active_tz}
               />
             <% {:external_event, item} -> %>
-              <Components.Event.ExternalDetails.render item={item} user_tz={@active_tz} />
-
-              <div class="mt-4">
-                <button
-                  :if={@tenant_context && @tenant_context.current_membership}
-                  type="button"
-                  class="btn btn-sm btn-ghost"
-                  data-testid={"external-event-detail-interest-#{item.event.id}"}
-                  phx-click="event_interest_start"
-                  phx-value-id={item.event.id}
-                  phx-value-source_type="external"
-                >
-                  Add interest
-                </button>
-
-                <p
-                  :if={!(@tenant_context && @tenant_context.current_membership)}
-                  class="text-sm text-error"
-                >
-                  You need to be a member of this space to add interest.
-                </p>
-              </div>
+              <Components.Event.ExternalDetails.render
+                current_membership={@tenant_context && @tenant_context.current_membership}
+                item={item}
+                user_tz={@active_tz}
+              />
             <% :event_form -> %>
               <.live_component
                 module={EventForm}

@@ -1,6 +1,7 @@
 defmodule Wik.Events.Feeds.Serializer do
   alias Utils.Tz
   alias Wik.Events.Event
+  alias Wik.Events.ExternalEvent
   alias WikWeb.Endpoint
 
   @vendor "Wik"
@@ -52,35 +53,49 @@ defmodule Wik.Events.Feeds.Serializer do
     }
   end
 
-  defp dtstart(%Event{all_day: true, starts_at: starts_at, tz: tz}) do
+  defp to_ical_event(%{external_event: %ExternalEvent{} = event}) do
+    %ICal.Event{
+      created: event.inserted_at,
+      description: blank_to_nil(event.description),
+      dtend: dtend(event),
+      dtstamp: event.updated_at,
+      dtstart: dtstart(event),
+      location: blank_to_nil(event.location),
+      status: event_status(event),
+      summary: event.title,
+      uid: event_uid(event)
+    }
+  end
+
+  defp dtstart(%{all_day: true, starts_at: starts_at, tz: tz}) do
     starts_at
     |> Tz.to_local!(tz)
     |> DateTime.to_date()
   end
 
-  defp dtstart(%Event{starts_at: starts_at, tz: tz}) do
+  defp dtstart(%{starts_at: starts_at, tz: tz}) do
     Tz.to_local!(starts_at, tz)
   end
 
-  defp dtend(%Event{all_day: true, ends_at: nil}), do: nil
+  defp dtend(%{all_day: true, ends_at: nil}), do: nil
 
-  defp dtend(%Event{all_day: true, ends_at: ends_at, tz: tz}) do
+  defp dtend(%{all_day: true, ends_at: ends_at, tz: tz}) do
     ends_at
     |> Tz.to_local!(tz)
     |> DateTime.to_date()
     |> Date.add(1)
   end
 
-  defp dtend(%Event{all_day: false, ends_at: nil}), do: nil
+  defp dtend(%{all_day: false, ends_at: nil}), do: nil
 
-  defp dtend(%Event{all_day: false, ends_at: ends_at, tz: tz}) do
+  defp dtend(%{all_day: false, ends_at: ends_at, tz: tz}) do
     Tz.to_local!(ends_at, tz)
   end
 
-  defp event_status(%Event{status: :cancelled}), do: :cancelled
-  defp event_status(%Event{}), do: :confirmed
+  defp event_status(%{status: :cancelled}), do: :cancelled
+  defp event_status(_event), do: :confirmed
 
-  defp event_uid(%Event{id: event_id}) do
+  defp event_uid(%{id: event_id}) do
     uri = URI.parse(Endpoint.url())
     host = uri.host || "wik"
 

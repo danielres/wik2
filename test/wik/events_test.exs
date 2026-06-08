@@ -7,7 +7,11 @@ defmodule Wik.EventsTest do
   alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
+  alias Wik.Events.EventParticipation
   alias Wik.Events.EventPublication
+  alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Events.ExternalEvent
+  alias Wik.Repo
   alias Wik.Scope
 
   describe "create/2" do
@@ -510,6 +514,38 @@ defmodule Wik.EventsTest do
       assert hd(entries).event.status == :cancelled
     end
 
+    test "aggregate feed includes external events with participation and excludes ghosts" do
+      owner = generate(user())
+      member = generate(user())
+      space = generate(space(author: owner))
+
+      add_membership(space, owner, :owner)
+      membership = add_membership(space, member, :member)
+      grant_active_telegram_access(space, member)
+
+      external_event = external_event_fixture(space, owner)
+
+      assert {:ok, []} = Events.list_aggregate_feed_events(member)
+
+      assert {:ok, participation} =
+               Events.record_external_interest(
+                 external_event,
+                 %{interest: 8, extra_info: "joining"},
+                 scope: scope(member, space)
+               )
+
+      assert {:ok, [%{external_event: loaded_external_event, participations: participations}]} =
+               Events.list_aggregate_feed_events(member)
+
+      assert loaded_external_event.id == external_event.id
+
+      assert [%EventParticipation{id: participation_id, membership: loaded_membership}] =
+               participations
+
+      assert participation_id == participation.id
+      assert loaded_membership.id == membership.id
+    end
+
     test "space feed returns only events visible in the selected space" do
       owner = generate(user())
       member = generate(user())
@@ -608,6 +644,34 @@ defmodule Wik.EventsTest do
       title: "Shared Dinner"
     }
     |> Map.merge(Enum.into(overrides, %{}))
+  end
+
+  defp external_event_fixture(space, owner) do
+    {:ok, subscription} =
+      ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    Repo.insert!(%ExternalEvent{
+      id: Ash.UUIDv7.generate(),
+      all_day: false,
+      calendar_name: "Community calendar",
+      description: "Imported from an external calendar",
+      ends_at: ~U[2026-06-03 20:00:00.000000Z],
+      event_url: nil,
+      external_occurrence_key: "single",
+      external_recurrence_id: nil,
+      external_uid: "external-dinner",
+      last_seen_at: DateTime.utc_now(),
+      location: "Riverside Hall",
+      space_id: space.id,
+      starts_at: ~U[2026-06-03 18:00:00.000000Z],
+      status: :published,
+      subscription_id: subscription.id,
+      title: "External dinner",
+      tz: "Etc/UTC"
+    })
   end
 
   defp scope(actor, tenant) do

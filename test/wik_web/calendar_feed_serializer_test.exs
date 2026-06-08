@@ -3,6 +3,7 @@ defmodule Wik.Events.Feeds.SerializerTest do
 
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
+  alias Wik.Events.ExternalEvent
   alias Wik.Events.Feeds.Serializer
 
   test "serializes timed events with the event timezone" do
@@ -71,6 +72,17 @@ defmodule Wik.Events.Feeds.SerializerTest do
     assert ics =~ "Relay note: Worth sharing"
   end
 
+  test "serializes aggregate external event entries" do
+    ics =
+      %{external_event: external_event(), participations: []}
+      |> then(&Serializer.to_ics([&1], calendar_name: "Aggregate feed"))
+
+    assert ics =~ "SUMMARY:External dinner"
+    assert ics =~ "DESCRIPTION:Imported from an external calendar"
+    assert ics =~ "DTSTART:20260603T180000Z"
+    assert ics =~ "DTEND:20260603T200000Z"
+  end
+
   defp timed_event do
     %Event{
       description: "Bring food",
@@ -103,6 +115,22 @@ defmodule Wik.Events.Feeds.SerializerTest do
       title: "Festival",
       tz: "Europe/Berlin",
       updated_at: ~U[2026-05-02 09:00:00Z]
+    }
+  end
+
+  defp external_event do
+    %ExternalEvent{
+      all_day: false,
+      description: "Imported from an external calendar",
+      ends_at: ~U[2026-06-03 20:00:00Z],
+      id: "external-event-1",
+      inserted_at: ~U[2026-06-01 09:00:00Z],
+      location: "Riverside Hall",
+      starts_at: ~U[2026-06-03 18:00:00Z],
+      status: :published,
+      title: "External dinner",
+      tz: "Etc/UTC",
+      updated_at: ~U[2026-06-02 09:00:00Z]
     }
   end
 

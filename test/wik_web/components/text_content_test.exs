@@ -12,11 +12,10 @@ defmodule WikWeb.Components.TextContentTest do
           "<br>Body<br><br><br><br><a href=\"https://example.test\">https://example.test</a><br>"
       })
 
-    refute html =~ "<div><br>"
-    refute html =~ "<br></div>"
-    refute html =~ "<br><br><br>"
-    assert html =~ "Body<br><br><a"
-    assert html =~ ~s(href="https://example.test")
+    document = LazyHTML.from_fragment(html)
+
+    assert document |> LazyHTML.query(~s(a[href="https://example.test"])) |> Enum.any?()
+    assert document |> LazyHTML.query("br") |> Enum.count() == 2
   end
 
   test "does not preserve template indentation around html content" do

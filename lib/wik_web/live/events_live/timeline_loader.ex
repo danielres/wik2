@@ -16,6 +16,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
 
     publications_query =
       EventPublication
+      |> Events.scheduled_event_publications_query()
       |> Query.filter(
         event.starts_at >= ^yesterday_start or
           (not is_nil(event.ends_at) and event.ends_at >= ^yesterday_start)
@@ -121,6 +122,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
 
     query =
       Events.external_events_query()
+      |> Events.scheduled_external_events_query()
       |> Query.filter(
         (starts_at >= ^today_start or ends_at >= ^today_start) and starts_at <= ^future_window_end
       )
@@ -138,6 +140,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
 
     query =
       Events.external_events_query()
+      |> Events.scheduled_external_events_query()
       |> Query.filter(starts_at > ^future_window_end)
       |> Query.limit(1)
 

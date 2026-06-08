@@ -38,6 +38,7 @@ defmodule Wik.Events.Feeds do
 
   defp aggregate_feed_publications_query do
     EventPublication
+    |> Wik.Events.scheduled_event_publications_query()
     |> Ash.Query.filter(event.status != :draft)
     |> Ash.Query.sort([
       {"event.starts_at", :asc},
@@ -54,6 +55,7 @@ defmodule Wik.Events.Feeds do
 
   defp aggregate_feed_external_participations_query do
     EventParticipation
+    |> Wik.Events.scheduled_external_event_participations_query()
     |> Ash.Query.filter(not is_nil(external_event_id) and external_event.status != :draft)
     |> Ash.Query.sort([
       {"external_event.starts_at", :asc},
@@ -67,6 +69,7 @@ defmodule Wik.Events.Feeds do
 
   defp space_feed_publications_query do
     EventPublication
+    |> Wik.Events.scheduled_event_publications_query()
     |> Ash.Query.filter(event.status != :draft)
     |> Ash.Query.sort([
       {"event.starts_at", :asc},

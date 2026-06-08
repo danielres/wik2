@@ -100,6 +100,18 @@ defmodule Wik.Events do
     |> Query.sort(starts_at: :asc)
   end
 
+  def scheduled_event_publications_query(query) do
+    Query.filter(query, not is_nil(event.starts_at) and not is_nil(event.tz))
+  end
+
+  def scheduled_external_event_participations_query(query) do
+    Query.filter(query, not is_nil(external_event.starts_at) and not is_nil(external_event.tz))
+  end
+
+  def scheduled_external_events_query(query) do
+    Query.filter(query, not is_nil(starts_at) and not is_nil(tz))
+  end
+
   defp origin_publication(%Event{} = event, scope) do
     EventPublication
     |> Query.filter(event_id == ^event.id and target_space_id == ^scope.tenant.id)

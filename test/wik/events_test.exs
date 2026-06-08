@@ -514,6 +514,30 @@ defmodule Wik.EventsTest do
       assert hd(entries).event.status == :cancelled
     end
 
+    test "aggregate feed excludes malformed scheduled events" do
+      owner = generate(user())
+      member = generate(user())
+      space = generate(space(author: owner))
+
+      add_membership(space, owner, :owner)
+      add_membership(space, member, :member)
+      grant_active_telegram_access(space, member)
+
+      {:ok, event} =
+        Ash.create(
+          Event,
+          event_attrs(title: "Malformed event"),
+          action: :create,
+          scope: scope(owner, space)
+        )
+
+      Repo.query!("UPDATE events SET starts_at = NULL, tz = NULL WHERE id = $1", [
+        Ecto.UUID.dump!(event.id)
+      ])
+
+      assert {:ok, []} = Events.list_aggregate_feed_events(member)
+    end
+
     test "aggregate feed includes external events with participation and excludes ghosts" do
       owner = generate(user())
       member = generate(user())

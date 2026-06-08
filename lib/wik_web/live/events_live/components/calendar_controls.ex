@@ -84,7 +84,7 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
       </section>
 
       <section :if={not @timeline.show_external?}>
-        <label class="label cursor-pointer justify-start w-full">
+        <label :if={false} class="label cursor-pointer justify-start w-full">
           <div class="w-8">
             <Components.CalendarFeed.space_subscribe_button scope={@current_scope} />
           </div>

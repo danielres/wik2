@@ -35,6 +35,15 @@ defmodule WikWeb.Components.Event.ExternalDetails do
 
       <Event.Panels.Location.render location={@event.location} testid_prefix="external-event" />
 
+      <Event.Panels.Participation.render
+        current_membership={@current_membership}
+        current_member_participation={@item.current_member_participation}
+        participations={@item.participations}
+        source_id={@item.event.id}
+        source_type="external"
+        testid_prefix="external-event"
+      />
+
       <div :if={present?(@event.description)}>
         <div class="text-xs uppercase tracking-wide opacity-50">
           Description
@@ -47,15 +56,6 @@ defmodule WikWeb.Components.Event.ExternalDetails do
           <.description description={@event.description} />
         </div>
       </div>
-
-      <Event.Panels.Participation.render
-        current_membership={@current_membership}
-        current_member_participation={@item.current_member_participation}
-        participations={@item.participations}
-        source_id={@item.event.id}
-        source_type="external"
-        testid_prefix="external-event"
-      />
 
       <div class="space-y-3">
         <dl :if={dev?() and present?(@item.external_uid)} class="space-y-1">

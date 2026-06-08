@@ -23,6 +23,13 @@ defmodule Wik.Events.EventParticipation do
       reference :external_event, on_delete: :delete
       reference :membership, on_delete: :delete, match_with: [space_id: :space_id]
     end
+
+    check_constraints do
+      check_constraint [:publication_id, :external_event_id],
+                       "event_participations_exactly_one_target",
+                       check: "(publication_id IS NULL) != (external_event_id IS NULL)",
+                       message: "must target exactly one event"
+    end
   end
 
   actions do

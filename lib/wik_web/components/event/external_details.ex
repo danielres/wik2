@@ -33,12 +33,7 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         </div>
       </div>
 
-      <div :if={present?(@event.location)} class="flex gap-2 items-start">
-        <.icon name="hero-map-pin-mini" class="mt-0.5" />
-        <div class="min-w-0">
-          <div class="text-sm">{@event.location}</div>
-        </div>
-      </div>
+      <Event.Panels.Location.render location={@event.location} testid_prefix="external-event" />
 
       <div :if={present?(@event.description)}>
         <div class="text-xs uppercase tracking-wide opacity-50">

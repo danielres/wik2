@@ -232,11 +232,6 @@ defmodule WikWeb.Components.Event do
       Phoenix.Component.used_input?(form[:ends_at_time])
   end
 
-  defp google_maps_search_url(location) do
-    "https://www.google.com/maps/search/?" <>
-      URI.encode_query(%{api: 1, query: location})
-  end
-
   defp interest_dimension, do: Dimensions.get!("participation", "interest")
 
   attr :publication, :map, required: true
@@ -334,22 +329,10 @@ defmodule WikWeb.Components.Event do
         </div>
       </div>
 
-      <div :if={@display_event.location not in [nil, ""]} class="flex gap-2 items-start">
-        <.icon name="hero-map-pin-mini" class="mt-0.5" />
-        <div class="min-w-0">
-          <div class="text-sm">{@display_event.location}</div>
-          <.link
-            class="link link-hover text-xs opacity-70 flex items-center gap-0"
-            data-testid="event-location-google-maps-link"
-            href={google_maps_search_url(@display_event.location)}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <span>Open in Google Maps</span>
-            <.icon name="hero-arrow-top-right-on-square-micro" class="scale-80" />
-          </.link>
-        </div>
-      </div>
+      <WikWeb.Components.Event.Panels.Location.render
+        location={@display_event.location}
+        testid_prefix="event"
+      />
 
       <WikWeb.Components.Event.Panels.Participation.render
         current_membership={@current_membership}

@@ -111,8 +111,8 @@ defmodule WikWeb.Components.Event.Timeline do
                     ]}
                     data-state={if(item.participations == [], do: "ghost", else: "promoted")}
                   >
-                    <button
-                      type="button"
+                    <.link
+                      patch={item.open_path}
                       class={[
                         "cursor-pointer",
                         "block p-4",
@@ -126,9 +126,6 @@ defmodule WikWeb.Components.Event.Timeline do
                           ]
                       ]}
                       data-testid={"event-open-#{item.id}"}
-                      phx-click="external_event_show"
-                      phx-target={@target}
-                      phx-value-id={item.id}
                     >
                       <.timeline_item_body
                         current_scope={@current_scope}
@@ -136,7 +133,7 @@ defmodule WikWeb.Components.Event.Timeline do
                         item={item}
                         user_tz={@user_tz}
                       />
-                    </button>
+                    </.link>
                   </div>
                 <% end %>
               </article>

@@ -3,29 +3,37 @@ defmodule WikWeb.EventsLive.Params do
 
   def parse(params) do
     %{
+      event_id: parse_event_id(params),
+      external_event_id: parse_external_event_id(params),
       show_external?: parse_show_external?(params),
       future_windows: parse_future_windows(params["future_windows"])
     }
   end
 
-  def page_params(show_external?, future_windows) do
-    %{external: show_external?}
-    |> maybe_put_future_windows(future_windows)
-  end
+  def page_query(show_external?, future_windows),
+    do: query([calendars_param(show_external?), future_windows_param(future_windows)])
 
-  def event_params(event_id, show_external?, future_windows) do
-    %{event: event_id, external: show_external?}
-    |> maybe_put_future_windows(future_windows)
-  end
+  def event_query(event_id, show_external?, future_windows),
+    do:
+      query([
+        calendars_param(show_external?),
+        {"event", event_id},
+        future_windows_param(future_windows)
+      ])
 
-  def load_more_params(show_external?, future_windows) do
-    %{external: show_external?, future_windows: future_windows + 1}
-  end
+  def external_event_query(external_event_id), do: query([{"ext", external_event_id}])
 
-  defp parse_show_external?(%{"external" => value}),
-    do: value in [true, "true", "on", "1"]
+  def load_more_query(show_external?, future_windows),
+    do: query([calendars_param(show_external?), {"future_windows", future_windows + 1}])
 
-  defp parse_show_external?(_params), do: false
+  defp parse_event_id(%{"event" => event_id}), do: event_id
+  defp parse_event_id(_params), do: nil
+
+  defp parse_external_event_id(%{"ext" => external_event_id}), do: external_event_id
+  defp parse_external_event_id(_params), do: nil
+
+  defp parse_show_external?(%{"ext" => _external_event_id}), do: true
+  defp parse_show_external?(params), do: Map.has_key?(params, "calendars")
 
   defp parse_future_windows(nil), do: 1
 
@@ -36,9 +44,23 @@ defmodule WikWeb.EventsLive.Params do
     end
   end
 
-  defp maybe_put_future_windows(params, future_windows) when future_windows > 1 do
-    Map.put(params, :future_windows, future_windows)
-  end
+  defp calendars_param(true), do: "calendars"
+  defp calendars_param(false), do: nil
 
-  defp maybe_put_future_windows(params, _future_windows), do: params
+  defp future_windows_param(future_windows) when future_windows > 1,
+    do: {"future_windows", future_windows}
+
+  defp future_windows_param(_future_windows), do: nil
+
+  defp query(parts) do
+    parts
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map_join("&", fn
+      key when is_binary(key) ->
+        URI.encode_www_form(key)
+
+      {key, value} ->
+        URI.encode_www_form(to_string(key)) <> "=" <> URI.encode_www_form(to_string(value))
+    end)
+  end
 end

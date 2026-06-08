@@ -76,7 +76,7 @@ defmodule WikWeb.EventsLiveTest do
 
     assert_patch(
       view,
-      ~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}"
+      ~p"/#{space.slug}/events?#{%{event: publication.event_id}}"
     )
 
     assert has_element?(view, testid("event-detail"))
@@ -117,7 +117,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(member)
-      |> live(~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}")
+      |> live(~p"/#{space.slug}/events?#{%{event: publication.event_id}}")
 
     assert has_element?(view, ~s(a[href="/#{space.slug}/wiki/members/owner-ada"]))
   end
@@ -336,7 +336,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     assert has_element?(view, testid(first_event_year_testid))
     assert has_element?(view, testid(first_event_month_testid))
@@ -353,7 +353,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-external-toggle")))
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
+    assert_patch(view, ~p"/#{space.slug}/events")
     assert has_element?(view, testid(first_event_year_testid))
     assert has_element?(view, testid(first_event_month_testid))
     assert has_element?(view, testid(first_event_day_testid))
@@ -368,7 +368,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-external-toggle")))
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: true}}")
+    assert_patch(view, ~p"/#{space.slug}/events?calendars")
     assert has_element?(view, testid(external_event_month_testid))
     assert has_element?(view, testid(external_event_day_testid))
     assert has_element?(view, testid(external_event_testid))
@@ -568,13 +568,13 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     assert has_element?(view, ~s([data-testid^="external-event-"]))
 
     render_click(element(view, testid("events-external-toggle")))
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
+    assert_patch(view, ~p"/#{space.slug}/events")
     refute has_element?(view, ~s([data-testid^="external-event-"]))
   end
 
@@ -619,7 +619,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
+    assert_patch(view, ~p"/#{space.slug}/events")
     assert has_element?(view, testid("events-timeline"))
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
@@ -831,7 +831,7 @@ defmodule WikWeb.EventsLiveTest do
 
     assert_patch(
       view,
-      ~p"/#{space.slug}/events?#{%{event: publication.event_id, external: false}}"
+      ~p"/#{space.slug}/events?#{%{event: publication.event_id}}"
     )
 
     assert has_element?(view, testid("event-detail"))
@@ -859,7 +859,7 @@ defmodule WikWeb.EventsLiveTest do
       )
     )
 
-    assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
+    assert_patch(view, ~p"/#{space.slug}/events")
     refute has_element?(view, testid("event-form"))
     refute has_element?(view, testid("event-detail"))
     assert render(view) =~ "Community dinner updated"
@@ -1380,7 +1380,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     assert has_element?(view, testid("events-subscribe-to-calendar-button"))
     assert has_element?(view, testid("events-subscriptions-empty"))
@@ -1428,7 +1428,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, revisited_view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     assert has_element?(revisited_view, testid("events-subscription-open-#{subscription.id}"))
 
@@ -1455,7 +1455,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     render_click(element(view, testid("events-subscribe-to-calendar-button")))
 
@@ -1508,7 +1508,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     assert has_element?(
              view,
@@ -1529,20 +1529,76 @@ defmodule WikWeb.EventsLiveTest do
       )
 
     sync_subscription!(subscription)
+    external_event = first_external_event(subscription)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     external_event_id = external_event_id(subscription)
 
     render_click(element(view, testid("event-open-#{external_event_id}")))
 
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{ext: external_event.id}}")
     assert has_element?(view, testid("external-event-detail"))
     assert render(view) =~ "External dinner"
     assert render(view) =~ "Imported from an external calendar"
     assert render(view) =~ "Community Coordination Calendar"
+  end
+
+  test "external event route opens the shared event modal and forces calendars", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+    external_event = first_external_event(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{ext: external_event.id}}")
+
+    assert has_element?(view, testid("external-event-detail"))
+    assert has_element?(view, testid(external_event_testid(subscription)))
+  end
+
+  test "ambiguous event route opens no event modal", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, internal_event} =
+      Ash.create(
+        Event,
+        event_attrs(title: "Internal event"),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+    external_event = first_external_event(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{event: internal_event.id, ext: external_event.id}}")
+
+    refute has_element?(view, testid("event-detail"))
+    refute has_element?(view, testid("external-event-detail"))
   end
 
   test "can add interest from a ghost external event modal", %{conn: conn} do
@@ -1566,7 +1622,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(member)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     render_click(element(view, testid("event-open-#{external_event_id}")))
     render_click(element(view, testid("external-event-detail-interest-#{external_event.id}")))
@@ -1644,7 +1700,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
 
@@ -1683,7 +1739,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     assert external_event_id(subscription) == nil
     refute has_element?(view, ~s([data-testid^="external-event-"]))
@@ -1717,7 +1773,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     assert external_event_id(subscription) == nil
     refute has_element?(view, ~s([data-testid^="external-event-"]))
@@ -1798,7 +1854,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     external_event_id = external_event_id(subscription)
 
@@ -1832,7 +1888,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     external_event_testid = external_event_testid(subscription)
 
@@ -1879,7 +1935,7 @@ defmodule WikWeb.EventsLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+      |> live(~p"/#{space.slug}/events?calendars")
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
     assert has_element?(view, testid("events-subscription-name-form"))

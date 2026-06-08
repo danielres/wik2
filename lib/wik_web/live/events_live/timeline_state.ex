@@ -123,20 +123,28 @@ defmodule WikWeb.EventsLive.TimelineState do
           )
         )
 
-      item ->
-        item
+      %{source_type: :external, event: event} = item ->
+        Map.put(item, :open_path, external_event_path(current_scope, event.id))
     end)
   end
 
   defp load_more_path(current_scope, %{show_external?: true, future_windows: future_windows}) do
-    params = Params.load_more_params(true, future_windows)
-    ~p"/#{current_scope.tenant.slug}/events?#{params}"
+    events_path(current_scope, Params.load_more_query(true, future_windows))
   end
 
   defp load_more_path(_current_scope, _timeline), do: nil
 
   defp internal_event_path(current_scope, event_id, show_external?, future_windows) do
-    params = Params.event_params(event_id, show_external?, future_windows)
-    ~p"/#{current_scope.tenant.slug}/events?#{params}"
+    events_path(current_scope, Params.event_query(event_id, show_external?, future_windows))
+  end
+
+  defp external_event_path(current_scope, event_id) do
+    events_path(current_scope, Params.external_event_query(event_id))
+  end
+
+  def events_path(current_scope, ""), do: ~p"/#{current_scope.tenant.slug}/events"
+
+  def events_path(current_scope, query) do
+    ~p"/#{current_scope.tenant.slug}/events" <> "?" <> query
   end
 end

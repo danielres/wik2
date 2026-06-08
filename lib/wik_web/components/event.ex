@@ -368,9 +368,7 @@ defmodule WikWeb.Components.Event do
 
           <.link
             :if={@show_origin_space?}
-            navigate={
-              ~p"/#{@publication.event.space.slug}/events?external=false&event=#{@publication.event.id}"
-            }
+            navigate={~p"/#{@publication.event.space.slug}/events?event=#{@publication.event.id}"}
             class="badge badge-soft badge-sm"
           >
             {@publication.event.space.name}

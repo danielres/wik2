@@ -8,19 +8,7 @@ defmodule WikWeb.Components.Event.ExternalDetailsTest do
   test "render preserves plain text descriptions with line breaks" do
     html =
       render_component(&ExternalDetails.render/1, %{
-        item: %{
-          title: "External dinner",
-          status: :confirmed,
-          description: "Line one\nLine two",
-          all_day: false,
-          location: nil,
-          calendar_name: nil,
-          source_url: nil,
-          event_url: nil,
-          tz: "Etc/UTC",
-          starts_at: ~U[2026-06-01 18:00:00Z],
-          ends_at: ~U[2026-06-01 20:00:00Z]
-        },
+        item: external_item(description: "Line one\nLine two"),
         user_tz: "Etc/UTC"
       })
 
@@ -31,19 +19,10 @@ defmodule WikWeb.Components.Event.ExternalDetailsTest do
   test "render auto-links bare urls in plain text descriptions" do
     html =
       render_component(&ExternalDetails.render/1, %{
-        item: %{
-          title: "External dinner",
-          status: :confirmed,
-          description: "More info: https://sabinablumauer.si/blues-dance/\nBring friends",
-          all_day: false,
-          location: nil,
-          calendar_name: nil,
-          source_url: nil,
-          event_url: nil,
-          tz: "Etc/UTC",
-          starts_at: ~U[2026-06-01 18:00:00Z],
-          ends_at: ~U[2026-06-01 20:00:00Z]
-        },
+        item:
+          external_item(
+            description: "More info: https://sabinablumauer.si/blues-dance/\nBring friends"
+          ),
         user_tz: "Etc/UTC"
       })
 
@@ -60,20 +39,11 @@ defmodule WikWeb.Components.Event.ExternalDetailsTest do
   test "render sanitizes html descriptions and keeps safe links" do
     html =
       render_component(&ExternalDetails.render/1, %{
-        item: %{
-          title: "External dinner",
-          status: :confirmed,
-          description:
-            ~s|<a href="https://example.com">example</a><script>alert(1)</script><img src="https://example.com/x.png" onerror="alert(1)">|,
-          all_day: false,
-          location: nil,
-          calendar_name: nil,
-          source_url: nil,
-          event_url: nil,
-          tz: "Etc/UTC",
-          starts_at: ~U[2026-06-01 18:00:00Z],
-          ends_at: ~U[2026-06-01 20:00:00Z]
-        },
+        item:
+          external_item(
+            description:
+              ~s|<a href="https://example.com">example</a><script>alert(1)</script><img src="https://example.com/x.png" onerror="alert(1)">|
+          ),
         user_tz: "Etc/UTC"
       })
 
@@ -90,20 +60,11 @@ defmodule WikWeb.Components.Event.ExternalDetailsTest do
   test "render unwraps google calendar redirect links to their real destination" do
     html =
       render_component(&ExternalDetails.render/1, %{
-        item: %{
-          title: "External dinner",
-          status: :confirmed,
-          description:
-            ~s|<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar">www.werk36.de</a>|,
-          all_day: false,
-          location: nil,
-          calendar_name: nil,
-          source_url: nil,
-          event_url: nil,
-          tz: "Etc/UTC",
-          starts_at: ~U[2026-06-01 18:00:00Z],
-          ends_at: ~U[2026-06-01 20:00:00Z]
-        },
+        item:
+          external_item(
+            description:
+              ~s|<a href="https://www.google.com/url?q=http://www.werk36.de&amp;sa=D&amp;source=calendar">www.werk36.de</a>|
+          ),
         user_tz: "Etc/UTC"
       })
 
@@ -116,24 +77,43 @@ defmodule WikWeb.Components.Event.ExternalDetailsTest do
   test "render escapes rewritten hrefs after unwrapping google redirect links" do
     html =
       render_component(&ExternalDetails.render/1, %{
-        item: %{
-          title: "External dinner",
-          status: :confirmed,
-          description:
-            ~s|<a href="https://www.google.com/url?q=https%3A%2F%2Fexample.com%2F%3Fa%3D1%26x%3D%22oops%22&amp;sa=D">example</a>|,
-          all_day: false,
-          location: nil,
-          calendar_name: nil,
-          source_url: nil,
-          event_url: nil,
-          tz: "Etc/UTC",
-          starts_at: ~U[2026-06-01 18:00:00Z],
-          ends_at: ~U[2026-06-01 20:00:00Z]
-        },
+        item:
+          external_item(
+            description:
+              ~s|<a href="https://www.google.com/url?q=https%3A%2F%2Fexample.com%2F%3Fa%3D1%26x%3D%22oops%22&amp;sa=D">example</a>|
+          ),
         user_tz: "Etc/UTC"
       })
 
     assert html =~ ~s(href="https://example.com/?a=1&amp;x=&quot;oops&quot;")
     refute html =~ ~s(onclick=)
+  end
+
+  defp external_item(attrs) do
+    event =
+      Map.merge(
+        %{
+          id: "external-event-1",
+          title: "External dinner",
+          status: :confirmed,
+          description: nil,
+          all_day: false,
+          location: nil,
+          tz: "Etc/UTC",
+          starts_at: ~U[2026-06-01 18:00:00Z],
+          ends_at: ~U[2026-06-01 20:00:00Z]
+        },
+        Map.new(attrs)
+      )
+
+    %{
+      event: event,
+      participations: [],
+      current_member_participation: nil,
+      calendar_name: nil,
+      event_url: nil,
+      external_uid: nil,
+      external_recurrence_id: nil
+    }
   end
 end

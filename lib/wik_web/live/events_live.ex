@@ -155,16 +155,9 @@ defmodule WikWeb.EventsLive do
       |> TimelineState.put_show_external(route_params.show_external?)
       |> refresh_page_data()
 
-    publication =
-      params["event"] &&
-        Enum.find(
-          socket.assigns.timeline.internal_publications,
-          &(&1.event_id == params["event"])
-        )
-
     socket =
       socket
-      |> sync_modal_with_route(publication)
+      |> sync_modal_with_route(route_modal(socket, route_params))
 
     {:noreply, socket}
   end
@@ -201,9 +194,9 @@ defmodule WikWeb.EventsLive do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
 
-    params = Params.page_params(!timeline.show_external?, timeline.future_windows)
+    query = Params.page_query(!timeline.show_external?, timeline.future_windows)
 
-    {:noreply, push_patch(socket, to: ~p"/#{current_scope.tenant.slug}/events?#{params}")}
+    {:noreply, push_patch(socket, to: TimelineState.events_path(current_scope, query))}
   end
 
   def handle_event("external_calendar_subscription_start", _params, socket) do
@@ -249,13 +242,13 @@ defmodule WikWeb.EventsLive do
   def handle_info({:event_details, :saved}, socket) do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
-    page_params = Params.page_params(timeline.show_external?, timeline.future_windows)
+    page_query = Params.page_query(timeline.show_external?, timeline.future_windows)
 
     socket =
       socket
       |> assign(:modal, nil)
       |> refresh_page_data()
-      |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events?#{page_params}")
+      |> push_patch(to: TimelineState.events_path(current_scope, page_query))
 
     {:noreply, socket}
   end
@@ -279,13 +272,13 @@ defmodule WikWeb.EventsLive do
   def handle_info({:events_live, {:event_created, _event}}, socket) do
     current_scope = socket.assigns.current_scope
     timeline = socket.assigns.timeline
-    page_params = Params.page_params(timeline.show_external?, timeline.future_windows)
+    page_query = Params.page_query(timeline.show_external?, timeline.future_windows)
 
     {:noreply,
      socket
      |> assign(:modal, nil)
      |> refresh_page_data()
-     |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events?#{page_params}")}
+     |> push_patch(to: TimelineState.events_path(current_scope, page_query))}
   end
 
   # Interest
@@ -339,6 +332,27 @@ defmodule WikWeb.EventsLive do
     TimelineState.refresh_page_data(socket)
   end
 
+  defp route_modal(_socket, %{event_id: event_id, external_event_id: external_event_id})
+       when not is_nil(event_id) and not is_nil(external_event_id),
+       do: nil
+
+  defp route_modal(socket, %{event_id: event_id}) when not is_nil(event_id) do
+    case Enum.find(socket.assigns.timeline.internal_publications, &(&1.event_id == event_id)) do
+      nil -> nil
+      publication -> {:internal_event, publication}
+    end
+  end
+
+  defp route_modal(socket, %{external_event_id: external_event_id})
+       when not is_nil(external_event_id) do
+    case Enum.find(socket.assigns.timeline.external_items, &(&1.event.id == external_event_id)) do
+      nil -> nil
+      item -> {:external_event, item}
+    end
+  end
+
+  defp route_modal(_socket, _route_params), do: nil
+
   defp sync_modal_with_route(socket, nil) do
     case socket.assigns.modal do
       {:internal_event, _publication} -> assign(socket, :modal, nil)
@@ -347,8 +361,8 @@ defmodule WikWeb.EventsLive do
     end
   end
 
-  defp sync_modal_with_route(socket, publication) do
-    assign(socket, :modal, {:internal_event, publication})
+  defp sync_modal_with_route(socket, modal) do
+    assign(socket, :modal, modal)
   end
 
   defp close_modal(socket) do
@@ -357,12 +371,23 @@ defmodule WikWeb.EventsLive do
 
     case socket.assigns.modal do
       {:internal_event, _publication} ->
-        params =
-          Params.page_params(timeline.show_external?, timeline.future_windows)
+        query =
+          Params.page_query(timeline.show_external?, timeline.future_windows)
 
         socket
         |> assign(:modal, nil)
-        |> push_patch(to: ~p"/#{current_scope.tenant.slug}/events?#{params}")
+        |> push_patch(to: TimelineState.events_path(current_scope, query))
+
+      {:external_event, _item} ->
+        socket
+        |> assign(:modal, nil)
+        |> push_patch(
+          to:
+            TimelineState.events_path(
+              current_scope,
+              Params.page_query(true, timeline.future_windows)
+            )
+        )
 
       _ ->
         assign(socket, :modal, nil)

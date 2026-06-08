@@ -47,6 +47,7 @@ defmodule Wik.Events.Feeds do
     |> Ash.Query.load([
       :space,
       :published_by,
+      participations: [membership: [:avatar_url, user: [:external_identities]]],
       event: [:author, :space]
     ])
   end
@@ -58,10 +59,10 @@ defmodule Wik.Events.Feeds do
       {"external_event.starts_at", :asc},
       {:inserted_at, :asc}
     ])
-    |> Ash.Query.load([
-      :membership,
+    |> Ash.Query.load(
+      membership: [:avatar_url, user: [:external_identities]],
       external_event: [:space]
-    ])
+    )
   end
 
   defp space_feed_publications_query do
@@ -134,6 +135,7 @@ defmodule Wik.Events.Feeds do
 
       %{
         event: first.event,
+        participations: Enum.flat_map(publications, & &1.participations),
         publications: Enum.sort_by(publications, & &1.space.name)
       }
     end)

@@ -1,10 +1,14 @@
 defmodule Wik.Events.Feeds.SerializerTest do
   use ExUnit.Case, async: true
 
+  alias Wik.Accounts.Membership
+  alias Wik.Accounts.Space
   alias Wik.Events.Event
+  alias Wik.Events.EventParticipation
   alias Wik.Events.EventPublication
   alias Wik.Events.ExternalEvent
   alias Wik.Events.Feeds.Serializer
+  alias WikWeb.Endpoint
 
   test "serializes timed events with the event timezone" do
     ics =
@@ -50,37 +54,72 @@ defmodule Wik.Events.Feeds.SerializerTest do
     ics =
       %{
         event: timed_event_with_space(),
+        participations: [
+          participation("Ada", 8),
+          participation("Max", 5, "joining around 15:00")
+        ],
         publications: [
           %EventPublication{
             event: timed_event_with_space(),
-            space: %Wik.Accounts.Space{name: "berlin-hackers"},
+            space: %Space{name: "berlin-hackers", slug: "berlin-hackers"},
             publication_type: :origin
           },
           %EventPublication{
             event: timed_event_with_space(),
-            space: %Wik.Accounts.Space{name: "community-kitchen"},
+            space: %Space{name: "community-kitchen", slug: "community-kitchen"},
             publication_type: :relay,
-            published_by: %Wik.Accounts.User{email: "ada@example.com"},
             relay_note: "Worth sharing"
           }
         ]
       }
       |> then(&Serializer.to_ics([&1], calendar_name: "Aggregate feed"))
 
-    assert ics =~ "DESCRIPTION:Bring food\\n\\nVisible in: berlin-hackers"
-    assert ics =~ "Visible in: community-kitchen"
-    assert ics =~ "Relay note: Worth sharing"
+    assert ics =~ "DESCRIPTION:View event: #{Endpoint.url()}/origin-space/events?event=event-1"
+    assert ics =~ "Participation/Interest:\\n\\n- Ada: 8/10"
+    assert ics =~ "- Max: 5/10 - joining around 15:00"
+    assert ics =~ "---\\n\\nDescription:\\n\\nBring food"
+    assert ics =~ "---\\n\\nVisible in:\\n- berlin-hackers\\n- community-kitchen"
+    assert ics =~ "Relay note:\\nWorth sharing"
   end
 
   test "serializes aggregate external event entries" do
     ics =
-      %{external_event: external_event(), participations: []}
+      %{
+        external_event: external_event(),
+        participations: [participation("Ada", 8)],
+        space: %Space{name: "berlin-hackers", slug: "berlin-hackers"}
+      }
       |> then(&Serializer.to_ics([&1], calendar_name: "Aggregate feed"))
 
     assert ics =~ "SUMMARY:External dinner"
-    assert ics =~ "DESCRIPTION:Imported from an external calendar"
+
+    assert ics =~
+             "DESCRIPTION:View event: #{Endpoint.url()}/berlin-hackers/events?ext=external-event-1"
+
+    assert ics =~ "Participation/Interest:\\n\\n- Ada: 8/10"
+    assert ics =~ "---\\n\\nDescription:\\n\\nImported from an external calendar"
+    assert ics =~ "---\\n\\nVisible in:\\n- berlin-hackers"
     assert ics =~ "DTSTART:20260603T180000Z"
     assert ics =~ "DTEND:20260603T200000Z"
+  end
+
+  test "limits aggregate participation to ten list items" do
+    participations =
+      for interest <- 10..0//-1 do
+        participation("Member #{interest}", interest)
+      end
+
+    ics =
+      %{
+        external_event: external_event(),
+        participations: participations,
+        space: %Space{name: "berlin-hackers", slug: "berlin-hackers"}
+      }
+      |> then(&Serializer.to_ics([&1], calendar_name: "Aggregate feed"))
+
+    assert ics =~ "- Member 10: 10/10"
+    refute ics =~ "- Member 1: 1/10"
+    assert ics =~ "- ..."
   end
 
   defp timed_event do
@@ -99,7 +138,7 @@ defmodule Wik.Events.Feeds.SerializerTest do
   end
 
   defp timed_event_with_space do
-    %{timed_event() | space: %Wik.Accounts.Space{name: "origin-space"}}
+    %{timed_event() | space: %Space{name: "origin-space", slug: "origin-space"}}
   end
 
   defp all_day_event do
@@ -146,6 +185,14 @@ defmodule Wik.Events.Feeds.SerializerTest do
       title: "Cancelled dinner",
       tz: "Etc/UTC",
       updated_at: ~U[2026-05-02 09:00:00Z]
+    }
+  end
+
+  defp participation(username, interest, extra_info \\ nil) do
+    %EventParticipation{
+      extra_info: extra_info,
+      interest: interest,
+      membership: %Membership{username: username}
     }
   end
 end

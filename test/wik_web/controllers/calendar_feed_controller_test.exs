@@ -30,7 +30,7 @@ defmodule WikWeb.CalendarFeedControllerTest do
 
     assert response(conn, 200) =~ "BEGIN:VCALENDAR"
     assert response(conn, 200) =~ "SUMMARY:Shared dinner"
-    assert response(conn, 200) =~ "Visible in: #{space.name}"
+    assert response(conn, 200) =~ "Visible in:\\n- #{space.name}"
     assert get_resp_header(conn, "content-type") == ["text/calendar; charset=utf-8"]
   end
 
@@ -66,9 +66,10 @@ defmodule WikWeb.CalendarFeedControllerTest do
     token = Token.issue_for_aggregate(member)
     conn = get(conn, ~p"/calendar/#{token}")
 
-    assert response(conn, 200) =~ "Visible in: #{origin_space.name}"
-    assert response(conn, 200) =~ "Visible in: #{target_space.name}"
-    assert response(conn, 200) =~ "Relay note: Worth sharing"
+    assert response(conn, 200) =~ "Visible in:\\n"
+    assert response(conn, 200) =~ "- #{origin_space.name}"
+    assert response(conn, 200) =~ "- #{target_space.name}"
+    assert response(conn, 200) =~ "Relay note:\\nWorth sharing"
   end
 
   test "returns a space feed for a valid token", %{conn: conn} do

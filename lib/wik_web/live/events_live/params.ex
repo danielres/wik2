@@ -21,8 +21,6 @@ defmodule WikWeb.EventsLive.Params do
         future_windows_param(future_windows)
       ])
 
-  def external_event_query(external_event_id), do: external_event_query(external_event_id, 1)
-
   def external_event_query(external_event_id, future_windows),
     do: query([{"ext", external_event_id}, future_windows_param(future_windows)])
 

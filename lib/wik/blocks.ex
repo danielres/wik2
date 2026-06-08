@@ -10,6 +10,7 @@ defmodule Wik.Blocks do
   alias LexSortKey
   alias Wik.Blocks.Block
   alias Wik.Blocks.BlockPlacement
+  alias Wik.Blocks.BlockVersion
   alias Wik.Blocks.Types
   alias Wik.Repo
   alias Wik.Wiki.Page
@@ -487,7 +488,7 @@ defmodule Wik.Blocks do
   end
 
   defp version_query(block) do
-    Wik.Blocks.BlockVersion
+    BlockVersion
     |> Query.filter(block_id == ^block.id)
   end
 

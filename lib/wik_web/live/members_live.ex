@@ -25,6 +25,7 @@ defmodule WikWeb.MembersLive do
       |> assign(selected_membership: nil)
       |> assign(membership_type_form: nil)
       |> assign(transfer_ownership_form: nil)
+      |> assign(members_block_id: "members-block")
       |> assign(space: space)
       |> assign(editable?: editable?(scope, socket.assigns.tenant_context))
 
@@ -79,7 +80,7 @@ defmodule WikWeb.MembersLive do
           event_membership_type_change_start="membership_type_change_start"
           event_transfer_ownership_start="transfer_ownership_start"
           scope={@current_scope}
-          block={%{id: "members-block"}}
+          block={%{id: @members_block_id}}
           actions?={@editable? and @editing?}
         />
       </Layouts.space>
@@ -97,7 +98,10 @@ defmodule WikWeb.MembersLive do
     space = socket.assigns.space
 
     if topic == Membership.space_pub_sub_topic(space.id) do
-      {:noreply, refresh_space_memberships(socket)}
+      {:noreply,
+       socket
+       |> refresh_space_memberships()
+       |> assign(:members_block_id, "members-block-#{System.unique_integer([:positive])}")}
     else
       {:noreply, socket}
     end
@@ -181,7 +185,7 @@ defmodule WikWeb.MembersLive do
 
     case Form.submit(form, params: %{target_membership_id: target_membership_id}) do
       {:ok, _membership} ->
-        {:noreply, socket |> assign(transfer_ownership_form: nil)}
+        {:noreply, assign(socket, transfer_ownership_form: nil)}
 
       {:error, form} ->
         {:noreply, socket |> assign(transfer_ownership_form: form)}

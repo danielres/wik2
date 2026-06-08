@@ -83,7 +83,7 @@ defmodule Wik.EventParticipationsTest do
   end
 
   describe "record_external_interest/3" do
-    test "creates and reuses one converted event for an external occurrence" do
+    test "upserts one interest record per external event and member" do
       owner = generate(user())
       member = generate(user())
       other_member = generate(user())
@@ -110,26 +110,18 @@ defmodule Wik.EventParticipationsTest do
                  scope: scope(other_member, space)
                )
 
-      assert first.publication.event_id == second.publication.event_id
-
-      assert {:ok, event} =
-               Event
-               |> Query.filter(source_external_event_id == ^external_event.id)
-               |> Ash.read_one(scope: scope(owner, space))
-
-      assert event.author_id == member.id
-      assert event.title == nil
-      assert event.source_external_event_id == external_event.id
+      assert first.external_event_id == external_event.id
+      assert second.external_event_id == external_event.id
 
       assert {:ok, participations} =
                EventParticipation
-               |> Query.filter(publication_id == ^first.publication.id)
+               |> Query.filter(external_event_id == ^external_event.id)
                |> Ash.read(scope: scope(owner, space))
 
       assert Enum.sort(Enum.map(participations, & &1.interest)) == [4, 8]
     end
 
-    test "does not create a converted event when removing empty external interest" do
+    test "does not create a participation when removing empty external interest" do
       owner = generate(user())
       member = generate(user())
       space = generate(space(author: owner))
@@ -139,7 +131,7 @@ defmodule Wik.EventParticipationsTest do
 
       external_event = external_event_fixture(space, owner)
 
-      assert {:ok, %{publication: nil, participation: nil}} =
+      assert {:ok, nil} =
                Events.record_external_interest(
                  external_event,
                  %{interest: 0, extra_info: ""},
@@ -147,8 +139,8 @@ defmodule Wik.EventParticipationsTest do
                )
 
       assert {:ok, nil} =
-               Event
-               |> Query.filter(source_external_event_id == ^external_event.id)
+               EventParticipation
+               |> Query.filter(external_event_id == ^external_event.id)
                |> Ash.read_one(scope: scope(owner, space))
     end
 
@@ -162,14 +154,16 @@ defmodule Wik.EventParticipationsTest do
 
       external_event = external_event_fixture(space, owner)
 
-      assert {:ok, %{publication: publication, participation: %EventParticipation{}}} =
+      assert {:ok, %EventParticipation{} = participation} =
                Events.record_external_interest(
                  external_event,
                  %{interest: 8, extra_info: "picnic after work"},
                  scope: scope(member, space)
                )
 
-      assert {:ok, %{publication: ^publication, participation: nil}} =
+      assert participation.external_event_id == external_event.id
+
+      assert {:ok, nil} =
                Events.record_external_interest(
                  external_event,
                  %{interest: 0, extra_info: ""},
@@ -178,7 +172,7 @@ defmodule Wik.EventParticipationsTest do
 
       assert {:ok, []} =
                EventParticipation
-               |> Query.filter(publication_id == ^publication.id)
+               |> Query.filter(external_event_id == ^external_event.id)
                |> Ash.read(scope: scope(owner, space))
     end
   end

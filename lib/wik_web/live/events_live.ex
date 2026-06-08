@@ -76,20 +76,11 @@ defmodule WikWeb.EventsLive do
                 user_tz={@active_tz}
               />
             <% {:external_event, item} -> %>
-              <Components.Event.ExternalDetails.render item={item} user_tz={@active_tz} />
-
-              <div class="mt-4">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-ghost"
-                  data-testid={"external-event-detail-interest-#{item.event.id}"}
-                  phx-click="event_interest_start"
-                  phx-value-id={item.event.id}
-                  phx-value-source_type="external"
-                >
-                  Add interest
-                </button>
-              </div>
+              <Components.Event.ExternalDetails.render
+                current_membership={@tenant_context && @tenant_context.current_membership}
+                item={item}
+                user_tz={@active_tz}
+              />
             <% :event_form -> %>
               <.live_component
                 module={EventForm}
@@ -114,17 +105,15 @@ defmodule WikWeb.EventsLive do
                 source_type={:internal}
               />
             <% {:interest, :external, external_event_id} -> %>
-              <% external_event =
-                @timeline.external_items
-                |> Enum.map(& &1.event)
-                |> Enum.find(&(&1.id == external_event_id)) %>
+              <% item =
+                Enum.find(@timeline.external_items, &(&1.event.id == external_event_id)) %>
 
               <.live_component
                 module={InterestForm}
                 id="events-interest-form"
-                current_member_participation={nil}
+                current_member_participation={item && item.current_member_participation}
                 current_scope={@current_scope}
-                external_event={external_event}
+                external_event={item && item.event}
                 publication={nil}
                 source_id={external_event_id}
                 source_type={:external}

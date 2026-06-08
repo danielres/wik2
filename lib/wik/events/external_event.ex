@@ -134,10 +134,6 @@ defmodule Wik.Events.ExternalEvent do
       destination_attribute :id
       allow_nil? false
     end
-
-    has_one :linked_event, Wik.Events.Event do
-      destination_attribute :source_external_event_id
-    end
   end
 
   identities do

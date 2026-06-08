@@ -10,6 +10,7 @@ defmodule WikWeb.HomeLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.Event
+  alias Wik.Events.EventPublication
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
@@ -98,7 +99,7 @@ defmodule WikWeb.HomeLiveTest do
     assert render(view) =~ "Relay event"
   end
 
-  test "lists converted external events with their original schedule", %{conn: conn} do
+  test "lists external events with interest using their original schedule", %{conn: conn} do
     owner = generate(user())
     member = generate(user())
     space = generate(space(author: owner))
@@ -124,6 +125,45 @@ defmodule WikWeb.HomeLiveTest do
     assert has_element?(view, "[data-testid='events-timeline']")
     assert render(view) =~ "External dinner"
     assert render(view) =~ "18:00"
+  end
+
+  test "ignores unscheduled legacy event publications on the home page", %{conn: conn} do
+    owner = generate(user())
+    member = generate(user())
+    space = generate(space(author: owner))
+
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+
+    event =
+      Repo.insert!(%Event{
+        id: Ash.UUIDv7.generate(),
+        all_day: false,
+        author_id: owner.id,
+        description: nil,
+        location: nil,
+        relay_policy: :internal_only,
+        space_id: space.id,
+        starts_at: nil,
+        status: :published,
+        title: nil,
+        tz: nil
+      })
+
+    Repo.insert!(%EventPublication{
+      id: Ash.UUIDv7.generate(),
+      event_id: event.id,
+      publication_type: :origin,
+      published_by_id: owner.id,
+      target_space_id: space.id
+    })
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/")
+
+    assert has_element?(view, "[data-testid='events-timeline']")
   end
 
   defp add_membership(space, user, type) do

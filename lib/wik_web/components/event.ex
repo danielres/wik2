@@ -6,12 +6,9 @@ defmodule WikWeb.Components.Event do
 
   alias Wik.Accounts
   alias Wik.Events.Dimensions
-  alias Wik.Events.ExternalCalendar
-  alias WikWeb.Components.Event.ExternalDetails
   alias WikWeb.Components.RangeInput
   alias WikWeb.Components.Event.Schedule
   alias WikWeb.Components.Event.Timeline
-  alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.TimezonePicker
   alias WikWeb.Components.UI
@@ -211,47 +208,6 @@ defmodule WikWeb.Components.Event do
     """
   end
 
-  attr :form, Phoenix.HTML.Form, required: true
-  attr :error, :string, default: nil
-  attr :target, :any, default: nil
-
-  def local_overlay_form(assigns) do
-    ~H"""
-    <.form
-      for={@form}
-      id="local-overlay-form"
-      data-testid="local-overlay-form"
-      phx-submit="local_overlay_submit"
-      phx-target={@target}
-    >
-      <div class="space-y-4">
-        <.input field={@form[:title]} label="Local title" />
-        <.input field={@form[:description]} label="Local info" type="textarea" />
-
-        <p :if={@error not in [nil, ""]} class="text-sm text-error">
-          {@error}
-        </p>
-
-        <div class="flex justify-end gap-2">
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm"
-            data-testid="local-overlay-cancel"
-            phx-click="local_overlay_cancel"
-            phx-target={@target}
-          >
-            Cancel
-          </button>
-
-          <button type="submit" class="btn btn-accent btn-sm" data-testid="local-overlay-submit">
-            Save
-          </button>
-        </div>
-      </div>
-    </.form>
-    """
-  end
-
   defp errors_for(form, field) do
     form[field].errors
     |> Enum.map(&WikWeb.CoreComponents.translate_error/1)
@@ -276,29 +232,24 @@ defmodule WikWeb.Components.Event do
       Phoenix.Component.used_input?(form[:ends_at_time])
   end
 
-  defp google_maps_search_url(location) do
-    "https://www.google.com/maps/search/?" <>
-      URI.encode_query(%{api: 1, query: location})
-  end
+  defp interest_dimension, do: Dimensions.get!("participation", "interest")
 
   attr :publication, :map, required: true
 
   def event_header(assigns) do
-    assigns = assign(assigns, :event, display_event(assigns.publication.event))
-
     ~H"""
     <h2 class={[
       "text-base font-medium leading-tight",
       "flex-grow",
       "flex items-center gap-2",
-      @event.status == :cancelled && "line-through decoration-base-content"
+      @publication.event.status == :cancelled && "line-through decoration-base-content"
     ]}>
       <.iconify
         :if={@publication.publication_type == :relay}
         icon="mdi:share"
         class="text-base-content/30 size-5 -ml-5 absolute"
       />
-      {@event.title}
+      {@publication.event.title}
     </h2>
     """
   end
@@ -339,12 +290,7 @@ defmodule WikWeb.Components.Event do
         Accounts.present_membership(assigns.author_membership)
       )
       |> assign(:relayer, Accounts.present_membership(assigns.relayer_membership))
-      |> assign(:display_event, display_event(assigns.publication.event))
-      |> assign(:source_external_event, assigns.publication.event.source_external_event)
-      |> assign(
-        :source_external_item,
-        source_external_item(assigns.publication.event.source_external_event)
-      )
+      |> assign(:display_event, assigns.publication.event)
 
     ~H"""
     <div class="space-y-5" data-testid="event-detail">
@@ -383,149 +329,21 @@ defmodule WikWeb.Components.Event do
         </div>
       </div>
 
-      <div :if={@display_event.location not in [nil, ""]} class="flex gap-2 items-start">
-        <.icon name="hero-map-pin-mini" class="mt-0.5" />
-        <div class="min-w-0">
-          <div class="text-sm">{@display_event.location}</div>
-          <.link
-            class="link link-hover text-xs opacity-70 flex items-center gap-0"
-            data-testid="event-location-google-maps-link"
-            href={google_maps_search_url(@display_event.location)}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <span>Open in Google Maps</span>
-            <.icon name="hero-arrow-top-right-on-square-micro" class="scale-80" />
-          </.link>
-        </div>
-      </div>
+      <WikWeb.Components.Event.Panels.Location.render
+        location={@display_event.location}
+        testid_prefix="event"
+      />
 
-      <WikWeb.Components.Event.Panel.render title="Participation">
-        <div
-          :if={!@current_member_participation}
-          class={[
-            "rounded-md bg-base-content/5 px-2 py-1",
-            "mb-2"
-          ]}
-        >
-          <div class={["flex justify-between"]}>
-            <User.identity
-              avatar_size="xs"
-              class="text-xs opacity-70"
-              membership={@current_membership}
-            />
+      <WikWeb.Components.Event.Panels.Participation.render
+        current_membership={@current_membership}
+        current_member_participation={@current_member_participation}
+        participations={@participations}
+        source_id={@publication.id}
+        source_type="internal"
+        testid_prefix="event"
+      />
 
-            <button
-              type="button"
-              class="btn btn-xs transition btn-neutral btn-soft"
-              data-testid={"event-detail-interest-#{@publication.id}"}
-              phx-click="event_interest_start"
-              phx-value-id={@publication.id}
-              phx-value-source_type="internal"
-              style={"color: #{interest_dimension().color}"}
-            >
-              <span>Add</span>
-              <.icon
-                name="hero-plus-circle-micro"
-                class="scale-80"
-                style={"color: #{interest_dimension().color}"}
-              />
-            </button>
-          </div>
-        </div>
-
-        <div
-          :for={participation <- @participations}
-          data-testid={"event-participation-#{participation.id}"}
-          class={[
-            "rounded-md bg-base-content/5 px-2 py-1"
-          ]}
-        >
-          <div class={[
-            "flex justify-between"
-          ]}>
-            <User.identity
-              avatar_size="xs"
-              class="text-xs opacity-70"
-              membership={participation.membership}
-            />
-
-            <div class="flex gap-1 items-center">
-              <LevelMeter.render
-                :if={
-                  !@current_member_participation ||
-                    participation.membership_id != @current_member_participation.membership_id
-                }
-                dimension={interest_dimension()}
-                label="Interest"
-                level={participation.interest}
-                testid={"event-participation-interest-#{participation.id}"}
-                width_class="w-10"
-                class="ml-auto mr-2"
-              />
-
-              <button
-                :if={
-                  @current_member_participation &&
-                    participation.membership_id == @current_member_participation.membership_id
-                }
-                type="button"
-                class={["btn btn-ghost btn-xs hover:btn-soft rounded-full"]}
-                data-testid={"event-detail-interest-#{@publication.id}"}
-                phx-click="event_interest_start"
-                phx-value-id={@publication.id}
-                phx-value-source_type="internal"
-              >
-                <.icon
-                  name="hero-pencil-micro"
-                  style={"color: #{interest_dimension().color}"}
-                />
-                <LevelMeter.render
-                  dimension={interest_dimension()}
-                  label="Interest"
-                  level={participation.interest}
-                  testid={"event-participation-interest-#{participation.id}"}
-                  width_class="w-10"
-                  class="ml-auto"
-                />
-              </button>
-            </div>
-          </div>
-          <div :if={participation.extra_info not in [nil, ""]} class="opacity-70 text-xs ml-5">
-            {participation.extra_info}
-          </div>
-        </div>
-      </WikWeb.Components.Event.Panel.render>
-
-      <WikWeb.Components.Event.Panel.render
-        :if={@publication.event.description not in [nil, ""]}
-        title="Description"
-      >
-        <div class={[
-          "rounded-md bg-base-content/5 px-4 py-2 text-base-content/90",
-          "text-xs leading-6"
-        ]}>
-          <div class="whitespace-pre-wrap">{@publication.event.description}</div>
-        </div>
-      </WikWeb.Components.Event.Panel.render>
-
-      <WikWeb.Components.Event.Panel.render
-        :if={@source_external_event}
-        title="Original event"
-      >
-        <div :if={@source_external_event.source_missing_at} class="text-sm text-warning">
-          No longer found in external calendar.
-        </div>
-
-        <div class={[
-          "rounded-box",
-          "p-2",
-          "opacity-70 hover:opacity-100 transition-opacity",
-          "border-[1.5px] border-dashed border-base-content/30"
-        ]}>
-          <ExternalDetails.render item={@source_external_item} user_tz={@user_tz} />
-        </div>
-      </WikWeb.Components.Event.Panel.render>
+      <WikWeb.Components.Event.Panels.Description.render description={@publication.event.description} />
 
       <WikWeb.Components.Event.Panel.render title="By">
         <User.identity
@@ -578,37 +396,6 @@ defmodule WikWeb.Components.Event do
     </div>
     """
   end
-
-  defp display_event(%{source_external_event: %{id: _id} = external_event} = local_event) do
-    %{external_event | title: local_event.title || external_event.title}
-  end
-
-  defp display_event(event), do: event
-
-  defp interest_dimension, do: Dimensions.get!("participation", "interest")
-
-  defp source_external_item(nil), do: nil
-
-  defp source_external_item(external_event) do
-    %{
-      event: external_event,
-      event_url: external_event.event_url,
-      external_uid: external_event.external_uid,
-      external_recurrence_id: external_event.external_recurrence_id,
-      calendar_name: source_external_calendar_name(external_event)
-    }
-  end
-
-  defp source_external_calendar_name(%{subscription: %Ash.NotLoaded{}} = external_event) do
-    external_event.calendar_name
-  end
-
-  defp source_external_calendar_name(%{subscription: subscription} = external_event)
-       when not is_nil(subscription) do
-    ExternalCalendar.display_name(subscription, external_event.calendar_name)
-  end
-
-  defp source_external_calendar_name(external_event), do: external_event.calendar_name
 
   attr :publication, :map, required: true
   attr :relay_error, :string, default: nil

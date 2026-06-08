@@ -275,35 +275,41 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    first_event_date = Date.utc_today() |> Date.add(10)
+    second_event_date = Date.utc_today() |> Date.add(220)
 
-    {:ok, may_event} =
-      Ash.create(
-        Event,
-        event_attrs(title: "May gathering"),
-        action: :create,
-        scope: scope(owner, space)
-      )
-
-    {:ok, january_event} =
+    {:ok, first_event} =
       Ash.create(
         Event,
         event_attrs(
-          ends_on: "2027-01-15",
-          starts_on: "2027-01-15",
-          title: "January gathering"
+          ends_on: Date.to_iso8601(first_event_date),
+          starts_on: Date.to_iso8601(first_event_date),
+          title: "First gathering"
         ),
         action: :create,
         scope: scope(owner, space)
       )
 
-    {:ok, may_publication} =
+    {:ok, second_event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_on: Date.to_iso8601(second_event_date),
+          starts_on: Date.to_iso8601(second_event_date),
+          title: "Second gathering"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, first_publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^may_event.id and target_space_id == ^space.id)
+      |> Ash.Query.filter(event_id == ^first_event.id and target_space_id == ^space.id)
       |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
-    {:ok, january_publication} =
+    {:ok, second_publication} =
       Wik.Events.EventPublication
-      |> Ash.Query.filter(event_id == ^january_event.id and target_space_id == ^space.id)
+      |> Ash.Query.filter(event_id == ^second_event.id and target_space_id == ^space.id)
       |> Ash.read_first(authorize?: false, scope: scope(owner, space))
 
     {:ok, subscription} =
@@ -320,36 +326,42 @@ defmodule WikWeb.EventsLiveTest do
     external_event_month_testid = timeline_month_testid(external_event_date)
     external_event_day_testid = timeline_day_testid(external_event_date)
     external_event_testid = external_event_testid(subscription)
+    first_event_year_testid = timeline_year_testid(first_event_date)
+    first_event_month_testid = timeline_month_testid(first_event_date)
+    first_event_day_testid = timeline_day_testid(first_event_date)
+    second_event_year_testid = timeline_year_testid(second_event_date)
+    second_event_month_testid = timeline_month_testid(second_event_date)
+    second_event_day_testid = timeline_day_testid(second_event_date)
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
       |> live(~p"/#{space.slug}/events?#{%{external: true}}")
 
-    assert has_element?(view, testid("events-year-2026"))
-    assert has_element?(view, testid("events-month-2026-5"))
-    assert has_element?(view, testid("events-day-2026-5-10"))
+    assert has_element?(view, testid(first_event_year_testid))
+    assert has_element?(view, testid(first_event_month_testid))
+    assert has_element?(view, testid(first_event_day_testid))
     assert has_element?(view, testid(external_event_year_testid))
     assert has_element?(view, testid(external_event_month_testid))
     assert has_element?(view, testid(external_event_day_testid))
-    assert has_element?(view, testid("events-year-2027"))
-    assert has_element?(view, testid("events-month-2027-1"))
-    assert has_element?(view, testid("events-day-2027-1-15"))
-    assert has_element?(view, testid("event-publication-#{may_publication.id}"))
-    assert has_element?(view, testid("event-publication-#{january_publication.id}"))
+    assert has_element?(view, testid(second_event_year_testid))
+    assert has_element?(view, testid(second_event_month_testid))
+    assert has_element?(view, testid(second_event_day_testid))
+    assert has_element?(view, testid("event-publication-#{first_publication.id}"))
+    assert has_element?(view, testid("event-publication-#{second_publication.id}"))
     assert has_element?(view, testid(external_event_testid))
 
     render_click(element(view, testid("events-external-toggle")))
 
     assert_patch(view, ~p"/#{space.slug}/events?#{%{external: false}}")
-    assert has_element?(view, testid("events-year-2026"))
-    assert has_element?(view, testid("events-month-2026-5"))
-    assert has_element?(view, testid("events-day-2026-5-10"))
-    assert has_element?(view, testid("events-year-2027"))
-    assert has_element?(view, testid("events-month-2027-1"))
-    assert has_element?(view, testid("events-day-2027-1-15"))
-    assert has_element?(view, testid("event-publication-#{may_publication.id}"))
-    assert has_element?(view, testid("event-publication-#{january_publication.id}"))
+    assert has_element?(view, testid(first_event_year_testid))
+    assert has_element?(view, testid(first_event_month_testid))
+    assert has_element?(view, testid(first_event_day_testid))
+    assert has_element?(view, testid(second_event_year_testid))
+    assert has_element?(view, testid(second_event_month_testid))
+    assert has_element?(view, testid(second_event_day_testid))
+    assert has_element?(view, testid("event-publication-#{first_publication.id}"))
+    assert has_element?(view, testid("event-publication-#{second_publication.id}"))
     refute has_element?(view, testid(external_event_month_testid))
     refute has_element?(view, testid(external_event_day_testid))
     refute has_element?(view, testid(external_event_testid))
@@ -360,6 +372,164 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid(external_event_month_testid))
     assert has_element?(view, testid(external_event_day_testid))
     assert has_element?(view, testid(external_event_testid))
+  end
+
+  test "all-day events group by their event-local date", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    all_day_date = Date.utc_today() |> Date.add(12)
+    previous_utc_date = Date.add(all_day_date, -1)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          all_day: true,
+          ends_on: Date.to_iso8601(all_day_date),
+          starts_on: Date.to_iso8601(all_day_date),
+          title: "All-day Berlin gathering",
+          tz: "Europe/Berlin"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid(timeline_day_testid(all_day_date)))
+    assert has_element?(view, testid("event-publication-#{publication.id}"))
+    refute has_element?(view, testid(timeline_day_testid(previous_utc_date)))
+  end
+
+  test "external events with interest appear in the normal timeline", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+    external_event = first_external_event(subscription)
+
+    assert {:ok, _participation} =
+             Events.record_external_interest(
+               external_event,
+               %{interest: 8, extra_info: "joining"},
+               scope: scope(owner, space)
+             )
+
+    source_date = DateTime.to_date(external_event.starts_at)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid(timeline_day_testid(source_date)))
+    assert has_element?(view, testid("external-event-external:#{external_event.id}"))
+  end
+
+  test "grouped timeline hides past internal events but keeps today's finished events", %{
+    conn: conn
+  } do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    yesterday = Date.utc_today() |> Date.add(-1)
+    today = Date.utc_today()
+
+    {:ok, past_event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_on: Date.to_iso8601(yesterday),
+          starts_on: Date.to_iso8601(yesterday),
+          title: "Past gathering",
+          tz: "Etc/UTC"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, today_event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_at_time: "00:01",
+          ends_on: Date.to_iso8601(today),
+          starts_at_time: "00:00",
+          starts_on: Date.to_iso8601(today),
+          title: "Early gathering",
+          tz: "Etc/UTC"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, past_publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^past_event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, today_publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^today_event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid(timeline_day_testid(today)))
+    assert has_element?(view, testid("event-publication-#{today_publication.id}"))
+    refute has_element?(view, testid("event-publication-#{past_publication.id}"))
+  end
+
+  test "grouped timeline keeps multi-day events that end today or later", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    yesterday = Date.utc_today() |> Date.add(-1)
+    tomorrow = Date.utc_today() |> Date.add(1)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          ends_on: Date.to_iso8601(tomorrow),
+          starts_on: Date.to_iso8601(yesterday),
+          title: "Multi-day gathering",
+          tz: "Etc/UTC"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, publication} =
+      Wik.Events.EventPublication
+      |> Ash.Query.filter(event_id == ^event.id and target_space_id == ^space.id)
+      |> Ash.read_first(authorize?: false, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events")
+
+    assert has_element?(view, testid("event-publication-#{publication.id}"))
   end
 
   test "switching to internal removes all external rows for the swing feed", %{conn: conn} do
@@ -471,6 +641,30 @@ defmodule WikWeb.EventsLiveTest do
                publication_id == ^publication.id and membership_id == ^membership.id
              )
              |> Ash.read_one!(authorize?: false, scope: scope(owner, space))
+  end
+
+  test "internal event descriptions render plain links as clickable links", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, event} =
+      Ash.create(
+        Event,
+        event_attrs(
+          description: "Links: http://test.com and https://github.com/danielres/wik2/pull/35"
+        ),
+        action: :create,
+        scope: scope(owner, space)
+      )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?#{%{event: event.id}}")
+
+    assert has_element?(view, ~s(a[href="http://test.com"]))
+    assert has_element?(view, ~s(a[href="https://github.com/danielres/wik2/pull/35"]))
   end
 
   test "create submit shows field errors without a flash", %{conn: conn} do
@@ -610,6 +804,7 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    event_date = future_date_string(30)
 
     {:ok, event} =
       Ash.create(
@@ -653,9 +848,9 @@ defmodule WikWeb.EventsLiveTest do
           "description" => "Bring extra plates",
           "location" => "Community Hall, 123 Example Street",
           "all_day" => "false",
-          "starts_on" => "2026-05-12",
+          "starts_on" => event_date,
           "starts_at_time" => "18:30",
-          "ends_on" => "2026-05-12",
+          "ends_on" => event_date,
           "ends_at_time" => "20:30",
           "relay_policy" => "admins_only_spaces",
           "status" => "cancelled",
@@ -728,14 +923,16 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    starts_on = future_date_string(30)
+    ends_on = future_date_string(31)
 
     {:ok, event} =
       Ash.create(
         Event,
         event_attrs(
-          starts_on: "2026-05-12",
+          starts_on: starts_on,
           starts_at_time: "18:30",
-          ends_on: "2026-05-13",
+          ends_on: ends_on,
           ends_at_time: "20:45"
         ),
         action: :create,
@@ -755,8 +952,8 @@ defmodule WikWeb.EventsLiveTest do
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 
-    assert has_element?(view, "#event-starts-on[value='2026-05-12']")
-    assert has_element?(view, "#event-ends-on[value='2026-05-13']")
+    assert has_element?(view, "#event-starts-on[value='#{starts_on}']")
+    assert has_element?(view, "#event-ends-on[value='#{ends_on}']")
 
     html = render(view)
     assert html =~ ~r/id="event-starts-at-time"[^>]*value="18:30(?::00)?"/
@@ -827,14 +1024,16 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
+    starts_on = future_date_string(30)
+    ends_on = future_date_string(31)
 
     {:ok, event} =
       Ash.create(
         Event,
         event_attrs(
           all_day: true,
-          starts_on: "2026-05-12",
-          ends_on: "2026-05-13"
+          starts_on: starts_on,
+          ends_on: ends_on
         ),
         action: :create,
         scope: scope(owner, space)
@@ -853,8 +1052,8 @@ defmodule WikWeb.EventsLiveTest do
     render_click(element(view, testid("event-open-#{publication.id}")))
     render_click(element(view, testid("event-detail-edit-#{publication.id}")))
 
-    assert has_element?(view, "#event-starts-on[value='2026-05-12']")
-    assert has_element?(view, "#event-ends-on[value='2026-05-13']")
+    assert has_element?(view, "#event-starts-on[value='#{starts_on}']")
+    assert has_element?(view, "#event-ends-on[value='#{ends_on}']")
     refute has_element?(view, "#event-starts-at-time")
     refute has_element?(view, "#event-ends-at-time")
   end
@@ -1077,9 +1276,9 @@ defmodule WikWeb.EventsLiveTest do
         Event,
         event_attrs(
           title: "Berlin dinner",
-          starts_on: "2026-05-12",
+          starts_on: future_date_string(30),
           starts_at_time: "18:00",
-          ends_on: "2026-05-12",
+          ends_on: future_date_string(30),
           ends_at_time: "20:00",
           tz: "Europe/Berlin"
         ),
@@ -1111,9 +1310,9 @@ defmodule WikWeb.EventsLiveTest do
         Event,
         event_attrs(
           title: "European dinner",
-          starts_on: "2026-05-12",
+          starts_on: future_date_string(30),
           starts_at_time: "18:00",
-          ends_on: "2026-05-12",
+          ends_on: future_date_string(30),
           ends_at_time: "20:00",
           tz: "Europe/Berlin"
         ),
@@ -1140,8 +1339,8 @@ defmodule WikWeb.EventsLiveTest do
       Ash.create(
         Event,
         event_attrs(
-          starts_on: "2026-05-16",
-          ends_on: "2026-05-16",
+          starts_on: future_date_string(30),
+          ends_on: future_date_string(30),
           tz: "Europe/Berlin",
           title: "Berlin event"
         ),
@@ -1344,6 +1543,56 @@ defmodule WikWeb.EventsLiveTest do
     assert render(view) =~ "External dinner"
     assert render(view) =~ "Imported from an external calendar"
     assert render(view) =~ "Community Coordination Calendar"
+  end
+
+  test "can add interest from a ghost external event modal", %{conn: conn} do
+    owner = generate(user())
+    member = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope(owner, space)
+      )
+
+    sync_subscription!(subscription)
+    external_event = first_external_event(subscription)
+    external_event_id = external_event_id(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/#{space.slug}/events?#{%{external: true}}")
+
+    render_click(element(view, testid("event-open-#{external_event_id}")))
+    render_click(element(view, testid("external-event-detail-interest-#{external_event.id}")))
+
+    assert has_element?(view, testid("event-interest-form"))
+
+    view
+    |> form(testid("event-interest-form"),
+      interest: %{interest: "8", extra_info: "joining later"}
+    )
+    |> render_submit()
+
+    participation =
+      EventParticipation
+      |> Ash.Query.filter(external_event_id == ^external_event.id)
+      |> Ash.read_one!(scope: scope(member, space))
+
+    assert has_element?(
+             view,
+             "#{testid("external-event-#{external_event_id}")} [data-state='promoted']"
+           )
+
+    assert has_element?(
+             view,
+             "#{testid("external-event-#{external_event_id}")} #{testid("timeline-event-participation-#{participation.id}")}"
+           )
   end
 
   test "external events keep UTC presentation timezone for UTC ICS timestamps", %{conn: _conn} do
@@ -1654,11 +1903,11 @@ defmodule WikWeb.EventsLiveTest do
       all_day: false,
       description: "An event description",
       ends_at_time: "20:00",
-      ends_on: "2026-05-10",
+      ends_on: future_date_string(30),
       location: "Community Hall, 123 Example Street",
       relay_policy: :internal_only,
       starts_at_time: "18:00",
-      starts_on: "2026-05-10",
+      starts_on: future_date_string(30),
       tz: "Etc/UTC",
       title: "Shared Dinner"
     }

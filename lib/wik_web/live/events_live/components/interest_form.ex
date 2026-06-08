@@ -1,6 +1,7 @@
 defmodule WikWeb.EventsLive.Components.InterestForm do
   use WikWeb, :live_component
 
+  alias Utils.Log
   alias Wik.Events
   alias WikWeb.Components.Event
 
@@ -28,6 +29,14 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
         <div class="space-y-4">
           <Event.interest_fields form={@form} />
 
+          <p
+            :if={@error not in [nil, ""]}
+            class="text-sm text-error"
+            data-testid="interest-form-error"
+          >
+            {@error}
+          </p>
+
           <div class="flex justify-end">
             <button
               type="submit"
@@ -50,16 +59,22 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
         case Events.record_interest(socket.assigns.publication, params,
                scope: socket.assigns.current_scope
              ) do
-          {:ok, participation} -> saved(socket, participation)
-          {:error, error} -> {:noreply, assign(socket, :form, form_from_params(params, error))}
+          {:ok, participation} ->
+            saved(socket, participation)
+
+          {:error, error} ->
+            failed(socket, params, error)
         end
 
       :external ->
         case Events.record_external_interest(socket.assigns.external_event, params,
                scope: socket.assigns.current_scope
              ) do
-          {:ok, result} -> saved(socket, result)
-          {:error, error} -> {:noreply, assign(socket, :form, form_from_params(params, error))}
+          {:ok, result} ->
+            saved(socket, result)
+
+          {:error, error} ->
+            failed(socket, params, error)
         end
     end
   end
@@ -67,6 +82,15 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
   defp saved(socket, result) do
     send(self(), {:events_live, {:interest_saved, result}})
     {:noreply, socket}
+  end
+
+  defp failed(socket, params, error) do
+    Log.scoped_error(socket.assigns.current_scope, error, "event interest save failed")
+
+    {:noreply,
+     socket
+     |> assign(:form, form_from_params(params, error))
+     |> assign(:error, error_message(error))}
   end
 
   defp maybe_reset_form(socket) do
@@ -78,6 +102,7 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
       socket
       |> assign(:source_key, source_key)
       |> assign(:form, interest_form(socket.assigns.current_member_participation))
+      |> assign(:error, nil)
     end
   end
 
@@ -101,6 +126,10 @@ defmodule WikWeb.EventsLive.Components.InterestForm do
 
   defp error_message(:invalid_interest), do: "Interest must be between 0 and 10"
   defp error_message(:membership_not_found), do: "Could not find your membership"
+
+  defp error_message(:external_event_not_in_current_space),
+    do: "Could not save interest for this space"
+
   defp error_message(error) when is_binary(error), do: error
   defp error_message(error), do: Exception.message(error)
 end

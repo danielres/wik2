@@ -6,7 +6,6 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   require Logger
 
   alias Utils.Values
-  alias Wik.Events.Event
   alias Wik.Events.ExternalCalendar.Fetch
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.ExternalEvent
@@ -156,19 +155,12 @@ defmodule Wik.Events.ExternalCalendar.Sync do
                )
              end)
              |> Enum.reduce_while(:ok, fn event, :ok ->
-               if linked_external_event?(event) do
-                 case mark_source_missing(event, seen_at) do
-                   {:ok, _event} -> {:cont, :ok}
-                   {:error, error} -> Repo.rollback(error)
-                 end
-               else
-                 case Repo.delete(event) do
-                   {:ok, _deleted_event} ->
-                     {:cont, :ok}
+               case Repo.delete(event) do
+                 {:ok, _deleted_event} ->
+                   {:cont, :ok}
 
-                   {:error, error} ->
-                     Repo.rollback(error)
-                 end
+                 {:error, error} ->
+                   Repo.rollback(error)
                end
              end)
            end) do
@@ -210,23 +202,38 @@ defmodule Wik.Events.ExternalCalendar.Sync do
       |> Enum.reject(fn {key, _event} ->
         Enum.any?(base_occurrences, &(&1.external_occurrence_key == key))
       end)
-      |> Enum.map(fn {occurrence_key_value, event} ->
-        starts_at = normalize_datetime!(event.dtstart)
+      |> Enum.flat_map(fn {occurrence_key_value, event} ->
+        case event.dtstart do
+          nil ->
+            log_unscheduled_ics_event(event)
+            []
 
-        materialized_event_attrs(
-          subscription,
-          event,
-          starts_at,
-          calendar_name,
-          occurrence_key_value
-        )
+          dtstart ->
+            starts_at = normalize_datetime!(dtstart)
+
+            [
+              materialized_event_attrs(
+                subscription,
+                event,
+                starts_at,
+                calendar_name,
+                occurrence_key_value
+              )
+            ]
+        end
       end)
 
     base_occurrences ++ override_only_occurrences
   end
 
-  defp occurrences_for_event(%ICal.Event{dtstart: nil}, _override_by_key, _raw_event_metadata),
-    do: []
+  defp occurrences_for_event(
+         %ICal.Event{dtstart: nil} = event,
+         _override_by_key,
+         _raw_event_metadata
+       ) do
+    log_unscheduled_ics_event(event)
+    []
+  end
 
   defp occurrences_for_event(event, override_by_key, raw_event_metadata) do
     horizon_start = recent_past_start()
@@ -316,21 +323,6 @@ defmodule Wik.Events.ExternalCalendar.Sync do
     }
   end
 
-  defp linked_external_event?(%ExternalEvent{id: id}) do
-    from(event in Event,
-      where: event.source_external_event_id == type(^id, :binary_id),
-      select: event.id,
-      limit: 1
-    )
-    |> Repo.exists?()
-  end
-
-  defp mark_source_missing(%ExternalEvent{} = event, seen_at) do
-    event
-    |> Ecto.Changeset.change(status: :cancelled, source_missing_at: seen_at)
-    |> Repo.update()
-  end
-
   defp persist_cache(subscription, attrs) do
     Ash.update(
       subscription,
@@ -344,6 +336,12 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   defp fallback_uid(event) do
     [event.summary || "untitled", inspect(event.dtstart)]
     |> Enum.join(":")
+  end
+
+  defp log_unscheduled_ics_event(event) do
+    Logger.warning(
+      "Skipped unscheduled ICS event uid=#{inspect(event.uid)} summary=#{inspect(event.summary)}"
+    )
   end
 
   defp occurrence_key(%DateTime{} = recurrence) do

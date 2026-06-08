@@ -61,32 +61,30 @@ defmodule Wik.Events do
 
   def record_external_interest(%ExternalEvent{} = external_event, attrs, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
+    space_id = scope.tenant && scope.tenant.id
 
-    with {:ok, participation_attrs} <- participation_attrs(attrs) do
-      if remove_interest?(participation_attrs) do
-        remove_external_interest(external_event, attrs, opts)
-      else
-        with {:ok, publication} <- publication_for_external_event(external_event, scope),
-             {:ok, participation} <- record_interest(publication, attrs, opts) do
-          {:ok, %{publication: publication, participation: participation}}
-        end
-      end
+    with true <- external_event.space_id == space_id,
+         {:ok, membership} when not is_nil(membership) <-
+           Accounts.get_membership(space_id, scope.actor.id),
+         {:ok, participation_attrs} <- participation_attrs(attrs) do
+      upsert_external_participation(external_event, membership, participation_attrs, opts)
+    else
+      false -> {:error, :external_event_not_in_current_space}
+      {:ok, nil} -> {:error, :membership_not_found}
+      {:error, error} -> {:error, error}
     end
-  end
-
-  def update_local_overlay(%Event{} = event, attrs, opts \\ []) do
-    attrs = %{
-      description:
-        Values.blank_to_nil(Map.get(attrs, :description) || Map.get(attrs, "description")),
-      title: Values.blank_to_nil(Map.get(attrs, :title) || Map.get(attrs, "title"))
-    }
-
-    Ash.update(event, attrs, Keyword.put(opts, :action, :update_local_overlay))
   end
 
   def event_participations_query(publication_ids) when is_list(publication_ids) do
     EventParticipation
     |> Query.filter(publication_id in ^publication_ids)
+    |> Query.load(membership: [:avatar_url, :user])
+    |> Query.sort([:inserted_at])
+  end
+
+  def external_event_participations_query(external_event_ids) when is_list(external_event_ids) do
+    EventParticipation
+    |> Query.filter(external_event_id in ^external_event_ids)
     |> Query.load(membership: [:avatar_url, :user])
     |> Query.sort([:inserted_at])
   end
@@ -102,64 +100,13 @@ defmodule Wik.Events do
     |> Query.sort(starts_at: :asc)
   end
 
-  defp publication_for_external_event(%ExternalEvent{} = external_event, scope) do
-    with {:ok, event} <- event_for_external_event(external_event, scope) do
-      origin_publication(event, scope)
-    end
-  end
-
-  defp remove_external_interest(%ExternalEvent{} = external_event, attrs, opts) do
-    scope = Keyword.fetch!(opts, :scope)
-
-    case get_event_for_external_event(external_event, scope) do
-      {:ok, nil} ->
-        {:ok, %{publication: nil, participation: nil}}
-
-      {:ok, event} ->
-        with {:ok, publication} when not is_nil(publication) <- origin_publication(event, scope),
-             {:ok, participation} <- record_interest(publication, attrs, opts) do
-          {:ok, %{publication: publication, participation: participation}}
-        else
-          {:ok, nil} -> {:ok, %{publication: nil, participation: nil}}
-          {:error, error} -> {:error, error}
-        end
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp event_for_external_event(%ExternalEvent{} = external_event, scope) do
-    case get_event_for_external_event(external_event, scope) do
-      {:ok, %Event{} = event} ->
-        {:ok, event}
-
-      {:ok, nil} ->
-        Ash.create(
-          Event,
-          %{description: nil, source_external_event_id: external_event.id, title: nil},
-          action: :create_from_external,
-          scope: scope
-        )
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp get_event_for_external_event(%ExternalEvent{} = external_event, scope) do
-    Event
-    |> Query.filter(source_external_event_id == ^external_event.id)
-    |> Ash.read_one(scope: scope)
-  end
-
   defp origin_publication(%Event{} = event, scope) do
     EventPublication
     |> Query.filter(event_id == ^event.id and target_space_id == ^scope.tenant.id)
     |> Query.load([
       :space,
       :published_by,
-      event: [:author, :space, source_external_event: [:subscription]]
+      event: [:author, :space]
     ])
     |> Ash.read_one(scope: scope)
   end
@@ -171,6 +118,40 @@ defmodule Wik.Events do
     }
 
     case get_participation_by_identity(identity_attrs, Keyword.fetch!(opts, :scope)) do
+      {:ok, nil} ->
+        if remove_interest?(attrs) do
+          {:ok, nil}
+        else
+          Ash.create(
+            EventParticipation,
+            Map.merge(identity_attrs, attrs),
+            Keyword.put(opts, :action, :create)
+          )
+        end
+
+      {:ok, %EventParticipation{} = participation} ->
+        if remove_interest?(attrs) do
+          destroy_participation(participation, opts)
+        else
+          Ash.update(
+            participation,
+            attrs,
+            Keyword.put(opts, :action, :update_details)
+          )
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp upsert_external_participation(external_event, membership, attrs, opts) do
+    identity_attrs = %{
+      external_event_id: external_event.id,
+      membership_id: membership.id
+    }
+
+    case get_external_participation_by_identity(identity_attrs, Keyword.fetch!(opts, :scope)) do
       {:ok, nil} ->
         if remove_interest?(attrs) do
           {:ok, nil}
@@ -210,6 +191,14 @@ defmodule Wik.Events do
     EventParticipation
     |> Query.filter(
       publication_id == ^attrs.publication_id and membership_id == ^attrs.membership_id
+    )
+    |> Ash.read_one(scope: scope, authorize?: false)
+  end
+
+  defp get_external_participation_by_identity(attrs, scope) do
+    EventParticipation
+    |> Query.filter(
+      external_event_id == ^attrs.external_event_id and membership_id == ^attrs.membership_id
     )
     |> Ash.read_one(scope: scope, authorize?: false)
   end

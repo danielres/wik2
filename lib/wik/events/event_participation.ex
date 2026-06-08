@@ -3,7 +3,9 @@ defmodule Wik.Events.EventParticipation do
   alias Wik.Accounts.Space
   alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Events.EventParticipation.Checks.ActorCanManageOwnParticipation
+  alias Wik.Events.EventParticipation.Validations.ExactlyOneTarget
   alias Wik.Events.EventPublication
+  alias Wik.Events.ExternalEvent
 
   use Ash.Resource,
     otp_app: :wik,
@@ -18,7 +20,15 @@ defmodule Wik.Events.EventParticipation do
 
     references do
       reference :publication, on_delete: :delete
+      reference :external_event, on_delete: :delete
       reference :membership, on_delete: :delete, match_with: [space_id: :space_id]
+    end
+
+    check_constraints do
+      check_constraint [:publication_id, :external_event_id],
+                       "event_participations_exactly_one_target",
+                       check: "(publication_id IS NULL) != (external_event_id IS NULL)",
+                       message: "must target exactly one event"
     end
   end
 
@@ -26,7 +36,7 @@ defmodule Wik.Events.EventParticipation do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:publication_id, :membership_id, :interest, :extra_info]
+      accept [:publication_id, :external_event_id, :membership_id, :interest, :extra_info]
 
       change SetSpaceFromCurrentTenant
     end
@@ -67,6 +77,10 @@ defmodule Wik.Events.EventParticipation do
     publish :destroy, ["space", :space_id]
   end
 
+  validations do
+    validate ExactlyOneTarget
+  end
+
   multitenancy do
     strategy :attribute
     attribute :space_id
@@ -97,7 +111,12 @@ defmodule Wik.Events.EventParticipation do
 
     belongs_to :publication, EventPublication do
       destination_attribute :id
-      allow_nil? false
+      allow_nil? true
+    end
+
+    belongs_to :external_event, ExternalEvent do
+      destination_attribute :id
+      allow_nil? true
     end
 
     belongs_to :membership, Membership do
@@ -108,5 +127,6 @@ defmodule Wik.Events.EventParticipation do
 
   identities do
     identity :unique_publication_membership, [:publication_id, :membership_id]
+    identity :unique_external_event_membership, [:external_event_id, :membership_id]
   end
 end

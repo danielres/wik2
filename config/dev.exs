@@ -1,7 +1,7 @@
 import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 config :ash, :pub_sub, debug?: true
-config :wik, show_external_event_debug_ids?: true
+config :wik, show_external_event_debug_ids?: false
 
 # Configure your database
 pg_host = System.get_env("PGHOST")

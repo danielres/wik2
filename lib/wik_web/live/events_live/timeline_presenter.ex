@@ -3,6 +3,19 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   alias Wik.Accounts
   alias Wik.Events.ExternalCalendar
 
+  def aggregate_items(entries, user, opts \\ []) do
+    internal_publications = aggregate_internal_publications(entries)
+
+    author_memberships_by_space_and_user =
+      author_memberships_by_space_and_user(internal_publications)
+
+    entries
+    |> Enum.map(&aggregate_item(&1, user, author_memberships_by_space_and_user))
+    |> Enum.reject(&is_nil/1)
+    |> maybe_filter_upcoming(Keyword.get(opts, :upcoming?, false))
+    |> Enum.sort_by(&{DateTime.to_unix(&1.event.starts_at, :microsecond), &1.id})
+  end
+
   def build(loaded_data, show_external?) do
     loaded_subscriptions = ExternalCalendar.load_subscriptions(loaded_data.subscription_records)
 
@@ -113,6 +126,83 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     |> DateTime.to_date()
   end
 
+  defp aggregate_internal_publications(entries) do
+    entries
+    |> Enum.filter(&Map.has_key?(&1, :publications))
+    |> Enum.map(&List.first(&1.publications))
+  end
+
+  defp aggregate_item(%{event: event, publications: publications} = entry, user, memberships) do
+    publication = List.first(publications)
+
+    item =
+      internal_item(
+        publication,
+        Map.get(memberships, {publication.space.id, event.author.id}),
+        Map.get(entry, :participations, [])
+      )
+
+    %{
+      item
+      | current_member_participation:
+          current_member_participation_by_user(Map.get(entry, :participations, []), user)
+    }
+  end
+
+  defp aggregate_item(%{external_event: event} = entry, user, _memberships) do
+    normalize_external_event(
+      event,
+      external_calendar_name(event),
+      Map.get(entry, :participations, []),
+      nil
+    )
+    |> Map.put(:space_slug, entry.space.slug)
+    |> Map.put(
+      :current_member_participation,
+      current_member_participation_by_user(Map.get(entry, :participations, []), user)
+    )
+  end
+
+  defp maybe_filter_upcoming(items, false), do: items
+
+  defp maybe_filter_upcoming(items, true) do
+    Enum.filter(items, fn item ->
+      event = item.event
+      tz = event.tz || "Etc/UTC"
+
+      event_date =
+        (event.ends_at || event.starts_at)
+        |> Tz.to_local!(tz)
+        |> DateTime.to_date()
+
+      today =
+        DateTime.utc_now()
+        |> Tz.to_local!(tz)
+        |> DateTime.to_date()
+
+      Date.compare(event_date, today) in [:eq, :gt]
+    end)
+  end
+
+  defp author_memberships_by_space_and_user(publications) do
+    publications
+    |> Enum.group_by(& &1.space.id)
+    |> Enum.reduce(%{}, fn {_space_id, space_publications}, acc ->
+      space = List.first(space_publications).space
+      user_ids = Enum.map(space_publications, & &1.event.author.id) |> Enum.uniq()
+
+      case Accounts.list_memberships_by_user_id(space.id, user_ids) do
+        {:ok, memberships_by_user_id} ->
+          Enum.reduce(memberships_by_user_id, acc, fn {user_id, membership}, space_acc ->
+            Map.put(space_acc, {space.id, user_id}, membership)
+          end)
+
+        {:error, _error} ->
+          acc
+      end
+    end)
+  end
+
   defp normalize_internal_publications(
          publications,
          author_memberships_by_user_id,
@@ -188,6 +278,12 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     Enum.find(participations, &(&1.membership_id == current_membership.id))
   end
 
+  defp current_member_participation_by_user(participations, user) do
+    Enum.find(participations, fn participation ->
+      participation.membership.user_id == user.id
+    end)
+  end
+
   defp month_label(year, month) do
     year
     |> Date.new!(month, 1)
@@ -206,4 +302,13 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       Map.get(loaded_subscriptions.names_by_id, subscription.id, event.calendar_name)
     )
   end
+
+  defp external_calendar_name(%{subscription: %Ash.NotLoaded{}} = event), do: event.calendar_name
+
+  defp external_calendar_name(%{subscription: subscription} = event)
+       when not is_nil(subscription) do
+    ExternalCalendar.display_name(subscription, event.calendar_name)
+  end
+
+  defp external_calendar_name(event), do: event.calendar_name
 end

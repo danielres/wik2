@@ -193,9 +193,16 @@ defmodule WikWeb.Components.Event.Timeline do
             <.compact_item_body item={item} user_tz={@user_tz} />
           </.link>
         <% else %>
-          <div class="block p-4">
+          <.link
+            patch={external_event_link_target(item)}
+            class={[
+              "block p-4 hover:bg-base-300/70 transition",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            ]}
+            data-testid={"event-open-#{item.id}"}
+          >
             <.compact_item_body item={item} user_tz={@user_tz} />
-          </div>
+          </.link>
         <% end %>
       </article>
     </div>
@@ -331,6 +338,10 @@ defmodule WikWeb.Components.Event.Timeline do
 
   defp legacy_event_link_target(_scope, publication) do
     ~p"/#{publication.space.slug}/events?#{%{event: publication.event_id}}"
+  end
+
+  defp external_event_link_target(%{space_slug: space_slug, event: event}) do
+    ~p"/#{space_slug}/events?#{%{ext: event.id}}"
   end
 
   defp present?(value), do: value not in [nil, ""]

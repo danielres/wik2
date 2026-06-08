@@ -76,8 +76,8 @@ defmodule WikWeb.HomeLiveTest do
         event_attrs(
           title: "Relay event",
           relay_policy: :admins_only_spaces,
-          starts_on: "2026-05-11",
-          ends_on: "2026-05-11"
+          starts_on: future_date_string(31),
+          ends_on: future_date_string(31)
         ),
         action: :create,
         scope: scope(relay_owner, second_space)
@@ -125,6 +125,7 @@ defmodule WikWeb.HomeLiveTest do
     assert has_element?(view, "[data-testid='events-timeline']")
     assert render(view) =~ "External dinner"
     assert render(view) =~ "18:00"
+    assert has_element?(view, "a[href='/#{space.slug}/events?ext=#{external_event.id}']")
   end
 
   test "ignores unscheduled legacy event publications on the home page", %{conn: conn} do
@@ -179,11 +180,11 @@ defmodule WikWeb.HomeLiveTest do
       all_day: false,
       description: "An event description",
       ends_at_time: "20:00",
-      ends_on: "2026-05-10",
+      ends_on: future_date_string(30),
       location: "Community Hall, 123 Example Street",
       relay_policy: :internal_only,
       starts_at_time: "18:00",
-      starts_on: "2026-05-10",
+      starts_on: future_date_string(30),
       tz: "Etc/UTC",
       title: "Shared Dinner"
     }
@@ -202,7 +203,7 @@ defmodule WikWeb.HomeLiveTest do
       all_day: false,
       calendar_name: "Community calendar",
       description: "Imported from an external calendar",
-      ends_at: ~U[2026-06-03 20:00:00.000000Z],
+      ends_at: future_datetime(30, ~T[20:00:00]),
       event_url: nil,
       external_occurrence_key: "single",
       external_recurrence_id: nil,
@@ -210,7 +211,7 @@ defmodule WikWeb.HomeLiveTest do
       last_seen_at: DateTime.utc_now(),
       location: "Riverside Hall",
       space_id: space.id,
-      starts_at: ~U[2026-06-03 18:00:00.000000Z],
+      starts_at: future_datetime(30, ~T[18:00:00]),
       status: :published,
       subscription_id: subscription.id,
       title: "External dinner",
@@ -220,6 +221,12 @@ defmodule WikWeb.HomeLiveTest do
 
   defp scope(actor, tenant) do
     %Wik.Scope{actor: actor, tenant: tenant}
+  end
+
+  defp future_datetime(offset, time) do
+    offset
+    |> future_date()
+    |> DateTime.new!(%{time | microsecond: {0, 6}}, "Etc/UTC")
   end
 
   defp log_in(conn, user) do

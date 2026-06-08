@@ -7,8 +7,6 @@ defmodule WikWeb.HomeLive do
   alias Wik.Accounts
   alias Wik.Accounts.Space
   alias Wik.Events
-  alias Wik.Events.EventParticipation
-  alias Wik.Events.ExternalCalendar
   alias WikWeb.Components
   alias WikWeb.Components.UI
   alias WikWeb.EventsLive.TimelinePresenter
@@ -165,121 +163,12 @@ defmodule WikWeb.HomeLive do
   defp list_aggregate_event_items(nil), do: []
 
   defp list_aggregate_event_items(scope) do
-    with {:ok, entries} <- Events.list_aggregate_feed_events(scope.actor),
-         {:ok, external_items} <- list_external_event_items(scope) do
-      internal_items =
-        entries
-        |> Enum.map(fn entry -> List.first(entry.publications) end)
-        |> with_author_memberships()
-
-      (internal_items ++ external_items)
-      |> Enum.reject(&is_nil(&1.event.starts_at))
-      |> Enum.sort_by(&{DateTime.to_unix(&1.event.starts_at, :microsecond), &1.id})
+    with {:ok, entries} <- Events.list_aggregate_feed_events(scope.actor) do
+      TimelinePresenter.aggregate_items(entries, scope.actor, upcoming?: true)
     else
       err ->
-        Log.scoped_error(scope, err, "list_aggregate_feed_events failed")
+        Log.scoped_error(scope, err, "list_aggregate_event_items failed")
         []
     end
-  end
-
-  defp list_external_event_items(scope) do
-    with {:ok, spaces} <- Accounts.list_spaces(scope: scope),
-         {:ok, participations} <- external_event_participations(scope, spaces) do
-      {:ok,
-       Enum.map(participations, fn participation ->
-         external_event = participation.external_event
-
-         %{
-           id: "external:#{external_event.id}",
-           source_type: :external,
-           event: external_event,
-           publication: nil,
-           event_url: external_event.event_url,
-           external_uid: external_event.external_uid,
-           external_recurrence_id: external_event.external_recurrence_id,
-           space_slug: nil,
-           source_name: nil,
-           author: nil,
-           calendar_name: external_calendar_name(external_event),
-           current_member_participation: participation,
-           participations: [participation],
-           source_url: nil,
-           subscription_id: external_event.subscription_id
-         }
-       end)}
-    end
-  end
-
-  defp external_event_participations(scope, spaces) do
-    spaces
-    |> Enum.reduce_while({:ok, []}, fn space, {:ok, participations} ->
-      case Accounts.get_membership(space.id, scope.actor.id) do
-        {:ok, nil} ->
-          {:cont, {:ok, participations}}
-
-        {:ok, membership} ->
-          space_scope = %{scope | tenant: space}
-
-          query =
-            EventParticipation
-            |> Ash.Query.filter(membership_id == ^membership.id and not is_nil(external_event_id))
-            |> Ash.Query.load([:membership, external_event: [:subscription]])
-
-          case Ash.read(query, scope: space_scope) do
-            {:ok, space_participations} ->
-              {:cont, {:ok, participations ++ space_participations}}
-
-            {:error, error} ->
-              {:halt, {:error, error}}
-          end
-
-        {:error, error} ->
-          {:halt, {:error, error}}
-      end
-    end)
-  end
-
-  defp external_calendar_name(%{subscription: %Ash.NotLoaded{}} = event), do: event.calendar_name
-
-  defp external_calendar_name(%{subscription: subscription} = event)
-       when not is_nil(subscription) do
-    ExternalCalendar.display_name(subscription, event.calendar_name)
-  end
-
-  defp external_calendar_name(event), do: event.calendar_name
-
-  defp with_author_memberships(publications) do
-    publications
-    |> author_memberships_by_space_and_user()
-    |> then(fn memberships_by_space_and_user ->
-      Enum.map(publications, fn publication ->
-        TimelinePresenter.internal_item(
-          publication,
-          Map.get(memberships_by_space_and_user, {
-            publication.space.id,
-            publication.event.author.id
-          })
-        )
-      end)
-    end)
-  end
-
-  defp author_memberships_by_space_and_user(publications) do
-    publications
-    |> Enum.group_by(& &1.space.id)
-    |> Enum.reduce(%{}, fn {_space_id, space_publications}, acc ->
-      space = List.first(space_publications).space
-      user_ids = Enum.map(space_publications, & &1.event.author.id) |> Enum.uniq()
-
-      case Accounts.list_memberships_by_user_id(space.id, user_ids) do
-        {:ok, memberships_by_user_id} ->
-          Enum.reduce(memberships_by_user_id, acc, fn {user_id, membership}, space_acc ->
-            Map.put(space_acc, {space.id, user_id}, membership)
-          end)
-
-        {:error, _error} ->
-          acc
-      end
-    end)
   end
 end

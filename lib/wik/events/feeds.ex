@@ -63,7 +63,7 @@ defmodule Wik.Events.Feeds do
     ])
     |> Ash.Query.load(
       membership: [:avatar_url, user: [:external_identities]],
-      external_event: [:space]
+      external_event: [:space, :subscription]
     )
   end
 

@@ -87,14 +87,16 @@ defmodule WikWeb.Components.TextContent do
   end
 
   defp auto_link_plain_text(text) do
-    Regex.split(~r/(https?:\/\/[^\s<]+)/, text, include_captures: true, trim: false)
+    Regex.split(~r/((?:https?:\/\/|www\.)[^\s<]+)/, text, include_captures: true, trim: false)
     |> Enum.map_join(&plain_text_part_to_html/1)
   end
 
   defp plain_text_part_to_html(part) do
-    if safe_external_url?(part) do
+    href = plain_text_href(part)
+
+    if safe_external_url?(href) do
       href =
-        part
+        href
         |> maybe_unwrap_google_redirect_url()
         |> Phoenix.HTML.html_escape()
         |> Phoenix.HTML.safe_to_string()
@@ -111,6 +113,9 @@ defmodule WikWeb.Components.TextContent do
       |> Phoenix.HTML.safe_to_string()
     end
   end
+
+  defp plain_text_href("www." <> _rest = url), do: "https://" <> url
+  defp plain_text_href(url), do: url
 
   defp maybe_unwrap_google_redirect_url(url) do
     uri = URI.parse(url)

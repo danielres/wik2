@@ -28,4 +28,14 @@ defmodule WikWeb.Components.TextContentTest do
     refute html =~ ~s(class="whitespace-pre-wrap [&amp;_a])
     assert html =~ ~s(<div class="whitespace-pre-wrap"><p>Body</p></div>)
   end
+
+  test "links bare www domains in plain text" do
+    html =
+      render_component(&TextContent.render/1, %{
+        text: "More info at www.example.de"
+      })
+
+    assert html =~ ~s(href="https://www.example.de")
+    assert html =~ ">www.example.de</a>"
+  end
 end

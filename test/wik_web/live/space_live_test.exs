@@ -37,7 +37,8 @@ defmodule WikWeb.SpaceLiveTest do
     |> render_click()
 
     refute has_element?(view, testid("orphan-block-#{block.id}-destroy"))
-    assert {:error, %Ash.Error.Query.NotFound{}} = Ash.get(Block, block.id, scope: scope)
+    assert {:error, error} = Ash.get(Block, block.id, scope: scope)
+    assert [%Ash.Error.Query.NotFound{}] = error.errors
   end
 
   defp scope(actor, tenant), do: %Wik.Scope{actor: actor, tenant: tenant}

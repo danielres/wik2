@@ -42,30 +42,37 @@ defmodule Wik.Events.Feeds.Serializer do
 
   defp to_ical_event(%{event: %Event{}, publications: _publications} = entry) do
     event = entry.event
+    url = event_url(event.space, event.id)
 
     %ICal.Event{
       created: event.inserted_at,
-      description: aggregate_description(entry),
+      custom_properties: html_description_properties(aggregate_html_description(entry, url)),
+      description: aggregate_description(entry, url),
       dtend: dtend(event),
       dtstamp: event.updated_at,
       dtstart: dtstart(event),
       location: blank_to_nil(event.location),
       status: event_status(event),
       summary: event.title,
+      url: url,
       uid: event_uid(event)
     }
   end
 
   defp to_ical_event(%{external_event: %ExternalEvent{} = event} = entry) do
+    url = external_event_url(entry.space, event.id)
+
     %ICal.Event{
       created: event.inserted_at,
-      description: aggregate_description(entry),
+      custom_properties: html_description_properties(aggregate_html_description(entry, url)),
+      description: aggregate_description(entry, url),
       dtend: dtend(event),
       dtstamp: event.updated_at,
       dtstart: dtstart(event),
       location: blank_to_nil(event.location),
       status: event_status(event),
       summary: event.title,
+      url: url,
       uid: event_uid(event)
     }
   end
@@ -105,28 +112,30 @@ defmodule Wik.Events.Feeds.Serializer do
     "#{event_id}@#{host}"
   end
 
-  defp aggregate_description(%{event: %Event{} = event, publications: publications} = entry) do
-    top_section =
-      top_section(event_url(event.space, event.id), Map.get(entry, :participations, []))
-
-    [top_section, description_section(event.description), aggregate_context(publications)]
+  defp aggregate_description(%{event: %Event{} = event, publications: publications} = entry, url) do
+    [
+      top_section(url, Map.get(entry, :participations, [])),
+      description_section(event.description),
+      aggregate_context(publications)
+    ]
     |> Enum.reject(&blank?/1)
     |> Enum.join("\n\n---\n\n")
     |> blank_to_nil()
   end
 
-  defp aggregate_description(%{external_event: %ExternalEvent{} = event} = entry) do
-    top_section =
-      top_section(external_event_url(entry.space, event.id), Map.get(entry, :participations, []))
-
-    [top_section, description_section(event.description), aggregate_context([entry])]
+  defp aggregate_description(%{external_event: %ExternalEvent{} = event} = entry, url) do
+    [
+      top_section(url, Map.get(entry, :participations, [])),
+      description_section(event.description),
+      aggregate_context([entry])
+    ]
     |> Enum.reject(&blank?/1)
     |> Enum.join("\n\n---\n\n")
     |> blank_to_nil()
   end
 
   defp top_section(url, participations) do
-    ["View event: #{url}", participation_section(participations)]
+    ["View event in app: #{url}", participation_section(participations)]
     |> Enum.reject(&blank?/1)
     |> Enum.join("\n\n")
   end
@@ -225,6 +234,141 @@ defmodule Wik.Events.Feeds.Serializer do
   end
 
   defp relay_note?(_publication), do: false
+
+  defp aggregate_html_description(
+         %{event: %Event{} = event, publications: publications} = entry,
+         url
+       ) do
+    [
+      html_top_section(url, Map.get(entry, :participations, [])),
+      html_description_section(event.description),
+      html_aggregate_context(publications)
+    ]
+    |> Enum.reject(&blank?/1)
+    |> Enum.join("<hr>")
+    |> blank_to_nil()
+  end
+
+  defp aggregate_html_description(%{external_event: %ExternalEvent{} = event} = entry, url) do
+    [
+      html_top_section(url, Map.get(entry, :participations, [])),
+      html_description_section(event.description),
+      html_aggregate_context([entry])
+    ]
+    |> Enum.reject(&blank?/1)
+    |> Enum.join("<hr>")
+    |> blank_to_nil()
+  end
+
+  defp html_top_section(url, participations) do
+    [
+      ~s(<p><a href="#{html_escape(url)}">View event in app</a></p>),
+      html_participation_section(participations)
+    ]
+    |> Enum.reject(&blank?/1)
+    |> Enum.join("")
+  end
+
+  defp html_participation_section([]), do: nil
+
+  defp html_participation_section(participations) do
+    sorted_participations =
+      Enum.sort_by(participations, fn participation ->
+        {-participation.interest, participation_name(participation)}
+      end)
+
+    visible_participations =
+      if length(sorted_participations) > 10 do
+        Enum.take(sorted_participations, 9)
+      else
+        Enum.take(sorted_participations, 10)
+      end
+
+    lines =
+      visible_participations
+      |> Enum.map(&html_participation_line/1)
+      |> maybe_append_more_html_participations(sorted_participations)
+
+    "<p>Participation/Interest:</p><ul>#{Enum.join(lines)}</ul>"
+  end
+
+  defp maybe_append_more_html_participations(lines, participations) do
+    if length(participations) > 10, do: lines ++ ["<li>...</li>"], else: lines
+  end
+
+  defp html_participation_line(participation) do
+    extra_info =
+      participation.extra_info
+      |> blank_to_nil()
+      |> case do
+        nil -> ""
+        extra_info -> " - #{html_escape(extra_info)}"
+      end
+
+    "<li>#{html_escape(participation_name(participation))}: #{participation.interest}/10#{extra_info}</li>"
+  end
+
+  defp html_description_section(description) do
+    case blank_to_nil(description) do
+      nil -> nil
+      description -> "<p>Description:</p><p>#{html_text(description)}</p>"
+    end
+  end
+
+  defp html_aggregate_context(publications) do
+    [html_visible_in_section(publications), html_relay_notes_section(publications)]
+    |> Enum.reject(&blank?/1)
+    |> Enum.join("")
+  end
+
+  defp html_visible_in_section(publications) do
+    lines =
+      publications
+      |> Enum.map(& &1.space.name)
+      |> Enum.uniq()
+      |> Enum.sort()
+      |> Enum.map(&"<li>#{html_escape(&1)}</li>")
+
+    "<p>Visible in:</p><ul>#{Enum.join(lines)}</ul>"
+  end
+
+  defp html_relay_notes_section(publications) do
+    lines =
+      publications
+      |> Enum.filter(&relay_note?/1)
+      |> Enum.map(& &1.relay_note)
+      |> Enum.uniq()
+      |> Enum.map(&"<p>#{html_text(&1)}</p>")
+      |> Enum.join("")
+
+    case blank_to_nil(lines) do
+      nil -> nil
+      lines -> "<p>Relay note:</p>#{lines}"
+    end
+  end
+
+  defp html_description_properties(nil), do: %{}
+
+  defp html_description_properties(html) do
+    %{
+      "X-ALT-DESC" => %{
+        params: %{"FMTTYPE" => "text/html"},
+        value: ICal.Serialize.value(html)
+      }
+    }
+  end
+
+  defp html_text(value) do
+    value
+    |> html_escape()
+    |> String.replace("\n", "<br>")
+  end
+
+  defp html_escape(value) do
+    value
+    |> Phoenix.HTML.html_escape()
+    |> Phoenix.HTML.safe_to_string()
+  end
 
   defp event_url(space, event_id) do
     "#{Endpoint.url()}/#{space.slug}/events?event=#{event_id}"

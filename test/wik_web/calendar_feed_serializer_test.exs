@@ -74,7 +74,16 @@ defmodule Wik.Events.Feeds.SerializerTest do
       }
       |> then(&Serializer.to_ics([&1], calendar_name: "Aggregate feed"))
 
-    assert ics =~ "DESCRIPTION:View event: #{Endpoint.url()}/origin-space/events?event=event-1"
+    assert ics =~
+             "DESCRIPTION:View event in app: #{Endpoint.url()}/origin-space/events?event=event-1"
+
+    assert ics =~ "URL:#{Endpoint.url()}/origin-space/events?event=event-1"
+
+    assert ics =~
+             ~s(X-ALT-DESC;FMTTYPE=text/html:<p><a href="#{Endpoint.url()}/origin-space/events?event=event-1">View event in app</a></p>)
+
+    assert ics =~ "<ul><li>Ada: 8/10</li><li>Max: 5/10 - joining around 15:00</li></ul>"
+    assert ics =~ "<hr><p>Description:</p><p>Bring food</p><hr>"
     assert ics =~ "Participation/Interest:\\n\\n- Ada: 8/10"
     assert ics =~ "- Max: 5/10 - joining around 15:00"
     assert ics =~ "---\\n\\nDescription:\\n\\nBring food"
@@ -94,7 +103,12 @@ defmodule Wik.Events.Feeds.SerializerTest do
     assert ics =~ "SUMMARY:External dinner"
 
     assert ics =~
-             "DESCRIPTION:View event: #{Endpoint.url()}/berlin-hackers/events?ext=external-event-1"
+             "DESCRIPTION:View event in app: #{Endpoint.url()}/berlin-hackers/events?ext=external-event-1"
+
+    assert ics =~ "URL:#{Endpoint.url()}/berlin-hackers/events?ext=external-event-1"
+
+    assert ics =~
+             ~s(X-ALT-DESC;FMTTYPE=text/html:<p><a href="#{Endpoint.url()}/berlin-hackers/events?ext=external-event-1">View event in app</a></p>)
 
     assert ics =~ "Participation/Interest:\\n\\n- Ada: 8/10"
     assert ics =~ "---\\n\\nDescription:\\n\\nImported from an external calendar"

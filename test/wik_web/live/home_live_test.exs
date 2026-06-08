@@ -95,6 +95,9 @@ defmodule WikWeb.HomeLiveTest do
       |> live(~p"/")
 
     assert has_element?(view, "[data-testid='events-timeline']")
+    assert has_element?(view, "[data-testid='events-year-#{future_date(30).year}']")
+    assert has_element?(view, "[data-testid^='home-event-source-internal:']", first_space.name)
+    assert has_element?(view, "[data-testid^='home-event-source-internal:']", second_space.name)
     assert render(view) =~ "Shared dinner"
     assert render(view) =~ "Relay event"
   end
@@ -110,7 +113,7 @@ defmodule WikWeb.HomeLiveTest do
 
     external_event = external_event_fixture(space, owner)
 
-    assert {:ok, _result} =
+    assert {:ok, participation} =
              Events.record_external_interest(
                external_event,
                %{interest: 7, extra_info: "joining later"},
@@ -125,6 +128,20 @@ defmodule WikWeb.HomeLiveTest do
     assert has_element?(view, "[data-testid='events-timeline']")
     assert render(view) =~ "External dinner"
     assert render(view) =~ "18:00"
+
+    assert has_element?(
+             view,
+             "[data-testid='home-event-source-external:#{external_event.id}']",
+             space.name
+           )
+
+    assert has_element?(view, "[data-testid='timeline-event-participation-#{participation.id}']")
+
+    assert has_element?(
+             view,
+             "[data-testid='timeline-event-participation-interest-#{participation.id}']"
+           )
+
     assert has_element?(view, "a[href='/#{space.slug}/events?ext=#{external_event.id}']")
   end
 

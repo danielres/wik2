@@ -54,7 +54,18 @@ defmodule WikWeb.EventsLive do
             more_external_future?={@timeline.more_external_future?}
             show_external?={@timeline.show_external?}
             user_tz={@active_tz}
-          />
+          >
+            <:meta :let={item}>
+              <div
+                :if={item.source_type == :external and item.calendar_name not in [nil, ""]}
+                class="truncate text-xs opacity-60 flex items-center gap-1"
+                data-testid={"external-event-calendar-name-#{item.id}"}
+              >
+                <.icon name="hero-calendar-days-micro" class="opacity-60" />
+                {item.calendar_name}
+              </div>
+            </:meta>
+          </Components.Event.grouped_timeline>
         </div>
 
         <Components.Modal.render

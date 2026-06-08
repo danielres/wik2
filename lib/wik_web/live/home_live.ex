@@ -63,21 +63,36 @@ defmodule WikWeb.HomeLive do
               </Components.Modal.render>
             </:body>
           </UI.page_blocks>
-          <UI.page_blocks>
-            <:title>All your events</:title>
 
-            <:actions>
-              <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
-            </:actions>
+          <section>
+            <div class="flex items-center justify-between mb-1">
+              <h2 class="text-lg">
+                All your events
+              </h2>
 
-            <:body>
-              <Components.Event.list
+              <div>
+                <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
+              </div>
+            </div>
+
+            <div style="--top: 0rem">
+              <Components.Event.grouped_timeline
                 current_scope={@current_scope}
-                items={@event_items}
+                grouped_items={@grouped_event_items}
                 user_tz={@active_tz}
-              />
-            </:body>
-          </UI.page_blocks>
+              >
+                <:meta :let={item}>
+                  <div
+                    :if={item.source_name not in [nil, ""]}
+                    class="truncate text-xs opacity-60 flex items-center gap-1"
+                    data-testid={"home-event-source-#{item.id}"}
+                  >
+                    {item.source_name}
+                  </div>
+                </:meta>
+              </Components.Event.grouped_timeline>
+            </div>
+          </section>
         </div>
       </Layouts.container>
     </Layouts.app>
@@ -131,9 +146,11 @@ defmodule WikWeb.HomeLive do
 
   defp assign_spaces_and_form(socket) do
     scope = socket.assigns.current_scope
+    event_items = list_aggregate_event_items(scope)
 
     socket
-    |> assign(event_items: list_aggregate_event_items(scope))
+    |> assign(event_items: event_items)
+    |> assign(grouped_event_items: TimelinePresenter.grouped_timeline_items(event_items))
     |> assign(spaces: scope |> list_spaces())
     |> assign(form: scope |> init_form())
   end

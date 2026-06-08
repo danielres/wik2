@@ -493,14 +493,17 @@ defmodule WikWeb.Components.Event do
   end
 
   attr :current_scope, :map, default: nil
-  attr :items, :list, default: []
   attr :grouped_items, :list, default: []
   attr :load_more_path, :string, default: nil
+  attr :more_external_future?, :boolean, default: false
   attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
-  def list(assigns), do: Timeline.compact_list(assigns)
+  slot :meta do
+    attr :item, :map
+  end
+
   def grouped_timeline(assigns), do: Timeline.grouped_list(assigns)
 
   attr :class, :string, default: nil

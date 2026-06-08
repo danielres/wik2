@@ -14,9 +14,13 @@ defmodule WikWeb.Components.Event.Timeline do
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
 
+  slot :meta do
+    attr :item, :map
+  end
+
   def grouped_list(assigns) do
     ~H"""
-    <div class="space-y-6" data-testid="events-timeline">
+    <div class="space-y-6" data-testid="events-timeline" style="--_top: var(--top, 2.25rem)">
       <div
         :if={@grouped_items == []}
         class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
@@ -31,7 +35,10 @@ defmodule WikWeb.Components.Event.Timeline do
         id={"events-year-#{year_group.year}"}
         data-testid={"events-year-#{year_group.year}"}
       >
-        <h2 class={["text-xl font-semibold", "sticky top-9 bg-base-100 z-40 pt-4"]}>
+        <h2
+          class={["text-xl font-semibold", "sticky bg-base-100 z-40 pt-4"]}
+          style="top: var(--_top)"
+        >
           {year_group.year}
         </h2>
 
@@ -41,10 +48,13 @@ defmodule WikWeb.Components.Event.Timeline do
           data-testid={"events-month-#{year_group.year}-#{month_group.month}"}
           class=""
         >
-          <h3 class={[
-            "text-sm font-semibold uppercase tracking-wide text-base-content/80",
-            "sticky top-19 bg-base-100 z-30"
-          ]}>
+          <h3
+            class={[
+              "text-sm font-semibold uppercase tracking-wide text-base-content/80",
+              "sticky bg-base-100 z-30"
+            ]}
+            style="top: calc(var(--_top) + 2.5rem)"
+          >
             {month_group.label}
           </h3>
 
@@ -54,11 +64,14 @@ defmodule WikWeb.Components.Event.Timeline do
             id={"events-day-#{year_group.year}-#{month_group.month}-#{day_group.day}"}
             data-testid={"events-day-#{year_group.year}-#{month_group.month}-#{day_group.day}"}
           >
-            <h4 class={[
-              "text-sm font-medium tracking-wide text-base-content/70",
-              "sticky top-23 bg-base-100 z-20",
-              "pb-2"
-            ]}>
+            <h4
+              class={[
+                "text-sm font-medium tracking-wide text-base-content/70",
+                "sticky bg-base-100 z-20",
+                "pb-2"
+              ]}
+              style="top: calc(var(--_top) + 2.5rem + 1rem)"
+            >
               {day_group.label}
             </h4>
 
@@ -89,6 +102,7 @@ defmodule WikWeb.Components.Event.Timeline do
                         current_scope={@current_scope}
                         grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
                         item={item}
+                        meta={@meta}
                         user_tz={@user_tz}
                       />
                     </.link>
@@ -131,6 +145,7 @@ defmodule WikWeb.Components.Event.Timeline do
                         current_scope={@current_scope}
                         grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
                         item={item}
+                        meta={@meta}
                         user_tz={@user_tz}
                       />
                     </.link>
@@ -155,98 +170,10 @@ defmodule WikWeb.Components.Event.Timeline do
     """
   end
 
-  attr :items, :list, default: []
-  attr :current_scope, :map, required: true
-  attr :user_tz, :string, required: true
-
-  def compact_list(assigns) do
-    ~H"""
-    <div
-      id="event-publications"
-      class="grid gap-1"
-      data-testid="events-timeline"
-    >
-      <div
-        :if={@items == []}
-        id="event-publications-empty"
-        class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
-        data-testid="events-empty"
-      >
-        No upcoming events yet.
-      </div>
-
-      <article
-        :for={item <- @items}
-        id={timeline_dom_id(item)}
-        data-testid={timeline_testid(item)}
-        class="rounded-box bg-base-200 p-0 transition overflow-hidden"
-      >
-        <%= if item.source_type == :internal do %>
-          <.link
-            patch={legacy_event_link_target(@current_scope, item.publication)}
-            class={[
-              "block p-4 hover:bg-base-300/70 transition",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            ]}
-            data-testid={"event-open-#{item.publication.id}"}
-          >
-            <.compact_item_body item={item} user_tz={@user_tz} />
-          </.link>
-        <% else %>
-          <.link
-            patch={external_event_link_target(item)}
-            class={[
-              "block p-4 hover:bg-base-300/70 transition",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            ]}
-            data-testid={"event-open-#{item.id}"}
-          >
-            <.compact_item_body item={item} user_tz={@user_tz} />
-          </.link>
-        <% end %>
-      </article>
-    </div>
-    """
-  end
-
-  attr :item, :map, required: true
-  attr :user_tz, :string, required: true
-
-  defp compact_item_body(assigns) do
-    ~H"""
-    <div class="min-w-0 space-y-1">
-      <div class="flex flex-wrap items-center gap-2">
-        <%= if @item.source_type == :internal do %>
-          <Event.event_header publication={@item.publication} />
-        <% else %>
-          <h2 class="text-base font-medium leading-tight flex-grow">
-            {@item.event.title}
-          </h2>
-        <% end %>
-        <Event.event_status event={@item.event} />
-      </div>
-
-      <div
-        class="truncate text-sm opacity-80"
-        data-testid={timeline_schedule_testid(@item)}
-      >
-        <Event.schedule event={@item.event} user_tz={@user_tz} />
-      </div>
-
-      <%= if @item.source_type == :internal do %>
-        <User.identity avatar_size="xs" class="text-xs opacity-60" membership={@item.author} />
-      <% else %>
-        <div :if={present?(@item.calendar_name)} class="truncate text-xs opacity-60">
-          {@item.calendar_name}
-        </div>
-      <% end %>
-    </div>
-    """
-  end
-
   attr :current_scope, :map, required: true
   attr :grouped_date, :any, default: nil
   attr :item, :map, required: true
+  attr :meta, :any, default: []
   attr :user_tz, :string, required: true
 
   defp timeline_item_body(assigns) do
@@ -267,14 +194,7 @@ defmodule WikWeb.Components.Event.Timeline do
         <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
-      <div
-        :if={present?(@item.calendar_name)}
-        class="truncate text-xs opacity-60 flex items-center gap-1"
-        data-testid={"external-event-calendar-name-#{@item.id}"}
-      >
-        <.icon name="hero-calendar-days-micro" class="opacity-60" />
-        {@item.calendar_name}
-      </div>
+      {render_slot(@meta, @item)}
 
       <div :if={@item.participations != []} class="flex flex-wrap items-center gap-4">
         <div
@@ -331,18 +251,6 @@ defmodule WikWeb.Components.Event.Timeline do
   defp interest_dimension, do: Dimensions.get!("participation", "interest")
 
   defp dev?, do: Application.get_env(:wik, :show_external_event_debug_ids?, false)
-
-  defp legacy_event_link_target(%{tenant: %{slug: space_slug}}, publication) do
-    ~p"/#{space_slug}/events?#{%{event: publication.event_id}}"
-  end
-
-  defp legacy_event_link_target(_scope, publication) do
-    ~p"/#{publication.space.slug}/events?#{%{event: publication.event_id}}"
-  end
-
-  defp external_event_link_target(%{space_slug: space_slug, event: event}) do
-    ~p"/#{space_slug}/events?#{%{ext: event.id}}"
-  end
 
   defp present?(value), do: value not in [nil, ""]
 end

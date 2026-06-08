@@ -133,7 +133,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   end
 
   defp aggregate_item(%{event: event, publications: publications} = entry, user, memberships) do
-    publication = List.first(publications)
+    publication = origin_publication(publications)
 
     item =
       internal_item(
@@ -147,6 +147,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       | current_member_participation:
           current_member_participation_by_user(Map.get(entry, :participations, []), user)
     }
+    |> Map.put(:open_path, "/#{publication.space.slug}/events?event=#{event.id}")
   end
 
   defp aggregate_item(%{external_event: event} = entry, user, _memberships) do
@@ -157,10 +158,16 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       nil
     )
     |> Map.put(:space_slug, entry.space.slug)
+    |> Map.put(:source_name, entry.space.name)
+    |> Map.put(:open_path, "/#{entry.space.slug}/events?ext=#{event.id}")
     |> Map.put(
       :current_member_participation,
       current_member_participation_by_user(Map.get(entry, :participations, []), user)
     )
+  end
+
+  defp origin_publication(publications) do
+    Enum.find(publications, &(&1.publication_type == :origin)) || List.first(publications)
   end
 
   defp maybe_filter_upcoming(items, false), do: items

@@ -24,7 +24,6 @@ defmodule WikWeb.Components.TextContent do
         <div class={["whitespace-pre-wrap", @class]}>{raw(html)}</div>
       <% {:html, html} -> %>
         <div class={[
-          "whitespace-pre-wrap",
           "[&_a]:link",
           "[&_a]:link-hover",
           "[&_a]:underline",
@@ -33,7 +32,7 @@ defmodule WikWeb.Components.TextContent do
           "[&_a]:underline-offset-2",
           @class
         ]}>
-          <div>{raw(html)}</div>
+          <div class="whitespace-pre-wrap">{raw(html)}</div>
         </div>
     <% end %>
     """
@@ -45,6 +44,7 @@ defmodule WikWeb.Components.TextContent do
        text
        |> String.trim()
        |> sanitize()
+       |> normalize_breaks()
        |> clean_link_urls()
        |> open_links_in_new_tab()}
     else
@@ -54,6 +54,14 @@ defmodule WikWeb.Components.TextContent do
 
   defp html?(text) do
     Regex.match?(~r/<\/?[a-zA-Z][^>]*>/, text)
+  end
+
+  defp normalize_breaks(html) do
+    html
+    |> String.trim()
+    |> String.replace(~r/(?:\s*<br\s*\/?>\s*){3,}/i, "<br><br>")
+    |> String.replace(~r/\A(?:\s*<br\s*\/?>\s*)+/i, "")
+    |> String.replace(~r/(?:\s*<br\s*\/?>\s*)+\z/i, "")
   end
 
   defp open_links_in_new_tab(html) do

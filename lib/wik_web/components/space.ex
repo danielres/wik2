@@ -41,9 +41,11 @@ defmodule WikWeb.Components.Space do
 
         <.input field={@form[:description]} label="Description" type="textarea" />
 
-        <.button type="submit" class="btn btn-accent btn-soft mt-3">
-          {@action_type |> String.capitalize()} space
-        </.button>
+        <div class="flex">
+          <.button type="submit" class="btn btn-accent btn-soft mt-3 ml-auto">
+            {@action_type |> String.capitalize()} space
+          </.button>
+        </div>
       </Phoenix.Component.form>
     </div>
     """

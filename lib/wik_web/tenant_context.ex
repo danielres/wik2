@@ -25,6 +25,13 @@ defmodule WikWeb.TenantContext do
     }
   end
 
+  def space_admin?(%{actor: %{role: :superadmin}}, _tenant_context), do: true
+
+  def space_admin?(_scope, %{current_membership: %{type: type}}) when type in [:admin, :owner],
+    do: true
+
+  def space_admin?(_scope, _tenant_context), do: false
+
   defp membership_username_form(_user, %{username: username}, _space)
        when is_binary(username) and username != "" do
     nil

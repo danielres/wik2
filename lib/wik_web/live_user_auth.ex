@@ -111,6 +111,15 @@ defmodule WikWeb.LiveUserAuth do
     end
   end
 
+  def on_mount(:admin_required, _params, _session, socket) do
+    if TenantContext.space_admin?(socket.assigns[:current_scope], socket.assigns[:tenant_context]) do
+      {:cont, socket}
+    else
+      socket = Phoenix.LiveView.put_flash(socket, :error, "Not found")
+      {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
+    end
+  end
+
   def on_mount(:live_no_user, _params, _session, socket) do
     if socket.assigns[:current_user] do
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}

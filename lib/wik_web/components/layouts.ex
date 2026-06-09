@@ -14,6 +14,7 @@ defmodule WikWeb.Layouts do
   embed_templates "layouts/*"
 
   alias WikWeb.Components
+  alias WikWeb.TenantContext
 
   @doc """
   Renders your app layout.
@@ -360,8 +361,9 @@ defmodule WikWeb.Layouts do
             <section
               :if={
                 @scope.tenant && @tenant_context &&
-                  @tenant_context[:current_membership] &&
-                  @tenant_context[:current_membership].username != nil
+                  ((@tenant_context[:current_membership] &&
+                      @tenant_context[:current_membership].username != nil) ||
+                     TenantContext.space_admin?(@scope, @tenant_context))
               }
               class="p-4 border-b border-base-content/20"
             >
@@ -369,7 +371,10 @@ defmodule WikWeb.Layouts do
               <ul class={[
                 "menu w-full"
               ]}>
-                <li>
+                <li :if={
+                  @tenant_context[:current_membership] &&
+                    @tenant_context[:current_membership].username != nil
+                }>
                   <.link navigate={
                     ~p"/#{@scope.tenant.slug}/wiki/members/#{@tenant_context[:current_membership].username}"
                   }>
@@ -378,6 +383,12 @@ defmodule WikWeb.Layouts do
                       tenant={@scope.tenant}
                       size="xs"
                     /> Profile
+                  </.link>
+                </li>
+
+                <li :if={TenantContext.space_admin?(@scope, @tenant_context)}>
+                  <.link navigate={~p"/#{@scope.tenant.slug}/admin"}>
+                    <.icon name="hero-adjustments-horizontal-micro" class="" /> Admin
                   </.link>
                 </li>
               </ul>

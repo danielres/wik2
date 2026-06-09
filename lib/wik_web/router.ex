@@ -143,6 +143,7 @@ defmodule WikWeb.Router do
         live "/", SpaceLive, :members
         live "/members", MembersLive
         live "/orphans", SpaceLive, :orphans
+        live "/admin", SpaceAdminLive
         live "/tags", TagGraphLive, :index
         live "/tags/:tag_slug", TagLive, :tag
         live "/events", EventsLive, :index

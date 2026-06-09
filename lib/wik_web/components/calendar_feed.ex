@@ -17,7 +17,7 @@ defmodule WikWeb.Components.CalendarFeed do
     ~H"""
     <.subscribe_button
       id={@id}
-      text="Paste the URL below in your personal calendar app to subscribe to all your events."
+      text="Paste the URL below in your calendar app to subscribe to all your events."
       url={@url}
     />
     """
@@ -37,7 +37,7 @@ defmodule WikWeb.Components.CalendarFeed do
     ~H"""
     <.subscribe_button
       id={@id}
-      text="Paste the URL below in your personal calendar app to subscribe to this space's events."
+      text="Paste the URL below in your calendar app to subscribe to this space's events."
       url={@url}
     />
     """
@@ -45,7 +45,7 @@ defmodule WikWeb.Components.CalendarFeed do
 
   attr :id, :string, default: "calendar-subscribe-button"
   attr :testid, :string, default: nil
-  attr :text, :string, default: "Paste the URL below in your personal calendar app."
+  attr :text, :string, default: "Paste the URL below in your calendar app."
   attr :url, :string, required: true
 
   defp subscribe_button(assigns) do
@@ -79,7 +79,7 @@ defmodule WikWeb.Components.CalendarFeed do
           value={@url}
         />
 
-        <div class="alert text-warning-content bg-warning/10 rounded-md">
+        <div class="alert text-warning-content bg-warning/80 rounded-md">
           <.icon name="hero-exclamation-triangle-micro" class="opacity-50" />
 
           <div class="text-xs">

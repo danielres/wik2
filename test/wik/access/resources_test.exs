@@ -3,6 +3,7 @@ defmodule Wik.Access.ResourcesTest do
 
   import Wik.TestGenerators
 
+  alias Wik.Access
   alias Wik.Access.ExternalIdentity
   alias Wik.Access.Grant
   alias Wik.Access.Source
@@ -54,6 +55,68 @@ defmodule Wik.Access.ResourcesTest do
       assert source.claimed_by_user.id == user.id
       assert source.space.id == space.id
     end
+
+    test "list_space_access_sources/1 returns claimed sources for the selected space with grants loaded" do
+      user = generate(user())
+      space = generate(space())
+      other_space = generate(space())
+      source = create_source(space, user)
+      other_source = create_source(other_space, user)
+      pending_source = create_source(space, user, claimed_at: nil, status: :pending)
+      identity = create_external_identity(user)
+
+      {:ok, grant} =
+        Ash.create(Grant, telegram_grant_attrs(source, identity, user), authorize?: false)
+
+      {:ok, _other_grant} =
+        Ash.create(Grant, telegram_grant_attrs(other_source, identity, user), authorize?: false)
+
+      {:ok, _pending_grant} =
+        Ash.create(Grant, telegram_grant_attrs(pending_source, identity, user), authorize?: false)
+
+      assert {:ok, [listed_source]} = Access.list_space_access_sources(space)
+
+      assert listed_source.id == source.id
+
+      assert [%{id: grant_id, external_identity: loaded_identity, user: loaded_user}] =
+               listed_source.grants
+
+      assert grant_id == grant.id
+      assert loaded_identity.id == identity.id
+      assert loaded_user.id == user.id
+    end
+
+    test "list_space_access_sources/1 keeps grants scoped to each source" do
+      first_user = generate(user())
+      second_user = generate(user())
+      space = generate(space())
+      first_source = create_source(space, first_user, title: "First Telegram Group")
+      second_source = create_source(space, second_user, title: "Second Telegram Group")
+      first_identity = create_external_identity(first_user, provider_user_id: "telegram-user-1")
+      second_identity = create_external_identity(second_user, provider_user_id: "telegram-user-2")
+
+      {:ok, first_grant} =
+        Ash.create(Grant, telegram_grant_attrs(first_source, first_identity, first_user),
+          authorize?: false
+        )
+
+      {:ok, second_grant} =
+        Ash.create(Grant, telegram_grant_attrs(second_source, second_identity, second_user),
+          authorize?: false
+        )
+
+      assert {:ok, sources} = Access.list_space_access_sources(space)
+
+      assert [
+               %{id: first_source_id, grants: [%{id: first_grant_id}]},
+               %{id: second_source_id, grants: [%{id: second_grant_id}]}
+             ] = sources
+
+      assert first_source_id == first_source.id
+      assert first_grant_id == first_grant.id
+      assert second_source_id == second_source.id
+      assert second_grant_id == second_grant.id
+    end
   end
 
   describe "grants" do
@@ -84,18 +147,33 @@ defmodule Wik.Access.ResourcesTest do
     end
   end
 
-  defp create_external_identity(user) do
+  defp create_external_identity(user, overrides \\ []) do
     {:ok, identity} =
-      Ash.create(ExternalIdentity, telegram_identity_attrs(user), authorize?: false)
+      Ash.create(
+        ExternalIdentity,
+        Map.merge(telegram_identity_attrs(user), Enum.into(overrides, %{})),
+        authorize?: false
+      )
 
     identity
   end
 
-  defp create_source(space, user) do
+  defp create_source(space, user, overrides \\ []) do
     {:ok, source} =
       Ash.create(
         Source,
-        telegram_source_attrs(space_id: space.id, claimed_by_user_id: user.id, status: :active),
+        telegram_source_attrs(
+          Keyword.merge(
+            [
+              claimed_at: DateTime.utc_now(),
+              space_id: space.id,
+              claimed_by_user_id: user.id,
+              status: :active,
+              provider_source_id: "telegram-chat-#{System.unique_integer([:positive])}"
+            ],
+            overrides
+          )
+        ),
         authorize?: false
       )
 
@@ -131,7 +209,7 @@ defmodule Wik.Access.ResourcesTest do
       space_id: Keyword.get(overrides, :space_id),
       metadata: %{"kind" => "space"},
       provider: :telegram,
-      provider_source_id: "telegram-chat-1",
+      provider_source_id: Keyword.get(overrides, :provider_source_id, "telegram-chat-1"),
       status: Keyword.get(overrides, :status, :pending),
       title: "Telegram Space"
     }

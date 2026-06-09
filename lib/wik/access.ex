@@ -125,6 +125,20 @@ defmodule Wik.Access do
     |> Ash.read(authorize?: false, domain: __MODULE__, load: grant_card_load())
   end
 
+  def list_space_access_sources(space_or_id, opts \\ [])
+
+  def list_space_access_sources(%{id: space_id}, opts) do
+    list_space_access_sources(space_id, opts)
+  end
+
+  def list_space_access_sources(space_id, _opts)
+      when is_binary(space_id) do
+    Wik.Access.Source
+    |> Ash.Query.filter(space_id == ^space_id and not is_nil(claimed_at))
+    |> Ash.Query.sort(title: :asc)
+    |> Ash.read(authorize?: false, domain: __MODULE__, load: space_access_sources_load())
+  end
+
   def get_user_space_avatar_url(%User{id: user_id}, %{id: space_id}) do
     case list_space_avatar_urls(space_id, [user_id]) do
       {:ok, avatar_urls} -> {:ok, Map.get(avatar_urls, user_id)}
@@ -224,5 +238,12 @@ defmodule Wik.Access do
 
   defp grant_card_load do
     [:external_identity, source: [:claimed_by_user, space: [:memberships]]]
+  end
+
+  defp space_access_sources_load do
+    [
+      grants: [:external_identity, :user],
+      space: [memberships: [:user]]
+    ]
   end
 end

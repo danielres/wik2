@@ -3,10 +3,12 @@ defmodule WikWeb.SpaceAdminLive do
   use WikWeb.Presence.Handlers
 
   alias AshPhoenix.Form
+  alias Wik.Access
   alias Wik.Blocks
   alias WikWeb.Components
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
+  alias WikWeb.SpaceAdminLive.AccessSources
   alias WikWeb.SpaceLive.OrphanBlocks
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
@@ -18,6 +20,7 @@ defmodule WikWeb.SpaceAdminLive do
     scope = socket.assigns.current_scope
     space = socket.assigns.current_scope.tenant |> load_space(scope)
     orphan_blocks = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
+    {:ok, access_sources} = Access.list_space_access_sources(space)
 
     socket =
       socket
@@ -25,6 +28,7 @@ defmodule WikWeb.SpaceAdminLive do
       |> assign(space: space)
       |> assign(editing?: false)
       |> assign(orphan_block_selected: nil)
+      |> assign_access_sources(access_sources)
       |> assign_orphan_blocks(orphan_blocks)
 
     {:ok, socket}
@@ -42,6 +46,10 @@ defmodule WikWeb.SpaceAdminLive do
     |> assign(
       can_destroy_orphan_blocks?: Enum.any?(orphan_blocks, &Ash.can?({&1, :destroy}, scope))
     )
+  end
+
+  defp assign_access_sources(socket, access_sources) do
+    assign(socket, access_source_groups: AccessSources.prepare(access_sources))
   end
 
   # socket.assigns.live_action #=> :page_tree
@@ -160,6 +168,19 @@ defmodule WikWeb.SpaceAdminLive do
                 orphan_blocks={@orphan_blocks}
                 scope={@current_scope}
               />
+            </div>
+          </section>
+
+          <section>
+            <h2 class="text-xl flex items-center gap-2">
+              <.icon name="hero-key-micro" /> Access sources
+            </h2>
+
+            <div class={[
+              "border rounded-box p-4 border-base-content/20",
+              "space-y-2"
+            ]}>
+              <AccessSources.render groups={@access_source_groups} />
             </div>
           </section>
         </div>

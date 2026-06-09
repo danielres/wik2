@@ -130,24 +130,25 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     entries
     |> Enum.filter(&Map.has_key?(&1, :publications))
     |> Enum.map(&List.first(&1.publications))
+    |> Enum.reject(&is_nil/1)
   end
 
   defp aggregate_item(%{event: event, publications: publications} = entry, user, memberships) do
-    publication = origin_publication(publications)
+    with publication when not is_nil(publication) <- origin_publication(publications) do
+      item =
+        internal_item(
+          publication,
+          Map.get(memberships, {publication.space.id, event.author.id}),
+          Map.get(entry, :participations, [])
+        )
 
-    item =
-      internal_item(
-        publication,
-        Map.get(memberships, {publication.space.id, event.author.id}),
-        Map.get(entry, :participations, [])
-      )
-
-    %{
-      item
-      | current_member_participation:
-          current_member_participation_by_user(Map.get(entry, :participations, []), user)
-    }
-    |> Map.put(:open_path, "/#{publication.space.slug}/events?event=#{event.id}")
+      %{
+        item
+        | current_member_participation:
+            current_member_participation_by_user(Map.get(entry, :participations, []), user)
+      }
+      |> Map.put(:open_path, "/#{publication.space.slug}/events?event=#{event.id}")
+    end
   end
 
   defp aggregate_item(%{external_event: event} = entry, user, _memberships) do

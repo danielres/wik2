@@ -27,16 +27,13 @@ defmodule WikWeb.CalendarFeedController do
 
   defp load_feed(%{feed_kind: :aggregate}, user) do
     with {:ok, events} <- Events.list_aggregate_feed_events(user) do
-      {:ok, aggregate_calendar_name(user), events}
+      {:ok, "Wik events", events}
     end
   end
 
   defp load_feed(%{feed_kind: :space, space_id: space_id}, user) do
     with {:ok, %{events: events, space: space}} <- Events.get_space_feed(user, space_id) do
-      {:ok, space_calendar_name(space), events}
+      {:ok, "#{space.name} events", events}
     end
   end
-
-  defp aggregate_calendar_name(user), do: "#{user} events"
-  defp space_calendar_name(space), do: "#{space.name} events"
 end

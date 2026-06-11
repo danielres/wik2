@@ -29,7 +29,7 @@ defmodule WikWeb.Auth.SignInLive do
     ~H"""
     <div class="min-h-svh grid place-items-center p-6" data-testid="sign-in-page">
       <div class="flex w-full max-w-5xl flex-col items-center gap-12">
-        <WikWeb.Components.Telegram.Widgets.login />
+        <WikWeb.Components.Telegram.Widgets.login_custom />
 
         <.dev_sign_in :if={@dev_routes?} {assigns} />
       </div>

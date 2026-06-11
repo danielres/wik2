@@ -3,6 +3,18 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  slot :inner_block, required: true
+
+  def separator(assigns) do
+    ~H"""
+    <div class="flex items-center opacity-20">
+      <hr class="border-base-content w-full" />
+      <span class="uppercase mx-4 text-sm">{render_slot(@inner_block)}</span>
+      <hr class="border-base-content w-full" />
+    </div>
+    """
+  end
+
   attr :count, :integer, required: true
   attr :color, :string, required: false
   attr :class, :string, default: ""

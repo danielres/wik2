@@ -70,26 +70,31 @@
       @apply text-xs uppercase tracking-[0.20em] text-base-content/85 mb-2;
     }
 
+    > * + * {
+      margin-top: 2em;
+      margin-bottom: 0.5em ;
+    }
+
     h1,
     h2,
     h3 {
-      @apply tracking-tight text-base-content;
+      @apply tracking-tight;
     }
     h1 {
-      @apply text-2xl mb-2;
+      @apply text-2xl text-base-content font-semibold;
     }
     h2 {
-      @apply text-xl font-semibold mb-2 mt-8;
+      @apply text-xl font-semibold text-base-content;
     }
     h3 {
-      @apply text-base font-semibold mb-0 mt-4;
+      @apply text-base text-base-content/90;
     }
     p {
-      @apply text-sm mb-2;
+      @apply text-sm ;
     }
     ul {
       @apply text-sm;
-      @apply list-disc mb-4 pl-6 leading-tight space-y-2;
+      @apply list-disc pl-6 leading-tight space-y-2;
     }
   }
 

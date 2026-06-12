@@ -7,6 +7,7 @@ defmodule Wik.Access.Source do
     extensions: [AshAdmin.Resource]
 
   alias Wik.Access.Grant
+  alias Wik.Access.GoogleEmailAccess
   alias Wik.Accounts.Space
   alias Wik.Accounts.User
 
@@ -100,7 +101,7 @@ defmodule Wik.Access.Source do
 
     attribute :provider, :atom do
       allow_nil? false
-      constraints one_of: [:telegram]
+      constraints one_of: [:google, :telegram]
       public? true
     end
 
@@ -132,6 +133,10 @@ defmodule Wik.Access.Source do
     end
 
     has_many :grants, Grant do
+      destination_attribute :source_id
+    end
+
+    has_many :google_email_accesses, GoogleEmailAccess do
       destination_attribute :source_id
     end
   end

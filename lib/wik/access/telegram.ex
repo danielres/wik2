@@ -221,6 +221,7 @@ defmodule Wik.Access.Telegram do
     Access.upsert_grant(
       %{
         external_identity_id: identity.id,
+        granted_by_user_id: source.claimed_by_user_id,
         last_verified_at: DateTime.utc_now(),
         source_id: source.id,
         status: status,
@@ -360,6 +361,7 @@ defmodule Wik.Access.Telegram do
     Access.upsert_grant(
       %{
         external_identity_id: identity.id,
+        granted_by_user_id: user.id,
         last_verified_at: DateTime.utc_now(),
         source_id: source.id,
         status: :active,

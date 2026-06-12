@@ -19,10 +19,11 @@ defmodule WikWeb.Auth.SignInLiveTest do
     end)
   end
 
-  test "renders only the Telegram login entrypoint for anonymous users", %{conn: conn} do
+  test "renders Google and Telegram login entrypoints for anonymous users", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/sign-in")
 
     assert has_element?(view, testid("sign-in-page"))
+    assert has_element?(view, testid("google-sign-in"))
     assert has_element?(view, "#telegram-login")
     refute has_element?(view, testid("dev-sign-in"))
     refute has_element?(view, testid("dev-sign-in-superadmin"))

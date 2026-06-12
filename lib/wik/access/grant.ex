@@ -25,19 +25,33 @@ defmodule Wik.Access.Grant do
     create :create do
       primary? true
 
-      accept [:external_identity_id, :last_verified_at, :source_id, :status, :user_id]
+      accept [
+        :external_identity_id,
+        :granted_by_user_id,
+        :last_verified_at,
+        :source_id,
+        :status,
+        :user_id
+      ]
     end
 
     create :upsert do
-      accept [:external_identity_id, :last_verified_at, :source_id, :status, :user_id]
+      accept [
+        :external_identity_id,
+        :granted_by_user_id,
+        :last_verified_at,
+        :source_id,
+        :status,
+        :user_id
+      ]
 
       upsert? true
       upsert_identity :unique_source_user
-      upsert_fields [:external_identity_id, :last_verified_at, :status]
+      upsert_fields [:external_identity_id, :granted_by_user_id, :last_verified_at, :status]
     end
 
     update :update do
-      accept [:external_identity_id, :last_verified_at, :status]
+      accept [:external_identity_id, :granted_by_user_id, :last_verified_at, :status]
     end
   end
 
@@ -71,6 +85,10 @@ defmodule Wik.Access.Grant do
   relationships do
     belongs_to :external_identity, ExternalIdentity do
       allow_nil? false
+    end
+
+    belongs_to :granted_by_user, User do
+      allow_nil? true
     end
 
     belongs_to :source, Source do

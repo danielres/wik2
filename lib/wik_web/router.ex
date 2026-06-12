@@ -71,6 +71,8 @@ defmodule WikWeb.Router do
     live "/docs/*path", DocsLive
     get "/privacy", PageController, :privacy
     get "/terms", PageController, :terms
+    get "/auth/google", AuthController.Google, :request
+    get "/auth/google/callback", AuthController.Google, :callback
     get "/auth/telegram/callback", AuthController.Telegram, :callback
 
     if Application.compile_env(:wik, :dev_routes) do

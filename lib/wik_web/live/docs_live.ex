@@ -1,6 +1,5 @@
 defmodule WikWeb.DocsLive do
   use WikWeb, :live_view
-
   @docs_root Path.expand("../../docs", __DIR__)
 
   @impl true

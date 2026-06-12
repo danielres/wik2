@@ -18,6 +18,13 @@ defmodule WikWeb.Components.Content do
         Telegram identity fields needed for account linking and access checks.
       </p>
 
+      <h3>Google-linked identity data</h3>
+      <p>
+        If you use Google login, we store your verified Google email address, Google provider user
+        ID, display name, avatar URL, and reduced identity fields needed for account linking and
+        access checks.
+      </p>
+
       <h3>Spaces, memberships, and access grants</h3>
       <p>
         We store which spaces you belong to, your role in those spaces, linked access sources,
@@ -58,6 +65,10 @@ defmodule WikWeb.Components.Content do
         flow applies.
       </p>
       <p>
+        Google provides verified email and profile data if you choose Google login or a
+        Google-backed access flow applies.
+      </p>
+      <p>
         Operational systems generate logs, presence events, error events, and webhook metadata.
       </p>
 
@@ -83,6 +94,9 @@ defmodule WikWeb.Components.Content do
         Telegram, if you use Telegram login or a space depends on Telegram-backed access
         verification.
       </p>
+      <p>
+        Google, if you use Google login or a space depends on Google-backed access verification.
+      </p>
 
       <h2>Retention</h2>
       <p>
@@ -106,7 +120,7 @@ defmodule WikWeb.Components.Content do
       </p>
       <p>
         We may ask you to verify control of the account email address or linked Telegram account
-        before we act on access, export, correction, or deletion requests.
+        or Google account before we act on access, export, correction, or deletion requests.
       </p>
       <p>
         If you cannot access your account, use the separate recovery or contact path shared by

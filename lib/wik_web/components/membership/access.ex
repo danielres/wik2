@@ -177,6 +177,14 @@ defmodule WikWeb.Components.Membership.Access do
 
   defp grant_membership(_grant, _current_user), do: nil
 
+  defp issuer_label(%{granted_by_user: granted_by_user}, issuer_membership)
+       when not is_nil(granted_by_user) do
+    case issuer_membership do
+      %{username: username} -> username
+      nil -> fallback_issuer_label(granted_by_user)
+    end
+  end
+
   defp issuer_label(%{source: %{claimed_by_user: nil}}, _issuer_membership), do: "Unknown"
 
   defp issuer_label(%{source: %{claimed_by_user: claimed_by_user}}, issuer_membership) do
@@ -184,6 +192,16 @@ defmodule WikWeb.Components.Membership.Access do
       %{username: username} -> username
       nil -> fallback_issuer_label(claimed_by_user)
     end
+  end
+
+  defp issuer_membership(%{
+         granted_by_user: %{id: granted_by_user_id},
+         source: %{space: %{memberships: memberships}}
+       }) do
+    Enum.find(
+      memberships,
+      &(&1.user_id == granted_by_user_id and is_binary(&1.username) and &1.username != "")
+    )
   end
 
   defp issuer_membership(%{
@@ -213,6 +231,7 @@ defmodule WikWeb.Components.Membership.Access do
        do: "Telegram group membership"
 
   defp source_type_label(%{provider: :telegram}), do: "telegram source"
+  defp source_type_label(%{provider: :google}), do: "Google account"
   defp source_type_label(%{provider: provider}), do: provider |> Atom.to_string()
 
   defp source_container_label(%{
@@ -221,7 +240,10 @@ defmodule WikWeb.Components.Membership.Access do
        }),
        do: "Channel"
 
+  defp source_container_label(%{provider: :google}), do: nil
   defp source_container_label(_source), do: "Group"
+
+  defp source_title(%{provider: :google}), do: nil
 
   defp source_title(%{title: title}) when is_binary(title) and title != "", do: title
 

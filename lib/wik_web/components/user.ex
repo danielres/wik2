@@ -2,6 +2,7 @@ defmodule WikWeb.Components.User do
   use WikWeb, :html
 
   alias Wik.Accounts
+  alias WikWeb.GoogleAvatarCache
 
   attr :avatar_url, :string, default: nil
   attr :membership, :map, default: nil
@@ -35,7 +36,10 @@ defmodule WikWeb.Components.User do
 
     assigns =
       assigns
-      |> assign(:resolved_avatar_url, resolved_avatar_url(assigns))
+      |> assign(
+        :resolved_avatar_url,
+        assigns |> resolved_avatar_url() |> GoogleAvatarCache.cached_url()
+      )
       |> assign(:resolved_user, resolved_user(assigns))
       |> assign(:resolved_username, resolved_username(assigns))
       |> assign(tooltip_direction_class: tooltip_direction_class)

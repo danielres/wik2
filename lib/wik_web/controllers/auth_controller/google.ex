@@ -5,6 +5,7 @@ defmodule WikWeb.AuthController.Google do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Access
   alias Wik.Access.Google.Provider, as: Google
+  alias WikWeb.GoogleAvatarCache
 
   require Logger
 
@@ -36,6 +37,8 @@ defmodule WikWeb.AuthController.Google do
          {:ok, %{user: user}} <- Access.google_find_or_create_identity(google_user),
          {:ok, _grants} <- Access.google_apply_email_access(user),
          {:ok, token, _claims} <- Jwt.token_for_user(user) do
+      refresh_avatar(google_user)
+
       user = Ash.Resource.set_metadata(user, %{token: token})
 
       conn
@@ -65,6 +68,13 @@ defmodule WikWeb.AuthController.Google do
   end
 
   defp callback_url, do: url(~p"/auth/google/callback")
+
+  defp refresh_avatar(%{"picture" => picture}) when is_binary(picture) do
+    _result = Task.start(fn -> GoogleAvatarCache.refresh(picture) end)
+    :ok
+  end
+
+  defp refresh_avatar(_google_user), do: :ok
 
   defp require_verified_email(google_user) do
     if Google.verified_email?(google_user) do

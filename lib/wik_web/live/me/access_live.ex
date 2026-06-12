@@ -5,6 +5,7 @@ defmodule WikWeb.Me.AccessLive do
   alias Wik.Access
   alias Wik.Accounts
   alias WikWeb.Components
+  alias WikWeb.GoogleAvatarCache
 
   on_mount {WikWeb.LiveUserAuth, :live_user_required}
 
@@ -108,7 +109,7 @@ defmodule WikWeb.Me.AccessLive do
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <img src={@identity.avatar_url} class="size-10 rounded-full" />
+        <img src={GoogleAvatarCache.cached_url(@identity.avatar_url)} class="size-10 rounded-full" />
         <div>
           <div class="font-bold">{Components.Membership.Access.identity_label(@identity)}</div>
           <div class="badge badge-xs bg-base-300 text-base-content/50">

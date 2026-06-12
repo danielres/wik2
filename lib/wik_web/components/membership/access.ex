@@ -2,6 +2,7 @@ defmodule WikWeb.Components.Membership.Access do
   use WikWeb, :html
 
   alias WikWeb.Components.Time
+  alias WikWeb.GoogleAvatarCache
 
   attr :current_user, :map, default: nil
   attr :grant, :map, required: true
@@ -59,7 +60,10 @@ defmodule WikWeb.Components.Membership.Access do
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <img src={@grant.external_identity.avatar_url} class="size-6 rounded-full" />
+      <img
+        src={GoogleAvatarCache.cached_url(@grant.external_identity.avatar_url)}
+        class="size-6 rounded-full"
+      />
       <div>
         <.link
           class={[

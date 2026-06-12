@@ -74,6 +74,7 @@ defmodule WikWeb.Router do
     get "/auth/google", AuthController.Google, :request
     get "/auth/google/callback", AuthController.Google, :callback
     get "/auth/telegram/callback", AuthController.Telegram, :callback
+    get "/avatars/google/:token", GoogleAvatarController, :show
 
     if Application.compile_env(:wik, :dev_routes) do
       post "/auth/dev/sign-in", AuthController.Dev, :create

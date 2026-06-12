@@ -1,4 +1,4 @@
-defmodule Wik.Access.GoogleAccessTest do
+defmodule Wik.Access.Google.WorkflowTest do
   use Wik.DataCase, async: true
 
   import Wik.TestGenerators
@@ -18,7 +18,7 @@ defmodule Wik.Access.GoogleAccessTest do
           "sub" => "google-42"
         })
 
-      assert {:error, :google_email_access_not_found} =
+      assert {:error, :google_email_rule_not_found} =
                Access.google_apply_email_access(identity.user)
     end
 
@@ -27,8 +27,8 @@ defmodule Wik.Access.GoogleAccessTest do
       space = generate(space(author: owner))
       create_membership(space, owner, :owner)
 
-      {:ok, _email_access} =
-        Access.google_upsert_email_access(
+      {:ok, _email_rule} =
+        Access.google_upsert_email_rule(
           space,
           %{"email" => "ada@example.com", "membership_type" => "admin"},
           owner
@@ -58,8 +58,8 @@ defmodule Wik.Access.GoogleAccessTest do
 
       create_membership(space, user, :owner)
 
-      {:ok, _email_access} =
-        Access.google_upsert_email_access(
+      {:ok, _email_rule} =
+        Access.google_upsert_email_rule(
           space,
           %{"email" => "ada@example.com", "membership_type" => "member"},
           owner
@@ -84,8 +84,8 @@ defmodule Wik.Access.GoogleAccessTest do
       space = generate(space(author: owner))
       create_membership(space, owner, :owner)
 
-      {:ok, email_access} =
-        Access.google_upsert_email_access(
+      {:ok, email_rule} =
+        Access.google_upsert_email_rule(
           space,
           %{"email" => "ada@example.com", "membership_type" => "member"},
           owner
@@ -101,9 +101,9 @@ defmodule Wik.Access.GoogleAccessTest do
 
       assert {:ok, [grant]} = Access.google_apply_email_access(identity.user)
 
-      assert {:ok, _email_access} = Access.google_revoke_email_access(email_access.id, owner)
+      assert {:ok, _email_rule} = Access.google_revoke_email_rule(email_rule.id, owner)
 
-      assert {:error, :google_email_access_not_found} =
+      assert {:error, :google_email_rule_not_found} =
                Access.google_apply_email_access(identity.user)
 
       assert {:ok, grant} = Ash.get(Grant, grant.id, authorize?: false, domain: Access)

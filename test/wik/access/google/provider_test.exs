@@ -1,7 +1,7 @@
-defmodule Wik.Access.Providers.GoogleTest do
+defmodule Wik.Access.Google.ProviderTest do
   use ExUnit.Case, async: true
 
-  alias Wik.Access.Providers.Google
+  alias Wik.Access.Google.Provider, as: Google
 
   test "verified_email?/1 accepts boolean and string true" do
     assert Google.verified_email?(%{"email_verified" => true})

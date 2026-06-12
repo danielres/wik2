@@ -1,4 +1,4 @@
-defmodule Wik.Access.TelegramSourceClaimTest do
+defmodule Wik.Access.Telegram.SourceClaimTest do
   use Wik.DataCase, async: true
 
   import Wik.TestGenerators
@@ -6,7 +6,7 @@ defmodule Wik.Access.TelegramSourceClaimTest do
   alias Wik.Access
   alias Wik.Access.Grant
   alias Wik.Access.Source
-  alias Wik.Access.Telegram
+  alias Wik.Access.Telegram.Workflow, as: Telegram
   alias Wik.Accounts.Membership
 
   require Ash.Query

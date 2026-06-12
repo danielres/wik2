@@ -4,7 +4,7 @@ defmodule WikWeb.AuthController.Google do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Access
-  alias Wik.Access.Providers.Google
+  alias Wik.Access.Google.Provider, as: Google
 
   require Logger
 
@@ -46,7 +46,7 @@ defmodule WikWeb.AuthController.Google do
       |> put_flash(:info, "You are now signed in")
       |> redirect(to: return_to)
     else
-      {:error, :google_email_access_not_found} ->
+      {:error, :google_email_rule_not_found} ->
         conn
         |> delete_session(:google_return_to)
         |> delete_session(:google_session_params)

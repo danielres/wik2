@@ -1,8 +1,8 @@
-defmodule Wik.Access.Google do
+defmodule Wik.Access.Google.Workflow do
   alias Ash.Query
   alias Wik.Access
   alias Wik.Access.ExternalIdentity
-  alias Wik.Access.GoogleEmailAccess
+  alias Wik.Access.Google.EmailRule
   alias Wik.Access.Grant
   alias Wik.Accounts.Membership
   alias Wik.Accounts.User
@@ -28,11 +28,11 @@ defmodule Wik.Access.Google do
 
   def apply_email_access(%User{} = user) do
     with {:ok, identity} <- load_google_identity(user),
-         {:ok, email_accesses} <- Access.list_active_google_email_accesses(identity.email),
-         :ok <- authorize_email_access(email_accesses) do
-      email_accesses
-      |> Enum.reduce_while({:ok, []}, fn email_access, {:ok, grants} ->
-        case apply_email_access(email_access, identity, user) do
+         {:ok, email_rules} <- Access.list_active_google_email_rules(identity.email),
+         :ok <- authorize_email_rules(email_rules) do
+      email_rules
+      |> Enum.reduce_while({:ok, []}, fn email_rule, {:ok, grants} ->
+        case apply_email_rule(email_rule, identity, user) do
           {:ok, grant} -> {:cont, {:ok, [grant | grants]}}
           {:error, error} -> {:halt, {:error, error}}
         end
@@ -44,11 +44,11 @@ defmodule Wik.Access.Google do
     end
   end
 
-  def upsert_email_access(%{id: space_id} = space, attrs, %User{} = actor) do
+  def upsert_email_rule(%{id: space_id} = space, attrs, %User{} = actor) do
     with {:ok, source} <- get_or_create_space_source(space),
          {:ok, email} <- fetch_normalized_email(attrs),
          {:ok, membership_type} <- fetch_membership_type(attrs) do
-      Access.upsert_google_email_access(
+      Access.upsert_google_email_rule(
         %{
           email: email,
           granted_by_user_id: actor.id,
@@ -63,18 +63,18 @@ defmodule Wik.Access.Google do
     end
   end
 
-  def revoke_email_access(email_access_id, %User{} = actor) when is_binary(email_access_id) do
-    with {:ok, email_access} <- Ash.get(GoogleEmailAccess, email_access_id, authorize?: false),
-         {:ok, email_access} <-
+  def revoke_email_rule(email_rule_id, %User{} = actor) when is_binary(email_rule_id) do
+    with {:ok, email_rule} <- Ash.get(EmailRule, email_rule_id, authorize?: false),
+         {:ok, email_rule} <-
            Ash.update(
-             email_access,
+             email_rule,
              %{revoked_at: DateTime.utc_now(), revoked_by_user_id: actor.id},
              action: :revoke,
              actor: actor,
              domain: Access
            ),
-         :ok <- deactivate_grants(email_access) do
-      {:ok, email_access}
+         :ok <- deactivate_grants(email_rule) do
+      {:ok, email_rule}
     end
   end
 
@@ -188,12 +188,12 @@ defmodule Wik.Access.Google do
     end
   end
 
-  defp authorize_email_access([]), do: {:error, :google_email_access_not_found}
-  defp authorize_email_access(_email_accesses), do: :ok
+  defp authorize_email_rules([]), do: {:error, :google_email_rule_not_found}
+  defp authorize_email_rules(_email_rules), do: :ok
 
-  defp apply_email_access(email_access, identity, user) do
-    with :ok <- ensure_membership(email_access, user),
-         {:ok, grant} <- upsert_grant(email_access, identity, user) do
+  defp apply_email_rule(email_rule, identity, user) do
+    with :ok <- ensure_membership(email_rule, user),
+         {:ok, grant} <- upsert_grant(email_rule, identity, user) do
       {:ok, grant}
     end
   end
@@ -234,13 +234,13 @@ defmodule Wik.Access.Google do
     end
   end
 
-  defp upsert_grant(email_access, identity, user) do
+  defp upsert_grant(email_rule, identity, user) do
     Access.upsert_grant(
       %{
         external_identity_id: identity.id,
-        granted_by_user_id: email_access.granted_by_user_id,
+        granted_by_user_id: email_rule.granted_by_user_id,
         last_verified_at: DateTime.utc_now(),
-        source_id: email_access.source_id,
+        source_id: email_rule.source_id,
         status: :active,
         user_id: user.id
       },

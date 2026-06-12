@@ -1,4 +1,4 @@
-defmodule Wik.Access.TelegramGrantRefreshTest do
+defmodule Wik.Access.Telegram.GrantRefreshTest do
   use Wik.DataCase, async: true
 
   import Wik.TestGenerators
@@ -7,7 +7,7 @@ defmodule Wik.Access.TelegramGrantRefreshTest do
   alias Wik.Access.ExternalIdentity
   alias Wik.Access.Grant
   alias Wik.Access.Source
-  alias Wik.Access.Telegram
+  alias Wik.Access.Telegram.Workflow, as: Telegram
   alias Wik.Accounts
   alias Wik.Accounts.Membership
   alias Wik.Scope

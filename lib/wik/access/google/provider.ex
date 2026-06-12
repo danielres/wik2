@@ -1,4 +1,4 @@
-defmodule Wik.Access.Providers.Google do
+defmodule Wik.Access.Google.Provider do
   alias Assent.Strategy.Google, as: AssentGoogle
 
   def authorize_url(redirect_uri) when is_binary(redirect_uri) do

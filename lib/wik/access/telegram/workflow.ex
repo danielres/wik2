@@ -1,8 +1,8 @@
-defmodule Wik.Access.Telegram do
+defmodule Wik.Access.Telegram.Workflow do
   alias Ash.Query
   alias Wik.Access
   alias Wik.Access.ExternalIdentity
-  alias Wik.Access.Providers.Telegram, as: TelegramProvider
+  alias Wik.Access.Telegram.Provider, as: TelegramProvider
   alias Wik.Access.Source
   alias Wik.Access.Telegram.Bot.Update, as: BotUpdate
   alias Wik.Accounts.Space

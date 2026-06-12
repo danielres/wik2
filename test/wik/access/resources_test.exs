@@ -197,23 +197,23 @@ defmodule Wik.Access.ResourcesTest do
       space = generate(space(author: owner))
       create_membership(space, owner, :owner)
 
-      assert {:ok, email_access} =
-               Access.google_upsert_email_access(
+      assert {:ok, email_rule} =
+               Access.google_upsert_email_rule(
                  space,
                  %{"email" => " ADA@Example.COM ", "membership_type" => "admin"},
                  owner
                )
 
-      assert email_access.email == "ada@example.com"
-      assert email_access.membership_type == :admin
+      assert email_rule.email == "ada@example.com"
+      assert email_rule.membership_type == :admin
 
-      assert {:ok, email_access} =
-               Ash.load(email_access, [:space, :source, :granted_by_user], authorize?: false)
+      assert {:ok, email_rule} =
+               Ash.load(email_rule, [:space, :source, :granted_by_user], authorize?: false)
 
-      assert email_access.space.id == space.id
-      assert email_access.source.provider == :google
-      assert email_access.source.provider_source_id == "google:space:#{space.id}"
-      assert email_access.granted_by_user.id == owner.id
+      assert email_rule.space.id == space.id
+      assert email_rule.source.provider == :google
+      assert email_rule.source.provider_source_id == "google:space:#{space.id}"
+      assert email_rule.granted_by_user.id == owner.id
     end
   end
 

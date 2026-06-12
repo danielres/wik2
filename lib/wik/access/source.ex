@@ -7,7 +7,7 @@ defmodule Wik.Access.Source do
     extensions: [AshAdmin.Resource]
 
   alias Wik.Access.Grant
-  alias Wik.Access.GoogleEmailAccess
+  alias Wik.Access.Google.EmailRule
   alias Wik.Accounts.Space
   alias Wik.Accounts.User
 
@@ -136,7 +136,7 @@ defmodule Wik.Access.Source do
       destination_attribute :source_id
     end
 
-    has_many :google_email_accesses, GoogleEmailAccess do
+    has_many :google_email_rules, EmailRule do
       destination_attribute :source_id
     end
   end

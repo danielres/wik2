@@ -2,7 +2,7 @@ defmodule WikWeb.Webhooks.TelegramController do
   use WikWeb, :controller
 
   alias Wik.Access
-  alias Wik.Access.Providers.Telegram
+  alias Wik.Access.Telegram.Provider, as: Telegram
   alias WikWeb.Context
 
   require Logger

@@ -1,4 +1,4 @@
-defmodule Wik.Access.GoogleIdentityTest do
+defmodule Wik.Access.Google.IdentityTest do
   use Wik.DataCase, async: true
 
   import Wik.TestGenerators

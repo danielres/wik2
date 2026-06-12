@@ -1,4 +1,4 @@
-defmodule Wik.Access.TelegramIdentityTest do
+defmodule Wik.Access.Telegram.IdentityTest do
   use Wik.DataCase, async: true
 
   alias Wik.Access

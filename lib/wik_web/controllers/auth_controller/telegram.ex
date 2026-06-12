@@ -4,7 +4,7 @@ defmodule WikWeb.AuthController.Telegram do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Access
-  alias Wik.Access.Providers.Telegram
+  alias Wik.Access.Telegram.Provider, as: Telegram
 
   require Logger
 

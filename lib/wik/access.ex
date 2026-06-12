@@ -7,10 +7,10 @@ defmodule Wik.Access do
     ]
 
   alias Wik.Access.ExternalIdentity
-  alias Wik.Access.Google
-  alias Wik.Access.GoogleEmailAccess
+  alias Wik.Access.Google.EmailRule
+  alias Wik.Access.Google.Workflow, as: Google
   alias Wik.Access.Grant
-  alias Wik.Access.Telegram
+  alias Wik.Access.Telegram.Workflow, as: Telegram
   alias Wik.Accounts.User
 
   require Ash.Query
@@ -51,10 +51,10 @@ defmodule Wik.Access do
       define :upsert_grant, action: :upsert
     end
 
-    resource Wik.Access.GoogleEmailAccess do
-      define :create_google_email_access, action: :create
-      define :upsert_google_email_access, action: :upsert
-      define :revoke_google_email_access, action: :revoke
+    resource Wik.Access.Google.EmailRule do
+      define :create_google_email_rule, action: :create
+      define :upsert_google_email_rule, action: :upsert
+      define :revoke_google_email_rule, action: :revoke
     end
 
     resource Wik.Access.Telegram.Bot.Update do
@@ -107,22 +107,22 @@ defmodule Wik.Access do
     to: Google,
     as: :apply_email_access
 
-  defdelegate google_upsert_email_access(space, attrs, actor),
+  defdelegate google_upsert_email_rule(space, attrs, actor),
     to: Google,
-    as: :upsert_email_access
+    as: :upsert_email_rule
 
-  defdelegate google_revoke_email_access(email_access_id, actor),
+  defdelegate google_revoke_email_rule(email_rule_id, actor),
     to: Google,
-    as: :revoke_email_access
+    as: :revoke_email_rule
 
   defdelegate google_get_or_create_space_source(space),
     to: Google,
     as: :get_or_create_space_source
 
-  def list_active_google_email_accesses(email) when is_binary(email) do
+  def list_active_google_email_rules(email) when is_binary(email) do
     normalized_email = Google.normalize_email(email)
 
-    GoogleEmailAccess
+    EmailRule
     |> Ash.Query.filter(email == ^normalized_email and is_nil(revoked_at))
     |> Ash.Query.sort(inserted_at: :asc)
     |> Ash.read(
@@ -184,14 +184,14 @@ defmodule Wik.Access do
     |> Ash.read(authorize?: false, domain: __MODULE__, load: space_access_sources_load())
   end
 
-  def list_space_google_email_accesses(space_or_id)
+  def list_space_google_email_rules(space_or_id)
 
-  def list_space_google_email_accesses(%{id: space_id}) do
-    list_space_google_email_accesses(space_id)
+  def list_space_google_email_rules(%{id: space_id}) do
+    list_space_google_email_rules(space_id)
   end
 
-  def list_space_google_email_accesses(space_id) when is_binary(space_id) do
-    GoogleEmailAccess
+  def list_space_google_email_rules(space_id) when is_binary(space_id) do
+    EmailRule
     |> Ash.Query.filter(space_id == ^space_id)
     |> Ash.Query.sort(email: :asc)
     |> Ash.read(
@@ -305,7 +305,7 @@ defmodule Wik.Access do
   defp space_access_sources_load do
     [
       grants: [:external_identity, :user],
-      google_email_accesses: [:granted_by_user, :revoked_by_user],
+      google_email_rules: [:granted_by_user, :revoked_by_user],
       space: [memberships: [:user]]
     ]
   end

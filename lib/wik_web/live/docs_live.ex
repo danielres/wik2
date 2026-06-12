@@ -1,9 +1,6 @@
 defmodule WikWeb.DocsLive do
   use WikWeb, :live_view
 
-  alias WikWeb.Components
-  alias WikWeb.Components.UI
-
   @docs_root Path.expand("../../docs", __DIR__)
 
   @impl true
@@ -89,41 +86,38 @@ defmodule WikWeb.DocsLive do
     """
   end
 
-  def handle_params(params, url, socket) do
-    path = params["path"] |> Enum.join("/")
+  def handle_params(params, _url, socket) do
+    segments = Map.get(params, "path", [])
 
-    path =
-      case path do
-        "" ->
-          "index"
-
-        _ ->
-          path
+    slug =
+      case segments do
+        [] -> "index"
+        _ -> Path.join(segments)
       end
 
-    path = Path.join(@docs_root, path <> ".md")
-    socket = socket |> assign(path: path)
+    candidate = Path.expand(Path.join(@docs_root, slug <> ".md"))
+    safe? = String.starts_with?(candidate, @docs_root <> "/")
 
-    markdown =
-      case File.read(path) do
-        {:ok, content} -> content
-        {:error, :enoent} -> "not found"
-        _ -> "error"
+    {path, markdown} =
+      if safe? do
+        {candidate,
+         case File.read(candidate) do
+           {:ok, content} -> content
+           {:error, :enoent} -> "not found"
+           {:error, _} -> "error"
+         end}
+      else
+        {nil, "not found"}
       end
+
+    socket = assign(socket, path: path)
 
     {:ok, html, []} =
-      Earmark.as_html(markdown,
-        escape: true,
-        smartypants: false
-      )
+      Earmark.as_html(markdown, escape: true, smartypants: false)
 
     socket =
       socket
-      |> assign(
-        html:
-          html
-          |> Phoenix.HTML.raw()
-      )
+      |> assign(html: html |> Phoenix.HTML.raw())
 
     {:noreply, socket}
   end

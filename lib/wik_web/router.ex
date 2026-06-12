@@ -68,6 +68,7 @@ defmodule WikWeb.Router do
   scope "/", WikWeb do
     pipe_through :browser
 
+    live "/docs/*path", DocsLive
     get "/privacy", PageController, :privacy
     get "/terms", PageController, :terms
     get "/auth/telegram/callback", AuthController.Telegram, :callback

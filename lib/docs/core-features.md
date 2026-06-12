@@ -17,14 +17,14 @@ For shared knowledge, notes, resources, guides, decisions, and evolving group me
 Allows members to:
 
 - signal to the group their interest in specific events.
-- discover who intents to participate in which event, greatly simplifying coordination.
+- discover who intends to participate in which event, greatly simplifying coordination.
 
 ### Calendar apps integration
 
 Allows members to:
 
 - subscribe to group events in their own calendar app (Google Calendar, ...)
-- easiy contribute events to the group, by simply adding them to a personal calendar.
+- easily contribute events to the group, by simply adding them to a personal calendar.
 
 ## Member profiles
 

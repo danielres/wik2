@@ -14,9 +14,6 @@ defmodule WikWeb.GoogleAvatarController do
       {:error, :invalid} ->
         send_resp(conn, 404, "Not found")
 
-      {:error, :not_found} ->
-        send_resp(conn, 502, "Avatar unavailable")
-
       {:error, _reason} ->
         send_resp(conn, 502, "Avatar unavailable")
     end

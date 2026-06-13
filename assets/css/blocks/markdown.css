@@ -10,7 +10,7 @@
       in oklch,
       var(--color-primary-content) 80%,
       transparent
-    );
+      );
   }
 
   .cm-tooltip-autocomplete {
@@ -55,6 +55,7 @@
 
   a[href^="http"] {
     @apply inline-block text-balance;
+
     &::after {
       content: "";
       @apply hero-arrow-top-right-on-square-mini;
@@ -104,29 +105,77 @@
     @apply rounded border border-base-200;
   }
 
-  .warning {
-    @apply bg-error/20 text-error-content p-4 rounded border border-error/50 pl-14;
-    @apply my-8;
-    &:before { content: "aa"; @apply hero-exclamation-triangle absolute -ml-10}
-    * { @apply text-error-content;}
-    > * + * { margin-top: 1em; }
+  hr {
+    @apply border-base-content/30 my-16 w-3/4 mx-auto;
   }
 
-  input[type=checkbox]:not(checked){
-    --border: 1px;
-    @apply opacity-80;
-    @apply border-base-content;
-    @apply checkbox checkbox-success scale-60;
+  .warning {
+    @apply bg-error/30 rounded border border-error/50;
+    @apply my-8 p-4 pl-14;
+
+    &:before { 
+      content: ""; 
+      @apply hero-exclamation-triangle absolute -ml-10 text-error;
+    }
+
+    * { 
+      @apply dark:text-error-content text-error;
+    }
+
+    > * + * {
+      margin-top: 1em; 
+    }
   }
 
   ul:has(input[type=checkbox]){
     list-style-type: none;
-    @apply bg-base-200/50 rounded border-base-300 border;
+    @apply rounded border border-base-content/10 bg-base-content/3;
+    @apply text-base-content;
     @apply py-4;
+
     ul {
       @apply py-0 bg-transparent border-none;
       margin-top: 0.25em;
       margin-bottom: 0.5em;
     }
   }
+
+  input[type="checkbox"] {
+    appearance: none;
+    @apply rounded-sm;
+    @apply border;
+    @apply size-3;
+    @apply mr-0.5;
+    vertical-align: -0.15em;
+
+    &:not(:checked) {
+      @apply bg-base-content/20 border border-base-content/30;
+    }
+
+    &:checked {
+      @apply bg-success/50 border border-success;
+      @apply relative;
+    }
+
+    &:checked::after {
+      content: "";
+      position: absolute;
+      left: 0.19rem;
+      top: 0.054rem;
+      width: 0.29rem;
+      height: 0.48rem;
+      border-width: 0 0.14rem 0.16rem 0;
+      @apply border-success-content/50;
+      transform: rotate(45deg);
+    }
+  }
 }
+
+
+
+
+
+
+
+
+

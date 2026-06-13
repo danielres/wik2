@@ -43,6 +43,26 @@ defmodule Wik.Access.Google.IdentityTest do
       assert identity.email == "ada@example.com"
     end
 
+    test "rejects blank google email" do
+      assert {:error, :email_required} =
+               Access.google_find_or_create_identity(%{
+                 "email" => " ",
+                 "email_verified" => true,
+                 "name" => "Ada Lovelace",
+                 "sub" => "google-42"
+               })
+    end
+
+    test "rejects non-binary google email" do
+      assert {:error, :email_required} =
+               Access.google_find_or_create_identity(%{
+                 "email" => nil,
+                 "email_verified" => true,
+                 "name" => "Ada Lovelace",
+                 "sub" => "google-42"
+               })
+    end
+
     test "updates the external identity and keeps the existing user" do
       assert {:ok, identity} =
                Access.google_find_or_create_identity(%{

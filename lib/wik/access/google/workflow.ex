@@ -12,19 +12,17 @@ defmodule Wik.Access.Google.Workflow do
 
   def find_or_create_identity(%{"sub" => google_user_id, "email" => email} = google_user) do
     provider_user_id = to_string(google_user_id)
-    normalized_email = normalize_email(email)
 
-    case load_external_identity(:google, provider_user_id) do
-      {:ok, nil} ->
-        find_or_create_user_and_identity(provider_user_id, normalized_email, google_user)
-
-      {:ok, identity} ->
-        update_external_identity(identity, normalized_email, google_user)
-
-      {:error, error} ->
-        {:error, error}
+    with {:ok, normalized_email} <- validate_email(email),
+         {:ok, identity} <- load_external_identity(:google, provider_user_id) do
+      case identity do
+        nil -> find_or_create_user_and_identity(provider_user_id, normalized_email, google_user)
+        identity -> update_external_identity(identity, normalized_email, google_user)
+      end
     end
   end
+
+  def find_or_create_identity(_google_user), do: {:error, :email_required}
 
   def apply_email_access(%User{} = user) do
     with {:ok, identity} <- load_google_identity(user),

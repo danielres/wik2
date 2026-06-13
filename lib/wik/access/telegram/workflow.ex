@@ -2,6 +2,7 @@ defmodule Wik.Access.Telegram.Workflow do
   alias Ash.Query
   alias Wik.Access
   alias Wik.Access.ExternalIdentity
+  alias Wik.Access.Grant
   alias Wik.Access.Telegram.Provider, as: TelegramProvider
   alias Wik.Access.Source
   alias Wik.Access.Telegram.Bot.Update, as: BotUpdate
@@ -88,6 +89,7 @@ defmodule Wik.Access.Telegram.Workflow do
       sources
       |> Enum.reduce_while({:ok, []}, fn source, {:ok, grants} ->
         case refresh_grant(source, identity, user, telegram_provider) do
+          {:ok, nil} -> {:cont, {:ok, grants}}
           {:ok, grant} -> {:cont, {:ok, [grant | grants]}}
           {:error, error} -> {:halt, {:error, error}}
         end
@@ -124,7 +126,7 @@ defmodule Wik.Access.Telegram.Workflow do
         Ash.Notifier.notify(notifications)
         {:ok, identity}
 
-      {:error, error} ->
+      {_status, {:error, error}} ->
         {:error, error}
     end
   end
@@ -173,19 +175,31 @@ defmodule Wik.Access.Telegram.Workflow do
 
   defp refresh_grant(source, identity, user, telegram_provider) do
     {status, verification_reason} = verify_grant_status(source, identity, telegram_provider)
-    log_inactive_grant_verification(status, verification_reason, source, identity, user)
 
-    case upsert_grant(source, identity, user, status) do
-      {:ok, grant} ->
-        if status == :active do
-          with :ok <- ensure_space_member(source, user), do: {:ok, grant}
-        else
+    case {status, load_grant(source, user)} do
+      {:active, {:ok, _grant}} ->
+        with {:ok, grant} <- upsert_grant(source, identity, user, :active),
+             :ok <- ensure_space_member(source, user) do
           {:ok, grant}
         end
 
-      {:error, error} ->
+      {:inactive, {:ok, nil}} ->
+        log_inactive_grant_verification(status, verification_reason, source, identity, user)
+        {:ok, nil}
+
+      {:inactive, {:ok, _grant}} ->
+        log_inactive_grant_verification(status, verification_reason, source, identity, user)
+        upsert_grant(source, identity, user, :inactive)
+
+      {_status, {:error, error}} ->
         {:error, error}
     end
+  end
+
+  defp load_grant(%{id: source_id}, %{id: user_id}) do
+    Grant
+    |> Query.filter(source_id == ^source_id and user_id == ^user_id)
+    |> Ash.read_one(authorize?: false, domain: Access)
   end
 
   defp verify_grant_status(source, identity, telegram_provider) do

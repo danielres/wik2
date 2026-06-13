@@ -58,6 +58,19 @@ defmodule Wik.Access.Telegram.GrantRefreshTest do
                |> Ash.read_one(authorize?: false, domain: Wik.Accounts)
     end
 
+    test "does not create inactive grants when Telegram never reported membership" do
+      user = create_telegram_user()
+      space = generate(space())
+      source = create_active_source(space, "-1001")
+
+      assert {:ok, []} = Telegram.refresh_grants(user, LeftTelegramProvider)
+
+      assert {:ok, nil} =
+               Grant
+               |> Ash.Query.filter(source_id == ^source.id and user_id == ^user.id)
+               |> Ash.read_one(authorize?: false, domain: Wik.Access)
+    end
+
     test "keeps existing local app roles unchanged" do
       user = create_telegram_user()
       space = generate(space())

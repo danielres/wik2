@@ -366,7 +366,8 @@ defmodule WikWeb.SpaceAdminLive do
         {:noreply,
          socket
          |> put_flash(:info, "Google email access added")
-         |> refresh_google_email_rules()}
+         |> refresh_google_email_rules()
+         |> refresh_access_sources()}
 
       {:error, error} ->
         Utils.Log.scoped_error(

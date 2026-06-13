@@ -41,7 +41,7 @@ defmodule Wik.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:mdex, "~> 0.12"},
+      {:mdex, "~> 0.13"},
       {:oban, "~> 2.0"},
       {:oban_web, "~> 2.0"},
       {:ash_oban, "~> 0.8"},

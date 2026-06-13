@@ -19,8 +19,8 @@ defmodule WikWeb.AuthController.Google do
         |> put_session(:google_session_params, session_params)
         |> redirect(external: url)
 
-      {:error, error} ->
-        Logger.error("Google authorization request failed: #{inspect(error)}")
+      {:error, _error} ->
+        Logger.error("Google authorization request failed: google_authorize_error")
 
         conn
         |> put_flash(:error, "Google sign in is not available")
@@ -56,8 +56,8 @@ defmodule WikWeb.AuthController.Google do
         |> put_flash(:error, "Your Google account has not been granted access to any spaces")
         |> redirect(to: ~p"/sign-in")
 
-      {:error, error} ->
-        Logger.error("Google authentication failed: #{inspect(error)}")
+      {:error, _error} ->
+        Logger.error("Google authentication failed: google_callback_error")
 
         conn
         |> delete_session(:google_return_to)

@@ -103,4 +103,30 @@
   img {
     @apply rounded border border-base-200;
   }
+
+  .warning {
+    @apply bg-error/20 text-error-content p-4 rounded border border-error/50 pl-14;
+    @apply my-8;
+    &:before { content: "aa"; @apply hero-exclamation-triangle absolute -ml-10}
+    * { @apply text-error-content;}
+    > * + * { margin-top: 1em; }
+  }
+
+  input[type=checkbox]:not(checked){
+    --border: 1px;
+    @apply opacity-80;
+    @apply border-base-content;
+    @apply checkbox checkbox-success scale-60;
+  }
+
+  ul:has(input[type=checkbox]){
+    list-style-type: none;
+    @apply bg-base-200/50 rounded border-base-300 border;
+    @apply py-4;
+    ul {
+      @apply py-0 bg-transparent border-none;
+      margin-top: 0.25em;
+      margin-bottom: 0.5em;
+    }
+  }
 }

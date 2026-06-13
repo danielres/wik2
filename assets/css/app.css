@@ -96,12 +96,6 @@
       @apply text-sm;
       @apply list-disc pl-6 leading-tight space-y-2;
     }
-    .warning {
-      @apply bg-error/20 text-error-content p-4 rounded border border-error/50 pl-14;
-      &:before { content: "aa"; @apply hero-exclamation-triangle absolute -ml-10}
-      * { @apply text-error-content;}
-      > * + * { margin-top: 1em; }
-    }
   }
 
   .max-w-prose-lg {

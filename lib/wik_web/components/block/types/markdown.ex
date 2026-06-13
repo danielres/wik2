@@ -82,7 +82,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
 
     <div
       id={"edit-block-markdown-editor-#{@block.id}"}
-      phx-hook="MarkdownEditor"
+      phx-hook="Lexical"
       phx-update="ignore"
       data-textarea-id={"edit-block-markdown-textarea-#{@block.id}"}
       data-wikilink-paths={@wikilink_paths}

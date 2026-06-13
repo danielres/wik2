@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": false,
+    "lib": ["DOM", "ES2022", "ESNext.Disposable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,

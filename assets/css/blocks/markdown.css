@@ -164,6 +164,11 @@
     }
   }
 
+  blockquote {
+    border-left: 3px solid color-mix(in oklab, currentColor 25%, transparent);
+    padding-left: 0.75rem;
+  }
+
   code {
     @apply rounded bg-base-200 px-1;
   }

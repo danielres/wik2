@@ -41,6 +41,9 @@ importers:
       '@lexical/rich-text':
         specifier: ^0.45.0
         version: 0.45.0
+      '@lexical/selection':
+        specifier: ^0.45.0
+        version: 0.45.0
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3

@@ -33,6 +33,29 @@
   }
 }
 
+.LEXICAL_TOOLBAR {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid color-mix(in oklab, currentColor 10%, transparent);
+  padding: 0.25rem 0.25rem 0.5rem;
+}
+
+.LEXICAL_TOOLBAR_BUTTON {
+  min-height: 1.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  padding: 0.2rem 0.45rem;
+  background: color-mix(in oklab, currentColor 4%, transparent);
+  color: currentColor;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+
+  &:hover {
+    background: color-mix(in oklab, var(--color-accent) 18%, transparent);
+  }
+}
+
 .LEXICAL_EDITOR {
   min-height: 4rem;
   border-radius: var(--radius-lg);
@@ -229,7 +252,6 @@
     }
   }
 }
-
 
 
 

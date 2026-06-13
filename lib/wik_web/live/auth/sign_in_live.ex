@@ -29,10 +29,79 @@ defmodule WikWeb.Auth.SignInLive do
     ~H"""
     <div class="min-h-svh grid place-items-center p-6" data-testid="sign-in-page">
       <div class="flex w-full max-w-5xl flex-col items-center gap-12">
-        <WikWeb.Components.Telegram.Widgets.login_custom />
+        <div class="space-y-2">
+          <.telegram_login_button />
+          <.google_login_button />
+        </div>
 
         <.dev_sign_in :if={@dev_routes?} {assigns} />
       </div>
+    </div>
+    """
+  end
+
+  def google_login_button(assigns) do
+    ~H"""
+    <.link
+      id="google-sign-in"
+      data-testid="google-sign-in"
+      href={~p"/auth/google"}
+      class={[
+        "btn btn-primary gap-2",
+        "w-52",
+        "justify-start",
+        "opacity-90 hover:opacity-100 transition overflow-hidden justify-center items-center"
+      ]}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+        <path d="M0 0h24v24H0z" fill="none" />
+        <path
+          fill="currentColor"
+          d="M3.064 7.51A10 10 0 0 1 12 2c2.695 0 4.959.991 6.69 2.605l-2.867 2.868C14.786 6.482 13.468 5.977 12 5.977c-2.605 0-4.81 1.76-5.595 4.123c-.2.6-.314 1.24-.314 1.9s.114 1.3.314 1.9c.786 2.364 2.99 4.123 5.595 4.123c1.345 0 2.49-.355 3.386-.955a4.6 4.6 0 0 0 1.996-3.018H12v-3.868h9.418c.118.654.182 1.336.182 2.045c0 3.046-1.09 5.61-2.982 7.35C16.964 21.105 14.7 22 12 22A9.996 9.996 0 0 1 2 12c0-1.614.386-3.14 1.064-4.49"
+        />
+      </svg>
+
+      <span>Sign in with Google</span>
+    </.link>
+    """
+  end
+
+  attr :class, :string, default: nil
+  attr :request_access, :string, default: "write"
+  attr :size, :string, default: "large", values: ~w(small medium large)
+
+  def telegram_login_button(assigns) do
+    assigns = assign(assigns, :bot_username, System.fetch_env!("TELEGRAM_BOT_USERNAME"))
+
+    ~H"""
+    <div class={[
+      "stacked",
+      "opacity-90 hover:opacity-100 transition overflow-hidden justify-center items-center"
+    ]}>
+      <div class={[
+        "btn btn-primary gap-2",
+        "justify-start",
+        "w-52"
+      ]}>
+        <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24">
+          <path d="M0 0h24v24H0z" fill="none" />
+          <path
+            fill="currentColor"
+            d="M2.148 11.81q7.87-3.429 10.497-4.522c4.999-2.079 6.037-2.44 6.714-2.452c.15-.003.482.034.698.21c.182.147.232.347.256.487s.054.459.03.708c-.27 2.847-1.443 9.754-2.04 12.942c-.252 1.348-.748 1.8-1.23 1.845c-1.045.096-1.838-.69-2.85-1.354c-1.585-1.039-2.48-1.686-4.018-2.699c-1.777-1.171-.625-1.815.388-2.867c.265-.275 4.87-4.464 4.96-4.844c.01-.048.021-.225-.084-.318c-.105-.094-.26-.062-.373-.036q-.239.054-7.592 5.018q-1.079.74-1.952.721c-.643-.014-1.88-.363-2.798-.662c-1.128-.367-2.024-.56-1.946-1.183q.061-.486 1.34-.994"
+          />
+        </svg>
+        <span>Sign in with Telegram</span>
+      </div>
+
+      <div
+        id="telegram-login"
+        class={[@class, "opacity-0"]}
+        data-bot-username={@bot_username}
+        data-request-access={@request_access}
+        data-size={@size}
+        phx-hook="TelegramLogin"
+        phx-update="ignore"
+      />
     </div>
     """
   end

@@ -1,4 +1,4 @@
-defmodule Wik.Access.Providers.Telegram do
+defmodule Wik.Access.Telegram.Provider do
   alias Assent.Strategy.Telegram, as: AssentTelegram
   alias Wik.Access.Telegram.Bot.Update.Summary
 

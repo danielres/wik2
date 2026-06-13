@@ -189,6 +189,7 @@ defmodule WikWeb.SpaceAdminLive.AccessSources do
        do: "Telegram group"
 
   defp source_type_label(%{provider: :telegram}), do: "Telegram group membership"
+  defp source_type_label(%{provider: :google}), do: "Google account"
   defp source_type_label(%{provider: provider}), do: provider |> Atom.to_string()
 
   defp source_container_label(%{
@@ -197,7 +198,10 @@ defmodule WikWeb.SpaceAdminLive.AccessSources do
        }),
        do: "Channel"
 
+  defp source_container_label(%{provider: :google}), do: "Account"
   defp source_container_label(_source), do: "Group"
+
+  defp source_title(%{provider: :google}), do: "Google account"
 
   defp source_title(%{title: title}) when is_binary(title) and title != "", do: title
 

@@ -27,6 +27,7 @@ defmodule Wik.Access.ExternalIdentity do
       accept [
         :avatar_url,
         :display_name,
+        :email,
         :metadata,
         :provider,
         :provider_user_id,
@@ -39,6 +40,7 @@ defmodule Wik.Access.ExternalIdentity do
       accept [
         :avatar_url,
         :display_name,
+        :email,
         :metadata,
         :provider,
         :provider_user_id,
@@ -48,11 +50,11 @@ defmodule Wik.Access.ExternalIdentity do
 
       upsert? true
       upsert_identity :unique_provider_user
-      upsert_fields [:avatar_url, :display_name, :metadata, :username]
+      upsert_fields [:avatar_url, :display_name, :email, :metadata, :username]
     end
 
     update :update do
-      accept [:avatar_url, :display_name, :metadata, :user_id, :username]
+      accept [:avatar_url, :display_name, :email, :metadata, :user_id, :username]
     end
   end
 
@@ -78,6 +80,10 @@ defmodule Wik.Access.ExternalIdentity do
       public? true
     end
 
+    attribute :email, :string do
+      public? true
+    end
+
     attribute :metadata, :map do
       allow_nil? false
       default %{}
@@ -86,7 +92,7 @@ defmodule Wik.Access.ExternalIdentity do
 
     attribute :provider, :atom do
       allow_nil? false
-      constraints one_of: [:telegram]
+      constraints one_of: [:google, :telegram]
       public? true
     end
 

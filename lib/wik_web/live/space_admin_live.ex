@@ -21,10 +21,13 @@ defmodule WikWeb.SpaceAdminLive do
     space = socket.assigns.current_scope.tenant |> load_space(scope)
     orphan_blocks = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
     {:ok, access_sources} = Access.list_space_access_sources(space)
+    {:ok, google_email_rules} = Access.list_space_google_email_rules(space)
 
     socket =
       socket
       |> assign(form: nil)
+      |> assign(:google_email_rule_form, google_email_rule_form())
+      |> assign(:google_email_rules, google_email_rules)
       |> assign(space: space)
       |> assign(editing?: false)
       |> assign(orphan_block_selected: nil)
@@ -183,6 +186,100 @@ defmodule WikWeb.SpaceAdminLive do
               <AccessSources.render groups={@access_source_groups} />
             </div>
           </section>
+
+          <section>
+            <h2 class="text-xl flex items-center gap-2">
+              <.icon name="hero-envelope-micro" /> Google account access
+            </h2>
+
+            <div class={[
+              "border rounded-box p-4 border-base-content/20",
+              "space-y-4"
+            ]}>
+              <.form
+                for={@google_email_rule_form}
+                id="google-email-access-form"
+                phx-submit="google_email_rule_add"
+                class="grid gap-3 md:grid-cols-[1fr_auto_auto]"
+              >
+                <.input
+                  field={@google_email_rule_form[:email]}
+                  label="Email"
+                  placeholder="person@example.com"
+                  type="email"
+                />
+                <.input
+                  field={@google_email_rule_form[:membership_type]}
+                  label="Access"
+                  options={[Member: "member", Admin: "admin"]}
+                  type="select"
+                />
+                <button
+                  id="google-email-access-add"
+                  type="submit"
+                  class={[
+                    "btn btn-primary rounded",
+                    "md:self-end"
+                  ]}
+                >
+                  Add
+                </button>
+              </.form>
+
+              <div
+                id="google-email-access-list"
+                data-testid="google-email-access-list"
+                class="space-y-2"
+              >
+                <div
+                  :if={@google_email_rules == []}
+                  data-testid="google-email-access-empty"
+                  class="text-sm opacity-70"
+                >
+                  No Google email access rules yet.
+                </div>
+
+                <div
+                  :for={email_rule <- @google_email_rules}
+                  id={"google-email-access-#{email_rule.id}"}
+                  data-testid={"google-email-access-#{email_rule.id}"}
+                  class={[
+                    "flex flex-wrap items-center gap-3",
+                    "rounded-box bg-base-200 px-3 py-2"
+                  ]}
+                >
+                  <div class="min-w-0 flex-1">
+                    <div class={[
+                      "truncate font-mono text-sm",
+                      email_rule.revoked_at && "line-through opacity-60"
+                    ]}>
+                      {email_rule.email}
+                    </div>
+                    <div class="text-xs opacity-60">
+                      {email_rule.membership_type |> Atom.to_string()}
+                    </div>
+                  </div>
+
+                  <span
+                    :if={email_rule.revoked_at}
+                    class="badge badge-sm badge-neutral"
+                  >
+                    revoked
+                  </span>
+                  <button
+                    :if={is_nil(email_rule.revoked_at)}
+                    id={"google-email-access-revoke-#{email_rule.id}"}
+                    type="button"
+                    phx-click="google_email_rule_revoke"
+                    phx-value-id={email_rule.id}
+                    class="btn btn-sm btn-ghost rounded"
+                  >
+                    Revoke
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </Layouts.space>
     </Layouts.app>
@@ -260,6 +357,57 @@ defmodule WikWeb.SpaceAdminLive do
   end
 
   @impl true
+  def handle_event("google_email_rule_add", %{"google_email_rule" => params}, socket) do
+    space = socket.assigns.space
+    actor = socket.assigns.current_scope.actor
+
+    case Access.google_upsert_email_rule(space, params, actor) do
+      {:ok, _email_rule} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Google email access added")
+         |> refresh_google_email_rules()
+         |> refresh_access_sources()}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(
+          socket.assigns.current_scope,
+          error,
+          "google email access add failed"
+        )
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Could not add Google email access")}
+    end
+  end
+
+  @impl true
+  def handle_event("google_email_rule_revoke", %{"id" => id}, socket) do
+    actor = socket.assigns.current_scope.actor
+
+    case Access.google_revoke_email_rule(id, actor) do
+      {:ok, _email_rule} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Google email access revoked")
+         |> refresh_google_email_rules()
+         |> refresh_access_sources()}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(
+          socket.assigns.current_scope,
+          error,
+          "google email access revoke failed"
+        )
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Could not revoke Google email access")}
+    end
+  end
+
+  @impl true
   def handle_event("space_validate", %{"form" => params}, socket) do
     {:noreply, socket |> assign(form: socket.assigns.form |> Form.validate(space_params(params)))}
   end
@@ -285,6 +433,24 @@ defmodule WikWeb.SpaceAdminLive do
 
   defp load_space(space, scope) do
     Ash.load!(space, [memberships: [:user]], scope: scope)
+  end
+
+  defp google_email_rule_form do
+    to_form(%{"email" => "", "membership_type" => "member"}, as: :google_email_rule)
+  end
+
+  defp refresh_google_email_rules(socket) do
+    {:ok, google_email_rules} = Access.list_space_google_email_rules(socket.assigns.space)
+
+    socket
+    |> assign(:google_email_rule_form, google_email_rule_form())
+    |> assign(:google_email_rules, google_email_rules)
+  end
+
+  defp refresh_access_sources(socket) do
+    {:ok, access_sources} = Access.list_space_access_sources(socket.assigns.space)
+
+    assign_access_sources(socket, access_sources)
   end
 
   defp space_params(%{"name" => name} = params) do

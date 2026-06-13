@@ -46,4 +46,39 @@ defmodule WikWeb.Components.Membership.AccessTest do
     assert html =~ "@ada"
     assert html =~ "active"
   end
+
+  test "grant_card renders google access with grant issuer" do
+    now = DateTime.utc_now()
+
+    html =
+      render_component(&Access.grant_card/1, %{
+        grant: %{
+          id: "grant-1",
+          inserted_at: now,
+          last_verified_at: now,
+          status: :active,
+          granted_by_user: %{email: "issuer@example.com", id: "issuer-1"},
+          external_identity: %{
+            avatar_url: nil,
+            display_name: "Ada Lovelace",
+            email: "ada@example.com",
+            provider: :google,
+            provider_user_id: "google-user-1"
+          },
+          source: %{
+            provider: :google,
+            metadata: %{"kind" => "google_account"},
+            claimed_by_user: nil,
+            provider_source_id: "google:space:space-1",
+            space: %{memberships: []},
+            title: "Google account"
+          }
+        },
+        variant: :profile
+      })
+
+    assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
+    assert html =~ ~s(data-testid="access-grant-via-grant-1")
+    assert html =~ ~s(data-testid="access-grant-identity-grant-1")
+  end
 end

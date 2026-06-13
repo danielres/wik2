@@ -1,7 +1,7 @@
-defmodule Wik.Access.Providers.TelegramTest do
+defmodule Wik.Access.Telegram.ProviderTest do
   use ExUnit.Case, async: true
 
-  alias Wik.Access.Providers.Telegram
+  alias Wik.Access.Telegram.Provider, as: Telegram
 
   describe "verify_login/2" do
     test "accepts a valid Telegram Login Widget payload" do

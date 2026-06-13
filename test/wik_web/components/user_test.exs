@@ -37,6 +37,19 @@ defmodule WikWeb.Components.UserTest do
     refute html =~ "hero-user"
   end
 
+  test "avatar renders google avatar images through the local cache" do
+    html =
+      render_component(&User.avatar/1, %{
+        avatar_url: "https://lh3.googleusercontent.com/a/avatar=s96-c",
+        tenant: generate(space()),
+        user: generate(user(email: nil))
+      })
+
+    assert html =~ ~s(src="/avatars/google/)
+    refute html =~ ~s(src="https://lh3.googleusercontent.com/a/avatar=s96-c")
+    refute html =~ "hero-user"
+  end
+
   test "identity links to the profile when the membership has a space" do
     user = generate(user(email: "ada@example.com"))
     space = generate(space())

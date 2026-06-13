@@ -7,6 +7,7 @@ defmodule Wik.Access.ResourcesTest do
   alias Wik.Access.ExternalIdentity
   alias Wik.Access.Grant
   alias Wik.Access.Source
+  alias Wik.Accounts.Membership
 
   describe "external identities" do
     test "are unique per provider user" do
@@ -35,6 +36,27 @@ defmodule Wik.Access.ResourcesTest do
       assert {:ok, user} = Ash.load(user, [:external_identities], authorize?: false)
 
       assert Enum.map(user.external_identities, & &1.id) == [identity.id]
+    end
+
+    test "accept google identities with canonical email and keep telegram email optional" do
+      user = generate(user())
+
+      assert {:ok, google_identity} =
+               Ash.create(
+                 ExternalIdentity,
+                 %{
+                   email: "ada@example.com",
+                   provider: :google,
+                   provider_user_id: "google-user-1",
+                   user_id: user.id
+                 },
+                 authorize?: false
+               )
+
+      telegram_identity = create_external_identity(user, provider_user_id: "telegram-user-2")
+
+      assert google_identity.email == "ada@example.com"
+      assert telegram_identity.email == nil
     end
   end
 
@@ -145,6 +167,54 @@ defmodule Wik.Access.ResourcesTest do
       assert grant.source.id == source.id
       assert grant.user.id == user.id
     end
+
+    test "can load granted_by_user" do
+      user = generate(user())
+      issuer = generate(user())
+      source = create_source(generate(space()), issuer)
+      identity = create_external_identity(user)
+
+      assert {:ok, grant} =
+               Ash.create(
+                 Grant,
+                 Map.put(
+                   telegram_grant_attrs(source, identity, user),
+                   :granted_by_user_id,
+                   issuer.id
+                 ),
+                 authorize?: false
+               )
+
+      assert {:ok, grant} = Ash.load(grant, [:granted_by_user], authorize?: false)
+
+      assert grant.granted_by_user.id == issuer.id
+    end
+  end
+
+  describe "google email access" do
+    test "belongs to a space source and stores normalized emails through domain API" do
+      owner = generate(user())
+      space = generate(space(author: owner))
+      create_membership(space, owner, :owner)
+
+      assert {:ok, email_rule} =
+               Access.google_upsert_email_rule(
+                 space,
+                 %{"email" => " ADA@Example.COM ", "membership_type" => "admin"},
+                 owner
+               )
+
+      assert email_rule.email == "ada@example.com"
+      assert email_rule.membership_type == :admin
+
+      assert {:ok, email_rule} =
+               Ash.load(email_rule, [:space, :source, :granted_by_user], authorize?: false)
+
+      assert email_rule.space.id == space.id
+      assert email_rule.source.provider == :google
+      assert email_rule.source.provider_source_id == "google:space:#{space.id}"
+      assert email_rule.granted_by_user.id == owner.id
+    end
   end
 
   defp create_external_identity(user, overrides \\ []) do
@@ -213,5 +283,14 @@ defmodule Wik.Access.ResourcesTest do
       status: Keyword.get(overrides, :status, :pending),
       title: "Telegram Space"
     }
+  end
+
+  defp create_membership(space, user, type) do
+    Ash.create!(
+      Membership,
+      %{space_id: space.id, type: type, user_id: user.id},
+      authorize?: false,
+      domain: Wik.Accounts
+    )
   end
 end

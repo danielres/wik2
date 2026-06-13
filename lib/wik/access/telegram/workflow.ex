@@ -1,8 +1,8 @@
-defmodule Wik.Access.Telegram do
+defmodule Wik.Access.Telegram.Workflow do
   alias Ash.Query
   alias Wik.Access
   alias Wik.Access.ExternalIdentity
-  alias Wik.Access.Providers.Telegram, as: TelegramProvider
+  alias Wik.Access.Telegram.Provider, as: TelegramProvider
   alias Wik.Access.Source
   alias Wik.Access.Telegram.Bot.Update, as: BotUpdate
   alias Wik.Accounts.Space
@@ -221,6 +221,7 @@ defmodule Wik.Access.Telegram do
     Access.upsert_grant(
       %{
         external_identity_id: identity.id,
+        granted_by_user_id: source.claimed_by_user_id,
         last_verified_at: DateTime.utc_now(),
         source_id: source.id,
         status: status,
@@ -360,6 +361,7 @@ defmodule Wik.Access.Telegram do
     Access.upsert_grant(
       %{
         external_identity_id: identity.id,
+        granted_by_user_id: user.id,
         last_verified_at: DateTime.utc_now(),
         source_id: source.id,
         status: :active,

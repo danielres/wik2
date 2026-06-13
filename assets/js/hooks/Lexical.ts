@@ -49,6 +49,7 @@ type LexicalHook = {
 };
 
 const markdownTransformers: Transformer[] = TRANSFORMERS.filter((transformer) => transformer !== CODE);
+const preserveNewLines = true;
 
 function textareaFor(editor: HTMLElement): HTMLTextAreaElement | undefined {
   const textareaId = editor.dataset.textareaId;
@@ -63,6 +64,10 @@ function textareaFor(editor: HTMLElement): HTMLTextAreaElement | undefined {
 function dispatchTextareaInput(textarea: HTMLTextAreaElement, value: string): void {
   textarea.value = value;
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function normalizeExportedMarkdown(markdown: string): string {
+  return markdown.replace(/^(\s*[-*+]\s+\[[ xX]\]\s+)\[[ xX]\]\s+/gm, "$1");
 }
 
 function button(label: string, title: string, onClick: () => void): HTMLButtonElement {
@@ -220,7 +225,12 @@ export const Lexical = {
         if (!this.textarea) return;
 
         editorState.read(() => {
-          dispatchTextareaInput(this.textarea!, $convertToMarkdownString(markdownTransformers));
+          dispatchTextareaInput(
+            this.textarea!,
+            normalizeExportedMarkdown(
+              $convertToMarkdownString(markdownTransformers, undefined, preserveNewLines),
+            ),
+          );
         });
 
         updateFloating();
@@ -248,7 +258,12 @@ export const Lexical = {
     };
 
     editor.update(() => {
-      $convertFromMarkdownString(this.textarea?.value || "", markdownTransformers);
+      $convertFromMarkdownString(
+        this.textarea?.value || "",
+        markdownTransformers,
+        undefined,
+        preserveNewLines,
+      );
     });
 
     requestAnimationFrame(() => this.root?.focus());

@@ -77,8 +77,8 @@ defmodule WikWeb.Components.Membership.AccessTest do
         variant: :profile
       })
 
-    assert html =~ "Google account"
-    assert html =~ "issuer"
-    assert html =~ "Ada Lovelace"
+    assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
+    assert html =~ ~s(data-testid="access-grant-via-grant-1")
+    assert html =~ ~s(data-testid="access-grant-identity-grant-1")
   end
 end

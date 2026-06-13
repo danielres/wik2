@@ -90,6 +90,7 @@ defmodule WikWeb.AuthController.Google do
     cond do
       not String.starts_with?(path, "/") -> ~p"/"
       String.starts_with?(path, "//") -> ~p"/"
+      unsafe_return_path?(path) -> ~p"/"
       uri.host != nil -> ~p"/"
       uri.scheme != nil -> ~p"/"
       true -> path
@@ -97,4 +98,8 @@ defmodule WikWeb.AuthController.Google do
   end
 
   defp validate_return_to(_path), do: ~p"/"
+
+  defp unsafe_return_path?(path) do
+    String.contains?(path, "\\") or Regex.match?(~r/[\x00-\x1F\x7F]/, path)
+  end
 end

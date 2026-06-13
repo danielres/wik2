@@ -27,6 +27,14 @@ defmodule WikWeb.AuthController.GoogleTest do
     assert get_session(conn, :google_return_to) == "/"
   end
 
+  test "prevents redirect smuggling at OAuth start", %{conn: conn} do
+    backslash_conn = get(conn, ~p"/auth/google", %{"return_to" => "/\\evil.example"})
+    control_conn = get(conn, ~p"/auth/google", %{"return_to" => "/me\nLocation: //evil.example"})
+
+    assert get_session(backslash_conn, :google_return_to) == "/"
+    assert get_session(control_conn, :google_return_to) == "/"
+  end
+
   defp restore_env(key, nil), do: System.delete_env(key)
   defp restore_env(key, value), do: System.put_env(key, value)
 end

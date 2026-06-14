@@ -91,8 +91,12 @@ export const LexicalEditor = {
     };
 
     this.toolbar = toolbarFor(editor, requiredDatasetValue(this.el, "toolbarTemplateId"));
-    this.floatingToolbar = floatingToolbarFor(editor);
+    this.floatingToolbar = floatingToolbarFor(
+      editor,
+      requiredDatasetValue(this.el, "floatingToolbarTemplateId"),
+    );
     this.youtubeDialog = youtubeDialogFor(
+      requiredDatasetValue(this.el, "youtubeDialogTemplateId"),
       (videoId) => {
         const key = this.pendingYoutubeInsertKey;
         this.pendingYoutubeInsertKey = undefined;
@@ -107,6 +111,7 @@ export const LexicalEditor = {
     );
     this.blockControls = createBlockControls({
       editor,
+      insertMenuTemplateId: requiredDatasetValue(this.el, "insertMenuTemplateId"),
       root: this.root,
       onYoutubeEmbed: (key) => {
         this.pendingYoutubeInsertKey = key;

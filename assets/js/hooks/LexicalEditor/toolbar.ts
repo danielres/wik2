@@ -33,19 +33,6 @@ type ToolbarCommand =
   | "todo"
   | "unlink";
 
-function button(label: string, title: string, onClick: () => void): HTMLButtonElement {
-  const element = document.createElement("button");
-  element.type = "button";
-  element.className = "LEXICAL_TOOLBAR_BUTTON";
-  element.title = title;
-  element.textContent = label;
-
-  element.addEventListener("mousedown", (event) => event.preventDefault());
-  element.addEventListener("click", onClick);
-
-  return element;
-}
-
 function setBlockType(editor: LexicalEditor, createNode: () => ElementNode): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -97,11 +84,11 @@ function runToolbarCommand(editor: LexicalEditor, command: ToolbarCommand): void
   }
 }
 
-function toolbarTemplateFor(templateId: string): HTMLTemplateElement {
+function templateFor(templateId: string): HTMLTemplateElement {
   const template = document.getElementById(templateId);
 
   if (!(template instanceof HTMLTemplateElement)) {
-    throw new Error(`Missing Lexical toolbar template: ${templateId}`);
+    throw new Error(`Missing Lexical template: ${templateId}`);
   }
 
   return template;
@@ -131,15 +118,7 @@ function toolbarCommandFor(element: Element): ToolbarCommand | undefined {
   return undefined;
 }
 
-export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {
-  const element = toolbarTemplateFor(templateId).content.firstElementChild?.cloneNode(true);
-
-  if (!(element instanceof HTMLDivElement)) {
-    throw new Error(`Invalid Lexical toolbar template: ${templateId}`);
-  }
-
-  const toolbar = element;
-
+function bindToolbarCommands(toolbar: HTMLElement, editor: LexicalEditor): void {
   toolbar.querySelectorAll("[data-command]").forEach((element) => {
     const command = toolbarCommandFor(element);
     if (!command) return;
@@ -147,26 +126,30 @@ export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivEl
     element.addEventListener("mousedown", (event) => event.preventDefault());
     element.addEventListener("click", () => runToolbarCommand(editor, command));
   });
+}
+
+export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {
+  const element = templateFor(templateId).content.firstElementChild?.cloneNode(true);
+
+  if (!(element instanceof HTMLDivElement)) {
+    throw new Error(`Invalid Lexical toolbar template: ${templateId}`);
+  }
+
+  const toolbar = element;
+  bindToolbarCommands(toolbar, editor);
 
   return toolbar;
 }
 
-export function floatingToolbarFor(editor: LexicalEditor): HTMLDivElement {
-  const toolbar = document.createElement("div");
-  toolbar.className = "LEXICAL_FLOATING_TOOLBAR";
-  toolbar.hidden = true;
+export function floatingToolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {
+  const element = templateFor(templateId).content.firstElementChild?.cloneNode(true);
 
-  toolbar.append(
-    button("B", "Bold", () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")),
-    button("I", "Italic", () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")),
-    button("Code", "Inline code", () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")),
-    button("Link", "Add link", () => {
-      const url = window.prompt("Link URL");
-      if (url) editor.update(() => $toggleLink(url));
-    }),
-    button("Unlink", "Remove link", () => editor.update(() => $toggleLink(null))),
-  );
+  if (!(element instanceof HTMLDivElement)) {
+    throw new Error(`Invalid Lexical floating toolbar template: ${templateId}`);
+  }
 
+  const toolbar = element;
+  bindToolbarCommands(toolbar, editor);
   return toolbar;
 }
 

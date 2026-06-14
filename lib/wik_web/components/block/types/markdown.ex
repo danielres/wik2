@@ -4,6 +4,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   alias Wik.Accounts
   alias Wik.Tags
   alias Wik.Wiki.PageTree.Wikilinks
+  alias WikWeb.Components.UI
 
   attr :block, :map, required: true
   attr :page_tree, :map, required: true
@@ -80,64 +81,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       value={@form[:wikilink_tag_map].value || @wikilink_tag_map}
     />
 
-    <template id={"edit-block-markdown-toolbar-template-#{@block.id}"}>
-      <div class="LEXICAL_TOOLBAR">
-        <button
-          type="button"
-          class="LEXICAL_TOOLBAR_BUTTON"
-          title="Paragraph"
-          data-command="paragraph"
-        >
-          P
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Heading 1" data-command="h1">
-          H1
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Heading 2" data-command="h2">
-          H2
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Heading 3" data-command="h3">
-          H3
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Quote" data-command="quote">
-          Quote
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Bold" data-command="bold">
-          B
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Italic" data-command="italic">
-          I
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Inline code" data-command="code">
-          Code
-        </button>
-        <button
-          type="button"
-          class="LEXICAL_TOOLBAR_BUTTON"
-          title="Bullet list"
-          data-command="bullets"
-        >
-          Bullets
-        </button>
-        <button
-          type="button"
-          class="LEXICAL_TOOLBAR_BUTTON"
-          title="Numbered list"
-          data-command="numbers"
-        >
-          Numbers
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Task list" data-command="todo">
-          Todo
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Add link" data-command="link">
-          Link
-        </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Remove link" data-command="unlink">
-          Unlink
-        </button>
-      </div>
-    </template>
+    <UI.Lexical.components block={@block} />
 
     <div
       id={"edit-block-markdown-editor-#{@block.id}"}
@@ -145,6 +89,9 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       phx-update="ignore"
       data-textarea-id={"edit-block-markdown-textarea-#{@block.id}"}
       data-toolbar-template-id={"edit-block-markdown-toolbar-template-#{@block.id}"}
+      data-floating-toolbar-template-id={"edit-block-markdown-floating-toolbar-template-#{@block.id}"}
+      data-insert-menu-template-id={"edit-block-markdown-insert-menu-template-#{@block.id}"}
+      data-youtube-dialog-template-id={"edit-block-markdown-youtube-dialog-template-#{@block.id}"}
       data-wikilink-paths={@wikilink_paths}
       data-member-wikilink-usernames={@wikilink_member_usernames}
       data-tag-wikilink-names={@wikilink_tag_names}

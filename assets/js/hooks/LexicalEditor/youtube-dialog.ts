@@ -1,47 +1,43 @@
 import { youtubeIdFromUrl } from "./youtube";
 
 export function youtubeDialogFor(
+  templateId: string,
   onSubmit: (videoId: string) => void,
   onCancel: () => void,
 ): HTMLDialogElement {
-  const dialog = document.createElement("dialog");
-  dialog.className = "LEXICAL_YOUTUBE_DIALOG";
+  const template = document.getElementById(templateId);
+  if (!(template instanceof HTMLTemplateElement)) {
+    throw new Error(`Missing Lexical YouTube dialog template: ${templateId}`);
+  }
 
-  const form = document.createElement("form");
-  form.method = "dialog";
-  form.className = "LEXICAL_YOUTUBE_FORM";
+  const element = template.content.firstElementChild?.cloneNode(true);
+  if (!(element instanceof HTMLDialogElement)) {
+    throw new Error(`Invalid Lexical YouTube dialog template: ${templateId}`);
+  }
 
-  const title = document.createElement("div");
-  title.className = "LEXICAL_YOUTUBE_TITLE";
-  title.textContent = "YouTube embed";
+  const dialog = element;
+  const form = dialog.querySelector("form");
+  const input = dialog.querySelector("[data-youtube-input]");
+  const error = dialog.querySelector("[data-youtube-error]");
+  const cancel = dialog.querySelector("[data-youtube-cancel]");
 
-  const input = document.createElement("input");
-  input.type = "text";
-  input.required = true;
-  input.placeholder = "https://www.youtube.com/watch?v=W-hwnJUT854";
-  input.className = "LEXICAL_YOUTUBE_INPUT";
+  if (!(form instanceof HTMLFormElement)) {
+    throw new Error(`Missing YouTube dialog form: ${templateId}`);
+  }
 
-  const error = document.createElement("div");
-  error.className = "LEXICAL_YOUTUBE_ERROR";
-  error.hidden = true;
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error(`Missing YouTube dialog input: ${templateId}`);
+  }
 
-  const actions = document.createElement("div");
-  actions.className = "LEXICAL_YOUTUBE_ACTIONS";
+  if (!(error instanceof HTMLElement)) {
+    throw new Error(`Missing YouTube dialog error element: ${templateId}`);
+  }
 
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.className = "LEXICAL_YOUTUBE_BUTTON secondary";
-  cancel.textContent = "Cancel";
+  if (!(cancel instanceof HTMLButtonElement)) {
+    throw new Error(`Missing YouTube dialog cancel button: ${templateId}`);
+  }
+
   cancel.addEventListener("click", () => dialog.close());
-
-  const submit = document.createElement("button");
-  submit.type = "submit";
-  submit.className = "LEXICAL_YOUTUBE_BUTTON primary";
-  submit.textContent = "Insert";
-
-  actions.append(cancel, submit);
-  form.append(title, input, error, actions);
-  dialog.append(form);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();

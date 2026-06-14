@@ -18,6 +18,7 @@ import {
 
 type BlockControlsOptions = {
   editor: LexicalEditor;
+  insertMenuTemplateId: string;
   onYoutubeEmbed: (key: NodeKey) => void;
   root: HTMLElement;
 };
@@ -31,6 +32,17 @@ export type BlockControls = {
   unregister: () => void;
   update: () => void;
 };
+
+type InsertCommand =
+  | "bullets"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "numbers"
+  | "paragraph"
+  | "quote"
+  | "todo"
+  | "youtube";
 
 function closestTopLevelElement(root: HTMLElement, target: Node): HTMLElement | undefined {
   if (target === root) return undefined;
@@ -213,26 +225,49 @@ function insertListBlockAfter(
   });
 }
 
-function insertMenuItem(label: string, onClick: () => void): HTMLButtonElement {
-  const item = document.createElement("button");
-  item.type = "button";
-  item.className = "LEXICAL_INSERT_MENU_BUTTON";
-  item.textContent = label;
+function templateFor(templateId: string): HTMLTemplateElement {
+  const template = document.getElementById(templateId);
 
-  item.addEventListener("mousedown", (event) => event.preventDefault());
-  item.addEventListener("click", onClick);
+  if (!(template instanceof HTMLTemplateElement)) {
+    throw new Error(`Missing Lexical insert menu template: ${templateId}`);
+  }
 
-  return item;
+  return template;
+}
+
+function insertCommandFor(element: Element): InsertCommand | undefined {
+  const command = element.getAttribute("data-insert-command");
+
+  if (
+    command === "bullets" ||
+    command === "h1" ||
+    command === "h2" ||
+    command === "h3" ||
+    command === "numbers" ||
+    command === "paragraph" ||
+    command === "quote" ||
+    command === "todo" ||
+    command === "youtube"
+  ) {
+    return command;
+  }
+
+  return undefined;
 }
 
 function insertMenuFor(
   editor: LexicalEditor,
   getKey: () => NodeKey | undefined,
+  templateId: string,
   openYoutubeEmbed: (key: NodeKey) => void,
 ): HTMLDivElement {
-  const menu = document.createElement("div");
-  menu.className = "LEXICAL_INSERT_MENU";
-  menu.hidden = true;
+  const element = templateFor(templateId).content.firstElementChild?.cloneNode(true);
+
+  if (!(element instanceof HTMLDivElement)) {
+    throw new Error(`Invalid Lexical insert menu template: ${templateId}`);
+  }
+
+  const menu = element;
 
   const insert = (createNode: () => LexicalNode) => {
     const key = getKey();
@@ -250,23 +285,44 @@ function insertMenuFor(
     menu.hidden = true;
   };
 
-  menu.append(
-    insertMenuItem("Paragraph", () => insert(() => $createParagraphNode())),
-    insertMenuItem("Heading 1", () => insert(() => $createHeadingNode("h1"))),
-    insertMenuItem("Heading 2", () => insert(() => $createHeadingNode("h2"))),
-    insertMenuItem("Heading 3", () => insert(() => $createHeadingNode("h3"))),
-    insertMenuItem("Quote", () => insert(() => $createQuoteNode())),
-    insertMenuItem("Bullet list", () => insertList("bullet")),
-    insertMenuItem("Numbered list", () => insertList("number")),
-    insertMenuItem("Task list", () => insertList("check")),
-    insertMenuItem("YouTube embed", () => {
-      const key = getKey();
-      if (!key) return;
+  menu.querySelectorAll("[data-insert-command]").forEach((element) => {
+    const command = insertCommandFor(element);
+    if (!command) return;
 
-      menu.hidden = true;
-      openYoutubeEmbed(key);
-    }),
-  );
+    element.addEventListener("mousedown", (event) => event.preventDefault());
+    element.addEventListener("click", () => {
+      switch (command) {
+        case "paragraph":
+          insert(() => $createParagraphNode());
+          break;
+        case "h1":
+        case "h2":
+        case "h3":
+          insert(() => $createHeadingNode(command));
+          break;
+        case "quote":
+          insert(() => $createQuoteNode());
+          break;
+        case "bullets":
+          insertList("bullet");
+          break;
+        case "numbers":
+          insertList("number");
+          break;
+        case "todo":
+          insertList("check");
+          break;
+        case "youtube": {
+          const key = getKey();
+          if (!key) return;
+
+          menu.hidden = true;
+          openYoutubeEmbed(key);
+          break;
+        }
+      }
+    });
+  });
 
   return menu;
 }
@@ -332,6 +388,7 @@ function moveBlock(
 
 export function createBlockControls({
   editor,
+  insertMenuTemplateId,
   onYoutubeEmbed,
   root,
 }: BlockControlsOptions): BlockControls {
@@ -340,7 +397,7 @@ export function createBlockControls({
 
   const dragHandle = dragHandleFor();
   const insertButton = insertButtonFor();
-  const insertMenu = insertMenuFor(editor, () => activeBlockKey, onYoutubeEmbed);
+  const insertMenu = insertMenuFor(editor, () => activeBlockKey, insertMenuTemplateId, onYoutubeEmbed);
   const dropIndicator = dropIndicatorFor();
 
   const update = () => {

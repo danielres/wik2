@@ -75,7 +75,7 @@ defmodule WikWeb.Components.UI.Lexical do
           type="button"
           class="LEXICAL_TOOLBAR_BUTTON"
           title="Bullet list"
-          data-command="bullets"
+          data-command="bullet"
         >
           <.icon name="hero-list-bullet" />
         </button>
@@ -83,11 +83,11 @@ defmodule WikWeb.Components.UI.Lexical do
           type="button"
           class="LEXICAL_TOOLBAR_BUTTON"
           title="Numbered list"
-          data-command="numbers"
+          data-command="number"
         >
           <.icon name="hero-numbered-list" />
         </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Task list" data-command="todo">
+        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Task list" data-command="check">
           <.icon name="hero-check" />
         </button>
         <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Add link" data-command="link">

@@ -54,6 +54,12 @@
   &:hover {
     background: color-mix(in oklab, var(--color-accent) 18%, transparent);
   }
+
+  &.active {
+    border-color: color-mix(in oklab, var(--color-accent) 55%, transparent);
+    background: color-mix(in oklab, var(--color-accent) 24%, transparent);
+    color: var(--color-base-content);
+  }
 }
 
 .LEXICAL_FLOATING_TOOLBAR {

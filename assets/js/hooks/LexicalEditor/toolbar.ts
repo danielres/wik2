@@ -1,5 +1,6 @@
 import { $toggleLink } from "@lexical/link";
 import {
+  $isListNode,
   INSERT_CHECK_LIST_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
@@ -8,30 +9,34 @@ import { $setBlocksType } from "@lexical/selection";
 import {
   $createHeadingNode,
   $createQuoteNode,
+  $isHeadingNode,
+  $isQuoteNode,
 } from "@lexical/rich-text";
 import {
   $createParagraphNode,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
   type ElementNode,
   type LexicalEditor,
+  type LexicalNode,
 } from "lexical";
 import { positionFloating } from "./floating";
 
 type ToolbarCommand =
   | "bold"
-  | "bullets"
+  | "bullet"
+  | "check"
   | "code"
   | "h1"
   | "h2"
   | "h3"
   | "italic"
   | "link"
-  | "numbers"
+  | "number"
   | "paragraph"
   | "quote"
-  | "todo"
   | "unlink";
 
 function setBlockType(editor: LexicalEditor, createNode: () => ElementNode): void {
@@ -65,13 +70,13 @@ function runToolbarCommand(editor: LexicalEditor, command: ToolbarCommand): void
     case "code":
       editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
       break;
-    case "bullets":
+    case "bullet":
       editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
       break;
-    case "numbers":
+    case "number":
       editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
       break;
-    case "todo":
+    case "check":
       editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
       break;
     case "link": {
@@ -100,17 +105,17 @@ function toolbarCommandFor(element: Element): ToolbarCommand | undefined {
 
   if (
     command === "bold" ||
-    command === "bullets" ||
+    command === "bullet" ||
+    command === "check" ||
     command === "code" ||
     command === "h1" ||
     command === "h2" ||
     command === "h3" ||
     command === "italic" ||
     command === "link" ||
-    command === "numbers" ||
+    command === "number" ||
     command === "paragraph" ||
     command === "quote" ||
-    command === "todo" ||
     command === "unlink"
   ) {
     return command;
@@ -129,6 +134,38 @@ function bindToolbarCommands(toolbar: HTMLElement, editor: LexicalEditor): void 
   });
 }
 
+function blockCommandForNode(node: LexicalNode): ToolbarCommand | undefined {
+  if ($isHeadingNode(node)) {
+    const tag = node.getTag();
+    return tag === "h1" || tag === "h2" || tag === "h3" ? tag : undefined;
+  }
+  if ($isQuoteNode(node)) return "quote";
+  if ($isParagraphNode(node)) return "paragraph";
+  if ($isListNode(node)) return node.getListType();
+
+  return undefined;
+}
+
+function selectedBlockCommand(): ToolbarCommand | undefined {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) return undefined;
+
+  const anchorNode = selection.anchor.getNode();
+  return blockCommandForNode(anchorNode.getTopLevelElementOrThrow());
+}
+
+function setActiveToolbarCommand(toolbar: HTMLElement, activeCommand: ToolbarCommand | undefined): void {
+  toolbar.querySelectorAll("[data-command]").forEach((element) => {
+    if (!(element instanceof HTMLElement)) return;
+
+    const command = toolbarCommandFor(element);
+    const active = !!command && command === activeCommand;
+
+    element.classList.toggle("active", active);
+    element.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
 export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {
   const element = templateFor(templateId).content.firstElementChild?.cloneNode(true);
 
@@ -140,6 +177,12 @@ export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivEl
   bindToolbarCommands(toolbar, editor);
 
   return toolbar;
+}
+
+export function updateToolbarState(editor: LexicalEditor, toolbar: HTMLElement): void {
+  editor.getEditorState().read(() => {
+    setActiveToolbarCommand(toolbar, selectedBlockCommand());
+  });
 }
 
 export function floatingToolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {

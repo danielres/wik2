@@ -21,7 +21,12 @@ import {
 import { markdownEditorBehaviorExtension } from "./LexicalEditor/behavior";
 import { createBlockControls, type BlockControls } from "./LexicalEditor/block-controls";
 import { markdownTransformers, normalizeExportedMarkdown, preserveNewLines } from "./LexicalEditor/markdown";
-import { floatingToolbarFor, toolbarFor, updateFloatingToolbar } from "./LexicalEditor/toolbar";
+import {
+  floatingToolbarFor,
+  toolbarFor,
+  updateFloatingToolbar,
+  updateToolbarState,
+} from "./LexicalEditor/toolbar";
 import {
   createWikilinkCompletions,
   parseWikilinkDataset,
@@ -180,6 +185,10 @@ export const LexicalEditor = {
     );
 
     updateFloating = () => {
+      if (this.toolbar) {
+        updateToolbarState(editor, this.toolbar);
+      }
+
       if (this.root && this.floatingToolbar) {
         updateFloatingToolbar(editor, this.root, this.floatingToolbar);
       }

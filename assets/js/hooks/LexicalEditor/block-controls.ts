@@ -15,6 +15,7 @@ import {
   type LexicalNode,
   type NodeKey,
 } from "lexical";
+import { positionFloating } from "./floating";
 
 type BlockControlsOptions = {
   editor: LexicalEditor;
@@ -165,10 +166,12 @@ function positionInsertButton(editor: LexicalEditor, key: NodeKey, button: HTMLE
 }
 
 function positionInsertMenu(button: HTMLElement, menu: HTMLElement): void {
-  const rect = button.getBoundingClientRect();
-
-  menu.style.left = `${rect.left}px`;
-  menu.style.top = `${rect.bottom + 6}px`;
+  positionFloating({
+    anchorRect: button.getBoundingClientRect(),
+    floating: menu,
+    offset: 6,
+    preferredPlacement: "bottom",
+  });
 }
 
 function dragHandleFor(): HTMLButtonElement {

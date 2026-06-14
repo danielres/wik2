@@ -17,6 +17,7 @@ import {
   type ElementNode,
   type LexicalEditor,
 } from "lexical";
+import { positionFloating } from "./floating";
 
 type ToolbarCommand =
   | "bold"
@@ -188,8 +189,11 @@ export function updateFloatingToolbar(
       return;
     }
 
-    toolbar.hidden = false;
-    toolbar.style.left = `${rect.left + rect.width / 2}px`;
-    toolbar.style.top = `${rect.top + window.scrollY}px`;
+    positionFloating({
+      anchorRect: rect,
+      floating: toolbar,
+      offset: 7,
+      preferredPlacement: "top",
+    });
   });
 }

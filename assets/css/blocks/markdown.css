@@ -162,6 +162,97 @@
   }
 }
 
+.LEXICAL_YOUTUBE_DIALOG {
+  max-width: min(28rem, calc(100vw - 2rem));
+  border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  padding: 0;
+  box-shadow: 0 24px 70px color-mix(in oklab, black 30%, transparent);
+
+  &::backdrop {
+    background: color-mix(in oklab, black 36%, transparent);
+  }
+}
+
+.LEXICAL_YOUTUBE_FORM {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.LEXICAL_YOUTUBE_TITLE {
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  font-weight: 700;
+}
+
+.LEXICAL_YOUTUBE_INPUT {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+  background: var(--color-base-100);
+  padding: 0.55rem 0.7rem;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  outline: none;
+
+  &:focus {
+    border-color: color-mix(in oklab, var(--color-accent) 60%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-accent) 55%, transparent);
+  }
+}
+
+.LEXICAL_YOUTUBE_ERROR {
+  color: var(--color-error);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.LEXICAL_YOUTUBE_ACTIONS {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.LEXICAL_YOUTUBE_BUTTON {
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  padding: 0.45rem 0.7rem;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+
+  &.secondary {
+    background: color-mix(in oklab, currentColor 4%, transparent);
+  }
+
+  &.primary {
+    background: var(--color-accent);
+    color: var(--color-accent-content);
+  }
+}
+
+.LEXICAL_YOUTUBE_EMBED {
+  width: min(100%, 42rem);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-base-200);
+  box-shadow: 0 8px 24px color-mix(in oklab, black 12%, transparent);
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+}
+
 .LEXICAL_DROP_INDICATOR {
   position: fixed;
   z-index: 69;
@@ -375,6 +466,10 @@
       transform: rotate(45deg);
     }
   }
+
+  iframe {
+    @apply aspect-video h-auto max-w-full;
+    @apply my-6;
+    @apply rounded-box border-2 border-black/50;
+  }
 }
-
-

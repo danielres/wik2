@@ -29,18 +29,25 @@ import {
   type HeadingTagType,
 } from "@lexical/rich-text";
 import {
+  $applyNodeReplacement,
   $createParagraphNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  DecoratorNode,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   createEditor,
+  type EditorConfig,
   type ElementNode,
+  type LexicalNode,
   type LexicalEditor,
   type NodeKey,
+  type SerializedLexicalNode,
+  type Spread,
 } from "lexical";
 
 type LexicalHook = {
@@ -53,13 +60,159 @@ type LexicalHook = {
   floatingToolbar?: HTMLDivElement;
   insertButton?: HTMLButtonElement;
   insertMenu?: HTMLDivElement;
+  pendingYoutubeInsertKey?: NodeKey;
   toolbar?: HTMLDivElement;
   unregister?: () => void;
   root?: HTMLDivElement;
   textarea?: HTMLTextAreaElement;
+  youtubeDialog?: HTMLDialogElement;
 };
 
-const markdownTransformers: Transformer[] = TRANSFORMERS.filter((transformer) => transformer !== CODE);
+type SerializedYouTubeNode = Spread<
+  {
+    videoId: string;
+  },
+  SerializedLexicalNode
+>;
+
+class YouTubeNode extends DecoratorNode<null> {
+  __videoId: string;
+
+  static getType(): string {
+    return "youtube";
+  }
+
+  static clone(node: YouTubeNode): YouTubeNode {
+    return new YouTubeNode(node.__videoId, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedLexicalNode): YouTubeNode {
+    const videoId =
+      "videoId" in serializedNode && typeof serializedNode.videoId === "string"
+        ? serializedNode.videoId
+        : "";
+
+    return new YouTubeNode(videoId);
+  }
+
+  constructor(videoId: string, key?: NodeKey) {
+    super(key);
+    this.__videoId = videoId;
+  }
+
+  exportJSON(): SerializedYouTubeNode {
+    return {
+      ...super.exportJSON(),
+      videoId: this.__videoId,
+    };
+  }
+
+  createDOM(_config: EditorConfig): HTMLElement {
+    const wrapper = document.createElement("div");
+    wrapper.className = "LEXICAL_YOUTUBE_EMBED";
+
+    const iframe = document.createElement("iframe");
+    iframe.width = "560";
+    iframe.height = "315";
+    iframe.src = `https://www.youtube-nocookie.com/embed/${this.__videoId}`;
+    iframe.frameBorder = "0";
+    iframe.allow =
+      "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+    iframe.allowFullscreen = true;
+    iframe.title = "YouTube video";
+
+    wrapper.appendChild(iframe);
+
+    return wrapper;
+  }
+
+  updateDOM(prevNode: YouTubeNode, dom: HTMLElement): boolean {
+    if (prevNode.__videoId === this.__videoId) return false;
+
+    const iframe = dom.querySelector("iframe");
+    if (iframe instanceof HTMLIFrameElement) {
+      iframe.src = `https://www.youtube-nocookie.com/embed/${this.__videoId}`;
+    }
+
+    return false;
+  }
+
+  decorate(): null {
+    return null;
+  }
+
+  getTextContent(): string {
+    return youtubeIframeMarkdown(this.__videoId);
+  }
+
+  isInline(): boolean {
+    return false;
+  }
+
+  isIsolated(): boolean {
+    return true;
+  }
+
+  getVideoId(): string {
+    return this.__videoId;
+  }
+}
+
+function $createYouTubeNode(videoId: string): YouTubeNode {
+  return $applyNodeReplacement(new YouTubeNode(videoId));
+}
+
+function $isYouTubeNode(node: LexicalNode | null | undefined): node is YouTubeNode {
+  return node instanceof YouTubeNode;
+}
+
+function youtubeIdFromIframeHtml(html: string): string | undefined {
+  const src = html.match(/\bsrc="([^"]+)"/i)?.[1];
+  if (!src) return undefined;
+
+  return youtubeIdFromUrl(src);
+}
+
+const youtubeTransformer: Transformer = {
+  dependencies: [YouTubeNode],
+  export: (node) => {
+    if (!$isYouTubeNode(node)) return null;
+
+    return youtubeIframeMarkdown(node.getVideoId());
+  },
+  handleImportAfterStartMatch: ({ lines, rootNode, startLineIndex }) => {
+    const iframeLines: string[] = [];
+
+    for (let index = startLineIndex; index < lines.length; index += 1) {
+      iframeLines.push(lines[index]);
+
+      if (/<\/iframe>\s*$/i.test(lines[index])) {
+        const videoId = youtubeIdFromIframeHtml(iframeLines.join("\n"));
+        if (!videoId) return null;
+
+        rootNode.append($createYouTubeNode(videoId));
+        return [true, index];
+      }
+    }
+
+    return null;
+  },
+  regExpEnd: /^<\/iframe>\s*$/i,
+  regExpStart: /^<iframe\b/i,
+  replace: (rootNode, _children, startMatch, _endMatch, linesInBetween) => {
+    const html = [startMatch[0], ...(linesInBetween || []), "</iframe>"].join("\n");
+    const videoId = youtubeIdFromIframeHtml(html);
+    if (!videoId) return false;
+
+    rootNode.append($createYouTubeNode(videoId));
+  },
+  type: "multiline-element",
+};
+
+const markdownTransformers: Transformer[] = [
+  youtubeTransformer,
+  ...TRANSFORMERS.filter((transformer) => transformer !== CODE),
+];
 const preserveNewLines = true;
 
 function textareaFor(editor: HTMLElement): HTMLTextAreaElement | undefined {
@@ -79,6 +232,51 @@ function dispatchTextareaInput(textarea: HTMLTextAreaElement, value: string): vo
 
 function normalizeExportedMarkdown(markdown: string): string {
   return markdown.replace(/^(\s*[-*+]\s+\[[ xX]\]\s+)\[[ xX]\]\s+/gm, "$1");
+}
+
+function youtubeIdFromUrl(input: string): string | undefined {
+  const trimmed = input.trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed;
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.replace(/^www\./, "");
+
+    if (host === "youtu.be") {
+      const id = url.pathname.split("/").filter(Boolean)[0];
+      return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : undefined;
+    }
+
+    if (
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "youtube-nocookie.com"
+    ) {
+      const watchId = url.searchParams.get("v");
+      if (watchId && /^[A-Za-z0-9_-]{11}$/.test(watchId)) return watchId;
+
+      const parts = url.pathname.split("/").filter(Boolean);
+      const id = parts[0] === "embed" || parts[0] === "shorts" ? parts[1] : undefined;
+      return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : undefined;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function youtubeIframeMarkdown(id: string): string {
+  return `<iframe
+    width="560"
+    height="315"
+    src="https://www.youtube-nocookie.com/embed/${id}"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen=""
+    title="YouTube video"
+>
+</iframe>`;
 }
 
 function button(label: string, title: string, onClick: () => void): HTMLButtonElement {
@@ -349,14 +547,17 @@ function insertButtonFor(): HTMLButtonElement {
   return button;
 }
 
-function insertBlockAfter(editor: LexicalEditor, key: NodeKey, createNode: () => ElementNode): void {
+function insertNodeAfter(editor: LexicalEditor, key: NodeKey, createNode: () => LexicalNode): void {
   editor.update(() => {
     const targetNode = $getNodeByKey(key);
     if (!targetNode) return;
 
     const newNode = createNode();
     targetNode.insertAfter(newNode);
-    newNode.selectStart();
+
+    if ($isElementNode(newNode)) {
+      newNode.selectStart();
+    }
   });
 }
 
@@ -365,7 +566,7 @@ function insertListBlockAfter(
   key: NodeKey,
   listType: "bullet" | "number" | "check",
 ): void {
-  insertBlockAfter(editor, key, () => {
+  insertNodeAfter(editor, key, () => {
     const list = $createListNode(listType);
     list.append($createListItemNode(listType === "check" ? false : undefined));
 
@@ -385,7 +586,89 @@ function insertMenuItem(label: string, onClick: () => void): HTMLButtonElement {
   return item;
 }
 
-function insertMenuFor(editor: LexicalEditor, getKey: () => NodeKey | undefined): HTMLDivElement {
+function youtubeDialogFor(
+  onSubmit: (videoId: string) => void,
+  onCancel: () => void,
+): HTMLDialogElement {
+  const dialog = document.createElement("dialog");
+  dialog.className = "LEXICAL_YOUTUBE_DIALOG";
+
+  const form = document.createElement("form");
+  form.method = "dialog";
+  form.className = "LEXICAL_YOUTUBE_FORM";
+
+  const title = document.createElement("div");
+  title.className = "LEXICAL_YOUTUBE_TITLE";
+  title.textContent = "YouTube embed";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.required = true;
+  input.placeholder = "https://www.youtube.com/watch?v=W-hwnJUT854";
+  input.className = "LEXICAL_YOUTUBE_INPUT";
+
+  const error = document.createElement("div");
+  error.className = "LEXICAL_YOUTUBE_ERROR";
+  error.hidden = true;
+
+  const actions = document.createElement("div");
+  actions.className = "LEXICAL_YOUTUBE_ACTIONS";
+
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "LEXICAL_YOUTUBE_BUTTON secondary";
+  cancel.textContent = "Cancel";
+  cancel.addEventListener("click", () => dialog.close());
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.className = "LEXICAL_YOUTUBE_BUTTON primary";
+  submit.textContent = "Insert";
+
+  actions.append(cancel, submit);
+  form.append(title, input, error, actions);
+  dialog.append(form);
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const id = youtubeIdFromUrl(input.value);
+    if (!id) {
+      error.textContent = "Enter a valid YouTube URL.";
+      error.hidden = false;
+      return;
+    }
+
+    error.hidden = true;
+    onSubmit(id);
+    input.value = "";
+    dialog.returnValue = "inserted";
+    dialog.close();
+  });
+
+  dialog.addEventListener("close", () => {
+    error.hidden = true;
+    if (dialog.returnValue !== "inserted") onCancel();
+    dialog.returnValue = "";
+  });
+
+  return dialog;
+}
+
+function openYoutubeDialog(dialog: HTMLDialogElement): void {
+  if (!dialog.open) dialog.showModal();
+
+  const input = dialog.querySelector("input");
+  if (input instanceof HTMLInputElement) {
+    requestAnimationFrame(() => input.focus());
+  }
+}
+
+function insertMenuFor(
+  editor: LexicalEditor,
+  getKey: () => NodeKey | undefined,
+  openYoutubeEmbed: () => void,
+): HTMLDivElement {
   const menu = document.createElement("div");
   menu.className = "LEXICAL_INSERT_MENU";
   menu.hidden = true;
@@ -394,7 +677,7 @@ function insertMenuFor(editor: LexicalEditor, getKey: () => NodeKey | undefined)
     const key = getKey();
     if (!key) return;
 
-    insertBlockAfter(editor, key, createNode);
+    insertNodeAfter(editor, key, createNode);
     menu.hidden = true;
   };
 
@@ -415,6 +698,10 @@ function insertMenuFor(editor: LexicalEditor, getKey: () => NodeKey | undefined)
     insertMenuItem("Bullet list", () => insertList("bullet")),
     insertMenuItem("Numbered list", () => insertList("number")),
     insertMenuItem("Task list", () => insertList("check")),
+    insertMenuItem("YouTube embed", () => {
+      menu.hidden = true;
+      openYoutubeEmbed();
+    }),
   );
 
   return menu;
@@ -491,7 +778,7 @@ export const Lexical = {
 
     const editor = createEditor({
       namespace: "WikMarkdownEditor",
-      nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode],
+      nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, YouTubeNode],
       onError(error) {
         throw error;
       },
@@ -503,11 +790,33 @@ export const Lexical = {
     this.floatingToolbar = floatingToolbarFor(editor);
     this.dragHandle = dragHandleFor();
     this.insertButton = insertButtonFor();
-    this.insertMenu = insertMenuFor(editor, () => this.activeBlockKey);
+    this.youtubeDialog = youtubeDialogFor(
+      (videoId) => {
+        const key = this.pendingYoutubeInsertKey;
+        this.pendingYoutubeInsertKey = undefined;
+        if (!key) return;
+
+        insertNodeAfter(editor, key, () => $createYouTubeNode(videoId));
+        hideBlockControls();
+      },
+      () => {
+        this.pendingYoutubeInsertKey = undefined;
+      },
+    );
+    this.insertMenu = insertMenuFor(editor, () => this.activeBlockKey, () => {
+      this.pendingYoutubeInsertKey = this.activeBlockKey;
+      if (this.youtubeDialog) openYoutubeDialog(this.youtubeDialog);
+    });
     this.dropIndicator = dropIndicatorFor();
     this.el.prepend(this.toolbar);
     document.body.appendChild(this.floatingToolbar);
-    document.body.append(this.insertButton, this.dragHandle, this.insertMenu, this.dropIndicator);
+    document.body.append(
+      this.insertButton,
+      this.dragHandle,
+      this.insertMenu,
+      this.dropIndicator,
+      this.youtubeDialog,
+    );
 
     const updateFloating = () => {
       if (this.root && this.floatingToolbar) {
@@ -734,6 +1043,7 @@ export const Lexical = {
     this.editor?.setRootElement(null);
     this.insertButton?.remove();
     this.insertMenu?.remove();
+    this.youtubeDialog?.remove();
     this.dragHandle?.remove();
     this.dropIndicator?.remove();
     this.floatingToolbar?.remove();

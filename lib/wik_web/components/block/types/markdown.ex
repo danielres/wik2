@@ -109,6 +109,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> mask_unresolved_canonical_tag_wikilinks()
     |> render_visible_wikilinks(scope, page_tree, member_id_to_username_map, tag_name_to_slug_map)
     |> render_markdown()
+    |> keep_youtube_iframes()
     |> restore_unresolved_canonical_tag_wikilinks()
     |> open_external_links_in_new_tab()
     |> patch_internal_wiki_links(scope)
@@ -124,7 +125,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
         tasklist: true
       ],
       render: [
-        escape: true
+        unsafe: true
       ],
       sanitize: markdown_sanitize_options()
     )
@@ -132,9 +133,31 @@ defmodule WikWeb.Components.Block.Types.Markdown do
 
   defp markdown_sanitize_options do
     MDEx.Document.default_sanitize_options()
-    |> Keyword.put(:add_tags, ["input"])
-    |> Keyword.put(:add_tag_attributes, %{"input" => ["checked", "disabled", "type"]})
+    |> Keyword.put(:add_tags, ["input", "iframe"])
+    |> Keyword.put(:add_tag_attributes, %{
+      "input" => ["checked", "disabled", "type"],
+      "iframe" => [
+        "allow",
+        "allowfullscreen",
+        "frameborder",
+        "height",
+        "src",
+        "title",
+        "width"
+      ]
+    })
   end
+
+  defp keep_youtube_iframes(html) do
+    Regex.replace(~r/<iframe\b[^>]*\bsrc="([^"]*)"[^>]*>.*?<\/iframe>/s, html, fn iframe, src ->
+      if youtube_embed_src?(src), do: iframe, else: ""
+    end)
+  end
+
+  defp youtube_embed_src?("https://www.youtube-nocookie.com/embed/" <> video_id),
+    do: Regex.match?(~r/^[A-Za-z0-9_-]{11}$/, video_id)
+
+  defp youtube_embed_src?(_src), do: false
 
   defp open_external_links_in_new_tab(html) do
     Regex.replace(~r/<a href="https?:\/\/[^"]*"/, html, fn link ->

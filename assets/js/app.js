@@ -27,7 +27,7 @@ import topbar from "../vendor/topbar";
 
 import { CapitalizeFirstLetter } from "./hooks/CapitalizeFirstLetter";
 import { Combobox } from "./hooks/Combobox";
-import { Lexical } from "./hooks/Lexical";
+import { LexicalEditor } from "./hooks/LexicalEditor.ts";
 import { MarkdownEditor } from "./hooks/MarkdownEditor";
 import { SlugifyInput } from "./hooks/SlugifyInput";
 import { TelegramLogin } from "./hooks/TelegramLogin";
@@ -48,7 +48,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ...colocatedHooks,
     CapitalizeFirstLetter,
     Combobox,
-    Lexical,
+    LexicalEditor,
     MarkdownEditor,
     SlugifyInput,
     TelegramLogin,

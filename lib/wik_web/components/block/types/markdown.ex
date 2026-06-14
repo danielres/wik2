@@ -91,6 +91,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       data-toolbar-template-id={"edit-block-markdown-toolbar-template-#{@block.id}"}
       data-floating-toolbar-template-id={"edit-block-markdown-floating-toolbar-template-#{@block.id}"}
       data-insert-menu-template-id={"edit-block-markdown-insert-menu-template-#{@block.id}"}
+      data-wikilink-completion-menu-template-id={"edit-block-markdown-wikilink-completion-menu-template-#{@block.id}"}
       data-youtube-dialog-template-id={"edit-block-markdown-youtube-dialog-template-#{@block.id}"}
       data-wikilink-paths={@wikilink_paths}
       data-member-wikilink-usernames={@wikilink_member_usernames}

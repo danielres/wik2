@@ -6,6 +6,7 @@ defmodule WikWeb.Components.UI.Lexical do
     <.toolbar block={@block} />
     <.floating_toolbar block={@block} />
     <.insert_menu block={@block} />
+    <.wikilink_completion_menu block={@block} />
     <.youtube_dialog block={@block} />
     """
   end
@@ -160,6 +161,24 @@ defmodule WikWeb.Components.UI.Lexical do
           </div>
         </form>
       </dialog>
+    </template>
+    """
+  end
+
+  def wikilink_completion_menu(assigns) do
+    ~H"""
+    <template id={"edit-block-markdown-wikilink-completion-menu-template-#{@block.id}"}>
+      <div class="LEXICAL_WIKILINK_MENU" role="listbox" hidden>
+        <button
+          type="button"
+          class="LEXICAL_WIKILINK_OPTION"
+          role="option"
+          data-wikilink-completion-option
+        >
+          <span class="LEXICAL_WIKILINK_LABEL" data-wikilink-completion-label></span>
+          <span class="LEXICAL_WIKILINK_KIND" data-wikilink-completion-kind></span>
+        </button>
+      </div>
     </template>
     """
   end

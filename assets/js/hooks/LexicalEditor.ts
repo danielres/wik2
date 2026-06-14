@@ -19,6 +19,11 @@ import {
 import { createBlockControls, type BlockControls } from "./LexicalEditor/block-controls";
 import { markdownTransformers, normalizeExportedMarkdown, preserveNewLines } from "./LexicalEditor/markdown";
 import { floatingToolbarFor, toolbarFor, updateFloatingToolbar } from "./LexicalEditor/toolbar";
+import {
+  createWikilinkCompletions,
+  parseWikilinkDataset,
+  type WikilinkCompletions,
+} from "./LexicalEditor/wikilink-completions";
 import { $createYouTubeNode, YouTubeNode } from "./LexicalEditor/youtube";
 import { openYoutubeDialog, youtubeDialogFor } from "./LexicalEditor/youtube-dialog";
 
@@ -32,6 +37,7 @@ type LexicalHook = {
   textarea?: HTMLTextAreaElement;
   toolbar?: HTMLDivElement;
   unregister?: () => void;
+  wikilinkCompletions?: WikilinkCompletions;
   youtubeDialog?: HTMLDialogElement;
 };
 
@@ -118,6 +124,14 @@ export const LexicalEditor = {
         if (this.youtubeDialog) openYoutubeDialog(this.youtubeDialog);
       },
     });
+    this.wikilinkCompletions = createWikilinkCompletions({
+      editor,
+      root: this.root,
+      templateId: requiredDatasetValue(this.el, "wikilinkCompletionMenuTemplateId"),
+      wikilinkPaths: parseWikilinkDataset(this.el, "wikilinkPaths"),
+      wikilinkTagNames: parseWikilinkDataset(this.el, "tagWikilinkNames"),
+      wikilinkUsernames: parseWikilinkDataset(this.el, "memberWikilinkUsernames"),
+    });
 
     this.el.prepend(this.toolbar);
     document.body.appendChild(this.floatingToolbar);
@@ -126,6 +140,7 @@ export const LexicalEditor = {
       this.blockControls.dragHandle,
       this.blockControls.insertMenu,
       this.blockControls.dropIndicator,
+      this.wikilinkCompletions.menu,
       this.youtubeDialog,
     );
 
@@ -133,6 +148,7 @@ export const LexicalEditor = {
       if (this.root && this.floatingToolbar) {
         updateFloatingToolbar(editor, this.root, this.floatingToolbar);
       }
+      this.wikilinkCompletions?.update();
     };
 
     const unregisters = [
@@ -167,6 +183,7 @@ export const LexicalEditor = {
       () => window.removeEventListener("resize", updateFloating),
       () => window.removeEventListener("scroll", updateFloating, true),
       () => this.blockControls?.unregister(),
+      () => this.wikilinkCompletions?.unregister(),
     ];
 
     window.addEventListener("resize", updateFloating);
@@ -196,6 +213,7 @@ export const LexicalEditor = {
     this.editor?.setRootElement(null);
     this.blockControls?.insertButton.remove();
     this.blockControls?.insertMenu.remove();
+    this.wikilinkCompletions?.menu.remove();
     this.youtubeDialog?.remove();
     this.blockControls?.dragHandle.remove();
     this.blockControls?.dropIndicator.remove();

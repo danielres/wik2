@@ -165,6 +165,56 @@
   }
 }
 
+.LEXICAL_WIKILINK_MENU {
+  position: fixed;
+  z-index: 73;
+  display: grid;
+  min-width: 12rem;
+  max-width: calc(100vw - 1rem);
+  max-height: min(18rem, calc(100vh - 1rem));
+  gap: 0.1rem;
+  overflow-y: auto;
+  border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-base-100) 96%, transparent);
+  padding: 0.25rem;
+  color: var(--color-base-content);
+  box-shadow: 0 12px 30px color-mix(in oklab, black 18%, transparent);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.LEXICAL_WIKILINK_OPTION {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.55rem;
+  text-align: left;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+
+  &:hover,
+  &.active {
+    background: color-mix(in oklab, var(--color-accent) 16%, transparent);
+  }
+}
+
+.LEXICAL_WIKILINK_LABEL {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.LEXICAL_WIKILINK_KIND {
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+}
+
 .LEXICAL_YOUTUBE_DIALOG {
   max-width: min(28rem, calc(100vw - 2rem));
   border: 1px solid color-mix(in oklab, currentColor 12%, transparent);

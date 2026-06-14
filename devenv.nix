@@ -40,6 +40,8 @@
     enable = true;
   };
 
+  languages.typescript.enable = true;
+
   services.adminer.enable = true;
 
   services.postgres = {

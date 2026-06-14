@@ -24,6 +24,38 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     assert document |> LazyHTML.query("ul li") |> Enum.count() == 2
   end
 
+  test "render supports mdex block directives" do
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{
+          id: "block-1",
+          data: %{"text" => ":::warning\nA paragraph.\n\n- item one\n- item two\n:::"}
+        },
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document |> LazyHTML.query(".warning") |> Enum.any?()
+    assert document |> LazyHTML.query(".warning li") |> Enum.count() == 2
+  end
+
+  test "render supports mdex task lists" do
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "- [ ] foo\n- [x] bar"}},
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document |> LazyHTML.query(~s(input[type="checkbox"][disabled])) |> Enum.count() == 2
+
+    assert document
+           |> LazyHTML.query(~s(input[type="checkbox"][checked][disabled]))
+           |> Enum.count() == 1
+  end
+
   test "render converts canonical wikilinks to wiki page links" do
     page_tree = page_tree_fixture()
     scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}

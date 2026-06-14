@@ -108,12 +108,32 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> Wikilinks.tags_to_tag_names(tag_id_to_name_map)
     |> mask_unresolved_canonical_tag_wikilinks()
     |> render_visible_wikilinks(scope, page_tree, member_id_to_username_map, tag_name_to_slug_map)
-    |> Earmark.as_html!(escape: true, compact_output: true)
-    |> HtmlSanitizeEx.markdown_html()
+    |> render_markdown()
     |> restore_unresolved_canonical_tag_wikilinks()
     |> open_external_links_in_new_tab()
     |> patch_internal_wiki_links(scope)
     |> mark_missing_wikilinks()
+  end
+
+  defp render_markdown(markdown) do
+    MDEx.to_html!(markdown,
+      extension: [
+        block_directive: true,
+        table: true,
+        strikethrough: true,
+        tasklist: true
+      ],
+      render: [
+        escape: true
+      ],
+      sanitize: markdown_sanitize_options()
+    )
+  end
+
+  defp markdown_sanitize_options do
+    MDEx.Document.default_sanitize_options()
+    |> Keyword.put(:add_tags, ["input"])
+    |> Keyword.put(:add_tag_attributes, %{"input" => ["checked", "disabled", "type"]})
   end
 
   defp open_external_links_in_new_tab(html) do

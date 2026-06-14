@@ -41,6 +41,7 @@ defmodule Wik.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:mdex, "~> 0.13"},
       {:oban, "~> 2.0"},
       {:oban_web, "~> 2.0"},
       {:ash_oban, "~> 0.8"},
@@ -51,7 +52,6 @@ defmodule Wik.MixProject do
       {:hunt_szymanski_diff, "~> 0.1.0"},
       {:cinder, "~> 0.12"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:earmark, "~> 1.4"},
       {:lex_sort_key, "~> 0.1.0"},
       {:mix_test_interactive, "~> 5.1", only: :dev, runtime: false},
       {:picosat_elixir, "~> 0.2"},

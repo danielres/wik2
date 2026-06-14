@@ -28,7 +28,6 @@ export type BlockControls = {
   dragHandle: HTMLButtonElement;
   dropIndicator: HTMLDivElement;
   hide: () => void;
-  insertButton: HTMLButtonElement;
   insertMenu: HTMLDivElement;
   unregister: () => void;
   update: () => void;
@@ -152,22 +151,9 @@ function positionDragHandle(editor: LexicalEditor, key: NodeKey, handle: HTMLEle
   handle.style.top = `${rect.top + rect.height / 2}px`;
 }
 
-function positionInsertButton(editor: LexicalEditor, key: NodeKey, button: HTMLElement): void {
-  const element = editor.getElementByKey(key);
-  if (!element) {
-    button.hidden = true;
-    return;
-  }
-
-  const rect = element.getBoundingClientRect();
-  button.hidden = false;
-  button.style.left = `${Math.max(8, rect.left - 60)}px`;
-  button.style.top = `${rect.top + rect.height / 2}px`;
-}
-
-function positionInsertMenu(button: HTMLElement, menu: HTMLElement): void {
+function positionInsertMenu(anchor: HTMLElement, menu: HTMLElement): void {
   positionFloating({
-    anchorRect: button.getBoundingClientRect(),
+    anchorRect: anchor.getBoundingClientRect(),
     floating: menu,
     offset: 6,
     preferredPlacement: "bottom",
@@ -185,20 +171,6 @@ function dragHandleFor(): HTMLButtonElement {
   handle.textContent = "::";
 
   return handle;
-}
-
-function insertButtonFor(): HTMLButtonElement {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "LEXICAL_INSERT_BUTTON";
-  button.hidden = true;
-  button.title = "Insert block";
-  button.ariaLabel = "Insert block";
-  button.textContent = "+";
-
-  button.addEventListener("mousedown", (event) => event.preventDefault());
-
-  return button;
 }
 
 function insertNodeAfter(editor: LexicalEditor, key: NodeKey, createNode: () => LexicalNode): void {
@@ -397,31 +369,29 @@ export function createBlockControls({
 }: BlockControlsOptions): BlockControls {
   let activeBlockKey: NodeKey | undefined;
   let dragKey: NodeKey | undefined;
+  let ignoreNextClick = false;
 
   const dragHandle = dragHandleFor();
-  const insertButton = insertButtonFor();
   const insertMenu = insertMenuFor(editor, () => activeBlockKey, insertMenuTemplateId, onYoutubeEmbed);
   const dropIndicator = dropIndicatorFor();
 
   const update = () => {
     if (activeBlockKey) {
-      positionInsertButton(editor, activeBlockKey, insertButton);
       positionDragHandle(editor, activeBlockKey, dragHandle);
       if (!insertMenu.hidden) {
-        positionInsertMenu(insertButton, insertMenu);
+        positionInsertMenu(dragHandle, insertMenu);
       }
     }
   };
 
   const hide = () => {
     dragHandle.hidden = true;
-    insertButton.hidden = true;
     insertMenu.hidden = true;
     activeBlockKey = undefined;
   };
 
   const controlsHovered = () =>
-    dragHandle.matches(":hover") || insertButton.matches(":hover") || insertMenu.matches(":hover");
+    dragHandle.matches(":hover") || insertMenu.matches(":hover");
 
   const insertMenuOpen = () => !insertMenu.hidden;
 
@@ -436,7 +406,6 @@ export function createBlockControls({
 
     activeBlockKey = key;
     positionDragHandle(editor, key, dragHandle);
-    positionInsertButton(editor, key, insertButton);
   };
 
   const hideIfIdle = () => {
@@ -452,14 +421,14 @@ export function createBlockControls({
     if (!activeBlockKey) return;
 
     insertMenu.hidden = !insertMenu.hidden;
-    if (!insertMenu.hidden) positionInsertMenu(insertButton, insertMenu);
+    if (!insertMenu.hidden) positionInsertMenu(dragHandle, insertMenu);
   };
 
   const closeInsertMenuOnOutsidePointerDown = (event: PointerEvent) => {
     if (!insertMenuOpen()) return;
 
     const target = event.target instanceof Node ? event.target : undefined;
-    if (target && (insertButton.contains(target) || insertMenu.contains(target))) {
+    if (target && (dragHandle.contains(target) || insertMenu.contains(target))) {
       return;
     }
 
@@ -517,10 +486,20 @@ export function createBlockControls({
   };
 
   const clearDragState = () => {
+    ignoreNextClick = true;
+    window.setTimeout(() => {
+      ignoreNextClick = false;
+    }, 0);
     dragKey = undefined;
     dragHandle.classList.remove("dragging");
     dropIndicator.hidden = true;
     update();
+  };
+
+  const handleDragHandleClick = () => {
+    if (ignoreNextClick) return;
+
+    toggleInsertMenu();
   };
 
   root.addEventListener("pointermove", handleRootPointerMove);
@@ -530,9 +509,8 @@ export function createBlockControls({
   root.addEventListener("drop", handleRootDrop);
   dragHandle.addEventListener("dragstart", handleDragStart);
   dragHandle.addEventListener("dragend", clearDragState);
+  dragHandle.addEventListener("click", handleDragHandleClick);
   dragHandle.addEventListener("mouseleave", hideIfIdle);
-  insertButton.addEventListener("click", toggleInsertMenu);
-  insertButton.addEventListener("mouseleave", hideIfIdle);
   insertMenu.addEventListener("mouseleave", hideIfIdle);
   document.addEventListener("pointerdown", closeInsertMenuOnOutsidePointerDown);
 
@@ -540,7 +518,6 @@ export function createBlockControls({
     dragHandle,
     dropIndicator,
     hide,
-    insertButton,
     insertMenu,
     unregister: () => {
       root.removeEventListener("pointermove", handleRootPointerMove);
@@ -550,9 +527,8 @@ export function createBlockControls({
       root.removeEventListener("drop", handleRootDrop);
       dragHandle.removeEventListener("dragstart", handleDragStart);
       dragHandle.removeEventListener("dragend", clearDragState);
+      dragHandle.removeEventListener("click", handleDragHandleClick);
       dragHandle.removeEventListener("mouseleave", hideIfIdle);
-      insertButton.removeEventListener("click", toggleInsertMenu);
-      insertButton.removeEventListener("mouseleave", hideIfIdle);
       insertMenu.removeEventListener("mouseleave", hideIfIdle);
       document.removeEventListener("pointerdown", closeInsertMenuOnOutsidePointerDown);
     },

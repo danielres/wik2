@@ -106,32 +106,6 @@
   }
 }
 
-.LEXICAL_INSERT_BUTTON {
-  @apply transition-all;
-  position: fixed;
-  z-index: 71;
-  width: 1.65rem;
-  height: 1.75rem;
-  transform: translateY(-50%);
-  border-radius: var(--radius-sm);
-  border: 1px solid color-mix(in oklab, currentColor 18%, transparent);
-  background: color-mix(in oklab, var(--color-base-100) 88%, transparent);
-  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
-  font-size: 1rem;
-  line-height: 1;
-  box-shadow: 0 4px 12px color-mix(in oklab, black 10%, transparent);
-
-  &:hover {
-    border-color: color-mix(in oklab, currentColor 16%, transparent);
-    background: color-mix(in oklab, var(--color-accent) 18%, transparent);
-    color: var(--color-base-content);
-  }
-
-  &[hidden] {
-    display: none;
-  }
-}
-
 .LEXICAL_INSERT_MENU {
   position: fixed;
   z-index: 72;

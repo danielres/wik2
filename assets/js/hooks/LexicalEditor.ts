@@ -172,7 +172,6 @@ export const LexicalEditor = {
     this.el.prepend(this.toolbar);
     document.body.appendChild(this.floatingToolbar);
     document.body.append(
-      this.blockControls.insertButton,
       this.blockControls.dragHandle,
       this.blockControls.insertMenu,
       this.blockControls.dropIndicator,
@@ -215,7 +214,6 @@ export const LexicalEditor = {
   destroyed(this: LexicalHook) {
     this.unregister?.();
     this.editor?.dispose();
-    this.blockControls?.insertButton.remove();
     this.blockControls?.insertMenu.remove();
     this.wikilinkCompletions?.menu.remove();
     this.youtubeDialog?.remove();

@@ -26,6 +26,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.41.0
         version: 6.41.0
+      '@lexical/extension':
+        specifier: ^0.45.0
+        version: 0.45.0
       '@lexical/history':
         specifier: ^0.45.0
         version: 0.45.0

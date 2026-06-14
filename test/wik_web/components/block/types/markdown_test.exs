@@ -256,6 +256,47 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     refute document |> LazyHTML.query("img") |> Enum.any?()
   end
 
+  test "render turns youtube embed image markdown into an iframe" do
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{
+          id: "block-1",
+          data: %{"text" => "![](https://www.youtube-nocookie.com/embed/W-hwnJUT854)"}
+        },
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document |> LazyHTML.query("iframe") |> length() == 1
+    refute document |> LazyHTML.query("img") |> Enum.any?()
+    assert html =~ ~s(src="https://www.youtube-nocookie.com/embed/W-hwnJUT854")
+  end
+
+  test "render strips raw iframes and non-youtube images" do
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{
+          id: "block-1",
+          data: %{
+            "text" => """
+            <iframe src="https://www.youtube-nocookie.com/embed/W-hwnJUT854"></iframe>
+            ![](https://www.youtube.com/embed/W-hwnJUT854)
+            ![](https://evil.example/image.png)
+            """
+          }
+        },
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    refute document |> LazyHTML.query("iframe") |> Enum.any?()
+    refute document |> LazyHTML.query("img") |> Enum.any?()
+    refute html =~ "youtube.com/embed"
+    refute html =~ "evil.example"
+  end
+
   test "form_fields keeps the markdown source editable" do
     owner = generate(user())
     space = generate(space(author: owner))

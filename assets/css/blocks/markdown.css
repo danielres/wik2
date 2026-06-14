@@ -291,19 +291,32 @@
 }
 
 .LEXICAL_YOUTUBE_EMBED {
-  width: min(100%, 42rem);
+  width: min(100%, 22rem);
+  margin-bottom: 1rem;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: var(--radius-lg);
   background: var(--color-base-200);
   box-shadow: 0 8px 24px color-mix(in oklab, black 12%, transparent);
+  user-select: none;
+
+  &.selected {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
 
   iframe {
     width: 100%;
     height: 100%;
     border: 0;
     display: block;
+    pointer-events: none;
   }
+}
+
+.LEXICAL_YOUTUBE_EMBED.selected {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 .LEXICAL_DROP_INDICATOR {
@@ -320,9 +333,10 @@
 }
 
 .LEXICAL_EDITOR {
-  min-height: 4rem;
+  min-height: 12rem;
   border-radius: var(--radius-lg);
   padding: 0.5rem;
+  padding-bottom: 6rem;
   outline: none;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -521,7 +535,8 @@
   }
 
   iframe {
-    @apply aspect-video h-auto max-w-full;
+    width: min(100%, 22rem);
+    @apply aspect-video h-auto;
     @apply my-6;
     @apply rounded-box border-2 border-black/50;
   }

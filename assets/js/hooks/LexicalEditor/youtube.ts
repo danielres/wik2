@@ -1,3 +1,4 @@
+import type { Transformer } from "@lexical/markdown";
 import {
   $applyNodeReplacement,
   DecoratorNode,
@@ -6,8 +7,8 @@ import {
   type NodeKey,
   type SerializedLexicalNode,
   type Spread,
+  type TextNode,
 } from "lexical";
-import type { Transformer } from "@lexical/markdown";
 
 type SerializedYouTubeNode = Spread<
   {
@@ -51,6 +52,8 @@ export class YouTubeNode extends DecoratorNode<null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const wrapper = document.createElement("div");
     wrapper.className = "LEXICAL_YOUTUBE_EMBED";
+    wrapper.contentEditable = "false";
+    wrapper.dataset.lexicalYoutubeKey = this.getKey();
 
     const iframe = document.createElement("iframe");
     iframe.width = "560";
@@ -60,6 +63,7 @@ export class YouTubeNode extends DecoratorNode<null> {
     iframe.allow =
       "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
     iframe.allowFullscreen = true;
+    iframe.tabIndex = -1;
     iframe.title = "YouTube video";
 
     wrapper.appendChild(iframe);
@@ -83,7 +87,7 @@ export class YouTubeNode extends DecoratorNode<null> {
   }
 
   getTextContent(): string {
-    return youtubeIframeMarkdown(this.__videoId);
+    return youtubeImageMarkdown(this.__videoId);
   }
 
   isInline(): boolean {
@@ -91,6 +95,10 @@ export class YouTubeNode extends DecoratorNode<null> {
   }
 
   isIsolated(): boolean {
+    return true;
+  }
+
+  isKeyboardSelectable(): boolean {
     return true;
   }
 
@@ -103,7 +111,7 @@ export function $createYouTubeNode(videoId: string): YouTubeNode {
   return $applyNodeReplacement(new YouTubeNode(videoId));
 }
 
-function $isYouTubeNode(node: LexicalNode | null | undefined): node is YouTubeNode {
+export function $isYouTubeNode(node: LexicalNode | null | undefined): node is YouTubeNode {
   return node instanceof YouTubeNode;
 }
 
@@ -139,24 +147,13 @@ export function youtubeIdFromUrl(input: string): string | undefined {
   return undefined;
 }
 
-export function youtubeIframeMarkdown(id: string): string {
-  return `<iframe
-    width="560"
-    height="315"
-    src="https://www.youtube-nocookie.com/embed/${id}"
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allowfullscreen=""
-    title="YouTube video"
->
-</iframe>`;
+export function youtubeImageMarkdown(id: string): string {
+  return `![](https://www.youtube-nocookie.com/embed/${id})`;
 }
 
-function youtubeIdFromIframeHtml(html: string): string | undefined {
-  const src = html.match(/\bsrc="([^"]+)"/i)?.[1];
-  if (!src) return undefined;
-
-  return youtubeIdFromUrl(src);
+function youtubeIdFromImageMarkdown(markdown: string): string | undefined {
+  const match = /^!\[[^\]\n]*\]\(([^()\s]+)\)$/.exec(markdown);
+  return match ? youtubeIdFromUrl(match[1]) : undefined;
 }
 
 export const youtubeTransformer: Transformer = {
@@ -164,33 +161,16 @@ export const youtubeTransformer: Transformer = {
   export: (node) => {
     if (!$isYouTubeNode(node)) return null;
 
-    return youtubeIframeMarkdown(node.getVideoId());
+    return youtubeImageMarkdown(node.getVideoId());
   },
-  handleImportAfterStartMatch: ({ lines, rootNode, startLineIndex }) => {
-    const iframeLines: string[] = [];
+  importRegExp: /!\[[^\]\n]*\]\([^()\s]+\)/,
+  regExp: /!\[[^\]\n]*\]\([^()\s]+\)$/,
+  replace: (textNode: TextNode, match) => {
+    const videoId = youtubeIdFromImageMarkdown(match[0]);
+    if (!videoId) return;
 
-    for (let index = startLineIndex; index < lines.length; index += 1) {
-      iframeLines.push(lines[index]);
-
-      if (/<\/iframe>\s*$/i.test(lines[index])) {
-        const videoId = youtubeIdFromIframeHtml(iframeLines.join("\n"));
-        if (!videoId) return null;
-
-        rootNode.append($createYouTubeNode(videoId));
-        return [true, index];
-      }
-    }
-
-    return null;
+    textNode.replace($createYouTubeNode(videoId));
   },
-  regExpEnd: /^<\/iframe>\s*$/i,
-  regExpStart: /^<iframe\b/i,
-  replace: (rootNode, _children, startMatch, _endMatch, linesInBetween) => {
-    const html = [startMatch[0], ...(linesInBetween || []), "</iframe>"].join("\n");
-    const videoId = youtubeIdFromIframeHtml(html);
-    if (!videoId) return false;
-
-    rootNode.append($createYouTubeNode(videoId));
-  },
-  type: "multiline-element",
+  trigger: ")",
+  type: "text-match",
 };

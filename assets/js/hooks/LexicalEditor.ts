@@ -1,21 +1,24 @@
-import { createEmptyHistoryState, registerHistory } from "@lexical/history";
+import {
+  buildEditorFromExtensions,
+  ClickAfterLastBlockExtension,
+  configExtension,
+  defineExtension,
+  type LexicalEditorWithDispose,
+} from "@lexical/extension";
 import { LinkNode } from "@lexical/link";
-import { ListItemNode, ListNode, registerCheckList, registerList } from "@lexical/list";
+import { ListItemNode, ListNode } from "@lexical/list";
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
-  registerMarkdownShortcuts,
 } from "@lexical/markdown";
-import { HeadingNode, QuoteNode, registerRichText } from "@lexical/rich-text";
+import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import {
-  $getNodeByKey,
-  SELECTION_CHANGE_COMMAND,
-  COMMAND_PRIORITY_LOW,
-  createEditor,
-  type LexicalEditor as LexicalEditorInstance,
+  mergeRegister,
+  type EditorState,
   type NodeKey,
 } from "lexical";
 
+import { markdownEditorBehaviorExtension } from "./LexicalEditor/behavior";
 import { createBlockControls, type BlockControls } from "./LexicalEditor/block-controls";
 import { markdownTransformers, normalizeExportedMarkdown, preserveNewLines } from "./LexicalEditor/markdown";
 import { floatingToolbarFor, toolbarFor, updateFloatingToolbar } from "./LexicalEditor/toolbar";
@@ -24,12 +27,13 @@ import {
   parseWikilinkDataset,
   type WikilinkCompletions,
 } from "./LexicalEditor/wikilink-completions";
-import { $createYouTubeNode, YouTubeNode } from "./LexicalEditor/youtube";
+import { $isYouTubeNode, YouTubeNode } from "./LexicalEditor/youtube";
 import { openYoutubeDialog, youtubeDialogFor } from "./LexicalEditor/youtube-dialog";
+import { INSERT_YOUTUBE_COMMAND } from "./LexicalEditor/youtube-insert-command";
 
 type LexicalHook = {
   blockControls?: BlockControls;
-  editor?: LexicalEditorInstance;
+  editor?: LexicalEditorWithDispose;
   el: HTMLElement;
   floatingToolbar?: HTMLDivElement;
   pendingYoutubeInsertKey?: NodeKey;
@@ -63,19 +67,38 @@ function dispatchTextareaInput(textarea: HTMLTextAreaElement, value: string): vo
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function createMarkdownEditor(): LexicalEditorInstance {
-  return createEditor({
-    namespace: "WikMarkdownEditor",
-    nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, YouTubeNode],
-    onError(error) {
-      throw error;
-    },
-  });
+const markdownEditorBaseExtension = defineExtension({
+  name: "WikMarkdownEditor",
+  namespace: "WikMarkdownEditor",
+  nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, YouTubeNode],
+  dependencies: [
+    configExtension(ClickAfterLastBlockExtension, {
+      $shouldInsertAfter: $isYouTubeNode,
+    }),
+  ],
+  onError(error) {
+    throw error;
+  },
+});
+
+type MarkdownEditorOptions = {
+  onChange: (editorState: EditorState) => void;
+  onSelectionChange: () => void;
+};
+
+function createMarkdownEditor(options: MarkdownEditorOptions): LexicalEditorWithDispose {
+  return buildEditorFromExtensions(
+    markdownEditorBaseExtension,
+    markdownEditorBehaviorExtension(options),
+  );
 }
 
 export const LexicalEditor = {
   mounted(this: LexicalHook) {
     this.textarea = textareaFor(this.el);
+    const initialMarkdown = this.textarea?.value || "";
+    let syncEditorState = false;
+
     this.root = document.createElement("div");
     this.root.className = "LEXICAL_EDITOR";
     this.root.contentEditable = "true";
@@ -83,18 +106,31 @@ export const LexicalEditor = {
     this.root.ariaMultiLine = "true";
     this.el.appendChild(this.root);
 
-    const editor = createMarkdownEditor();
+    let updateFloating = () => { };
+
+    const syncTextarea = (editorState: EditorState) => {
+      if (!syncEditorState) return;
+      if (!this.textarea) return;
+
+      editorState.read(() => {
+        dispatchTextareaInput(
+          this.textarea!,
+          normalizeExportedMarkdown(
+            $convertToMarkdownString(markdownTransformers, undefined, preserveNewLines),
+          ),
+        );
+      });
+
+      updateFloating();
+      this.blockControls?.update();
+    };
+
+    const editor = createMarkdownEditor({
+      onChange: syncTextarea,
+      onSelectionChange: () => updateFloating(),
+    });
     editor.setRootElement(this.root);
     this.editor = editor;
-
-    const insertYouTubeNode = (key: NodeKey, videoId: string) => {
-      editor.update(() => {
-        const targetNode = $getNodeByKey(key);
-        if (!targetNode) return;
-
-        targetNode.insertAfter($createYouTubeNode(videoId));
-      });
-    };
 
     this.toolbar = toolbarFor(editor, requiredDatasetValue(this.el, "toolbarTemplateId"));
     this.floatingToolbar = floatingToolbarFor(
@@ -108,7 +144,7 @@ export const LexicalEditor = {
         this.pendingYoutubeInsertKey = undefined;
         if (!key) return;
 
-        insertYouTubeNode(key, videoId);
+        editor.dispatchCommand(INSERT_YOUTUBE_COMMAND, { afterKey: key, videoId });
         this.blockControls?.hide();
       },
       () => {
@@ -144,73 +180,41 @@ export const LexicalEditor = {
       this.youtubeDialog,
     );
 
-    const updateFloating = () => {
+    updateFloating = () => {
       if (this.root && this.floatingToolbar) {
         updateFloatingToolbar(editor, this.root, this.floatingToolbar);
       }
       this.wikilinkCompletions?.update();
     };
 
-    const unregisters = [
-      registerRichText(editor),
-      registerList(editor),
-      registerCheckList(editor),
-      registerHistory(editor, createEmptyHistoryState(), 300),
-      registerMarkdownShortcuts(editor, markdownTransformers),
-      editor.registerUpdateListener(({ editorState }) => {
-        if (!this.textarea) return;
+    window.addEventListener("resize", updateFloating);
+    window.addEventListener("scroll", updateFloating, true);
 
-        editorState.read(() => {
-          dispatchTextareaInput(
-            this.textarea!,
-            normalizeExportedMarkdown(
-              $convertToMarkdownString(markdownTransformers, undefined, preserveNewLines),
-            ),
-          );
-        });
-
-        updateFloating();
-        this.blockControls?.update();
-      }),
-      editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        () => {
-          updateFloating();
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
+    this.unregister = mergeRegister(
       () => window.removeEventListener("resize", updateFloating),
       () => window.removeEventListener("scroll", updateFloating, true),
       () => this.blockControls?.unregister(),
       () => this.wikilinkCompletions?.unregister(),
-    ];
-
-    window.addEventListener("resize", updateFloating);
-    window.addEventListener("scroll", updateFloating, true);
-
-    this.unregister = () => {
-      unregisters
-        .slice()
-        .reverse()
-        .forEach((unregister) => unregister());
-    };
+    );
 
     editor.update(() => {
       $convertFromMarkdownString(
-        this.textarea?.value || "",
+        initialMarkdown,
         markdownTransformers,
         undefined,
         preserveNewLines,
       );
     });
+    syncEditorState = true;
+    updateFloating();
+    this.blockControls.update();
 
     requestAnimationFrame(() => this.root?.focus());
   },
 
   destroyed(this: LexicalHook) {
     this.unregister?.();
-    this.editor?.setRootElement(null);
+    this.editor?.dispose();
     this.blockControls?.insertButton.remove();
     this.blockControls?.insertMenu.remove();
     this.wikilinkCompletions?.menu.remove();

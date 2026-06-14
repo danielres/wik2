@@ -8,7 +8,6 @@ import { $setBlocksType } from "@lexical/selection";
 import {
   $createHeadingNode,
   $createQuoteNode,
-  type HeadingTagType,
 } from "@lexical/rich-text";
 import {
   $createParagraphNode,
@@ -18,6 +17,21 @@ import {
   type ElementNode,
   type LexicalEditor,
 } from "lexical";
+
+type ToolbarCommand =
+  | "bold"
+  | "bullets"
+  | "code"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "italic"
+  | "link"
+  | "numbers"
+  | "paragraph"
+  | "quote"
+  | "todo"
+  | "unlink";
 
 function button(label: string, title: string, onClick: () => void): HTMLButtonElement {
   const element = document.createElement("button");
@@ -41,38 +55,98 @@ function setBlockType(editor: LexicalEditor, createNode: () => ElementNode): voi
   });
 }
 
-function headingButton(editor: LexicalEditor, tag: HeadingTagType): HTMLButtonElement {
-  return button(tag.toUpperCase(), `Heading ${tag.slice(1)}`, () => {
-    setBlockType(editor, () => $createHeadingNode(tag));
-  });
-}
-
-export function toolbarFor(editor: LexicalEditor): HTMLDivElement {
-  const toolbar = document.createElement("div");
-  toolbar.className = "LEXICAL_TOOLBAR";
-
-  toolbar.append(
-    button("P", "Paragraph", () => setBlockType(editor, () => $createParagraphNode())),
-    headingButton(editor, "h1"),
-    headingButton(editor, "h2"),
-    headingButton(editor, "h3"),
-    button("Quote", "Quote", () => setBlockType(editor, () => $createQuoteNode())),
-    button("B", "Bold", () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")),
-    button("I", "Italic", () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")),
-    button("Code", "Inline code", () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")),
-    button("Bullets", "Bullet list", () =>
-      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined),
-    ),
-    button("Numbers", "Numbered list", () =>
-      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined),
-    ),
-    button("Todo", "Task list", () => editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined)),
-    button("Link", "Add link", () => {
+function runToolbarCommand(editor: LexicalEditor, command: ToolbarCommand): void {
+  switch (command) {
+    case "paragraph":
+      setBlockType(editor, () => $createParagraphNode());
+      break;
+    case "h1":
+    case "h2":
+    case "h3":
+      setBlockType(editor, () => $createHeadingNode(command));
+      break;
+    case "quote":
+      setBlockType(editor, () => $createQuoteNode());
+      break;
+    case "bold":
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
+      break;
+    case "italic":
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
+      break;
+    case "code":
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
+      break;
+    case "bullets":
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+      break;
+    case "numbers":
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+      break;
+    case "todo":
+      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
+      break;
+    case "link": {
       const url = window.prompt("Link URL");
       if (url) editor.update(() => $toggleLink(url));
-    }),
-    button("Unlink", "Remove link", () => editor.update(() => $toggleLink(null))),
-  );
+      break;
+    }
+    case "unlink":
+      editor.update(() => $toggleLink(null));
+      break;
+  }
+}
+
+function toolbarTemplateFor(templateId: string): HTMLTemplateElement {
+  const template = document.getElementById(templateId);
+
+  if (!(template instanceof HTMLTemplateElement)) {
+    throw new Error(`Missing Lexical toolbar template: ${templateId}`);
+  }
+
+  return template;
+}
+
+function toolbarCommandFor(element: Element): ToolbarCommand | undefined {
+  const command = element.getAttribute("data-command");
+
+  if (
+    command === "bold" ||
+    command === "bullets" ||
+    command === "code" ||
+    command === "h1" ||
+    command === "h2" ||
+    command === "h3" ||
+    command === "italic" ||
+    command === "link" ||
+    command === "numbers" ||
+    command === "paragraph" ||
+    command === "quote" ||
+    command === "todo" ||
+    command === "unlink"
+  ) {
+    return command;
+  }
+
+  return undefined;
+}
+
+export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {
+  const element = toolbarTemplateFor(templateId).content.firstElementChild?.cloneNode(true);
+
+  if (!(element instanceof HTMLDivElement)) {
+    throw new Error(`Invalid Lexical toolbar template: ${templateId}`);
+  }
+
+  const toolbar = element;
+
+  toolbar.querySelectorAll("[data-command]").forEach((element) => {
+    const command = toolbarCommandFor(element);
+    if (!command) return;
+
+    element.addEventListener("mousedown", (event) => event.preventDefault());
+    element.addEventListener("click", () => runToolbarCommand(editor, command));
+  });
 
   return toolbar;
 }

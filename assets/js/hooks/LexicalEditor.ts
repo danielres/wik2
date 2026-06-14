@@ -12,7 +12,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   COMMAND_PRIORITY_LOW,
   createEditor,
-  type LexicalEditor,
+  type LexicalEditor as LexicalEditorInstance,
   type NodeKey,
 } from "lexical";
 
@@ -24,7 +24,7 @@ import { openYoutubeDialog, youtubeDialogFor } from "./LexicalEditor/youtube-dia
 
 type LexicalHook = {
   blockControls?: BlockControls;
-  editor?: LexicalEditor;
+  editor?: LexicalEditorInstance;
   el: HTMLElement;
   floatingToolbar?: HTMLDivElement;
   pendingYoutubeInsertKey?: NodeKey;
@@ -34,6 +34,13 @@ type LexicalHook = {
   unregister?: () => void;
   youtubeDialog?: HTMLDialogElement;
 };
+
+function requiredDatasetValue(element: HTMLElement, name: string): string {
+  const value = element.dataset[name];
+  if (!value) throw new Error(`Missing Lexical editor data-${name}`);
+
+  return value;
+}
 
 function textareaFor(editor: HTMLElement): HTMLTextAreaElement | undefined {
   const textareaId = editor.dataset.textareaId;
@@ -50,7 +57,7 @@ function dispatchTextareaInput(textarea: HTMLTextAreaElement, value: string): vo
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function createMarkdownEditor(): LexicalEditor {
+function createMarkdownEditor(): LexicalEditorInstance {
   return createEditor({
     namespace: "WikMarkdownEditor",
     nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, YouTubeNode],
@@ -83,7 +90,7 @@ export const LexicalEditor = {
       });
     };
 
-    this.toolbar = toolbarFor(editor);
+    this.toolbar = toolbarFor(editor, requiredDatasetValue(this.el, "toolbarTemplateId"));
     this.floatingToolbar = floatingToolbarFor(editor);
     this.youtubeDialog = youtubeDialogFor(
       (videoId) => {

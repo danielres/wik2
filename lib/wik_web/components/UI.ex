@@ -5,6 +5,33 @@ defmodule WikWeb.Components.UI do
 
   slot :inner_block, required: true
 
+  def drawer(assigns) do
+    ~H"""
+    <div class="drawer sm:drawer-open">
+      <input id="my-drawer-1" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content">
+        {render_slot(@inner_block)}
+      </div>
+
+      <div class="drawer-side z-50">
+        <label for="my-drawer-1" aria-label="close sidebar" class="drawer-overlay"></label>
+
+        <ul class="menu bg-base-200 min-h-full w-fit p-4 pr-8">
+          <!-- Sidebar content here -->
+          <li>
+            <.link patch={~p"/docs"}> Home </.link>
+          </li>
+          <li>
+            <.link patch={~p"/docs/core-features"}>Core features</.link>
+          </li>
+        </ul>
+      </div>
+    </div>
+    """
+  end
+
+  slot :inner_block, required: true
+
   def separator(assigns) do
     ~H"""
     <div class="flex items-center opacity-20">

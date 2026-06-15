@@ -5,9 +5,12 @@ defmodule WikWeb.TagLive do
   alias AshPhoenix.Form
   alias Phoenix.LiveView
   alias Utils.Log
+  alias Wik.Blocks
   alias Wik.Tags
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
+  alias Wik.Wiki
+  alias WikWeb.Components.Block.Types.Markdown
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Tag, as: TagComponent
   alias WikWeb.Components.UI
@@ -28,9 +31,13 @@ defmodule WikWeb.TagLive do
     {:ok,
      socket
      |> assign(editable?: editable?)
+     |> assign(content_editing?: false)
      |> assign(editing?: false)
+     |> assign(page_tree: nil)
      |> assign(selected_member_tagging_sort: "interest_level")
      |> assign(tag: nil)
+     |> assign(tag_content_block: nil)
+     |> assign(tag_content_form: nil)
      |> assign(tag_graph: nil)
      |> assign(tag_form: nil)
      |> assign(taggings_query: nil)
@@ -42,10 +49,17 @@ defmodule WikWeb.TagLive do
     socket =
       case Tags.get_tag_by_slug(tag_slug, scope: socket.assigns.current_scope) do
         {:ok, tag} when not is_nil(tag) ->
+          scope = socket.assigns.current_scope
           tag_graph = Tags.load_tag_graph(socket.assigns.current_scope)
+          page_tree = Wiki.load_page_tree(scope)
+          tag_content_block = load_tag_content_block(tag, scope)
 
           socket
           |> assign(:tag, tag)
+          |> assign(:content_editing?, false)
+          |> assign(:page_tree, page_tree)
+          |> assign(:tag_content_block, tag_content_block)
+          |> assign(:tag_content_form, nil)
           |> assign(:tag_graph, tag_graph)
           |> assign(:taggings_query, Tags.tag_taggings_query(tag))
           |> assign(:show_descendants?, GraphQueries.children_for(tag_graph, tag) != [])
@@ -109,6 +123,55 @@ defmodule WikWeb.TagLive do
     end
   end
 
+  def handle_event("tag_content_edit", _params, socket) do
+    scope = socket.assigns.current_scope
+
+    case Tags.get_or_create_tag_content_block(socket.assigns.tag, scope: scope) do
+      {:ok, %Tag{} = tag, block} ->
+        {:noreply,
+         socket
+         |> assign(:tag, tag)
+         |> assign(:tag_content_block, block)
+         |> assign(:content_editing?, true)
+         |> assign_tag_content_form(block)}
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content block creation failed")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Couldn't start editing tag content")}
+    end
+  end
+
+  def handle_event("tag_content_cancel", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:content_editing?, false)
+     |> assign(:tag_content_form, nil)}
+  end
+
+  def handle_event("tag_content_submit", %{"block" => params}, socket) do
+    scope = socket.assigns.current_scope
+
+    case Tags.update_tag_content_block(socket.assigns.tag, params, scope: scope) do
+      {:ok, block} ->
+        {:noreply,
+         socket
+         |> assign(:tag_content_block, block)
+         |> assign(:content_editing?, false)
+         |> assign(:tag_content_form, nil)}
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content update failed")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Couldn't update tag content")
+         |> assign_tag_content_form(socket.assigns.tag_content_block, params)}
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -154,13 +217,68 @@ defmodule WikWeb.TagLive do
               form={@tag_form}
             />
 
-            <div
-              :if={not @editing? and @tag.description not in [nil, ""]}
-              class="space-y-3 rounded-box opacity-80"
-              data-testid="tag-page-description"
-            >
-              <div class="whitespace-pre-wrap">{@tag.description}</div>
-            </div>
+            <section :if={!@editing?} class="space-y-0" data-testid="tag-content">
+              <div class="flex items-center justify-between gap-3">
+                <h2 class="text-base font-semibold text-base-content/20 uppercase">
+                  <span class="sr-only">Description</span>
+                </h2>
+
+                <div>
+                  <UI.button_edit_soft
+                    :if={@editable? and !@content_editing?}
+                    class="absolute"
+                    data-testid="tag-content-edit"
+                    phx-click="tag_content_edit"
+                  />
+                </div>
+              </div>
+
+              <.form
+                :if={@content_editing? and @tag_content_block != nil and @tag_content_form != nil}
+                for={@tag_content_form}
+                id="tag-content-form"
+                phx-submit="tag_content_submit"
+              >
+                <Markdown.form_fields
+                  block={@tag_content_block}
+                  form={@tag_content_form}
+                  page_tree={@page_tree}
+                  scope={@current_scope}
+                />
+
+                <div class="mt-3 flex justify-end gap-2">
+                  <button
+                    class="btn btn-sm btn-ghost"
+                    data-testid="tag-content-cancel"
+                    phx-click="tag_content_cancel"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+
+                  <button class="btn btn-sm btn-accent btn-soft" data-testid="tag-content-submit">
+                    Save
+                  </button>
+                </div>
+              </.form>
+
+              <div class="">
+                <Markdown.render
+                  :if={!@content_editing? and @tag_content_block != nil}
+                  block={@tag_content_block}
+                  page_tree={@page_tree}
+                  scope={@current_scope}
+                />
+              </div>
+
+              <div
+                :if={!@content_editing? and @tag_content_block == nil}
+                class="rounded-box border border-dashed border-base-content/20 p-4 text-sm opacity-60"
+                data-testid="tag-content-empty"
+              >
+                No content yet.
+              </div>
+            </section>
           </section>
 
           <div
@@ -217,6 +335,26 @@ defmodule WikWeb.TagLive do
     socket
     |> assign(:editing?, false)
     |> assign(:tag_form, nil)
+  end
+
+  defp assign_tag_content_form(socket, block, params \\ %{}) do
+    form =
+      block
+      |> Blocks.block_to_form_params(params, socket.assigns.page_tree)
+      |> to_form(as: :block)
+
+    assign(socket, :tag_content_form, form)
+  end
+
+  defp load_tag_content_block(%Tag{} = tag, scope) do
+    case Tags.get_tag_content_block(tag, scope: scope) do
+      {:ok, block} ->
+        block
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content block load failed")
+        nil
+    end
   end
 
   defp tag_params(%{"name" => name} = params),

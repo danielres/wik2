@@ -13,6 +13,7 @@ defmodule Wik.Blocks do
   alias Wik.Blocks.BlockVersion
   alias Wik.Blocks.Types
   alias Wik.Repo
+  alias Wik.Tags.Tag
   alias Wik.Wiki.Page
 
   require Ash.Query
@@ -221,11 +222,14 @@ defmodule Wik.Blocks do
 
   def list_orphan_space_owned_blocks(%{id: space_id}, opts) do
     scope = Keyword.fetch!(opts, :scope)
+    tag_primary_block_ids = tag_primary_block_ids(space_id, scope)
 
     Block
     |> Ash.Query.filter(owner_space_id == ^space_id)
     |> Ash.read!(scope: scope, load: [:placements])
-    |> Enum.filter(&Enum.empty?(&1.placements))
+    |> Enum.filter(
+      &(Enum.empty?(&1.placements) and not MapSet.member?(tag_primary_block_ids, &1.id))
+    )
   end
 
   def destroy_orphan_space_owned_block(space, block_id, opts) do
@@ -355,6 +359,15 @@ defmodule Wik.Blocks do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp tag_primary_block_ids(space_id, scope) do
+    Tag
+    |> Query.filter(space_id == ^space_id and not is_nil(primary_block_id))
+    |> Query.select([:primary_block_id])
+    |> Ash.read!(scope: scope)
+    |> Enum.map(& &1.primary_block_id)
+    |> MapSet.new()
   end
 
   defp create_user_owned_block_in_transaction(block_attrs, opts) do

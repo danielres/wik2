@@ -10,6 +10,8 @@ defmodule Wik.Tags do
   alias Utils.Log
   alias Wik.Accounts.Space
   alias Wik.Accounts.Membership
+  alias Wik.Blocks
+  alias Wik.Blocks.Block
   alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
@@ -34,6 +36,49 @@ defmodule Wik.Tags do
 
   def update_tag(%Tag{} = tag, attrs, opts \\ []) do
     Ash.update(tag, attrs, opts)
+  end
+
+  def get_tag_content_block(%Tag{primary_block_id: nil}, _opts), do: {:ok, nil}
+
+  def get_tag_content_block(%Tag{primary_block_id: primary_block_id}, opts) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    Block
+    |> Query.filter(id == ^primary_block_id)
+    |> Ash.read_one(scope: scope)
+  end
+
+  def get_or_create_tag_content_block(%Tag{} = tag, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    with {:ok, nil} <- get_tag_content_block(tag, opts),
+         {:ok, block} <-
+           Blocks.create_space_owned_block(
+             %{id: tag.space_id},
+             %{type: :markdown},
+             scope: scope
+           ),
+         {:ok, tag} <-
+           Ash.update(
+             tag,
+             %{primary_block_id: block.id},
+             action: :set_primary_block,
+             scope: scope
+           ) do
+      {:ok, tag, block}
+    else
+      {:ok, %Block{} = block} ->
+        {:ok, tag, block}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def update_tag_content_block(%Tag{} = tag, params, opts \\ []) do
+    with {:ok, %Block{} = block} <- get_or_create_existing_tag_content_block(tag, opts) do
+      Blocks.update_block(block, params, opts)
+    end
   end
 
   def destroy_tag(tag_or_id, opts \\ [])
@@ -334,5 +379,12 @@ defmodule Wik.Tags do
     |> Query.filter(space_id == ^space_id and not is_nil(name))
     |> Query.sort(name: :asc)
     |> Ash.read!(authorize?: false, domain: __MODULE__, tenant: space)
+  end
+
+  defp get_or_create_existing_tag_content_block(%Tag{} = tag, opts) do
+    case get_or_create_tag_content_block(tag, opts) do
+      {:ok, _tag, %Block{} = block} -> {:ok, block}
+      {:error, error} -> {:error, error}
+    end
   end
 end

@@ -250,6 +250,25 @@ defmodule WikWeb.Components.UI do
     """
   end
 
+  attr :rest, :global
+  attr :class, :string, default: ""
+
+  def button_edit_soft(assigns) do
+    ~H"""
+    <button
+      class={[
+        "btn btn-xs btn-circle btn-accent btn-ghost",
+        "text-accent hover:text-base-content",
+        "opacity-60 hover:opacity-100",
+        @class
+      ]}
+      {@rest}
+    >
+      <.icon name="hero-pencil-micro" />
+    </button>
+    """
+  end
+
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
   def button_ok(assigns) do

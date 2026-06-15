@@ -35,7 +35,9 @@ export function markdownEditorBehaviorExtension({
         registerMarkdownShortcuts(editor, markdownTransformers),
         registerYouTubeInsert(editor),
         registerYouTubeEditing(editor),
-        editor.registerUpdateListener(({ editorState }) => {
+        editor.registerUpdateListener(({ dirtyElements, dirtyLeaves, editorState }) => {
+          if (dirtyElements.size === 0 && dirtyLeaves.size === 0) return;
+
           onChange(editorState);
         }),
         editor.registerCommand(

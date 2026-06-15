@@ -138,12 +138,15 @@ defmodule WikWeb.Components.UI.Lexical do
   end
 
   def youtube_dialog(assigns) do
+    assigns = assign(assigns, :form, to_form(%{"url" => ""}, as: :youtube))
+
     ~H"""
     <template id={"edit-block-markdown-youtube-dialog-template-#{@block.id}"}>
       <dialog class="LEXICAL_YOUTUBE_DIALOG">
-        <form method="dialog" class="LEXICAL_YOUTUBE_FORM">
+        <.form for={@form} method="dialog" class="LEXICAL_YOUTUBE_FORM">
           <div class="LEXICAL_YOUTUBE_TITLE">YouTube embed</div>
-          <input
+          <.input
+            field={@form[:url]}
             type="text"
             required
             placeholder="https://www.youtube.com/watch?v=W-hwnJUT854"
@@ -159,7 +162,7 @@ defmodule WikWeb.Components.UI.Lexical do
               Insert
             </button>
           </div>
-        </form>
+        </.form>
       </dialog>
     </template>
     """

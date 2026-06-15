@@ -4,6 +4,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   alias Wik.Accounts
   alias Wik.Tags
   alias Wik.Wiki.PageTree.Wikilinks
+  alias WikWeb.Components.UI
 
   attr :block, :map, required: true
   attr :page_tree, :map, required: true
@@ -80,11 +81,18 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       value={@form[:wikilink_tag_map].value || @wikilink_tag_map}
     />
 
+    <UI.Lexical.components block={@block} />
+
     <div
       id={"edit-block-markdown-editor-#{@block.id}"}
-      phx-hook="MarkdownEditor"
+      phx-hook="LexicalEditor"
       phx-update="ignore"
       data-textarea-id={"edit-block-markdown-textarea-#{@block.id}"}
+      data-toolbar-template-id={"edit-block-markdown-toolbar-template-#{@block.id}"}
+      data-floating-toolbar-template-id={"edit-block-markdown-floating-toolbar-template-#{@block.id}"}
+      data-insert-menu-template-id={"edit-block-markdown-insert-menu-template-#{@block.id}"}
+      data-wikilink-completion-menu-template-id={"edit-block-markdown-wikilink-completion-menu-template-#{@block.id}"}
+      data-youtube-dialog-template-id={"edit-block-markdown-youtube-dialog-template-#{@block.id}"}
       data-wikilink-paths={@wikilink_paths}
       data-member-wikilink-usernames={@wikilink_member_usernames}
       data-tag-wikilink-names={@wikilink_tag_names}
@@ -109,6 +117,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> mask_unresolved_canonical_tag_wikilinks()
     |> render_visible_wikilinks(scope, page_tree, member_id_to_username_map, tag_name_to_slug_map)
     |> render_markdown()
+    |> render_youtube_embed_images()
     |> restore_unresolved_canonical_tag_wikilinks()
     |> open_external_links_in_new_tab()
     |> patch_internal_wiki_links(scope)
@@ -124,7 +133,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
         tasklist: true
       ],
       render: [
-        escape: true
+        unsafe: true
       ],
       sanitize: markdown_sanitize_options()
     )
@@ -132,8 +141,51 @@ defmodule WikWeb.Components.Block.Types.Markdown do
 
   defp markdown_sanitize_options do
     MDEx.Document.default_sanitize_options()
-    |> Keyword.put(:add_tags, ["input"])
-    |> Keyword.put(:add_tag_attributes, %{"input" => ["checked", "disabled", "type"]})
+    |> Keyword.put(:add_tags, ["input", "img"])
+    |> Keyword.put(:add_tag_attributes, %{
+      "input" => ["checked", "disabled", "type"],
+      "img" => ["alt", "src", "title"]
+    })
+  end
+
+  @img_tag_regex ~r/<img\b[^>]*>/i
+  @src_attr_regex ~r/\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
+
+  defp render_youtube_embed_images(html) do
+    Regex.replace(@img_tag_regex, html, fn img ->
+      case img |> html_src() |> youtube_embed_id() do
+        nil -> ""
+        video_id -> youtube_iframe(video_id)
+      end
+    end)
+  end
+
+  defp html_src(html) do
+    case Regex.run(@src_attr_regex, html, capture: :all_but_first) do
+      nil -> nil
+      captures -> Enum.find(captures, &(is_binary(&1) and byte_size(&1) > 0))
+    end
+  end
+
+  defp youtube_embed_id("https://www.youtube-nocookie.com/embed/" <> video_id) do
+    if Regex.match?(~r/^[A-Za-z0-9_-]{11}$/, video_id), do: video_id
+  end
+
+  defp youtube_embed_id(_src), do: nil
+
+  defp youtube_iframe(video_id) do
+    """
+    <iframe
+      width="560"
+      height="315"
+      src="https://www.youtube-nocookie.com/embed/#{video_id}"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen=""
+      title="YouTube video"
+    >
+    </iframe>
+    """
   end
 
   defp open_external_links_in_new_tab(html) do

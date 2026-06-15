@@ -2,6 +2,7 @@ defmodule WikWeb.DocsLive do
   use WikWeb, :live_view
 
   alias WikWeb.Docs.Pages
+  alias WikWeb.Components.UI
 
   @pages [
     Pages.Index,
@@ -42,6 +43,18 @@ defmodule WikWeb.DocsLive do
     </header>
 
     <UI.drawer>
+      <:aside>
+        <ul class="menu bg-base-200 min-h-full w-fit p-4 pr-8">
+          <!-- Sidebar content here -->
+          <li>
+            <.link patch={~p"/docs"}> Home </.link>
+          </li>
+          <li>
+            <.link patch={~p"/docs/core-features"}>Core features</.link>
+          </li>
+        </ul>
+      </:aside>
+
       <main>
         <.container class="py-8">
           <div class="prose">

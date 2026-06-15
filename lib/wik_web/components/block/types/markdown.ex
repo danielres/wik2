@@ -163,7 +163,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   defp html_src(html) do
     case Regex.run(@src_attr_regex, html, capture: :all_but_first) do
       nil -> nil
-      captures -> Enum.find(captures, &(&1 != ""))
+      captures -> Enum.find(captures, &(is_binary(&1) and byte_size(&1) > 0))
     end
   end
 

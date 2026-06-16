@@ -500,7 +500,7 @@ defmodule WikWeb.Layouts.Space do
           <li>
             <.link
               class={[
-                @view == "tree" and "!opacity-80 pointer-events-none"
+                @view == "wiki/home" and "!opacity-80 pointer-events-none"
               ]}
               navigate={~p"/#{@scope.tenant.slug}/wiki/home"}
             >

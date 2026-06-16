@@ -25,8 +25,8 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
           />
         </div>
         <div class="text-sm">
-          <span :if={not @timeline.show_external?}>Show external</span>
-          <span :if={@timeline.show_external?}>External calendars:</span>
+          <span :if={not @timeline.show_external?}>External calendars</span>
+          <span :if={@timeline.show_external?} class="text-base-content">External calendars</span>
         </div>
       </label>
 

@@ -42,6 +42,7 @@ defmodule Wik.MixProject do
   defp deps do
     [
       {:mdex, "~> 0.13"},
+      {:mdex_gfm, "~> 0.2.0"},
       {:oban, "~> 2.0"},
       {:oban_web, "~> 2.0"},
       {:ash_oban, "~> 0.8"},

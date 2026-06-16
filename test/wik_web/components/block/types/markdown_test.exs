@@ -169,6 +169,22 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
            |> Enum.any?()
   end
 
+  test "render autolinks bare external urls" do
+    url = "https://wik2.fly.dev/berlin-dancers/tags/fusion"
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => url}},
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(~s(a[href="#{url}"][target="_blank"][rel="noopener noreferrer"]))
+           |> Enum.any?()
+  end
+
   test "render does not open internal wiki links in a new tab" do
     page_tree = page_tree_fixture()
     scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}

@@ -127,6 +127,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   defp render_markdown(markdown) do
     MDEx.to_html!(markdown,
       extension: [
+        autolink: true,
         block_directive: true,
         table: true,
         strikethrough: true,

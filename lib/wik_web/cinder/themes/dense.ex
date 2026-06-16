@@ -174,7 +174,7 @@ defmodule WikWeb.Cinder.Themes.Dense do
   # List
   set :list_container_class, "space-y-1"
   set :list_item_class, ""
-
+  set :empty_class, "text-xs opacity-50 text-center pt-4"
   set :list_item_clickable_class, ""
 
   set :sort_container_class, ""

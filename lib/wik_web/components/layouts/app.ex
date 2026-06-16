@@ -24,12 +24,10 @@ defmodule WikWeb.Layouts.App do
     <div class="grid grid-rows-[auto_1fr_auto] min-h-screen">
       <.app_header {assigns} />
 
-      <div class="mb-8">
-        {render_slot(@inner_block)}
-      </div>
-    </div>
+      {render_slot(@inner_block)}
 
-    <.app_footer {assigns} />
+      <.app_footer scope={@scope} class="bg-base-300 py-4 border-t border-base-content/20" />
+    </div>
 
     <Components.Modal.render
       :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
@@ -208,10 +206,13 @@ defmodule WikWeb.Layouts.App do
     """
   end
 
+  attr :scope, :map, required: true
+  attr :class, :string, default: ""
+
   def app_footer(assigns) do
     ~H"""
-    <footer>
-      <div class="">
+    <footer class={@class}>
+      <div>
         <div class="hidden">
           <%= if @scope.actor do %>
             Privacy and moderation requests can be submitted <.link
@@ -227,7 +228,7 @@ defmodule WikWeb.Layouts.App do
         </div>
 
         <div class={[
-          "flex justify-center gap-6 text-xs mt-4 mb-1",
+          "flex justify-center gap-6 text-xs",
           "[&_a]:flex [&_a]:items-center [&_a]:gap-1",
           "[&_a]:opacity-30 hover:[&_a]:opacity-70 [&_a:hover]:opacity-100 [&_a]:transition",
           "[&_.icon]:size-3"

@@ -3,7 +3,6 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
-  attr :side, :string, default: "left"
   attr :id, :string, default: "drawer"
   slot :inner_block, required: true
   slot :aside, required: true

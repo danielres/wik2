@@ -30,7 +30,7 @@ defmodule WikWeb.Components.MembershipTagging do
       data-testid="member-taggings-table"
     >
       <div
-        class="mb-3 flex items-center justify-end gap-2"
+        class="mb-1 flex items-center justify-end gap-2"
         data-testid="member-tagging-sort-controls"
       >
         <button
@@ -236,7 +236,7 @@ defmodule WikWeb.Components.MembershipTagging do
       data-testid="tag-member-taggings-table"
     >
       <div
-        class="mb-3 flex items-center justify-end gap-2"
+        class="mb-1 flex items-center justify-end gap-2"
         data-testid="tag-member-tagging-sort-controls"
       >
         <button
@@ -362,7 +362,7 @@ defmodule WikWeb.Components.MembershipTagging do
             </div>
             <div
               :if={present?(tagging.description)}
-              class="text-xs/4 opacity-60 pr-2 space-y-2 max-w-prose-lg mt-3"
+              class="text-xs/4 opacity-60 pr-2 space-y-2 max-w-prose-lg mt-3 line-clamp-2"
               data-testid={"tag-member-tagging-description-#{tagging.id}"}
             >
               <.description_chunks description={tagging.description} />
@@ -662,7 +662,7 @@ defmodule WikWeb.Components.MembershipTagging do
     assigns = assign(assigns, :chunks, split_description(assigns.description))
 
     ~H"""
-    <div :for={chunk <- @chunks}>{chunk}</div>
+    <div :for={chunk <- @chunks} class="break-all">{chunk}</div>
     """
   end
 

@@ -276,6 +276,7 @@ defmodule WikWeb.Components.UI do
         "opacity-60 hover:opacity-100",
         @class
       ]}
+      type="button"
       {@rest}
     >
       <.icon name="hero-pencil-micro" />

@@ -30,11 +30,6 @@ defmodule WikWeb.DocsLive do
       "px-4"
     ]}>
       <h1 class="flex items-center gap-2">
-        <label for="my-drawer-1" class="btn drawer-button btn-xs sm:hidden">
-          <.icon name="hero-bars-3-micro" />
-          <span class="sr-only">Open drawer</span>
-        </label>
-
         <.link patch={~p"/docs"} class="text-xl">
           Wik docs
         </.link>

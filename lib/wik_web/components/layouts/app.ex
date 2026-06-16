@@ -24,7 +24,7 @@ defmodule WikWeb.Layouts.App do
     <div class="grid grid-rows-[auto_1fr_auto] min-h-screen">
       <.app_header {assigns} />
 
-      {render_slot(@inner_block)}
+      <div>{render_slot(@inner_block)}</div>
 
       <.app_footer scope={@scope} class="bg-base-300 py-4 border-t border-base-content/20" />
     </div>

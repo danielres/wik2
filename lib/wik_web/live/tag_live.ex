@@ -5,11 +5,13 @@ defmodule WikWeb.TagLive do
   alias AshPhoenix.Form
   alias Phoenix.LiveView
   alias Utils.Log
+  alias Wik.Accounts
   alias Wik.Blocks
   alias Wik.Tags
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
   alias Wik.Wiki
+  alias WikWeb.Components
   alias WikWeb.Components.Block.Types.Markdown
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Tag, as: TagComponent
@@ -36,8 +38,12 @@ defmodule WikWeb.TagLive do
      |> assign(page_tree: nil)
      |> assign(selected_member_tagging_sort: "interest_level")
      |> assign(tag: nil)
+     |> assign(tag_content_author_membership: nil)
      |> assign(tag_content_block: nil)
      |> assign(tag_content_form: nil)
+     |> assign(tag_content_selected_text: nil)
+     |> assign(tag_content_version: nil)
+     |> assign(tag_content_version_count: 0)
      |> assign(tag_graph: nil)
      |> assign(tag_form: nil)
      |> assign(taggings_query: nil)
@@ -58,8 +64,8 @@ defmodule WikWeb.TagLive do
           |> assign(:tag, tag)
           |> assign(:content_editing?, false)
           |> assign(:page_tree, page_tree)
-          |> assign(:tag_content_block, tag_content_block)
           |> assign(:tag_content_form, nil)
+          |> assign_tag_content_block(tag_content_block)
           |> assign(:tag_graph, tag_graph)
           |> assign(:taggings_query, Tags.tag_taggings_query(tag))
           |> assign(:show_descendants?, GraphQueries.children_for(tag_graph, tag) != [])
@@ -131,7 +137,7 @@ defmodule WikWeb.TagLive do
         {:noreply,
          socket
          |> assign(:tag, tag)
-         |> assign(:tag_content_block, block)
+         |> assign_tag_content_block(block)
          |> assign(:content_editing?, true)
          |> assign_tag_content_form(block)}
 
@@ -158,7 +164,7 @@ defmodule WikWeb.TagLive do
       {:ok, block} ->
         {:noreply,
          socket
-         |> assign(:tag_content_block, block)
+         |> assign_tag_content_block(block)
          |> assign(:content_editing?, false)
          |> assign(:tag_content_form, nil)}
 
@@ -169,6 +175,37 @@ defmodule WikWeb.TagLive do
          socket
          |> put_flash(:error, "Couldn't update tag content")
          |> assign_tag_content_form(socket.assigns.tag_content_block, params)}
+    end
+  end
+
+  def handle_event("tag_content_history_navigate", %{"direction" => direction}, socket)
+      when direction in ["prev", "next"] do
+    block = socket.assigns.tag_content_block
+    version = socket.assigns.tag_content_version
+    scope = socket.assigns.current_scope
+
+    result =
+      case {direction, block, version} do
+        {"prev", block, version} when not is_nil(block) and not is_nil(version) ->
+          Blocks.load_version_prev(block, version, scope: scope)
+
+        {"next", block, version} when not is_nil(block) and not is_nil(version) ->
+          Blocks.load_version_next(block, version, scope: scope)
+
+        _other ->
+          {:ok, nil}
+      end
+
+    case result do
+      {:ok, nil} ->
+        {:noreply, socket}
+
+      {:ok, version} ->
+        {:noreply, assign_tag_content_selected_version(socket, block, version, scope)}
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content history navigation failed")
+        {:noreply, socket}
     end
   end
 
@@ -208,6 +245,95 @@ defmodule WikWeb.TagLive do
         </:actions>
 
         <:aside :if={not @editing?}>
+          <section>
+            <div class="flex justify-between items-baseline">
+              <UI.panel_title>
+                <div>Updated</div>
+              </UI.panel_title>
+
+              <div>
+                <button
+                  type="button"
+                  data-testid="tag-content-history-prev"
+                  phx-click="tag_content_history_navigate"
+                  phx-value-direction="prev"
+                  class={[
+                    "hover:opacity-100 transition-opacity",
+                    "cursor-pointer",
+                    tag_content_prev_disabled?(@tag_content_version) &&
+                      "pointer-events-none opacity-20",
+                    !tag_content_prev_disabled?(@tag_content_version) &&
+                      "opacity-50 hover:opacity-100"
+                  ]}
+                >
+                  <span class="sr-only">prev</span>
+                  <.icon name="hero-chevron-left-micro" />
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="tag-content-history-next"
+                  phx-click="tag_content_history_navigate"
+                  phx-value-direction="next"
+                  class={[
+                    "transition-opacity",
+                    "cursor-pointer",
+                    tag_content_next_disabled?(@tag_content_version, @tag_content_version_count) &&
+                      "pointer-events-none opacity-20",
+                    !tag_content_next_disabled?(@tag_content_version, @tag_content_version_count) &&
+                      "opacity-50 hover:opacity-100"
+                  ]}
+                >
+                  <span class="sr-only">next</span>
+                  <.icon name="hero-chevron-right-micro" />
+                </button>
+
+                <div
+                  :if={@tag_content_block != nil}
+                  class="badge badge-sm badge-neutral"
+                >
+                  <span class="opacity-60">v.</span>
+                  <span data-testid="tag-content-version" class="text-xs opacity-60">
+                    {tag_content_version_label(@tag_content_version, @tag_content_version_count)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              :if={@tag_content_block == nil}
+              class="text-sm opacity-60"
+              data-testid="tag-content-history-empty"
+            >
+              No content yet.
+            </div>
+
+            <div
+              :if={@tag_content_block != nil}
+              class="text-xs flex gap-2 justify-between"
+              data-testid="tag-content-history"
+            >
+              <div data-testid="tag-content-author">
+                <Components.User.identity
+                  :if={@tag_content_author_membership}
+                  avatar_size="xs"
+                  class="gap-2"
+                  link?
+                  membership={@tag_content_author_membership}
+                />
+                <span :if={!@tag_content_author_membership} class="opacity-60">Unknown</span>
+              </div>
+
+              <div data-testid="tag-content-updated-at">
+                <Components.Time.relative_and_precise
+                  datetime={tag_content_timestamp(@tag_content_version, @tag_content_block)}
+                  direction="left"
+                  ago?
+                />
+              </div>
+            </div>
+          </section>
+
           <section>
             <UI.panel_title>Members</UI.panel_title>
 
@@ -297,7 +423,7 @@ defmodule WikWeb.TagLive do
               <div class="flex gap-2 items-baseline justify-between">
                 <Markdown.render
                   :if={!@content_editing? and @tag_content_block != nil}
-                  block={@tag_content_block}
+                  block={tag_content_render_block(@tag_content_block, @tag_content_selected_text)}
                   page_tree={@page_tree}
                   scope={@current_scope}
                 />
@@ -333,6 +459,22 @@ defmodule WikWeb.TagLive do
     |> assign(:tag_form, nil)
   end
 
+  defp assign_tag_content_block(socket, nil) do
+    assign(socket,
+      tag_content_author_membership: nil,
+      tag_content_block: nil,
+      tag_content_version: nil,
+      tag_content_selected_text: nil,
+      tag_content_version_count: 0
+    )
+  end
+
+  defp assign_tag_content_block(socket, block) do
+    socket
+    |> assign(:tag_content_block, block)
+    |> assign_tag_content_history(block)
+  end
+
   defp assign_tag_content_form(socket, block, params \\ %{}) do
     form =
       block
@@ -340,6 +482,75 @@ defmodule WikWeb.TagLive do
       |> to_form(as: :block)
 
     assign(socket, :tag_content_form, form)
+  end
+
+  defp assign_tag_content_history(socket, block) do
+    scope = socket.assigns.current_scope
+
+    socket
+    |> assign(:tag_content_version_count, count_tag_content_versions(block, scope))
+    |> assign_tag_content_latest_version(block, scope)
+  end
+
+  defp assign_tag_content_latest_version(socket, block, scope) do
+    case Blocks.load_version_latest(block, scope: scope) do
+      {:ok, nil} ->
+        assign(socket,
+          tag_content_author_membership: nil,
+          tag_content_selected_text: nil,
+          tag_content_version: nil
+        )
+
+      {:ok, version} ->
+        assign_tag_content_selected_version(socket, block, version, scope)
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content latest version load failed")
+
+        assign(socket,
+          tag_content_author_membership: nil,
+          tag_content_selected_text: nil,
+          tag_content_version: nil
+        )
+    end
+  end
+
+  defp assign_tag_content_selected_version(socket, block, version, scope) do
+    case Blocks.version_to_text(block, version, scope: scope) do
+      {:ok, text} ->
+        assign(socket,
+          tag_content_author_membership:
+            load_tag_content_author_membership(scope, version.author),
+          tag_content_selected_text: text,
+          tag_content_version: version
+        )
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content version text load failed")
+        socket
+    end
+  end
+
+  defp count_tag_content_versions(block, scope) do
+    case Blocks.count_versions(block, scope: scope) do
+      {:ok, count} ->
+        count
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content version count failed")
+        0
+    end
+  end
+
+  defp load_tag_content_author_membership(scope, author) do
+    case Accounts.get_membership(scope.tenant, author) do
+      {:ok, membership} ->
+        membership
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag content author membership load failed")
+        nil
+    end
   end
 
   defp load_tag_content_block(%Tag{} = tag, scope) do
@@ -357,4 +568,28 @@ defmodule WikWeb.TagLive do
     do: Map.put(params, "slug", Utils.Slugify.generate(name))
 
   defp tag_params(params), do: params
+
+  defp tag_content_version_label(nil, _count), do: "None"
+
+  defp tag_content_version_label(version, count) when count > 0 do
+    "#{version.revision}/#{count}"
+  end
+
+  defp tag_content_version_label(version, _count), do: "#{version.revision}"
+
+  defp tag_content_timestamp(%{inserted_at: inserted_at}, _block), do: inserted_at
+  defp tag_content_timestamp(_version, %{updated_at: updated_at}), do: updated_at
+
+  defp tag_content_prev_disabled?(nil), do: true
+  defp tag_content_prev_disabled?(version), do: version.revision <= 1
+
+  defp tag_content_next_disabled?(nil, _count), do: true
+  defp tag_content_next_disabled?(_version, count) when count <= 0, do: true
+  defp tag_content_next_disabled?(version, count), do: version.revision >= count
+
+  defp tag_content_render_block(block, text) when is_binary(text) do
+    %{block | data: %{"text" => text}}
+  end
+
+  defp tag_content_render_block(block, _text), do: block
 end

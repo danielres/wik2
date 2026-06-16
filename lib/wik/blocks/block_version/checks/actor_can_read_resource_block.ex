@@ -1,28 +1,39 @@
 defmodule Wik.Blocks.BlockVersion.Checks.ActorCanReadResourceBlock do
-  use Ash.Policy.SimpleCheck
+  import Ecto.Query, only: [from: 2]
+
+  use Ash.Policy.FilterCheck
+
+  alias Wik.Accounts.Space.Checks.Access
+  alias Wik.Blocks.Block
+  alias Wik.Blocks.BlockPlacement
+  alias Wik.Repo
+
+  require Ash.Expr
 
   @impl true
   def describe(_opts), do: "actor can read the current resource block"
 
   @impl true
-  def match?(nil, _context, _opts), do: {:ok, false}
+  def filter(nil, _context, _opts), do: false
 
-  def match?(actor, %{subject: version}, _opts) do
-    with {:ok, block} <- load_resource_block(version),
-         true <- Ash.can?({block, :read}, actor) do
-      {:ok, true}
-    else
-      false -> {:ok, false}
-      {:error, error} -> {:error, error}
-    end
+  def filter(actor, _context, _opts) do
+    Ash.Expr.expr(block_id in ^readable_block_ids(Access.accessible_space_ids(actor.id)))
   end
 
-  defp load_resource_block(%{block: %Ash.NotLoaded{}} = version) do
-    case Ash.load(version, :block, authorize?: false) do
-      {:ok, %{block: block}} -> {:ok, block}
-      {:error, error} -> {:error, error}
-    end
-  end
+  defp readable_block_ids([]), do: []
 
-  defp load_resource_block(%{block: block}), do: {:ok, block}
+  defp readable_block_ids(space_ids) do
+    placed_block_ids =
+      from(placement in BlockPlacement,
+        where: placement.space_id in ^space_ids,
+        select: placement.block_id
+      )
+
+    from(block in Block,
+      where: block.owner_space_id in ^space_ids or block.id in subquery(placed_block_ids),
+      select: block.id,
+      distinct: true
+    )
+    |> Repo.all()
+  end
 end

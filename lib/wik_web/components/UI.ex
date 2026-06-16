@@ -11,7 +11,7 @@ defmodule WikWeb.Components.UI do
   def drawer(assigns) do
     ~H"""
     <div class="drawer drawer-end md:drawer-open md:z-20">
-      <input id={@id} type="checkbox" class="drawer-toggle" />
+      <input id={@id} type="checkbox" class="drawer-toggle" phx-update="ignore" />
       <div class="drawer-content">
         <WikWeb.Layouts.container>
           <div class="flex justify-end pt-2 h-0">

@@ -52,7 +52,7 @@ defmodule WikWeb.Layouts.Space do
     <UI.drawer>
       <:aside :if={@aside != []}>
         <div class={[
-          "ml-6 min-h-full",
+          "min-h-full",
           "min-h-full bg-base-300/80 backdrop-blur",
           "w-74",
           "space-y-3 py-4 px-4",

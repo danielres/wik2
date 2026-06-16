@@ -514,6 +514,40 @@
     }
   }
 
+  .table_wrapper {
+    @apply overflow-x-auto;
+    @apply rounded;
+    @apply border border-base-content/10;
+    @apply my-8;
+
+    table {
+      @apply table border-collapse ;
+
+      td, th {
+        @apply border-b;
+      }
+
+      td, th { 
+        @apply border-base-content/10;
+
+        &:not(:last-child){
+          @apply border-r ;
+        }
+      }
+
+      thead {
+        @apply bg-base-300/40;
+      }
+
+      tbody { 
+        @apply bg-base-300/20;
+        tr:last-child {
+          td, th { @apply border-b-0;}
+        } 
+      }
+    }
+  }
+
   iframe {
     width: min(100%, 22rem);
     @apply aspect-video h-auto;

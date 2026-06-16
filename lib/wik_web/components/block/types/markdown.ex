@@ -118,6 +118,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> render_visible_wikilinks(scope, page_tree, member_id_to_username_map, tag_name_to_slug_map)
     |> render_markdown()
     |> render_youtube_embed_images()
+    |> wrap_tables()
     |> restore_unresolved_canonical_tag_wikilinks()
     |> open_external_links_in_new_tab()
     |> patch_internal_wiki_links(scope)
@@ -125,7 +126,9 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   end
 
   defp render_markdown(markdown) do
-    MDEx.to_html!(markdown,
+    MDEx.new(markdown: markdown)
+    |> MDExGFM.attach()
+    |> MDEx.to_html!(
       extension: [
         autolink: true,
         block_directive: true,
@@ -147,6 +150,14 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       "input" => ["checked", "disabled", "type"],
       "img" => ["alt", "src", "title"]
     })
+  end
+
+  @table_regex ~r/<table(?:\s[^>]*)?>.*?<\/table>/s
+
+  defp wrap_tables(html) do
+    Regex.replace(@table_regex, html, fn table ->
+      ~s(<div class="table_wrapper">#{table}</div>)
+    end)
   end
 
   @img_tag_regex ~r/<img\b[^>]*>/i

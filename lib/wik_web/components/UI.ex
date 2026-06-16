@@ -4,19 +4,40 @@ defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
   attr :side, :string, default: "left"
+  attr :id, :string, default: "drawer"
   slot :inner_block, required: true
   slot :aside, required: true
 
   def drawer(assigns) do
     ~H"""
-    <div class="drawer drawer-end md:drawer-open z-40">
-      <input id="my-drawer-1" type="checkbox" class="drawer-toggle" />
+    <div class="drawer drawer-end md:drawer-open md:z-20">
+      <input id={@id} type="checkbox" class="drawer-toggle" />
       <div class="drawer-content">
+        <WikWeb.Layouts.container>
+          <div class="flex justify-end pt-2 h-0">
+            <label
+              :if={@aside != []}
+              for={@id}
+              class={[
+                "btn btn-xs btn-square ",
+                "opacity-80 hover:opacity-100",
+                "md:hidden"
+              ]}
+            >
+              <.icon name="hero-bars-3" />
+            </label>
+          </div>
+        </WikWeb.Layouts.container>
         {render_slot(@inner_block)}
       </div>
 
       <div class="drawer-side z-50">
-        <label for="my-drawer-1" aria-label="close sidebar" class="drawer-overlay"></label>
+        <label
+          for={@id}
+          aria-label="close sidebar"
+          class="drawer-overlay"
+        >
+        </label>
 
         {render_slot(@aside)}
       </div>

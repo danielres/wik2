@@ -14,6 +14,7 @@ defmodule WikWeb.Layouts do
   embed_templates "layouts/*"
 
   alias WikWeb.Components
+  alias WikWeb.Components.UI
   alias WikWeb.TenantContext
 
   @doc """
@@ -93,6 +94,87 @@ defmodule WikWeb.Layouts do
     """
   end
 
+  def space_menu(assigns) do
+    ~H"""
+    <div class="item flex gap-0.5">
+      <.link
+        :if={@view != "wiki/home" and @view != "tree"}
+        patch={"/#{@scope.tenant.slug}/wiki"}
+      >
+        <span>Wiki</span>
+      </.link>
+
+      <button
+        :if={@view == "wiki/home" or @view == "tree"}
+        class={[
+          (@view == "wiki/home" or @view == "tree") and "active",
+          "flex items-center gap-0.5",
+          "dropdown dropdown-start",
+          "cursor-pointer"
+        ]}
+        type="button"
+      >
+        <span>Wiki</span>
+        <.icon name="hero-chevron-down" class="size-2 -mr-3" />
+
+        <ul
+          tabindex="-1"
+          class={[
+            "dropdown-content",
+            "bg-base-300 rounded-lg",
+            "border border-base-content/15",
+            "shadow",
+            "menu menu-sm",
+            "min-w-36 mt-3"
+          ]}
+        >
+          <li>
+            <.link
+              class={[
+                @view == "tree" and "!opacity-80 pointer-events-none"
+              ]}
+              navigate={~p"/#{@scope.tenant.slug}/wiki/home"}
+            >
+              Home
+            </.link>
+          </li>
+          <li>
+            <.link
+              class={[
+                @view == "tree" and "!opacity-80 pointer-events-none"
+              ]}
+              navigate={~p"/#{@scope.tenant.slug}/tree"}
+            >
+              All pages
+            </.link>
+          </li>
+        </ul>
+      </button>
+    </div>
+
+    <.link
+      patch={"/#{@scope.tenant.slug}/tags"}
+      class={["item", @view == "tags" and "active"]}
+    >
+      <span>Tags</span>
+    </.link>
+
+    <.link
+      patch={"/#{@scope.tenant.slug}/events"}
+      class={["item", @view == "events" and "active"]}
+    >
+      <span>Events</span>
+    </.link>
+
+    <.link
+      patch={"/#{@scope.tenant.slug}/members"}
+      class={["item", @view == "members" and "active"]}
+    >
+      <span>Members</span>
+    </.link>
+    """
+  end
+
   attr :scope, :map,
     default: %{actor: nil, tenant: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
@@ -102,13 +184,13 @@ defmodule WikWeb.Layouts do
   attr :editing?, :boolean, default: false
   slot :inner_block, required: true
   slot :actions, required: false
+  slot :aside, required: false
 
   def space(assigns) do
     ~H"""
     <div class={[
-      "sticky top-0 z-50",
+      "sticky top-0 z-30",
       "bg-base-300",
-      "mb-12",
       "py-1",
       "border-y border-base-content/10 shadow"
     ]}>
@@ -125,80 +207,7 @@ defmodule WikWeb.Layouts do
           "[&_a.active]:opacity-100",
           @editing? and "[&>.item]:hidden"
         ]}>
-          <div class="item flex gap-0.5">
-            <.link
-              :if={@view != "wiki/home" and @view != "tree"}
-              patch={"/#{@scope.tenant.slug}/wiki"}
-            >
-              <span>Wiki</span>
-            </.link>
-
-            <button
-              :if={@view == "wiki/home" or @view == "tree"}
-              class={[
-                (@view == "wiki/home" or @view == "tree") and "active",
-                "flex items-center gap-0.5",
-                "dropdown dropdown-start",
-                "cursor-pointer"
-              ]}
-              type="button"
-            >
-              <span>Wiki</span>
-              <.icon name="hero-chevron-down" class="size-2 -mr-3" />
-
-              <ul
-                tabindex="-1"
-                class={[
-                  "dropdown-content",
-                  "bg-base-300 rounded-lg",
-                  "border border-base-content/15",
-                  "shadow",
-                  "menu menu-sm",
-                  "min-w-36 mt-3"
-                ]}
-              >
-                <li>
-                  <.link
-                    class={[
-                      @view == "tree" and "!opacity-80 pointer-events-none"
-                    ]}
-                    navigate={~p"/#{@scope.tenant.slug}/wiki/home"}
-                  >
-                    Home
-                  </.link>
-                </li>
-                <li>
-                  <.link
-                    class={[
-                      @view == "tree" and "!opacity-80 pointer-events-none"
-                    ]}
-                    navigate={~p"/#{@scope.tenant.slug}/tree"}
-                  >
-                    All pages
-                  </.link>
-                </li>
-              </ul>
-            </button>
-          </div>
-
-          <.link patch={"/#{@scope.tenant.slug}/tags"} class={["item", @view == "tags" and "active"]}>
-            <span>Tags</span>
-          </.link>
-
-          <.link
-            patch={"/#{@scope.tenant.slug}/events"}
-            class={["item", @view == "events" and "active"]}
-          >
-            <span>Events</span>
-          </.link>
-
-          <.link
-            patch={"/#{@scope.tenant.slug}/members"}
-            class={["item", @view == "members" and "active"]}
-          >
-            <span>Members</span>
-          </.link>
-
+          <.space_menu {assigns} />
           <div :if={@actions != []} class="ml-auto flex items-center gap-2">
             {render_slot(@actions)}
           </div>
@@ -206,32 +215,51 @@ defmodule WikWeb.Layouts do
       </.container>
     </div>
 
-    <div
-      :if={@presences |> length() > 1}
-      class={[
-        "absolute",
-        "right-2 sm:right-2",
-        "w-[50svw]",
-        "flex items-end",
-        "z-40",
-        "pt-0.5",
-        "tooltip tooltip-left"
-      ]}
-      data-tip={ "#{@presences |> length() } members online" }
-    >
-      <div class={[
-        "flex gap-1",
-        "[&>:first-child]:ml-auto",
-        "w-[50svw]",
-        "overflow-x-auto"
-      ]}>
-        <Components.Presences.avatars presences={@presences} tenant={@scope.tenant} />
-      </div>
-    </div>
+    <UI.drawer>
+      <:aside :if={@aside != []}>
+        <div class={[
+          "ml-6 min-h-full",
+          "min-h-full bg-base-300/80 backdrop-blur",
+          "w-74",
+          "space-y-3 py-4 px-4",
+          "border-l border-base-content/20",
+          "[&>*]:p-4",
+          "[&>*]:bg-base-100",
+          "[&>*]:border",
+          "[&>*]:border-base-content/10",
+          "[&>*]:rounded-box"
+        ]}>
+          {render_slot(@aside)}
+        </div>
+      </:aside>
 
-    <.container>
-      {render_slot(@inner_block)}
-    </.container>
+      <div
+        :if={@presences |> length() > 1}
+        class={[
+          "absolute",
+          "right-2 sm:right-2",
+          "w-[50svw]",
+          "flex items-end",
+          "z-40",
+          "pt-0.5",
+          "tooltip tooltip-left"
+        ]}
+        data-tip={ "#{@presences |> length() } members online" }
+      >
+        <div class={[
+          "flex gap-1",
+          "[&>:first-child]:ml-auto",
+          "w-[50svw]",
+          "overflow-x-auto"
+        ]}>
+          <Components.Presences.avatars presences={@presences} tenant={@scope.tenant} />
+        </div>
+      </div>
+
+      <.container class="mt-8 max-w-3xl z-0">
+        {render_slot(@inner_block)}
+      </.container>
+    </UI.drawer>
     """
   end
 
@@ -252,21 +280,21 @@ defmodule WikWeb.Layouts do
     """
   end
 
-  attr :width_class, :string, default: "max-w-3xl"
+  def container_class, do: "px-2 sm:pl-6 sm:pr-4 lg:pl-8 "
+
   attr :class, :string, default: ""
   slot :inner_block, required: true
 
   def container(assigns) do
     ~H"""
-    <main class="px-2 sm:px-6 lg:px-8">
+    <div class={container_class()}>
       <div class={[
-        "mx-auto space-y-4",
-        @width_class,
+        "max-md:mx-auto space-y-4",
         @class
       ]}>
         {render_slot(@inner_block)}
       </div>
-    </main>
+    </div>
     """
   end
 
@@ -281,7 +309,7 @@ defmodule WikWeb.Layouts do
   def app(assigns) do
     ~H"""
     <div class="grid grid-rows-[auto_1fr_auto] min-h-screen">
-      <header class="navbar px-2 sm:pl-8 sm:pr-6 bg-base-300/80 py-2 sm:py-3 min-h-0">
+      <header class={["navbar bg-base-300/40 py-2 sm:py-3 min-h-0", container_class()]}>
         <div class="flex-1 flex items-center gap-0">
           <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
             <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />

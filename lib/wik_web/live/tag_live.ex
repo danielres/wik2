@@ -184,14 +184,54 @@ defmodule WikWeb.TagLive do
       <Layouts.space presences={@presences} scope={@current_scope} view="tags">
         <:actions :if={@editable?}>
           <%= if @editing? do %>
-            <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
           <% else %>
-            <UI.button_unlock
+            <button
+              :if={@editable? and !@content_editing?}
               phx-click="toggle_edit_mode"
               data-testid="tag-edit-mode-toggle"
+              class={[
+                "btn btn-xs btn-circle btn-accent btn-ghost",
+                "text-accent hover:text-base-content",
+                "opacity-60 hover:opacity-100"
+              ]}
+            >
+              <.icon name="hero-cog-6-tooth-micro" class="size-3.5" />
+            </button>
+
+            <UI.button_edit_soft
+              :if={@editable? and !@content_editing?}
+              class=""
+              data-testid="tag-content-edit"
+              phx-click="tag_content_edit"
             />
           <% end %>
         </:actions>
+
+        <:aside :if={not @editing?}>
+          <section>
+            <UI.panel_title>Members</UI.panel_title>
+
+            <MembershipTagging.list_for_tag
+              active_sort={@selected_member_tagging_sort}
+              query={@taggings_query}
+              scope={@current_scope}
+              tag={@tag}
+            />
+          </section>
+
+          <section>
+            <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} />
+          </section>
+
+          <section :if={false}>
+            <TagComponent.descendants
+              :if={@show_descendants?}
+              graph={@tag_graph}
+              scope={@current_scope}
+              tag={@tag}
+            />
+          </section>
+        </:aside>
 
         <div :if={@tag} class="space-y-6" data-testid="tag-page">
           <UI.page_head :if={!@editing?}>
@@ -206,8 +246,7 @@ defmodule WikWeb.TagLive do
 
             <UI.page_title>{@tag.name}</UI.page_title>
           </UI.page_head>
-
-          <section class="mb-12">
+          <section class="">
             <TagComponent.form
               :if={@editing? and @tag_form != nil}
               action_label="Update tag"
@@ -217,20 +256,13 @@ defmodule WikWeb.TagLive do
               form={@tag_form}
             />
 
-            <section :if={!@editing?} class="space-y-0" data-testid="tag-content">
+            <section :if={!@editing?} class="" data-testid="tag-content">
               <div class="flex items-center justify-between gap-3">
                 <h2 class="text-base font-semibold text-base-content/20 uppercase">
                   <span class="sr-only">Description</span>
                 </h2>
 
-                <div>
-                  <UI.button_edit_soft
-                    :if={@editable? and !@content_editing?}
-                    class="absolute"
-                    data-testid="tag-content-edit"
-                    phx-click="tag_content_edit"
-                  />
-                </div>
+                <div></div>
               </div>
 
               <.form
@@ -262,7 +294,7 @@ defmodule WikWeb.TagLive do
                 </div>
               </.form>
 
-              <div class="">
+              <div class="flex gap-2 items-baseline justify-between">
                 <Markdown.render
                   :if={!@content_editing? and @tag_content_block != nil}
                   block={@tag_content_block}
@@ -280,42 +312,6 @@ defmodule WikWeb.TagLive do
               </div>
             </section>
           </section>
-
-          <div
-            :if={not @editing?}
-            class={[
-              "grid sm:grid-cols-[3fr_1fr]",
-              "[&>section:first-child]:border-base-content/20",
-              "[&>section:first-child]:max-sm:border-b",
-              "[&>section:first-child]:max-sm:pb-8",
-              "[&>section:first-child]:max-sm:mb-8",
-              "[&>section:first-child]:sm:border-r",
-              "[&>section:first-child]:sm:pr-4",
-              "[&>section:first-child]:sm:mr-4"
-            ]}
-          >
-            <section>
-              <h2 class="text-xl font-semibold mb-2">Members</h2>
-
-              <MembershipTagging.list_for_tag
-                active_sort={@selected_member_tagging_sort}
-                query={@taggings_query}
-                scope={@current_scope}
-                tag={@tag}
-              />
-            </section>
-
-            <section class="space-y-4">
-              {# <TagComponent.parents scope={@current_scope} tag={@tag} />}
-              <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} />
-              <TagComponent.descendants
-                :if={@show_descendants?}
-                graph={@tag_graph}
-                scope={@current_scope}
-                tag={@tag}
-              />
-            </section>
-          </div>
         </div>
       </Layouts.space>
     </Layouts.app>

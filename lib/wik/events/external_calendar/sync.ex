@@ -39,7 +39,10 @@ defmodule Wik.Events.ExternalCalendar.Sync do
 
   def sync_all_subscriptions(opts \\ []) do
     Repo.all(ExternalCalendarSubscription)
-    |> Task.async_stream(&sync_subscription_safely(&1, opts), timeout: :infinity)
+    |> Task.async_stream(&sync_subscription_safely(&1, opts),
+      max_concurrency: 1,
+      timeout: :infinity
+    )
     |> Stream.run()
 
     :ok

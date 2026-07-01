@@ -1,11 +1,12 @@
 defmodule Wik.Blocks.BlockVersion.Checks.ActorCanReadResourceBlock do
-  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2]
 
   use Ash.Policy.FilterCheck
 
   alias Wik.Accounts.Space.Checks.Access
   alias Wik.Blocks.Block
   alias Wik.Blocks.BlockPlacement
+  alias Wik.Repo
 
   require Ash.Expr
 
@@ -21,21 +22,18 @@ defmodule Wik.Blocks.BlockVersion.Checks.ActorCanReadResourceBlock do
         false
 
       space_ids ->
-        Ash.Expr.expr(block_id in ^subquery(readable_block_ids(space_ids)))
+        Ash.Expr.expr(block_id in ^readable_block_ids(space_ids))
     end
   end
 
   defp readable_block_ids(space_ids) do
-    placed_block_ids =
-      from(placement in BlockPlacement,
-        where: placement.space_id in ^space_ids,
-        select: placement.block_id
-      )
-
     from(block in Block,
-      where: block.owner_space_id in ^space_ids or block.id in subquery(placed_block_ids),
+      left_join: placement in BlockPlacement,
+      on: placement.block_id == block.id and placement.space_id in ^space_ids,
+      where: block.owner_space_id in ^space_ids or not is_nil(placement.id),
       select: block.id,
       distinct: true
     )
+    |> Repo.all()
   end
 end

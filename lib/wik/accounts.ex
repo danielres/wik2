@@ -56,12 +56,22 @@ defmodule Wik.Accounts do
     |> Ash.read(authorize?: false, domain: __MODULE__)
   end
 
-  def space_slug_to_id(space_slug) do
-    case get_space_by_slug(space_slug, authorize?: false) do
-      {:ok, %{id: id}} -> id
-      {:error, _reason} -> nil
+  def space_slug_to_id(%Space{id: id}), do: id
+
+  def space_slug_to_id(space_slug_or_id) when is_binary(space_slug_or_id) do
+    case Ecto.UUID.cast(space_slug_or_id) do
+      {:ok, space_id} ->
+        space_id
+
+      :error ->
+        case get_space_by_slug(space_slug_or_id, authorize?: false) do
+          {:ok, %{id: id}} -> id
+          {:error, _reason} -> nil
+        end
     end
   end
+
+  def space_slug_to_id(_), do: nil
 
   # TODO: inline?
   def tenant_to_space_id(%{id: space_id}), do: space_id

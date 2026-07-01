@@ -144,28 +144,10 @@ defmodule Wik.Events.ExternalCalendar.Sync do
                )
              end
 
-             keep_occurrences =
-               attrs
-               |> Enum.map(&{&1.external_uid, &1.external_occurrence_key})
-               |> MapSet.new()
-
-             from(event in ExternalEvent, where: event.subscription_id == ^subscription.id)
-             |> Repo.all()
-             |> Enum.reject(fn event ->
-               MapSet.member?(
-                 keep_occurrences,
-                 {event.external_uid, event.external_occurrence_key}
-               )
-             end)
-             |> Enum.reduce_while(:ok, fn event, :ok ->
-               case Repo.delete(event) do
-                 {:ok, _deleted_event} ->
-                   {:cont, :ok}
-
-                 {:error, error} ->
-                   Repo.rollback(error)
-               end
-             end)
+             from(event in ExternalEvent,
+               where: event.subscription_id == ^subscription.id and event.last_seen_at != ^seen_at
+             )
+             |> Repo.delete_all()
            end) do
         {:ok, _result} ->
           :ok

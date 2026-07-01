@@ -12,8 +12,8 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   alias Wik.Repo
 
   @default_tz "Etc/UTC"
-  @future_horizon_months 12
-  @recent_past_days 30
+  @future_horizon_months 2
+  @recent_past_days 7
 
   def sync_subscription(%ExternalCalendarSubscription{} = subscription, opts \\ []) do
     http_get = Keyword.get(opts, :http_get, Fetch.http_get())

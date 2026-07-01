@@ -18,9 +18,7 @@ config :wik, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        # every day at 09:00
-       {"0 9 * * *", Wik.Events.Workers.RefreshExternalCalendars},
-       # every day at 21:00
-       {"0 21 * * *", Wik.Events.Workers.RefreshExternalCalendars}
+       {"0 9 * * *", Wik.Events.Workers.RefreshExternalCalendars}
      ]}
   ]
 

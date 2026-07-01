@@ -79,6 +79,64 @@ defmodule Wik.Access.Google.WorkflowTest do
       assert membership.type == :owner
     end
 
+    test "does not downgrade an existing admin membership" do
+      owner = generate(user())
+      user = generate(user(email: "ada@example.com"))
+      space = generate(space(author: owner))
+      create_membership(space, owner, :owner)
+
+      create_membership(space, user, :admin)
+
+      {:ok, _email_rule} =
+        Access.google_upsert_email_rule(
+          space,
+          %{"email" => "ada@example.com", "membership_type" => "member"},
+          owner
+        )
+
+      {:ok, identity} =
+        Access.google_find_or_create_identity(%{
+          "email" => "ada@example.com",
+          "email_verified" => true,
+          "name" => "Ada",
+          "sub" => "google-42"
+        })
+
+      assert {:ok, [_grant]} = Access.google_apply_email_access(identity.user)
+
+      assert {:ok, membership} = Accounts.get_membership(space, user)
+      assert membership.type == :admin
+    end
+
+    test "does not promote an existing member membership" do
+      owner = generate(user())
+      user = generate(user(email: "ada@example.com"))
+      space = generate(space(author: owner))
+      create_membership(space, owner, :owner)
+
+      create_membership(space, user, :member)
+
+      {:ok, _email_rule} =
+        Access.google_upsert_email_rule(
+          space,
+          %{"email" => "ada@example.com", "membership_type" => "admin"},
+          owner
+        )
+
+      {:ok, identity} =
+        Access.google_find_or_create_identity(%{
+          "email" => "ada@example.com",
+          "email_verified" => true,
+          "name" => "Ada",
+          "sub" => "google-42"
+        })
+
+      assert {:ok, [_grant]} = Access.google_apply_email_access(identity.user)
+
+      assert {:ok, membership} = Accounts.get_membership(space, user)
+      assert membership.type == :member
+    end
+
     test "revoking email access prevents future access application and inactivates grants" do
       owner = generate(user())
       space = generate(space(author: owner))

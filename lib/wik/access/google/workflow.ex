@@ -202,9 +202,7 @@ defmodule Wik.Access.Google.Workflow do
     |> Ash.read_one(authorize?: false, domain: Wik.Accounts)
     |> case do
       {:ok, nil} -> create_membership(space_id, user_id, membership_type)
-      {:ok, %{type: :owner}} -> :ok
-      {:ok, %{type: ^membership_type}} -> :ok
-      {:ok, membership} -> update_membership_type(membership, membership_type)
+      {:ok, %Membership{}} -> :ok
       {:error, error} -> {:error, error}
     end
   end
@@ -213,17 +211,6 @@ defmodule Wik.Access.Google.Workflow do
     case Ash.create(
            Membership,
            %{space_id: space_id, type: membership_type, user_id: user_id},
-           authorize?: false,
-           domain: Wik.Accounts
-         ) do
-      {:ok, _membership} -> :ok
-      {:error, error} -> {:error, error}
-    end
-  end
-
-  defp update_membership_type(membership, membership_type) do
-    case Ash.update(membership, %{type: membership_type},
-           action: :set_type,
            authorize?: false,
            domain: Wik.Accounts
          ) do

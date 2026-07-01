@@ -2,6 +2,7 @@ defmodule WikWeb.DocsLive do
   use WikWeb, :live_view
 
   alias WikWeb.Docs.Pages
+  alias WikWeb.Components.UI
 
   @pages [
     Pages.Index,
@@ -29,11 +30,6 @@ defmodule WikWeb.DocsLive do
       "px-4"
     ]}>
       <h1 class="flex items-center gap-2">
-        <label for="my-drawer-1" class="btn drawer-button btn-xs sm:hidden">
-          <.icon name="hero-bars-3-micro" />
-          <span class="sr-only">Open drawer</span>
-        </label>
-
         <.link patch={~p"/docs"} class="text-xl">
           Wik docs
         </.link>
@@ -41,7 +37,19 @@ defmodule WikWeb.DocsLive do
       <div class="w-26"><WikWeb.Layouts.theme_toggle /></div>
     </header>
 
-    <.drawer>
+    <UI.drawer>
+      <:aside>
+        <ul class="menu bg-base-200 min-h-full w-fit p-4 pr-8">
+          <!-- Sidebar content here -->
+          <li>
+            <.link patch={~p"/docs"}> Home </.link>
+          </li>
+          <li>
+            <.link patch={~p"/docs/core-features"}>Core features</.link>
+          </li>
+        </ul>
+      </:aside>
+
       <main>
         <.container class="py-8">
           <div class="prose">
@@ -53,7 +61,7 @@ defmodule WikWeb.DocsLive do
           </div>
         </.container>
       </main>
-    </.drawer>
+    </UI.drawer>
     """
   end
 
@@ -64,31 +72,6 @@ defmodule WikWeb.DocsLive do
       @class
     ]}>
       {render_slot(@inner_block)}
-    </div>
-    """
-  end
-
-  def drawer(assigns) do
-    ~H"""
-    <div class="drawer sm:drawer-open">
-      <input id="my-drawer-1" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content">
-        {render_slot(@inner_block)}
-      </div>
-
-      <div class="drawer-side z-50">
-        <label for="my-drawer-1" aria-label="close sidebar" class="drawer-overlay"></label>
-
-        <ul class="menu bg-base-200 min-h-full w-fit p-4 pr-8">
-          <!-- Sidebar content here -->
-          <li>
-            <.link patch={~p"/docs"}> Home </.link>
-          </li>
-          <li>
-            <.link patch={~p"/docs/core-features"}>Core features</.link>
-          </li>
-        </ul>
-      </div>
     </div>
     """
   end

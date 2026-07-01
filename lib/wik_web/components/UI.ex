@@ -3,6 +3,47 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  attr :id, :string, default: "drawer"
+  slot :inner_block, required: true
+  slot :aside, required: true
+
+  def drawer(assigns) do
+    ~H"""
+    <div class="drawer drawer-end md:drawer-open md:z-20">
+      <input id={@id} type="checkbox" class="drawer-toggle" phx-update="ignore" />
+      <div class="drawer-content">
+        <WikWeb.Layouts.container>
+          <div class="flex justify-end pt-2 h-0">
+            <label
+              :if={@aside != []}
+              for={@id}
+              class={[
+                "btn btn-xs btn-square ",
+                "opacity-80 hover:opacity-100",
+                "md:hidden"
+              ]}
+            >
+              <.icon name="hero-bars-3" />
+            </label>
+          </div>
+        </WikWeb.Layouts.container>
+        {render_slot(@inner_block)}
+      </div>
+
+      <div class="drawer-side z-50">
+        <label
+          for={@id}
+          aria-label="close sidebar"
+          class="drawer-overlay"
+        >
+        </label>
+
+        {render_slot(@aside)}
+      </div>
+    </div>
+    """
+  end
+
   slot :inner_block, required: true
 
   def separator(assigns) do
@@ -216,6 +257,26 @@ defmodule WikWeb.Components.UI do
     ~H"""
     <button
       class={["btn btn-sm btn-circle btn-accent btn-soft"]}
+      {@rest}
+    >
+      <.icon name="hero-pencil-micro" />
+    </button>
+    """
+  end
+
+  attr :rest, :global
+  attr :class, :string, default: ""
+
+  def button_edit_soft(assigns) do
+    ~H"""
+    <button
+      class={[
+        "btn btn-xs btn-circle btn-accent btn-ghost",
+        "text-accent hover:text-base-content",
+        "opacity-60 hover:opacity-100",
+        @class
+      ]}
+      type="button"
       {@rest}
     >
       <.icon name="hero-pencil-micro" />

@@ -283,7 +283,7 @@ defmodule WikWeb.Components.Tag do
           class={[
             "rounded border px-2.5 py-1 text-xs transition text-left w-full",
             "cursor-pointer",
-            "border-base-300 bg-base-200/50 hover:border-accent"
+            "border-base-300 bg-base-200/50 opacity-70 hover:opacity-100 transition"
           ]}
           data-testid={"#{@item_testid_prefix}-#{tag.id}"}
           phx-click="select_tag"
@@ -297,7 +297,7 @@ defmodule WikWeb.Components.Tag do
           :if={@interaction == :navigate}
           class={[
             "rounded border px-2.5 py-1 text-xs transition text-left w-full",
-            "border-base-300 bg-base-200/50 hover:border-accent"
+            "border-base-300 bg-base-300/60 opacity-70 hover:opacity-100 transition"
           ]}
           data-testid={"#{@item_testid_prefix}-#{tag.id}"}
           navigate={~p"/#{@space_slug}/tags/#{tag.slug}"}

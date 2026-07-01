@@ -18,7 +18,44 @@
         <UI.button_unlock phx-click="toggle_edit_mode" />
       <% end %>
     </:actions>
+    <:aside>
+      <section data-testid="page-backlinks">
+        <UI.panel_title>Backlinks</UI.panel_title>
+        <Components.Block.Types.Backlinks.render
+          block={%{data: %{"title" => "Backlinks"}, type: :backlinks}}
+          node={@node}
+          page_tree={@page_tree}
+          scope={@current_scope}
+        />
+      </section>
 
+      <section>
+        <UI.panel_title>Details</UI.panel_title>
+        <div class={[
+          "grid grid-cols-2 gap-x-4 gap-y-2 mt-0",
+          "items-baseline",
+          "text-sm"
+        ]}>
+          <div>
+            Created:
+          </div>
+          <Components.Time.relative_and_precise datetime={@page.inserted_at} ago? />
+
+          <div>
+            By:
+          </div>
+          <div class="flex items-center gap-2">
+            <Components.User.identity
+              :if={@author_membership}
+              avatar_size="xs"
+              class="gap-2"
+              link?={true}
+              membership={@author_membership}
+            />
+          </div>
+        </div>
+      </section>
+    </:aside>
     <%= if assigns[:not_found_path] do %>
       <div class="card-body bg-base-200 rounded flex flex-col items-center gap-4 py-16">
         <div>Ooops...</div>
@@ -47,18 +84,9 @@
             />
           </:prepend>
 
-          <PageLive.Components.Details.render
-            author_membership={@author_membership}
-            tenant_context={@tenant_context}
-            scope={@current_scope}
-            node={@node}
-            page={@page}
-            open?={false}
-          >
-            <UI.page_title class="opacity-90 hover:opacity-100 transition-opacity">
-              {@node.title}
-            </UI.page_title>
-          </PageLive.Components.Details.render>
+          <UI.page_title class="opacity-90 hover:opacity-100 transition-opacity">
+            {@node.title}
+          </UI.page_title>
         </UI.page_head>
 
         <div class={[

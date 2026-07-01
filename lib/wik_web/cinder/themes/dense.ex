@@ -53,7 +53,7 @@ defmodule WikWeb.Cinder.Themes.Dense do
       ]
 
   set :td_class, ""
-  set :empty_class, "text-center py-8 text-base-content/60"
+  set :empty_class, "text-xs opacity-50 text-center pt-4"
   set :error_container_class, "alert alert-error"
   set :error_message_class, ""
 
@@ -174,7 +174,6 @@ defmodule WikWeb.Cinder.Themes.Dense do
   # List
   set :list_container_class, "space-y-1"
   set :list_item_class, ""
-
   set :list_item_clickable_class, ""
 
   set :sort_container_class, ""

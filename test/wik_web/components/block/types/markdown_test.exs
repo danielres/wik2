@@ -56,6 +56,21 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
            |> Enum.count() == 1
   end
 
+  test "render wraps tables" do
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{
+          id: "block-1",
+          data: %{"text" => "| Feature | Status |\n| --- | --- |\n| Fast | :rocket: |"}
+        },
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document |> LazyHTML.query(".table_wrapper > table") |> Enum.any?()
+  end
+
   test "render converts canonical wikilinks to wiki page links" do
     page_tree = page_tree_fixture()
     scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}
@@ -166,6 +181,22 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
            |> LazyHTML.query(
              ~s(a[href="https://phoenixframework.org"][target="_blank"][rel="noopener noreferrer"])
            )
+           |> Enum.any?()
+  end
+
+  test "render autolinks bare external urls" do
+    url = "https://wik2.fly.dev/berlin-dancers/tags/fusion"
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => url}},
+        page_tree: %PageTree{nodes: []}
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(~s(a[href="#{url}"][target="_blank"][rel="noopener noreferrer"]))
            |> Enum.any?()
   end
 

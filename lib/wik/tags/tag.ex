@@ -1,8 +1,10 @@
 defmodule Wik.Tags.Tag do
   alias Wik.Accounts.Space
+  alias Wik.Blocks.Block
   alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Tags.TagEdge
   alias Wik.Tags.Tagging
+  alias Wik.Tags.Tag.Validations.PrimaryBlock
 
   use Ash.Resource,
     otp_app: :wik,
@@ -32,6 +34,12 @@ defmodule Wik.Tags.Tag do
 
     update :update do
       accept [:slug, :name, :description]
+      require_atomic? false
+    end
+
+    update :set_primary_block do
+      accept [:primary_block_id]
+      require_atomic? false
     end
   end
 
@@ -65,6 +73,10 @@ defmodule Wik.Tags.Tag do
     publish :destroy, ["space", :space_id]
   end
 
+  validations do
+    validate PrimaryBlock
+  end
+
   multitenancy do
     strategy :attribute
     attribute :space_id
@@ -95,6 +107,12 @@ defmodule Wik.Tags.Tag do
     belongs_to :space, Wik.Accounts.Space do
       destination_attribute :id
       allow_nil? false
+    end
+
+    belongs_to :primary_block, Block do
+      destination_attribute :id
+      allow_nil? true
+      public? true
     end
 
     has_many :outgoing_edges, TagEdge do

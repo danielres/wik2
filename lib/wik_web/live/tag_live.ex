@@ -47,7 +47,7 @@ defmodule WikWeb.TagLive do
      |> assign(tag_graph: nil)
      |> assign(tag_form: nil)
      |> assign(taggings_query: nil)
-     |> assign(show_descendants?: false)}
+     |> assign(show_descendants?: true)}
   end
 
   @impl true
@@ -349,9 +349,8 @@ defmodule WikWeb.TagLive do
             <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} />
           </section>
 
-          <section :if={false}>
+          <section :if={@show_descendants?}>
             <TagComponent.descendants
-              :if={@show_descendants?}
               graph={@tag_graph}
               scope={@current_scope}
               tag={@tag}

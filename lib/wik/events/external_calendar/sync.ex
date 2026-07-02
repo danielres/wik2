@@ -145,7 +145,7 @@ defmodule Wik.Events.ExternalCalendar.Sync do
              end
 
              from(event in ExternalEvent,
-               where: event.subscription_id == ^subscription.id and event.last_seen_at != ^seen_at
+               where: event.subscription_id == ^subscription.id and event.last_seen_at < ^seen_at
              )
              |> Repo.delete_all()
            end) do

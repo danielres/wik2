@@ -74,14 +74,14 @@ defmodule WikWeb.TagLive do
         {:ok, nil} ->
           socket
           |> put_flash(:error, "Tag not found")
-          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/tags")
+          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/topics")
 
         {:error, error} ->
           Log.scoped_error(socket.assigns.current_scope, error, "tag page load failed")
 
           socket
           |> put_flash(:error, "Couldn't load tag")
-          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/tags")
+          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/topics")
       end
 
     {:noreply, WikWeb.Presence.track_in_liveview(socket, url)}
@@ -122,7 +122,7 @@ defmodule WikWeb.TagLive do
          socket
          |> assign(:tag, tag)
          |> close_tag_form()
-         |> push_patch(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/tags/#{tag.slug}")}
+         |> push_patch(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/topics/#{tag.slug}")}
 
       {:error, form} ->
         {:noreply, assign(socket, :tag_form, form)}

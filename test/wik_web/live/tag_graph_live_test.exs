@@ -24,7 +24,7 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/tags")
+      |> live(~p"/#{space.slug}/topics")
 
     assert has_element?(view, testid("tag-graph-page"))
     assert has_element?(view, testid("tag-branch-tag-path-#{alpha.id}"))
@@ -104,7 +104,7 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/tags?#{%{tag: child.id}}")
+      |> live(~p"/#{space.slug}/topics?#{%{tag: child.id}}")
 
     assert has_element?(view, testid("tag-detail-dialog"))
     assert has_element?(view, testid("tag-detail-#{child.id}"))
@@ -133,13 +133,13 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/tags")
+      |> live(~p"/#{space.slug}/topics")
 
     refute has_element?(view, testid("tag-add-root"))
 
     render_click(element(view, testid("tag-select-tag-path-#{alpha.id}")))
 
-    path = ~p"/#{space.slug}/tags/#{alpha.slug}"
+    path = ~p"/#{space.slug}/topics/#{alpha.slug}"
     assert_redirect(view, path)
   end
 
@@ -174,7 +174,7 @@ defmodule WikWeb.TagGraphLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/tags")
+      |> live(~p"/#{space.slug}/topics")
 
     assert has_element?(view, "#{testid("tag-count-tag-path-#{alpha.id}")}", "2")
     assert has_element?(view, "#{testid("tag-count-tag-path-#{beta.id}")}", "1")

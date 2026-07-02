@@ -522,10 +522,10 @@ defmodule WikWeb.Layouts.Space do
     </div>
 
     <.link
-      patch={"/#{@scope.tenant.slug}/tags"}
+      patch={"/#{@scope.tenant.slug}/topics"}
       class={["item", @view == "tags" and "active"]}
     >
-      <span>Tags</span>
+      <span>Topics</span>
     </.link>
 
     <.link

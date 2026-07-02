@@ -141,7 +141,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
     assert document
            |> LazyHTML.query(
-             ~s(a[href="/#{scope.tenant.slug}/tags/dance"][data-phx-link="patch"][data-phx-link-state="push"])
+             ~s(a[href="/#{scope.tenant.slug}/topics/dance"][data-phx-link="patch"][data-phx-link-state="push"])
            )
            |> Enum.any?()
 
@@ -185,7 +185,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
   end
 
   test "render autolinks bare external urls" do
-    url = "https://wik2.fly.dev/berlin-dancers/tags/fusion"
+    url = "https://wik2.fly.dev/berlin-dancers/topics/fusion"
 
     html =
       render_component(&Markdown.render/1, %{
@@ -253,7 +253,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
         scope: scope
       })
 
-    refute html =~ ~s(/#{scope.tenant.slug}/tags/)
+    refute html =~ ~s(/#{scope.tenant.slug}/topics/)
     assert html =~ "[[#Unknown Tag]]"
   end
 
@@ -267,7 +267,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
         scope: scope
       })
 
-    refute html =~ ~s(/#{scope.tenant.slug}/tags/)
+    refute html =~ ~s(/#{scope.tenant.slug}/topics/)
     assert html =~ "[[tag:missing-tag]]"
   end
 

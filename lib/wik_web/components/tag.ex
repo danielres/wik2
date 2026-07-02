@@ -31,14 +31,14 @@ defmodule WikWeb.Components.Tag do
       >
         <ul class="leading-none space-y-0">
           <li :if={@render_root?}>
-            <.link navigate={~p"/#{@space_slug}/tags"} class="hover:opacity-100 transition-opacity">
+            <.link navigate={~p"/#{@space_slug}/topics"} class="hover:opacity-100 transition-opacity">
               Tags
             </.link>
           </li>
 
           <li :for={tag <- path}>
             <.link
-              navigate={~p"/#{@space_slug}/tags/#{tag.slug}"}
+              navigate={~p"/#{@space_slug}/topics/#{tag.slug}"}
               class="hover:opacity-100 transition-opacity"
             >
               {tag.name}
@@ -242,10 +242,10 @@ defmodule WikWeb.Components.Tag do
 
     ~H"""
     <div class="space-y-2" data-testid="tag-descendants">
-      <UI.panel_title>Descendants</UI.panel_title>
+      <UI.panel_title>Sub-topics</UI.panel_title>
 
       <div :if={@nodes == []} class="text-sm opacity-50">
-        No descendants.
+        No sub-topics.
       </div>
 
       <TagTree.render
@@ -300,7 +300,7 @@ defmodule WikWeb.Components.Tag do
             "border-base-300 bg-base-300/60 opacity-70 hover:opacity-100 transition"
           ]}
           data-testid={"#{@item_testid_prefix}-#{tag.id}"}
-          navigate={~p"/#{@space_slug}/tags/#{tag.slug}"}
+          navigate={~p"/#{@space_slug}/topics/#{tag.slug}"}
         >
           {tag.name}
         </.link>

@@ -119,7 +119,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
         <.link
           :if={not @editing?}
-          navigate={~p"/#{@space_slug}/tags/#{@node.tag.slug}"}
+          navigate={~p"/#{@space_slug}/topics/#{@node.tag.slug}"}
           class={[
             "flex min-w-0 flex-1 items-center gap-0 text-left transition",
             "cursor-pointer",

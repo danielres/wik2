@@ -415,7 +415,7 @@ defmodule WikWeb.Components.MembershipTagging do
       <UI.page_title class="text-lg flex justify-start">
         <.link
           :if={@link?}
-          navigate={~p"/#{@tenant.slug}/tags/#{@tagging.tag.slug}"}
+          navigate={~p"/#{@tenant.slug}/topics/#{@tagging.tag.slug}"}
           class="underline decoration-dashed underline-offset-4 decoration-base-content/60 hover:decoration-solid"
         >
           {@tagging.tag.name}

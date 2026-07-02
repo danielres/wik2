@@ -299,7 +299,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
     document = LazyHTML.from_fragment(html)
 
-    assert document |> LazyHTML.query("iframe") |> length() == 1
+    assert document |> LazyHTML.query("iframe") |> Enum.count() == 1
     refute document |> LazyHTML.query("img") |> Enum.any?()
     assert html =~ ~s(src="https://www.youtube-nocookie.com/embed/W-hwnJUT854")
   end

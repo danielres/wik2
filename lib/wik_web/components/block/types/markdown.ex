@@ -116,6 +116,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> Wikilinks.tags_to_tag_names(tag_id_to_name_map)
     |> mask_unresolved_canonical_tag_wikilinks()
     |> render_visible_wikilinks(scope, page_tree, member_id_to_username_map, tag_name_to_slug_map)
+    |> strip_raw_iframes()
     |> render_markdown()
     |> render_youtube_embed_images()
     |> wrap_tables()
@@ -150,6 +151,12 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       "input" => ["checked", "disabled", "type"],
       "img" => ["alt", "src", "title"]
     })
+  end
+
+  @raw_iframe_regex ~r/<iframe\b[^>]*>.*?<\/iframe>/is
+
+  defp strip_raw_iframes(markdown) do
+    Regex.replace(@raw_iframe_regex, markdown, "")
   end
 
   @table_regex ~r/<table(?:\s[^>]*)?>.*?<\/table>/s

@@ -14,15 +14,22 @@
 ARG ELIXIR_VERSION=1.18.4
 ARG OTP_VERSION=27.3.4.8
 ARG DEBIAN_VERSION=trixie-20260421-slim
+ARG NODE_VERSION=24.14.1
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
+ARG NODE_IMAGE="docker.io/node:${NODE_VERSION}-bookworm-slim"
 
+FROM ${NODE_IMAGE} AS node
 FROM ${BUILDER_IMAGE} AS builder
+
+# install pinned node build tooling
+COPY --from=node /usr/local/bin/ /usr/local/bin/
+COPY --from=node /usr/local/lib/node_modules/ /usr/local/lib/node_modules/
 
 # install build dependencies
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential git nodejs npm \
+  && apt-get install -y --no-install-recommends build-essential git \
   && npm install -g pnpm \
   && rm -rf /var/lib/apt/lists/*
 

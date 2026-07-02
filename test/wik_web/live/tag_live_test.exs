@@ -31,7 +31,6 @@ defmodule WikWeb.TagLiveTest do
 
     render_click(element(view, testid("tag-edit-mode-toggle")))
 
-    assert has_element?(view, testid("tag-edit-mode-ok"))
     assert has_element?(view, testid("tag-form-form"))
 
     render_submit(

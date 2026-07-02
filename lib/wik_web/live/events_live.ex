@@ -67,90 +67,90 @@ defmodule WikWeb.EventsLive do
             </:meta>
           </Components.Event.grouped_timeline>
         </div>
-
-        <Components.Modal.render
-          cancel="modal_close"
-          cancel_testid="events-modal-close"
-          open?={@modal != nil}
-        >
-          <:title>
-            {@modal_title}
-          </:title>
-
-          <%= case @modal do %>
-            <% {:internal_event, publication} -> %>
-              <.live_component
-                module={Components.Event.Details}
-                id={"event-details-#{publication.id}"}
-                current_scope={@current_scope}
-                publication={publication}
-                user_tz={@active_tz}
-              />
-            <% {:external_event, item} -> %>
-              <Components.Event.ExternalDetails.render
-                current_membership={@tenant_context && @tenant_context.current_membership}
-                item={item}
-                user_tz={@active_tz}
-              />
-            <% :event_form -> %>
-              <.live_component
-                module={EventForm}
-                id="events-event-form"
-                current_scope={@current_scope}
-                user_tz={@active_tz}
-              />
-            <% {:interest, :internal, publication_id} -> %>
-              <% publication =
-                Enum.find(@timeline.internal_publications, &(&1.id == publication_id)) %>
-              <% item =
-                Enum.find(@timeline.internal_items, &(&1.publication.id == publication_id)) %>
-
-              <.live_component
-                module={InterestForm}
-                id="events-interest-form"
-                current_member_participation={item && item.current_member_participation}
-                current_scope={@current_scope}
-                external_event={nil}
-                publication={publication}
-                source_id={publication_id}
-                source_type={:internal}
-              />
-            <% {:interest, :external, external_event_id} -> %>
-              <% item =
-                Enum.find(@timeline.external_items, &(&1.event.id == external_event_id)) %>
-
-              <.live_component
-                module={InterestForm}
-                id="events-interest-form"
-                current_member_participation={item && item.current_member_participation}
-                current_scope={@current_scope}
-                external_event={item && item.event}
-                publication={nil}
-                source_id={external_event_id}
-                source_type={:external}
-              />
-            <% {:subscription, :new} -> %>
-              <.live_component
-                module={SubscriptionForm}
-                id="events-subscription-form-content"
-                current_scope={@current_scope}
-              />
-            <% {:subscription, {:show, subscription_id}} -> %>
-              <% subscription = SubscriptionState.find(@subscriptions, subscription_id) %>
-              <% metadata = SubscriptionState.metadata(@subscriptions, subscription) %>
-
-              <.live_component
-                module={SubscriptionDetails}
-                id={"events-subscription-detail-#{subscription_id}"}
-                current_scope={@current_scope}
-                metadata={metadata}
-                subscription={subscription}
-              />
-            <% _ -> %>
-          <% end %>
-        </Components.Modal.render>
       </Layouts.space>
     </Layouts.app>
+
+    <Components.Modal.render
+      cancel="modal_close"
+      cancel_testid="events-modal-close"
+      open?={@modal != nil}
+    >
+      <:title>
+        {@modal_title}
+      </:title>
+
+      <%= case @modal do %>
+        <% {:internal_event, publication} -> %>
+          <.live_component
+            module={Components.Event.Details}
+            id={"event-details-#{publication.id}"}
+            current_scope={@current_scope}
+            publication={publication}
+            user_tz={@active_tz}
+          />
+        <% {:external_event, item} -> %>
+          <Components.Event.ExternalDetails.render
+            current_membership={@tenant_context && @tenant_context.current_membership}
+            item={item}
+            user_tz={@active_tz}
+          />
+        <% :event_form -> %>
+          <.live_component
+            module={EventForm}
+            id="events-event-form"
+            current_scope={@current_scope}
+            user_tz={@active_tz}
+          />
+        <% {:interest, :internal, publication_id} -> %>
+          <% publication =
+            Enum.find(@timeline.internal_publications, &(&1.id == publication_id)) %>
+          <% item =
+            Enum.find(@timeline.internal_items, &(&1.publication.id == publication_id)) %>
+
+          <.live_component
+            module={InterestForm}
+            id="events-interest-form"
+            current_member_participation={item && item.current_member_participation}
+            current_scope={@current_scope}
+            external_event={nil}
+            publication={publication}
+            source_id={publication_id}
+            source_type={:internal}
+          />
+        <% {:interest, :external, external_event_id} -> %>
+          <% item =
+            Enum.find(@timeline.external_items, &(&1.event.id == external_event_id)) %>
+
+          <.live_component
+            module={InterestForm}
+            id="events-interest-form"
+            current_member_participation={item && item.current_member_participation}
+            current_scope={@current_scope}
+            external_event={item && item.event}
+            publication={nil}
+            source_id={external_event_id}
+            source_type={:external}
+          />
+        <% {:subscription, :new} -> %>
+          <.live_component
+            module={SubscriptionForm}
+            id="events-subscription-form-content"
+            current_scope={@current_scope}
+          />
+        <% {:subscription, {:show, subscription_id}} -> %>
+          <% subscription = SubscriptionState.find(@subscriptions, subscription_id) %>
+          <% metadata = SubscriptionState.metadata(@subscriptions, subscription) %>
+
+          <.live_component
+            module={SubscriptionDetails}
+            id={"events-subscription-detail-#{subscription_id}"}
+            current_scope={@current_scope}
+            metadata={metadata}
+            subscription={subscription}
+          />
+        <% _ -> %>
+      <% end %>
+    </Components.Modal.render>
     """
   end
 

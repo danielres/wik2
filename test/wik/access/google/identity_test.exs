@@ -25,7 +25,7 @@ defmodule Wik.Access.Google.IdentityTest do
       assert identity.avatar_url == "https://google.example/ada.png"
       assert identity.metadata["sub"] == "google-42"
       assert identity.metadata["email_verified"] == true
-      assert identity.user.email == "ada@example.com"
+      assert identity.user.email |> to_string() == "ada@example.com"
     end
 
     test "attaches to an existing user with the same verified email" do

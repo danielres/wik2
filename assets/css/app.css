@@ -46,6 +46,7 @@
 @layer utilities {
   .fieldset {
     @apply text-base;
+    @apply py-0;
     .label {
       @apply font-bold;
     }

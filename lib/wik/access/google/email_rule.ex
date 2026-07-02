@@ -55,6 +55,7 @@ defmodule Wik.Access.Google.EmailRule do
 
     update :revoke do
       accept [:revoked_at, :revoked_by_user_id]
+      require_atomic? false
     end
   end
 

@@ -12,8 +12,8 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   alias Wik.Repo
 
   @default_tz "Etc/UTC"
-  @future_horizon_months 12
-  @recent_past_days 30
+  @future_horizon_months 2
+  @recent_past_days 7
 
   def sync_subscription(%ExternalCalendarSubscription{} = subscription, opts \\ []) do
     http_get = Keyword.get(opts, :http_get, Fetch.http_get())
@@ -39,7 +39,10 @@ defmodule Wik.Events.ExternalCalendar.Sync do
 
   def sync_all_subscriptions(opts \\ []) do
     Repo.all(ExternalCalendarSubscription)
-    |> Task.async_stream(&sync_subscription_safely(&1, opts), timeout: :infinity)
+    |> Task.async_stream(&sync_subscription_safely(&1, opts),
+      max_concurrency: 1,
+      timeout: :infinity
+    )
     |> Stream.run()
 
     :ok
@@ -141,28 +144,10 @@ defmodule Wik.Events.ExternalCalendar.Sync do
                )
              end
 
-             keep_occurrences =
-               attrs
-               |> Enum.map(&{&1.external_uid, &1.external_occurrence_key})
-               |> MapSet.new()
-
-             from(event in ExternalEvent, where: event.subscription_id == ^subscription.id)
-             |> Repo.all()
-             |> Enum.reject(fn event ->
-               MapSet.member?(
-                 keep_occurrences,
-                 {event.external_uid, event.external_occurrence_key}
-               )
-             end)
-             |> Enum.reduce_while(:ok, fn event, :ok ->
-               case Repo.delete(event) do
-                 {:ok, _deleted_event} ->
-                   {:cont, :ok}
-
-                 {:error, error} ->
-                   Repo.rollback(error)
-               end
-             end)
+             from(event in ExternalEvent,
+               where: event.subscription_id == ^subscription.id and event.last_seen_at < ^seen_at
+             )
+             |> Repo.delete_all()
            end) do
         {:ok, _result} ->
           :ok

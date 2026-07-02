@@ -256,7 +256,7 @@ defmodule WikWeb.TagLive do
           <section>
             <div class="flex justify-between items-baseline">
               <UI.panel_title>
-                <div>Updated</div>
+                <div>History</div>
               </UI.panel_title>
 
               <div>

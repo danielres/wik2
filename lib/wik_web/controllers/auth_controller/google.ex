@@ -46,7 +46,6 @@ defmodule WikWeb.AuthController.Google do
       |> delete_session(:google_session_params)
       |> AuthHelpers.store_in_session(user)
       |> assign(:current_user, user)
-      |> put_flash(:info, "You are now signed in")
       |> redirect(to: return_to)
     else
       {:error, :google_email_rule_not_found} ->

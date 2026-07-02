@@ -21,7 +21,6 @@ defmodule WikWeb.AuthController.Telegram do
       conn
       |> AuthHelpers.store_in_session(user)
       |> assign(:current_user, user)
-      |> put_flash(:info, "You are now signed in")
       |> redirect(to: return_to)
     else
       {:error, error} ->

@@ -1,0 +1,19 @@
+.LEXICAL_TOOLBAR {
+  @apply flex flex-wrap gap-1;
+  @apply border-b border-base-content/10;
+  @apply px-1 pt-1 pb-2;
+
+  .LEXICAL_TOOLBAR_BUTTON {
+    @apply min-h-7 rounded-sm border border-base-content/12;
+    @apply bg-base-content/4 px-2 py-0.5;
+    @apply text-current text-xs;
+
+    &:hover {
+      @apply bg-accent/20;
+    }
+
+    &.active {
+      @apply border-accent/55 bg-accent/25 text-base-content;
+    }
+  }
+}

@@ -1,0 +1,20 @@
+.LEXICAL_BLOCK_HANDLE {
+  @apply fixed z-[70] h-7 px-2;
+  @apply cursor-grab rounded-sm border border-base-content/20;
+  @apply bg-base-200 text-base-content/70 shadow-md;
+  @apply text-xs leading-none transition-all;
+  transform: translateY(-50%);
+
+  &:hover,
+  &.dragging {
+    @apply border-accent/50 bg-base-100 text-base-content;
+  }
+
+  &.dragging {
+    @apply cursor-grabbing;
+  }
+
+  &[hidden] {
+    @apply hidden;
+  }
+}

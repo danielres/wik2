@@ -1,0 +1,26 @@
+.LEXICAL_INSERT_MENU {
+  @apply fixed z-[72];
+  @apply rounded-md;
+  @apply overflow-y-auto;
+  @apply min-w-40 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-1rem)];
+  @apply p-1;
+  @apply grid;
+  @apply gap-0.5;
+  @apply bg-base-100/86 backdrop-blur;
+  @apply border border-base-content/32;
+  @apply text-base-content;
+  @apply shadow-xl;
+
+  &[hidden] {
+    @apply hidden;
+  }
+
+  .LEXICAL_INSERT_MENU_BUTTON {
+    @apply cursor-pointer;
+    @apply px-2 py-1 text-left text-sm;
+
+    &:hover {
+      @apply bg-accent/15;
+    }
+  }
+}

@@ -100,9 +100,17 @@ defmodule WikWeb.Components.UI do
     """
   end
 
+  attr :class, :string, default: ""
+  slot :inner_block, required: true
+
   def panel_title(assigns) do
     ~H"""
-    <h3 class="mb-2 text-xs uppercase tracking-wider opacity-50">{render_slot(@inner_block)}</h3>
+    <h3 class={[
+      "mb-2 text-xs uppercase tracking-wider opacity-50",
+      @class
+    ]}>
+      {render_slot(@inner_block)}
+    </h3>
     """
   end
 

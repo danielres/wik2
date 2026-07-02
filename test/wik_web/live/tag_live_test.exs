@@ -213,9 +213,9 @@ defmodule WikWeb.TagLiveTest do
 
     assert has_element?(view, testid("tag-breadcrumbs"))
     assert has_element?(view, testid("tag-breadcrumbs-path-0"))
-    assert has_element?(view, testid("tag-children"))
+    # assert has_element?(view, testid("tag-children"))
+    # assert has_element?(view, testid("tag-children-jump-#{child.id}"))
     assert has_element?(view, testid("tag-descendants"))
-    assert has_element?(view, testid("tag-children-jump-#{child.id}"))
     assert has_element?(view, testid("tag-branch-tag-path-#{current.id}__#{child.id}"))
 
     assert has_element?(

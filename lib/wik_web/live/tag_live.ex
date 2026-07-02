@@ -245,6 +245,14 @@ defmodule WikWeb.TagLive do
         </:actions>
 
         <:aside :if={not @editing?}>
+          <section :if={@show_descendants?}>
+            <TagComponent.descendants
+              graph={@tag_graph}
+              scope={@current_scope}
+              tag={@tag}
+            />
+          </section>
+
           <section>
             <div class="flex justify-between items-baseline">
               <UI.panel_title>
@@ -334,28 +342,9 @@ defmodule WikWeb.TagLive do
             </div>
           </section>
 
-          <section>
-            <UI.panel_title>Members</UI.panel_title>
-
-            <MembershipTagging.list_for_tag
-              active_sort={@selected_member_tagging_sort}
-              query={@taggings_query}
-              scope={@current_scope}
-              tag={@tag}
-            />
-          </section>
-
-          <section>
-            <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} />
-          </section>
-
-          <section :if={@show_descendants?}>
-            <TagComponent.descendants
-              graph={@tag_graph}
-              scope={@current_scope}
-              tag={@tag}
-            />
-          </section>
+          <%!-- <section> --%>
+          <%!--   <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} /> --%>
+          <%!-- </section> --%>
         </:aside>
 
         <div :if={@tag} class="space-y-6" data-testid="tag-page">
@@ -371,6 +360,17 @@ defmodule WikWeb.TagLive do
 
             <UI.page_title>{@tag.name}</UI.page_title>
           </UI.page_head>
+
+          <UI.panel_title>Members</UI.panel_title>
+          <MembershipTagging.list_for_tag
+            active_sort={@selected_member_tagging_sort}
+            query={@taggings_query}
+            scope={@current_scope}
+            tag={@tag}
+          />
+
+          <UI.panel_title class="pt-12 pb-6">Description</UI.panel_title>
+
           <section class="">
             <TagComponent.form
               :if={@editing? and @tag_form != nil}

@@ -55,7 +55,9 @@ defmodule Wik.Accounts.User do
   actions do
     defaults [:read]
 
-    create :create_from_external_identity
+    create :create_from_external_identity do
+      accept [:email]
+    end
 
     create :create_dev_user do
       accept [:email, :role]

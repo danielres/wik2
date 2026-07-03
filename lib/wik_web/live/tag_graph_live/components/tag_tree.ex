@@ -163,8 +163,17 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         >
           <div class={["space-y-4"]}>
             <div class="flex items-center gap-2">
-              <h2 class="text-xl">{@node.tag.name}</h2>
-              <div class="flex gap-4">
+              <h2 class="text-xl">
+                <.link
+                  navigate={~p"/#{@space_slug}/topics/#{@node.tag.slug}"}
+                  class={[
+                    "link link-hover underline decoration-dashed underline-offset-2"
+                  ]}
+                >
+                  {@node.tag.name}
+                </.link>
+              </h2>
+              <div class="flex gap-4" w>
                 <UI.icon_user_with_count count={@tagging_count} />
               </div>
             </div>

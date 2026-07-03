@@ -178,8 +178,14 @@ defmodule WikWeb.TagGraphLiveTest do
 
     assert has_element?(view, "#{testid("tag-count-tag-path-#{alpha.id}")}", "2")
     assert has_element?(view, "#{testid("tag-count-tag-path-#{beta.id}")}", "1")
-    assert has_element?(view, testid("tag-interest-chart-tag-path-#{alpha.id}"))
-    assert has_element?(view, testid("tag-skill-chart-tag-path-#{alpha.id}"))
+
+    alpha_modal_html =
+      view
+      |> element("#tag-path-#{alpha.id}-members-count-details-modal_portal")
+      |> render()
+
+    assert alpha_modal_html =~ ~s(data-testid="tag-interest-chart-tag-path-#{alpha.id}")
+    assert alpha_modal_html =~ ~s(data-testid="tag-skill-chart-tag-path-#{alpha.id}")
   end
 
   defp add_membership(space, user, type) do

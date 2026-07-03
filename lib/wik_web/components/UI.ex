@@ -362,21 +362,23 @@ defmodule WikWeb.Components.UI do
 
   def modal(assigns) do
     ~H"""
-    <dialog id={"#{@id}_modal"} class={["modal", @open? && "modal-open"]}>
-      <div
-        class={[
-          "modal-box",
-          @full? && "w-[100svw] max-w-none h-[calc(100svh-1rem)] px-1 pt-7.5 pb-0.5"
-        ]}
-        phx-click-away={modal_close(@id)}
-      >
-        {render_slot(@inner_block)}
+    <.portal id={"#{@id}_portal"} target="body">
+      <dialog id={"#{@id}_modal"} class={["modal", @open? && "modal-open"]}>
+        <div
+          class={[
+            "modal-box",
+            @full? && "w-[100svw] max-w-none h-[calc(100svh-1rem)] px-1 pt-7.5 pb-0.5"
+          ]}
+          phx-click-away={modal_close(@id)}
+        >
+          {render_slot(@inner_block)}
 
-        <form method="dialog">
-          <.modal_button_close phx-click={modal_close(@id)} />
-        </form>
-      </div>
-    </dialog>
+          <form method="dialog">
+            <.modal_button_close phx-click={modal_close(@id)} />
+          </form>
+        </div>
+      </dialog>
+    </.portal>
     """
   end
 

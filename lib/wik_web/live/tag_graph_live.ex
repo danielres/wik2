@@ -144,7 +144,7 @@ defmodule WikWeb.TagGraphLive do
             id="tag-link-target-tag"
             label="Tag"
             options_json={link_options_json(@options)}
-            placeholder="Search tags"
+            placeholder="Search topics"
             testid="tag-link-target-tag"
           />
 
@@ -413,7 +413,7 @@ defmodule WikWeb.TagGraphLive do
 
       {:error, error} ->
         Log.scoped_error(scope, error, "tag link failed")
-        update(socket, :tag_modal, &%{&1 | error: "Could not link those tags."})
+        update(socket, :tag_modal, &%{&1 | error: "Could not link those topics."})
     end
   end
 

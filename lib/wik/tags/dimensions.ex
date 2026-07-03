@@ -12,7 +12,7 @@ defmodule Wik.Tags.Dimensions do
         color: "oklch(65% 0.15 255)",
         icon: "hero-academic-cap-micro",
         key: "skill",
-        label: "Skill",
+        label: "Experience",
         max: 10
       }
     }

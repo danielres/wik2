@@ -533,7 +533,7 @@ defmodule WikWeb.Components.MembershipTagging do
             field={@form[:tag_id]}
             label="Tag"
             options={Enum.map(@options, &{&1.name, &1.id})}
-            prompt="Select a tag"
+            prompt="Select a topic"
             type="select"
           />
           <input

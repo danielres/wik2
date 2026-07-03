@@ -17,7 +17,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
     <%= if @nodes == [] do %>
       <div class="card bg-base-200/50">
         <div class="card-body">
-          No tags yet.
+          No topics yet.
         </div>
       </div>
     <% else %>

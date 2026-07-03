@@ -96,14 +96,14 @@ defmodule WikWeb.Components.Tag do
             "border-accent/50 hover:border-accent transition-colors",
             "bg-accent/2 hover:bg-accent/10"
           ]}
-          aria-label={"Edit tag #{@selected_tag.name}"}
+          aria-label={"Edit topic #{@selected_tag.name}"}
           data-testid="tag-detail-edit"
           phx-click="tag_edit_open"
           phx-value-tag_id={@selected_tag.id}
-          title={"Edit tag #{@selected_tag.name}"}
+          title={"Edit topic #{@selected_tag.name}"}
           type="button"
         >
-          <span class="sr-only">Edit tag</span>
+          <span class="sr-only">Edit topic</span>
         </button>
       </div>
 
@@ -346,7 +346,7 @@ defmodule WikWeb.Components.Tag do
           </div>
 
           <.error :for={{field, _message} <- @form_errors} :if={field == :slug and @auto_slug != ""}>
-            This tag name is not available.
+            This topic name is not available.
           </.error>
 
           <.input field={@form[:description]} label="Description" type="textarea" />
@@ -379,7 +379,7 @@ defmodule WikWeb.Components.Tag do
     <div class="space-y-4" data-testid="tag-delete-confirm">
       <div class="space-y-2">
         <UI.page_title class="text-lg font-[300]">
-          Delete tag?
+          Delete topic?
         </UI.page_title>
 
         <p class="text-sm text-base-content/70">
@@ -404,7 +404,7 @@ defmodule WikWeb.Components.Tag do
           phx-value-tag_id={@tag.id}
           type="button"
         >
-          <.icon name="hero-trash-mini" class="size-4" /> Delete tag
+          <.icon name="hero-trash-mini" class="size-4" /> Delete topic
         </button>
       </div>
     </div>

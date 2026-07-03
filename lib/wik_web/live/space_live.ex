@@ -67,6 +67,8 @@ defmodule WikWeb.SpaceLive do
             <button
               :if={@editing?}
               phx-click="update_space_start"
+              type="button"
+              aria-label="Edit space"
               class={[
                 "border",
                 "relative",

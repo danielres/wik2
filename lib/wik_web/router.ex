@@ -144,9 +144,8 @@ defmodule WikWeb.Router do
 
       scope "/:space_slug" do
         pipe_through [:space_tenant]
-        live "/", SpaceLive, :members
+        live "/", SpaceLive
         live "/members", MembersLive
-        live "/orphans", SpaceLive, :orphans
         live "/admin", SpaceAdminLive
         live "/topics", TagGraphLive, :index
         live "/topics/:tag_slug", TagLive, :tag

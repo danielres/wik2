@@ -173,7 +173,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
                   {@node.tag.name}
                 </.link>
               </h2>
-              <div class="flex gap-4" w>
+              <div class="flex gap-4">
                 <UI.icon_user_with_count count={@tagging_count} />
               </div>
             </div>

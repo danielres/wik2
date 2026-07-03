@@ -32,7 +32,7 @@ defmodule WikWeb.Components.Tag do
         <ul class="leading-none space-y-0">
           <li :if={@render_root?}>
             <.link navigate={~p"/#{@space_slug}/topics"} class="hover:opacity-100 transition-opacity">
-              Tags
+              Topics
             </.link>
           </li>
 

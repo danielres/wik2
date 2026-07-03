@@ -3,11 +3,9 @@ defmodule WikWeb.SpaceLive do
   use WikWeb.Presence.Handlers
 
   alias AshPhoenix.Form
-  alias Wik.Blocks
   alias WikWeb.Components
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
-  alias WikWeb.SpaceLive.OrphanBlocks
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
@@ -16,15 +14,12 @@ defmodule WikWeb.SpaceLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     space = socket.assigns.current_scope.tenant |> load_space(scope)
-    orphan_blocks = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
 
     socket =
       socket
       |> assign(form: nil)
       |> assign(space: space)
       |> assign(editing?: false)
-      |> assign(orphan_block_selected: nil)
-      |> assign_orphan_blocks(orphan_blocks)
 
     {:ok, socket}
   end
@@ -33,17 +28,6 @@ defmodule WikWeb.SpaceLive do
     space |> Form.for_update(:update, scope: scope) |> to_form()
   end
 
-  defp assign_orphan_blocks(socket, orphan_blocks) do
-    scope = socket.assigns.current_scope
-
-    socket
-    |> assign(orphan_blocks: orphan_blocks)
-    |> assign(
-      can_destroy_orphan_blocks?: Enum.any?(orphan_blocks, &Ash.can?({&1, :destroy}, scope))
-    )
-  end
-
-  # socket.assigns.live_action #=> :page_tree
   @impl true
   def render(assigns) do
     ~H"""
@@ -116,21 +100,6 @@ defmodule WikWeb.SpaceLive do
             form={@form}
           />
         </Modal.render>
-
-        <.link patch={~p"/#{@space.slug}/orphans"}>
-          <span class="badge badge-xs badge-warning mr-1">{@orphan_blocks |> length()}</span>
-          Orphan blocks
-        </.link>
-
-        <OrphanBlocks.render
-          :if={@can_destroy_orphan_blocks?}
-          event_orphan_block_destroy="orphan_block_destroy"
-          event_preview_cancel="orphan_block_preview_cancel"
-          event_preview_start="orphan_block_preview_start"
-          orphan_block_selected={@orphan_block_selected}
-          orphan_blocks={@orphan_blocks}
-          scope={@current_scope}
-        />
       </Layouts.space>
     </Layouts.app>
     """
@@ -159,51 +128,6 @@ defmodule WikWeb.SpaceLive do
   def handle_event("update_space_cancel", _params, socket) do
     socket = socket |> assign(form: nil)
     {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("orphan_block_preview_start", %{"block_id" => block_id}, socket) do
-    orphan_block_selected =
-      socket.assigns.orphan_blocks
-      |> Enum.find(&(&1.id == block_id))
-
-    {:noreply, socket |> assign(orphan_block_selected: orphan_block_selected)}
-  end
-
-  @impl true
-  def handle_event("orphan_block_preview_cancel", _params, socket) do
-    {:noreply, socket |> assign(orphan_block_selected: nil)}
-  end
-
-  @impl true
-  def handle_event("orphan_block_destroy", %{"block_id" => block_id}, socket) do
-    space = socket.assigns.space
-    scope = socket.assigns.current_scope
-
-    case Blocks.destroy_orphan_space_owned_block(space, block_id, scope: scope) do
-      :ok ->
-        orphan_blocks = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
-
-        orphan_block_selected =
-          case socket.assigns.orphan_block_selected do
-            %{id: ^block_id} -> nil
-            orphan_block_selected -> orphan_block_selected
-          end
-
-        {:noreply,
-         socket
-         |> assign_orphan_blocks(orphan_blocks)
-         |> assign(orphan_block_selected: orphan_block_selected)}
-
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "destroy_orphan_space_owned_block failed")
-        orphan_blocks = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
-
-        {:noreply,
-         socket
-         |> assign_orphan_blocks(orphan_blocks)
-         |> assign(orphan_block_selected: nil)}
-    end
   end
 
   @impl true

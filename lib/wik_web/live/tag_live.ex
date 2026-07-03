@@ -74,14 +74,14 @@ defmodule WikWeb.TagLive do
         {:ok, nil} ->
           socket
           |> put_flash(:error, "Tag not found")
-          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/tags")
+          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/topics")
 
         {:error, error} ->
           Log.scoped_error(socket.assigns.current_scope, error, "tag page load failed")
 
           socket
           |> put_flash(:error, "Couldn't load tag")
-          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/tags")
+          |> push_navigate(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/topics")
       end
 
     {:noreply, WikWeb.Presence.track_in_liveview(socket, url)}
@@ -122,7 +122,7 @@ defmodule WikWeb.TagLive do
          socket
          |> assign(:tag, tag)
          |> close_tag_form()
-         |> push_patch(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/tags/#{tag.slug}")}
+         |> push_patch(to: ~p"/#{socket.assigns.current_scope.tenant.slug}/topics/#{tag.slug}")}
 
       {:error, form} ->
         {:noreply, assign(socket, :tag_form, form)}
@@ -245,10 +245,18 @@ defmodule WikWeb.TagLive do
         </:actions>
 
         <:aside :if={not @editing?}>
+          <section :if={@show_descendants?}>
+            <TagComponent.descendants
+              graph={@tag_graph}
+              scope={@current_scope}
+              tag={@tag}
+            />
+          </section>
+
           <section>
             <div class="flex justify-between items-baseline">
               <UI.panel_title>
-                <div>Updated</div>
+                <div>History</div>
               </UI.panel_title>
 
               <div>
@@ -334,28 +342,9 @@ defmodule WikWeb.TagLive do
             </div>
           </section>
 
-          <section>
-            <UI.panel_title>Members</UI.panel_title>
-
-            <MembershipTagging.list_for_tag
-              active_sort={@selected_member_tagging_sort}
-              query={@taggings_query}
-              scope={@current_scope}
-              tag={@tag}
-            />
-          </section>
-
-          <section>
-            <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} />
-          </section>
-
-          <section :if={@show_descendants?}>
-            <TagComponent.descendants
-              graph={@tag_graph}
-              scope={@current_scope}
-              tag={@tag}
-            />
-          </section>
+          <%!-- <section> --%>
+          <%!--   <TagComponent.children graph={@tag_graph} scope={@current_scope} tag={@tag} /> --%>
+          <%!-- </section> --%>
         </:aside>
 
         <div :if={@tag} class="space-y-6" data-testid="tag-page">
@@ -371,6 +360,17 @@ defmodule WikWeb.TagLive do
 
             <UI.page_title>{@tag.name}</UI.page_title>
           </UI.page_head>
+
+          <UI.panel_title>Members</UI.panel_title>
+          <MembershipTagging.list_for_tag
+            active_sort={@selected_member_tagging_sort}
+            query={@taggings_query}
+            scope={@current_scope}
+            tag={@tag}
+          />
+
+          <UI.panel_title class="pt-12 pb-6">Description</UI.panel_title>
+
           <section class="">
             <TagComponent.form
               :if={@editing? and @tag_form != nil}

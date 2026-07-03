@@ -35,11 +35,11 @@ defmodule WikWeb.Components.TagTest do
     assert html =~ ~s(data-testid="tag-breadcrumbs")
     assert html =~ ~s(data-testid="tag-breadcrumbs-path-0")
     assert html =~ ~s(data-testid="tag-breadcrumbs-path-1")
-    assert html =~ ~s(href="/#{space.slug}/tags")
-    assert html =~ ~s(href="/#{space.slug}/tags/recipes")
-    assert html =~ ~s(href="/#{space.slug}/tags/soups")
-    assert html =~ ~s(href="/#{space.slug}/tags/healthy-ideas")
-    assert html =~ ~s(href="/#{space.slug}/tags/irish-stew")
+    assert html =~ ~s(href="/#{space.slug}/topics")
+    assert html =~ ~s(href="/#{space.slug}/topics/recipes")
+    assert html =~ ~s(href="/#{space.slug}/topics/soups")
+    assert html =~ ~s(href="/#{space.slug}/topics/healthy-ideas")
+    assert html =~ ~s(href="/#{space.slug}/topics/irish-stew")
   end
 
   test "breadcrumbs keeps a trailing separator when render_self? is false" do
@@ -63,10 +63,10 @@ defmodule WikWeb.Components.TagTest do
         tag: stew
       })
 
-    assert html =~ ~s(href="/#{space.slug}/tags")
-    assert html =~ ~s(href="/#{space.slug}/tags/recipes")
-    assert html =~ ~s(href="/#{space.slug}/tags/soups")
-    refute html =~ ~s(href="/#{space.slug}/tags/irish-stew")
+    assert html =~ ~s(href="/#{space.slug}/topics")
+    assert html =~ ~s(href="/#{space.slug}/topics/recipes")
+    assert html =~ ~s(href="/#{space.slug}/topics/soups")
+    refute html =~ ~s(href="/#{space.slug}/topics/irish-stew")
     assert html =~ ">"
   end
 

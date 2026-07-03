@@ -216,7 +216,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   defp patch_internal_wiki_links(html, %{tenant: %{slug: space_slug}})
        when is_binary(space_slug) do
     Regex.replace(
-      ~r/<a href="\/#{Regex.escape(space_slug)}(?:\/wiki\/|\/tags\/)[^"]*"/,
+      ~r/<a href="\/#{Regex.escape(space_slug)}(?:\/wiki\/|\/tags\/|\/topics\/)[^"]*"/,
       html,
       fn link ->
         link <> ~s( data-phx-link="patch" data-phx-link-state="push")
@@ -252,7 +252,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
 
         tag_name != title_path and Map.has_key?(tag_name_to_slug_map, tag_name) ->
           slug = Map.fetch!(tag_name_to_slug_map, tag_name)
-          "[#{"#" <> tag_name}](/#{space_slug}/tags/#{slug})"
+          "[#{"#" <> tag_name}](/#{space_slug}/topics/#{slug})"
 
         tag_name != title_path ->
           wikilink

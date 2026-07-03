@@ -6,6 +6,7 @@
 @import "../../priv/static/images/icons/icons.css";
 
 @import "./blocks/markdown.css";
+@import "./blocks/markdown/lexical.css";
 
 @source "../../deps/cinder";
 @source "../../deps/ash_authentication_phoenix";
@@ -45,6 +46,7 @@
 @layer utilities {
   .fieldset {
     @apply text-base;
+    @apply py-0;
     .label {
       @apply font-bold;
     }

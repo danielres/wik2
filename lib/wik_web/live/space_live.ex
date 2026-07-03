@@ -46,62 +46,67 @@ defmodule WikWeb.SpaceLive do
           <% end %>
         </:actions>
 
-        <div class={[
-          "stacked",
-          "w-fit"
-        ]}>
-          <div class="space-y-8">
-            <UI.page_head>
-              <UI.page_title>{@current_scope.tenant |> to_string()}</UI.page_title>
-              <span class="badge badge-xs badge-ghost font-mono text-base-content/50">
-                /{@space.slug}
-              </span>
-            </UI.page_head>
+        <div class="space-y-8">
+          <div class={[
+            "stacked"
+          ]}>
+            <div class="space-y-8">
+              <UI.page_head>
+                <UI.page_title>{@current_scope.tenant |> to_string()}</UI.page_title>
+              </UI.page_head>
 
-            <div>
-              <span class="label font-bold">Description</span>
-              <div class="opacity-50 text-sm bg-base-200 p-4 rounded">{@space.description}</div>
+              <div>
+                <UI.panel_title>
+                  Description
+                </UI.panel_title>
+
+                <div class="text-sm bg-base-200 p-4 rounded">{@space.description}</div>
+              </div>
             </div>
+
+            <button
+              :if={@editing?}
+              phx-click="update_space_start"
+              class={[
+                "border",
+                "relative",
+                "cursor-pointer",
+                "rounded",
+                "p-4",
+                "w-[calc(100%+1rem)] -ml-[.5rem]",
+                "h-[calc(100%+1rem)] -mt-[.5rem]",
+                "border-accent/70 hover:border-accent transition-colors",
+                "bg-accent/5 hover:bg-accent/10"
+              ]}
+            >
+            </button>
           </div>
 
-          <button
-            :if={@editing?}
-            phx-click="update_space_start"
-            class={[
-              "border",
-              "relative",
-              "cursor-pointer",
-              "rounded",
-              "p-4",
-              "w-[calc(100%+1rem)] -ml-[.5rem]",
-              "h-[calc(100%+1rem)] -mt-[.5rem]",
-              "border-accent/70 hover:border-accent transition-colors",
-              "bg-accent/5 hover:bg-accent/10"
-            ]}
-          >
-          </button>
-        </div>
+          <UI.panel_title>
+            Info
+          </UI.panel_title>
 
-        <div>
-          <span class="badge badge-xs badge-info">{@space.memberships |> length()} members</span>
+          <div class="text-sm bg-base-200 p-4 rounded">
+            <UI.icon_user_with_count count={@space.memberships |> length()} />
+          </div>
         </div>
-
-        <Modal.render
-          cancel="update_space_cancel"
-          cancel_testid="update-space-cancel"
-          open?={@form != nil}
-          testid="update-space-dialog"
-        >
-          <Components.Space.form
-            :if={Ash.can?({@space, :update}, @current_scope)}
-            action_type="update"
-            event_submit="space_submit"
-            event_validate="space_validate"
-            form={@form}
-          />
-        </Modal.render>
       </Layouts.space>
     </Layouts.app>
+
+    <Modal.render
+      cancel="update_space_cancel"
+      cancel_testid="update-space-cancel"
+      open?={@form != nil}
+      testid="update-space-dialog"
+    >
+      <Components.Space.form
+        :if={Ash.can?({@space, :update}, @current_scope)}
+        action_type="update"
+        event_submit="space_submit"
+        event_validate="space_validate"
+        form={@form}
+      />
+    </Modal.render>
     """
   end
 

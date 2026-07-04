@@ -42,7 +42,7 @@ defmodule WikWeb.DocsLive do
         <ul class="menu bg-base-200 min-h-full w-fit p-4 pr-8">
           <!-- Sidebar content here -->
           <li>
-            <.link patch={~p"/docs"}> Home </.link>
+            <.link patch={~p"/docs"}>Wik?</.link>
           </li>
           <li>
             <.link patch={~p"/docs/core-features"}>Core features</.link>

@@ -5,36 +5,56 @@ defmodule WikWeb.Docs.Pages.Index do
   def title, do: "What is Wik?"
 
   def render(assigns) do
+    # We don't only waste screen time because apps are addictive, but because our real-world social field is illegible.
+    #
+    # We don't know:
+    #
+    # - who is available
+    # - what is happening
+    # - what people want to do
+    # - which ideas are alive
+    # - where our group energy is
+    # - what could become real
+
     ~MD"""
-    # What is Wik?
+    #### Wik helps existing groups coordinate clearly
 
-    - Wik is community software for groups that want to spend less time coordinating online and more time together in real life.
-    - It optimizes for clarity, not retention.
-    - Instead of maximizing engagement, Wik reduces noise and gives groups the shared tools they need to coordinate without becoming another feed.
+    - local scenes and neighbourhoods
+    - friendship and support circles
+    - teams, classes, communities, clubs, collectives, …
 
-    ## Built for existing groups
 
-    Wik is designed for groups that already exist, such as:
+    <hr class="sm:max-w-xl"/>
 
-    - friend circles
-    - communities
-    - collectives
-    - teams
-    - clubs
-    - classes
-    - study groups
-    - book clubs
-    - projects
-    - local scenes
-    - ...
+    #### Most groups hold a quiet abundance
 
-    Most groups already contain far more potential than they manage to realize.
+    - overlapping interests, useful knowledge, unfinished ideas
+    - shared intentions, compatible availability, …
 
-    People have overlapping interests, useful knowledge, unfinished ideas, shared intentions, and compatible availability, but much of it stays hidden inside scattered messages, private conversations, and forgotten plans.
+    <div class="max-w-xl text-sm text-balance">
+      But much of it stays hidden inside scattered messages, private conversations, forgotten plans, and endless threads.
+    </div>
 
-    Wik makes that latent potential visible.
 
-    It helps a group turn "we should do this sometime" into actual events, projects, shared knowledge, and real-life activity.
+    **Wik helps make that potential visible**
+
+    <div class="max-w-xl text-sm text-balance">
+      It gives groups a shared place to gather what matters, find what is possible, and turn “we should do this sometime” into real events, shared projects, and time together.
+    </div>
+
+    <hr class="sm:max-w-xl"/>
+
+    #### Wik is built for clarity, not retention
+
+    <div class="max-w-xl text-sm text-balance">
+      Not another feed.
+      <br />
+      Not another place trying to capture your attention.
+      <br />
+      <br />
+      A calmer tool for making shared possibilities visible, and turning screen time into more meaningful time together.
+    </div>
+
     """HEEX
   end
 end

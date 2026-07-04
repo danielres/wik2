@@ -8,7 +8,9 @@ defmodule WikWeb.Docs.Pages.CoreFeatures do
     ~MD"""
     # Core features
 
-    Each group gets its own private space, collectively owned and authored by its members. Together, these features help groups coordinate around real goals without relying on endless chat threads.
+    Each group gets its own private space, collectively owned and authored by its members.
+
+    Together, these features help groups coordinate around real activities, projects and goals without relying on endless chat threads.
 
     ## Advanced wiki
 
@@ -39,6 +41,8 @@ defmodule WikWeb.Docs.Pages.CoreFeatures do
     For making people's interests, skills, availability, projects, and intentions easier to discover within the group.
 
     ## Versatile tag system
+
+    (WIP)
     """HEEX
   end
 end

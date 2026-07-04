@@ -79,7 +79,8 @@
 
     h1,
     h2,
-    h3 {
+    h3,
+    h4 {
       @apply tracking-tight;
     }
     h1 {
@@ -91,12 +92,18 @@
     h3 {
       @apply text-base text-base-content/90;
     }
+    h4 {
+      @apply text-[0.95em] text-base-content mb-0;
+    }
     p {
-      @apply text-sm ;
+      @apply text-sm;
     }
     ul {
       @apply text-sm;
       @apply list-disc pl-6 leading-tight space-y-2;
+    }
+    hr {
+      @apply border-base-content/30;
     }
   }
 

@@ -303,10 +303,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     assert has_element?(view, testid("member-tagging-skill-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-sort-controls"))
 
-    assert has_element?(
-             view,
-             testid("member-tagging-sort-tag") <> ~s([data-member-tagging-sort="tag.name"])
-           )
+    refute has_element?(view, testid("member-tagging-sort-tag"))
 
     assert has_element?(
              view,
@@ -326,22 +323,11 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     refute has_element?(view, ~s(.cinder-list button[phx-click="toggle_sort"]))
 
-    render_click(element(view, testid("member-tagging-sort-tag")))
-    render_async(view)
-
-    assert has_element?(view, testid("member-tagging-sort-tag") <> ~s([aria-pressed="true"]))
-    refute has_element?(view, testid("member-tagging-sort-interest") <> ~s([aria-pressed="true"]))
-
-    html = render(view)
-
-    assert index_of_testid(html, "member-tagging-name-#{acro.id}") <
-             index_of_testid(html, "member-tagging-name-#{dance.id}")
-
     render_click(element(view, testid("member-tagging-sort-skill")))
     render_async(view)
 
     assert has_element?(view, testid("member-tagging-sort-skill") <> ~s([aria-pressed="true"]))
-    refute has_element?(view, testid("member-tagging-sort-tag") <> ~s([aria-pressed="true"]))
+    refute has_element?(view, testid("member-tagging-sort-interest") <> ~s([aria-pressed="true"]))
 
     html = render(view)
 

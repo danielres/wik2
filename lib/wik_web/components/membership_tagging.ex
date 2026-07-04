@@ -30,25 +30,37 @@ defmodule WikWeb.Components.MembershipTagging do
       data-testid="member-taggings-table"
     >
       <div
-        class="mb-1 flex items-center justify-end gap-2"
+        class={[
+          "mb-1 flex items-center justify-end gap-2",
+          "group"
+        ]}
         data-testid="member-tagging-sort-controls"
       >
-        <button
-          id="member-tagging-sort-tag"
-          type="button"
+        <%!-- <button --%>
+        <%!--   id="member-tagging-sort-tag" --%>
+        <%!--   type="button" --%>
+        <%!--   class={[ --%>
+        <%!--     "btn btn-sm transition btn-neutral", --%>
+        <%!--     @active_sort != "tag.name" && "opacity-40" --%>
+        <%!--   ]} --%>
+        <%!--   aria-pressed={to_string(@active_sort == "tag.name")} --%>
+        <%!--   data-member-tagging-sort="tag.name" --%>
+        <%!--   data-testid="member-tagging-sort-tag" --%>
+        <%!--   phx-click="tagging_sort" --%>
+        <%!--   phx-value-sort="tag.name" --%>
+        <%!-- > --%>
+        <%!--   <.icon name="hero-arrow-down-mini" class="size-3 -mr-1.5" /> --%>
+        <%!--   <span>Aa</span> --%>
+        <%!-- </button> --%>
+
+        <.icon
+          name="hero-arrows-up-down-micro"
           class={[
-            "btn btn-sm transition btn-neutral",
-            @active_sort != "tag.name" && "opacity-40"
+            "opacity-20 group-hover:opacity-60 transition",
+            "size-4"
           ]}
-          aria-pressed={to_string(@active_sort == "tag.name")}
-          data-member-tagging-sort="tag.name"
-          data-testid="member-tagging-sort-tag"
-          phx-click="tagging_sort"
-          phx-value-sort="tag.name"
-        >
-          <.icon name="hero-arrow-down-mini" class="size-3 -mr-1.5" />
-          <span>Aa</span>
-        </button>
+        />
+
         <button
           id="member-tagging-sort-interest"
           type="button"
@@ -65,6 +77,7 @@ defmodule WikWeb.Components.MembershipTagging do
           <div style={"background: #{@interest_dimension.color}"} class="size-2.5 rounded-full" />
           {@interest_dimension.label}
         </button>
+
         <button
           id="member-tagging-sort-skill"
           type="button"
@@ -239,22 +252,22 @@ defmodule WikWeb.Components.MembershipTagging do
         class="mb-1 flex items-center justify-end gap-2"
         data-testid="tag-member-tagging-sort-controls"
       >
-        <button
-          id="tag-member-tagging-sort-username"
-          type="button"
-          class={[
-            "btn btn-sm transition btn-neutral",
-            @active_sort != "target_membership.username" && "opacity-40"
-          ]}
-          aria-pressed={to_string(@active_sort == "target_membership.username")}
-          data-member-tagging-sort="target_membership.username"
-          data-testid="tag-member-tagging-sort-username"
-          phx-click="member_tagging_sort"
-          phx-value-sort="target_membership.username"
-        >
-          <.icon name="hero-arrow-down-mini" class="size-3 -mr-1.5" />
-          <span>Aa</span>
-        </button>
+        <%!-- <button --%>
+        <%!--   id="tag-member-tagging-sort-username" --%>
+        <%!--   type="button" --%>
+        <%!--   class={[ --%>
+        <%!--     "btn btn-sm transition btn-neutral", --%>
+        <%!--     @active_sort != "target_membership.username" && "opacity-40" --%>
+        <%!--   ]} --%>
+        <%!--   aria-pressed={to_string(@active_sort == "target_membership.username")} --%>
+        <%!--   data-member-tagging-sort="target_membership.username" --%>
+        <%!--   data-testid="tag-member-tagging-sort-username" --%>
+        <%!--   phx-click="member_tagging_sort" --%>
+        <%!--   phx-value-sort="target_membership.username" --%>
+        <%!-- > --%>
+        <%!--   <.icon name="hero-arrow-down-mini" class="size-3 -mr-1.5" /> --%>
+        <%!--   <span>Aa</span> --%>
+        <%!-- </button> --%>
         <button
           id="tag-member-tagging-sort-interest"
           type="button"

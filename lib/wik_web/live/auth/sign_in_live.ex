@@ -24,10 +24,38 @@ defmodule WikWeb.Auth.SignInLive do
      |> assign(:dev_sign_in_users, dev_sign_in_users)}
   end
 
+  slot :inner_block, required: true
+
+  def blockquote(assigns) do
+    ~H"""
+    <blockquote class={[
+      "my-6",
+      "text-balance italic text-center",
+      "border-y border-base-content/20 py-6"
+    ]}>
+      {render_slot(@inner_block)}
+    </blockquote>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-svh grid place-items-center p-6" data-testid="sign-in-page">
+    <div class="min-h-svh grid place-items-center p-6 space-y-12" data-testid="sign-in-page">
+      <div class="text-base-content/70">
+        <.blockquote>
+          <p>Your attention is a powerful force.</p>
+          <p>It's the source of all you'll ever create in your life.</p>
+          <p class="mt-6">
+            Your phone, your job, the apps, the news.
+          </p>
+          <p>All day long, things are competing for it…</p>
+          <p class="mt-6">
+            How about we try something different?
+          </p>
+        </.blockquote>
+      </div>
+
       <div class="flex w-full max-w-5xl flex-col items-center gap-12">
         <div class="space-y-2">
           <.telegram_login_button />

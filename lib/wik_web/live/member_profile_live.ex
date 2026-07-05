@@ -171,24 +171,12 @@ defmodule WikWeb.MemberProfileLive do
           />
           <section class="space-y-3">
             <div class="flex justify-end">
-              <button
+              <UI.button_add_topic
                 :if={@editable?}
-                class={[
-                  "btn btn-sm btn-soft btn-accent btn-circle",
-                  "tooltip tooltip-xs tooltip-left tooltip-accent"
-                ]}
                 data-testid="member-tagging-add"
                 phx-click="tagging_create_start"
-                type="button"
                 data-tip="Insert topics"
-              >
-                <div class="indicator">
-                  <div class="relative -left-0.5 top-0.5">
-                    <.icon name="hero-tag-micro" class="opacity-70" />
-                    <.icon name="hero-plus-micro" class="indicator-item size-3 mt-0.5" />
-                  </div>
-                </div>
-              </button>
+              />
             </div>
 
             <MembershipTagging.list

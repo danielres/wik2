@@ -168,6 +168,60 @@ defmodule WikWeb.TagLiveTest do
     )
   end
 
+  test "tag page add-to-profile opens tagging form for the current topic", %{conn: conn} do
+    owner = generate(user())
+    user = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    membership =
+      space
+      |> add_membership(user, :member)
+      |> then(&set_username(&1, "ada"))
+      |> reload_membership()
+
+    grant_active_telegram_access(space, user)
+    owner_scope = scope(owner, space)
+    member_scope = scope(user, space)
+
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: owner_scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/#{space.slug}/topics/#{tag.slug}")
+
+    assert has_element?(view, testid("member-tagging-add"))
+
+    render_click(element(view, testid("member-tagging-add")))
+
+    assert has_element?(view, testid("member-tagging-dialog"))
+    assert has_element?(view, testid("member-tagging-form-form"))
+
+    assert has_element?(
+             view,
+             ~s(#member-tagging-form select[name="form[tag_id]"] option[value="#{tag.id}"]),
+             "Fusion"
+           )
+
+    render_submit(
+      form(view, testid("member-tagging-form-form"),
+        form: %{
+          "tag_id" => tag.id,
+          "interest_level" => "8",
+          "skill_level" => "3",
+          "description" => "I like this topic"
+        }
+      )
+    )
+
+    assert {:ok, [tagging]} = Tags.list_membership_taggings(membership, scope: member_scope)
+    assert tagging.tag_id == tag.id
+    assert tagging.description == "I like this topic"
+    assert has_element?(view, testid("tag-member-taggings-table"))
+    refute has_element?(view, testid("member-tagging-add"))
+  end
+
   test "tag page uses breadcrumbs for parents and relationship components for children and descendants",
        %{
          conn: conn

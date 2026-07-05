@@ -14,6 +14,7 @@ defmodule WikWeb.TagLive do
   alias WikWeb.Components
   alias WikWeb.Components.Block.Types.Markdown
   alias WikWeb.Components.MembershipTagging
+  alias WikWeb.Components.Modal
   alias WikWeb.Components.Tag, as: TagComponent
   alias WikWeb.Components.UI
 
@@ -32,6 +33,7 @@ defmodule WikWeb.TagLive do
 
     {:ok,
      socket
+     |> assign(current_member_tagged?: false)
      |> assign(editable?: editable?)
      |> assign(editing?: false)
      |> assign(page_tree: nil)
@@ -47,6 +49,8 @@ defmodule WikWeb.TagLive do
      |> assign(tag: nil)
      |> assign(tag_form: nil)
      |> assign(tag_graph: nil)
+     |> assign(tagging_modal: new_tagging_modal())
+     |> assign(tagging_count: 0)
      |> assign(taggings_query: nil)}
   end
 
@@ -67,8 +71,10 @@ defmodule WikWeb.TagLive do
           |> assign(:primary_block_form, nil)
           |> assign_primary_block(primary_block)
           |> assign(:tag_graph, tag_graph)
+          |> assign(:tagging_count, tagging_count(tag_graph, tag))
           |> assign(:taggings_query, Tags.tag_taggings_query(tag))
           |> assign(:show_descendants?, GraphQueries.children_for(tag_graph, tag) != [])
+          |> assign_current_member_tagging(tag)
           |> maybe_sync_tag_form()
 
         {:ok, nil} ->
@@ -209,8 +215,49 @@ defmodule WikWeb.TagLive do
     end
   end
 
+  def handle_event("tagging_create_start", _params, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :tagging_modal,
+       new_tagging_modal(:create, form: init_tagging_form(socket.assigns.tag))
+     )}
+  end
+
+  def handle_event("tagging_form_cancel", _params, socket) do
+    {:noreply, close_tagging_form(socket)}
+  end
+
+  def handle_event("tagging_validate", %{"form" => params}, socket) do
+    {:noreply,
+     update(socket, :tagging_modal, fn modal ->
+       %{modal | form: to_form(normalize_tagging_form(params), as: :form), error: nil}
+     end)}
+  end
+
+  def handle_event("tagging_submit", %{"form" => params}, socket) do
+    socket =
+      case {socket.assigns.tenant_context.current_membership, parse_tagging_params(params)} do
+        {nil, _result} ->
+          assign_tagging_form_error(socket, params, "Join this space before adding topics.")
+
+        {_membership, {:error, message}} ->
+          assign_tagging_form_error(socket, params, message)
+
+        {membership, {:ok, tagging_params}} ->
+          save_tagging_entry(membership, tagging_params, socket)
+      end
+
+    {:noreply, socket}
+  end
+
   @impl true
   def render(assigns) do
+    assigns =
+      assign(assigns,
+        tagging_modal_open?: assigns.tagging_modal.mode != nil
+      )
+
     ~H"""
     <Layouts.app
       context={@context}
@@ -367,10 +414,20 @@ defmodule WikWeb.TagLive do
               />
             </:prepend>
 
-            <UI.page_title>{@tag.name}</UI.page_title>
+            <div class="flex justify-between">
+              <UI.page_title>{@tag.name}</UI.page_title>
+
+              <UI.button_add_to_user
+                :if={@tenant_context.current_membership && !@current_member_tagged?}
+                data-testid="member-tagging-add"
+                phx-click="tagging_create_start"
+                data-tip="Add to my profile"
+              />
+            </div>
           </UI.page_head>
 
           <MembershipTagging.list_for_tag
+            :if={@tagging_count > 0}
             active_sort={@selected_member_tagging_sort}
             query={@taggings_query}
             scope={@current_scope}
@@ -402,6 +459,25 @@ defmodule WikWeb.TagLive do
         </div>
       </Layouts.space>
     </Layouts.app>
+
+    <Modal.render
+      cancel="tagging_form_cancel"
+      cancel_testid="member-tagging-cancel"
+      open?={@tagging_modal_open?}
+      testid="member-tagging-dialog"
+    >
+      <MembershipTagging.form
+        :if={@tagging_modal.mode == :create and @tagging_modal.form}
+        action_label="Save"
+        error={@tagging_modal.error}
+        form={@tagging_modal.form}
+        mode={@tagging_modal.mode}
+        options={[@tag]}
+        tag={@tag}
+        membership={@tenant_context.current_membership}
+        tenant={@current_scope.tenant}
+      />
+    </Modal.render>
     """
   end
 
@@ -530,6 +606,163 @@ defmodule WikWeb.TagLive do
 
   defp tag_params(params), do: params
 
+  defp init_tagging_form(%Tag{} = tag) do
+    to_form(
+      %{
+        "tag_id" => tag.id,
+        "interest_level" => "0",
+        "skill_level" => "0",
+        "description" => ""
+      },
+      as: :form
+    )
+  end
+
+  defp close_tagging_form(socket) do
+    assign(socket, :tagging_modal, new_tagging_modal())
+  end
+
+  defp normalize_tagging_form(params) do
+    %{
+      "tag_id" => Map.get(params, "tag_id", ""),
+      "interest_level" => Map.get(params, "interest_level", "0"),
+      "skill_level" => Map.get(params, "skill_level", "0"),
+      "description" => Map.get(params, "description", "")
+    }
+  end
+
+  defp parse_tagging_params(params) do
+    with tag_id when is_binary(tag_id) and tag_id != "" <- Map.get(params, "tag_id"),
+         {:ok, interest_level} <- parse_level(params, "interest_level"),
+         {:ok, skill_level} <- parse_level(params, "skill_level") do
+      {:ok,
+       %{
+         description: Map.get(params, "description", ""),
+         interest_level: interest_level,
+         skill_level: skill_level,
+         tag_id: tag_id
+       }}
+    else
+      _ -> {:error, "Enter valid levels."}
+    end
+  end
+
+  defp save_tagging_entry(membership, tagging_params, socket) do
+    scope = socket.assigns.current_scope
+
+    attrs = %{
+      description: tagging_params.description,
+      dimensions: %{
+        "interest" => tagging_params.interest_level,
+        "skill" => tagging_params.skill_level
+      }
+    }
+
+    result =
+      if empty_dimensions?(attrs.dimensions) do
+        remove_tagging_entry(membership, tagging_params.tag_id, scope)
+      else
+        Tags.upsert_membership_tagging(membership, tagging_params.tag_id, attrs, scope: scope)
+      end
+
+    case result do
+      {:ok, _tagging} ->
+        socket
+        |> close_tagging_form()
+        |> refresh_tagging_state()
+
+      :ok ->
+        socket
+        |> close_tagging_form()
+        |> refresh_tagging_state()
+
+      {:error, :not_found} ->
+        socket
+        |> close_tagging_form()
+        |> refresh_tagging_state()
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tagging submit failed")
+
+        assign_tagging_form_error(
+          socket,
+          normalize_tagging_form(%{}),
+          "Couldn't save that tagging."
+        )
+    end
+  end
+
+  defp remove_tagging_entry(membership, tag_id, scope) do
+    case Tags.remove_membership_tagging(membership, tag_id, scope: scope) do
+      {:ok, _tagging} -> :ok
+      {:error, :not_found} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp assign_tagging_form_error(socket, params, message) do
+    update(socket, :tagging_modal, fn modal ->
+      %{modal | form: to_form(normalize_tagging_form(params), as: :form), error: message}
+    end)
+  end
+
+  defp refresh_tagging_state(socket) do
+    scope = socket.assigns.current_scope
+    tag_graph = Tags.load_tag_graph(scope)
+
+    socket
+    |> assign(:tag_graph, tag_graph)
+    |> assign(:tagging_count, tagging_count(tag_graph, socket.assigns.tag))
+    |> assign_current_member_tagging(socket.assigns.tag)
+  end
+
+  defp assign_current_member_tagging(socket, tag) do
+    current_membership = socket.assigns.tenant_context.current_membership
+
+    assign(
+      socket,
+      :current_member_tagged?,
+      current_member_tagged?(current_membership, tag, socket.assigns.current_scope)
+    )
+  end
+
+  defp current_member_tagged?(nil, _tag, _scope), do: false
+
+  defp current_member_tagged?(current_membership, tag, scope) do
+    case Tags.list_membership_taggings(current_membership, scope: scope) do
+      {:ok, taggings} ->
+        Enum.any?(taggings, &(&1.tag_id == tag.id))
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "current member tagging lookup failed")
+        false
+    end
+  end
+
+  defp empty_dimensions?(dimensions) do
+    dimensions
+    |> Enum.reject(fn {_key, value} -> value == 0 end)
+    |> Enum.empty?()
+  end
+
+  defp parse_level(params, key) do
+    params
+    |> Map.get(key, "0")
+    |> Integer.parse()
+    |> case do
+      {level, ""} when level in 0..10 -> {:ok, level}
+      _other -> :error
+    end
+  end
+
+  defp tagging_count(tag_graph, tag) do
+    tag_graph
+    |> Map.get(:tags_by_id, %{})
+    |> Map.get(tag.id, tag)
+    |> Map.get(:membership_tagging_count, 0)
+    |> Kernel.||(0)
+  end
+
   defp primary_block_version_label(nil, _count), do: "None"
 
   defp primary_block_version_label(version, count) when count > 0 do
@@ -548,9 +781,11 @@ defmodule WikWeb.TagLive do
   defp primary_block_next_disabled?(_version, count) when count <= 0, do: true
   defp primary_block_next_disabled?(version, count), do: version.revision >= count
 
-  defp primary_block_render_block(block, text) when is_binary(text) do
-    %{block | data: %{"text" => text}}
+  defp new_tagging_modal(mode \\ nil, attrs \\ []) do
+    %{
+      error: Keyword.get(attrs, :error),
+      form: Keyword.get(attrs, :form),
+      mode: mode
+    }
   end
-
-  defp primary_block_render_block(block, _text), do: block
 end

@@ -237,14 +237,12 @@ defmodule Wik.Blocks do
 
   def list_orphan_space_owned_blocks(%{id: space_id}, opts) do
     scope = Keyword.fetch!(opts, :scope)
-    tag_primary_block_ids = tag_primary_block_ids(space_id, scope)
+    primary_block_ids = primary_block_ids(space_id, scope)
 
     Block
     |> Ash.Query.filter(owner_space_id == ^space_id)
     |> Ash.read!(scope: scope, load: [:placements])
-    |> Enum.filter(
-      &(Enum.empty?(&1.placements) and not MapSet.member?(tag_primary_block_ids, &1.id))
-    )
+    |> Enum.filter(&(Enum.empty?(&1.placements) and not MapSet.member?(primary_block_ids, &1.id)))
   end
 
   def destroy_orphan_space_owned_block(space, block_id, opts) do
@@ -376,7 +374,7 @@ defmodule Wik.Blocks do
     end
   end
 
-  defp tag_primary_block_ids(space_id, scope) do
+  defp primary_block_ids(space_id, scope) do
     Tag
     |> Query.filter(space_id == ^space_id and not is_nil(primary_block_id))
     |> Query.select([:primary_block_id])

@@ -33,21 +33,21 @@ defmodule WikWeb.TagLive do
     {:ok,
      socket
      |> assign(editable?: editable?)
-     |> assign(primary_block_editing?: false)
      |> assign(editing?: false)
      |> assign(page_tree: nil)
+     |> assign(primary_block: nil)
+     |> assign(primary_block_author_membership: nil)
+     |> assign(primary_block_editing?: false)
+     |> assign(primary_block_form: nil)
+     |> assign(primary_block_selected_text: nil)
+     |> assign(primary_block_version: nil)
+     |> assign(primary_block_version_count: 0)
      |> assign(selected_member_tagging_sort: "interest_level")
+     |> assign(show_descendants?: true)
      |> assign(tag: nil)
-     |> assign(tag_primary_block_author_membership: nil)
-     |> assign(tag_primary_block: nil)
-     |> assign(tag_primary_block_form: nil)
-     |> assign(tag_primary_block_selected_text: nil)
-     |> assign(tag_primary_block_version: nil)
-     |> assign(tag_primary_block_version_count: 0)
-     |> assign(tag_graph: nil)
      |> assign(tag_form: nil)
-     |> assign(taggings_query: nil)
-     |> assign(show_descendants?: true)}
+     |> assign(tag_graph: nil)
+     |> assign(taggings_query: nil)}
   end
 
   @impl true
@@ -58,14 +58,14 @@ defmodule WikWeb.TagLive do
           scope = socket.assigns.current_scope
           tag_graph = Tags.load_tag_graph(socket.assigns.current_scope)
           page_tree = Wiki.load_page_tree(scope)
-          tag_primary_block = load_tag_primary_block(tag, scope)
+          primary_block = load_primary_block(tag, scope)
 
           socket
           |> assign(:tag, tag)
           |> assign(:primary_block_editing?, false)
           |> assign(:page_tree, page_tree)
-          |> assign(:tag_primary_block_form, nil)
-          |> assign_tag_primary_block(tag_primary_block)
+          |> assign(:primary_block_form, nil)
+          |> assign_primary_block(primary_block)
           |> assign(:tag_graph, tag_graph)
           |> assign(:taggings_query, Tags.tag_taggings_query(tag))
           |> assign(:show_descendants?, GraphQueries.children_for(tag_graph, tag) != [])
@@ -129,7 +129,7 @@ defmodule WikWeb.TagLive do
     end
   end
 
-  def handle_event("tag_primary_block_edit", _params, socket) do
+  def handle_event("primary_block_edit", _params, socket) do
     scope = socket.assigns.current_scope
 
     case Tags.get_or_create_primary_block(socket.assigns.tag, scope: scope) do
@@ -137,9 +137,9 @@ defmodule WikWeb.TagLive do
         {:noreply,
          socket
          |> assign(:tag, tag)
-         |> assign_tag_primary_block(block)
+         |> assign_primary_block(block)
          |> assign(:primary_block_editing?, true)
-         |> assign_tag_primary_block_form(block)}
+         |> assign_primary_block_form(block)}
 
       {:error, error} ->
         Log.scoped_error(scope, error, "tag primary block creation failed")
@@ -150,23 +150,23 @@ defmodule WikWeb.TagLive do
     end
   end
 
-  def handle_event("tag_primary_block_cancel", _params, socket) do
+  def handle_event("primary_block_cancel", _params, socket) do
     {:noreply,
      socket
      |> assign(:primary_block_editing?, false)
-     |> assign(:tag_primary_block_form, nil)}
+     |> assign(:primary_block_form, nil)}
   end
 
-  def handle_event("tag_primary_block_submit", %{"block" => params}, socket) do
+  def handle_event("primary_block_submit", %{"block" => params}, socket) do
     scope = socket.assigns.current_scope
 
     case Tags.update_primary_block(socket.assigns.tag, params, scope: scope) do
       {:ok, block} ->
         {:noreply,
          socket
-         |> assign_tag_primary_block(block)
+         |> assign_primary_block(block)
          |> assign(:primary_block_editing?, false)
-         |> assign(:tag_primary_block_form, nil)}
+         |> assign(:primary_block_form, nil)}
 
       {:error, error} ->
         Log.scoped_error(scope, error, "tag primary block update failed")
@@ -174,14 +174,14 @@ defmodule WikWeb.TagLive do
         {:noreply,
          socket
          |> put_flash(:error, "Couldn't update primary block")
-         |> assign_tag_primary_block_form(socket.assigns.tag_primary_block, params)}
+         |> assign_primary_block_form(socket.assigns.primary_block, params)}
     end
   end
 
-  def handle_event("tag_primary_block_history_navigate", %{"direction" => direction}, socket)
+  def handle_event("primary_block_history_navigate", %{"direction" => direction}, socket)
       when direction in ["prev", "next"] do
-    block = socket.assigns.tag_primary_block
-    version = socket.assigns.tag_primary_block_version
+    block = socket.assigns.primary_block
+    version = socket.assigns.primary_block_version
     scope = socket.assigns.current_scope
 
     result =
@@ -201,7 +201,7 @@ defmodule WikWeb.TagLive do
         {:noreply, socket}
 
       {:ok, version} ->
-        {:noreply, assign_tag_primary_block_selected_version(socket, block, version, scope)}
+        {:noreply, assign_primary_block_selected_version(socket, block, version, scope)}
 
       {:error, error} ->
         Log.scoped_error(scope, error, "tag primary block history navigation failed")
@@ -238,8 +238,8 @@ defmodule WikWeb.TagLive do
             <UI.button_edit_soft
               :if={@editable? and !@primary_block_editing?}
               class=""
-              data-testid="tag-primary-block-edit"
-              phx-click="tag_primary_block_edit"
+              data-testid="primary-block-edit"
+              phx-click="primary_block_edit"
             />
           <% end %>
         </:actions>
@@ -262,15 +262,15 @@ defmodule WikWeb.TagLive do
               <div>
                 <button
                   type="button"
-                  data-testid="tag-primary-block-history-prev"
-                  phx-click="tag_primary_block_history_navigate"
+                  data-testid="primary-block-history-prev"
+                  phx-click="primary_block_history_navigate"
                   phx-value-direction="prev"
                   class={[
                     "hover:opacity-100 transition-opacity",
                     "cursor-pointer",
-                    tag_primary_block_prev_disabled?(@tag_primary_block_version) &&
+                    primary_block_prev_disabled?(@primary_block_version) &&
                       "pointer-events-none opacity-20",
-                    !tag_primary_block_prev_disabled?(@tag_primary_block_version) &&
+                    !primary_block_prev_disabled?(@primary_block_version) &&
                       "opacity-50 hover:opacity-100"
                   ]}
                 >
@@ -280,20 +280,20 @@ defmodule WikWeb.TagLive do
 
                 <button
                   type="button"
-                  data-testid="tag-primary-block-history-next"
-                  phx-click="tag_primary_block_history_navigate"
+                  data-testid="primary-block-history-next"
+                  phx-click="primary_block_history_navigate"
                   phx-value-direction="next"
                   class={[
                     "transition-opacity",
                     "cursor-pointer",
-                    tag_primary_block_next_disabled?(
-                      @tag_primary_block_version,
-                      @tag_primary_block_version_count
+                    primary_block_next_disabled?(
+                      @primary_block_version,
+                      @primary_block_version_count
                     ) &&
                       "pointer-events-none opacity-20",
-                    !tag_primary_block_next_disabled?(
-                      @tag_primary_block_version,
-                      @tag_primary_block_version_count
+                    !primary_block_next_disabled?(
+                      @primary_block_version,
+                      @primary_block_version_count
                     ) &&
                       "opacity-50 hover:opacity-100"
                   ]}
@@ -303,14 +303,14 @@ defmodule WikWeb.TagLive do
                 </button>
 
                 <div
-                  :if={@tag_primary_block != nil}
+                  :if={@primary_block != nil}
                   class="badge badge-sm badge-neutral"
                 >
                   <span class="opacity-60">v.</span>
-                  <span data-testid="tag-primary-block-version" class="text-xs opacity-60">
-                    {tag_primary_block_version_label(
-                      @tag_primary_block_version,
-                      @tag_primary_block_version_count
+                  <span data-testid="primary-block-version" class="text-xs opacity-60">
+                    {primary_block_version_label(
+                      @primary_block_version,
+                      @primary_block_version_count
                     )}
                   </span>
                 </div>
@@ -318,34 +318,32 @@ defmodule WikWeb.TagLive do
             </div>
 
             <div
-              :if={@tag_primary_block == nil}
+              :if={@primary_block == nil}
               class="text-sm opacity-60"
-              data-testid="tag-primary-block-history-empty"
+              data-testid="primary-block-history-empty"
             >
               No content yet.
             </div>
 
             <div
-              :if={@tag_primary_block != nil}
+              :if={@primary_block != nil}
               class="text-xs flex gap-2 justify-between"
-              data-testid="tag-primary-block-history"
+              data-testid="primary-block-history"
             >
-              <div data-testid="tag-primary-block-author">
+              <div data-testid="primary-block-author">
                 <Components.User.identity
-                  :if={@tag_primary_block_author_membership}
+                  :if={@primary_block_author_membership}
                   avatar_size="xs"
                   class="gap-2"
                   link?
-                  membership={@tag_primary_block_author_membership}
+                  membership={@primary_block_author_membership}
                 />
-                <span :if={!@tag_primary_block_author_membership} class="opacity-60">Unknown</span>
+                <span :if={!@primary_block_author_membership} class="opacity-60">Unknown</span>
               </div>
 
-              <div data-testid="tag-primary-block-updated-at">
+              <div data-testid="primary-block-updated-at">
                 <Components.Time.relative_and_precise
-                  datetime={
-                    tag_primary_block_timestamp(@tag_primary_block_version, @tag_primary_block)
-                  }
+                  datetime={primary_block_timestamp(@primary_block_version, @primary_block)}
                   direction="left"
                   ago?
                 />
@@ -372,7 +370,6 @@ defmodule WikWeb.TagLive do
             <UI.page_title>{@tag.name}</UI.page_title>
           </UI.page_head>
 
-          <UI.panel_title>Members</UI.panel_title>
           <MembershipTagging.list_for_tag
             active_sort={@selected_member_tagging_sort}
             query={@taggings_query}
@@ -380,76 +377,27 @@ defmodule WikWeb.TagLive do
             tag={@tag}
           />
 
-          <UI.panel_title class="pt-12 pb-6">Description</UI.panel_title>
-
-          <section class="">
+          <section :if={@editing? and @tag_form != nil}>
             <TagComponent.form
-              :if={@editing? and @tag_form != nil}
               action_label="Update tag"
               class="border border-accent rounded-box p-4 mb-6"
               event_submit="tag_submit"
               event_validate="tag_validate"
               form={@tag_form}
             />
+          </section>
 
-            <section :if={!@editing?} class="" data-testid="tag-primary-block">
-              <div class="flex items-center justify-between gap-3">
-                <h2 class="text-base font-semibold text-base-content/20 uppercase">
-                  <span class="sr-only">Description</span>
-                </h2>
-
-                <div></div>
-              </div>
-
-              <.form
-                :if={
-                  @primary_block_editing? and @tag_primary_block != nil and
-                    @tag_primary_block_form != nil
-                }
-                for={@tag_primary_block_form}
-                id="tag-primary-block-form"
-                phx-submit="tag_primary_block_submit"
-              >
-                <Markdown.form_fields
-                  block={@tag_primary_block}
-                  form={@tag_primary_block_form}
-                  page_tree={@page_tree}
-                  scope={@current_scope}
-                />
-
-                <div class="mt-3 flex justify-end gap-2">
-                  <button
-                    class="btn btn-sm btn-ghost"
-                    data-testid="tag-primary-block-cancel"
-                    phx-click="tag_primary_block_cancel"
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    class="btn btn-sm btn-accent btn-soft"
-                    data-testid="tag-primary-block-submit"
-                  >
-                    Save
-                  </button>
-                </div>
-              </.form>
-
-              <div class="flex gap-2 items-baseline justify-between">
-                <Markdown.render
-                  :if={!@primary_block_editing? and @tag_primary_block != nil}
-                  block={
-                    tag_primary_block_render_block(
-                      @tag_primary_block,
-                      @tag_primary_block_selected_text
-                    )
-                  }
-                  page_tree={@page_tree}
-                  scope={@current_scope}
-                />
-              </div>
-            </section>
+          <section :if={!@editing?} class="mt-12" data-testid="primary-block">
+            <Markdown.editable
+              block={@primary_block}
+              cancel="primary_block_cancel"
+              editing?={@primary_block_editing?}
+              form={@primary_block_form}
+              id="primary-block"
+              page_tree={@page_tree}
+              scope={@current_scope}
+              submit="primary_block_submit"
+            />
           </section>
         </div>
       </Layouts.space>
@@ -472,70 +420,70 @@ defmodule WikWeb.TagLive do
     |> assign(:tag_form, nil)
   end
 
-  defp assign_tag_primary_block(socket, nil) do
+  defp assign_primary_block(socket, nil) do
     assign(socket,
-      tag_primary_block_author_membership: nil,
-      tag_primary_block: nil,
-      tag_primary_block_version: nil,
-      tag_primary_block_selected_text: nil,
-      tag_primary_block_version_count: 0
+      primary_block_author_membership: nil,
+      primary_block: nil,
+      primary_block_version: nil,
+      primary_block_selected_text: nil,
+      primary_block_version_count: 0
     )
   end
 
-  defp assign_tag_primary_block(socket, block) do
+  defp assign_primary_block(socket, block) do
     socket
-    |> assign(:tag_primary_block, block)
-    |> assign_tag_primary_block_history(block)
+    |> assign(:primary_block, block)
+    |> assign_primary_block_history(block)
   end
 
-  defp assign_tag_primary_block_form(socket, block, params \\ %{}) do
+  defp assign_primary_block_form(socket, block, params \\ %{}) do
     form =
       block
       |> Blocks.block_to_form_params(params, socket.assigns.page_tree)
       |> to_form(as: :block)
 
-    assign(socket, :tag_primary_block_form, form)
+    assign(socket, :primary_block_form, form)
   end
 
-  defp assign_tag_primary_block_history(socket, block) do
+  defp assign_primary_block_history(socket, block) do
     scope = socket.assigns.current_scope
 
     socket
-    |> assign(:tag_primary_block_version_count, count_tag_primary_block_versions(block, scope))
-    |> assign_tag_primary_block_latest_version(block, scope)
+    |> assign(:primary_block_version_count, count_primary_block_versions(block, scope))
+    |> assign_primary_block_latest_version(block, scope)
   end
 
-  defp assign_tag_primary_block_latest_version(socket, block, scope) do
+  defp assign_primary_block_latest_version(socket, block, scope) do
     case Blocks.load_version_latest(block, scope: scope) do
       {:ok, nil} ->
         assign(socket,
-          tag_primary_block_author_membership: nil,
-          tag_primary_block_selected_text: nil,
-          tag_primary_block_version: nil
+          primary_block_author_membership: nil,
+          primary_block_selected_text: nil,
+          primary_block_version: nil
         )
 
       {:ok, version} ->
-        assign_tag_primary_block_selected_version(socket, block, version, scope)
+        assign_primary_block_selected_version(socket, block, version, scope)
 
       {:error, error} ->
         Log.scoped_error(scope, error, "tag primary block latest version load failed")
 
         assign(socket,
-          tag_primary_block_author_membership: nil,
-          tag_primary_block_selected_text: nil,
-          tag_primary_block_version: nil
+          primary_block_author_membership: nil,
+          primary_block_selected_text: nil,
+          primary_block_version: nil
         )
     end
   end
 
-  defp assign_tag_primary_block_selected_version(socket, block, version, scope) do
+  defp assign_primary_block_selected_version(socket, block, version, scope) do
     case Blocks.version_to_text(block, version, scope: scope) do
       {:ok, text} ->
         assign(socket,
-          tag_primary_block_author_membership:
-            load_tag_primary_block_author_membership(scope, version.author),
-          tag_primary_block_selected_text: text,
-          tag_primary_block_version: version
+          primary_block_author_membership:
+            load_primary_block_author_membership(scope, version.author),
+          primary_block_selected_text: text,
+          primary_block_version: version
         )
 
       {:error, error} ->
@@ -544,7 +492,7 @@ defmodule WikWeb.TagLive do
     end
   end
 
-  defp count_tag_primary_block_versions(block, scope) do
+  defp count_primary_block_versions(block, scope) do
     case Blocks.count_versions(block, scope: scope) do
       {:ok, count} ->
         count
@@ -555,7 +503,7 @@ defmodule WikWeb.TagLive do
     end
   end
 
-  defp load_tag_primary_block_author_membership(scope, author) do
+  defp load_primary_block_author_membership(scope, author) do
     case Accounts.get_membership(scope.tenant, author) do
       {:ok, membership} ->
         membership
@@ -566,7 +514,7 @@ defmodule WikWeb.TagLive do
     end
   end
 
-  defp load_tag_primary_block(%Tag{} = tag, scope) do
+  defp load_primary_block(%Tag{} = tag, scope) do
     case Tags.get_primary_block(tag, scope: scope) do
       {:ok, block} ->
         block
@@ -582,27 +530,27 @@ defmodule WikWeb.TagLive do
 
   defp tag_params(params), do: params
 
-  defp tag_primary_block_version_label(nil, _count), do: "None"
+  defp primary_block_version_label(nil, _count), do: "None"
 
-  defp tag_primary_block_version_label(version, count) when count > 0 do
+  defp primary_block_version_label(version, count) when count > 0 do
     "#{version.revision}/#{count}"
   end
 
-  defp tag_primary_block_version_label(version, _count), do: "#{version.revision}"
+  defp primary_block_version_label(version, _count), do: "#{version.revision}"
 
-  defp tag_primary_block_timestamp(%{inserted_at: inserted_at}, _block), do: inserted_at
-  defp tag_primary_block_timestamp(_version, %{updated_at: updated_at}), do: updated_at
+  defp primary_block_timestamp(%{inserted_at: inserted_at}, _block), do: inserted_at
+  defp primary_block_timestamp(_version, %{updated_at: updated_at}), do: updated_at
 
-  defp tag_primary_block_prev_disabled?(nil), do: true
-  defp tag_primary_block_prev_disabled?(version), do: version.revision <= 1
+  defp primary_block_prev_disabled?(nil), do: true
+  defp primary_block_prev_disabled?(version), do: version.revision <= 1
 
-  defp tag_primary_block_next_disabled?(nil, _count), do: true
-  defp tag_primary_block_next_disabled?(_version, count) when count <= 0, do: true
-  defp tag_primary_block_next_disabled?(version, count), do: version.revision >= count
+  defp primary_block_next_disabled?(nil, _count), do: true
+  defp primary_block_next_disabled?(_version, count) when count <= 0, do: true
+  defp primary_block_next_disabled?(version, count), do: version.revision >= count
 
-  defp tag_primary_block_render_block(block, text) when is_binary(text) do
+  defp primary_block_render_block(block, text) when is_binary(text) do
     %{block | data: %{"text" => text}}
   end
 
-  defp tag_primary_block_render_block(block, _text), do: block
+  defp primary_block_render_block(block, _text), do: block
 end

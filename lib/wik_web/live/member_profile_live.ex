@@ -31,25 +31,24 @@ defmodule WikWeb.MemberProfileLive do
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
-     assign(socket,
-       access_grants: [],
-       available_tags: [],
-       primary_block: nil,
-       primary_block_editable?: false,
-       primary_block_editing?: false,
-       primary_block_form: nil,
-       editable?: false,
-       membership: nil,
-       page_tree: nil,
-       selected_tag_slug: nil,
-       selected_tagging_sort: "interest_level",
-       subscribed_space_id: nil,
-       subscribed_target_id: nil,
-       tagging_count: 0,
-       tagging_modal: new_tagging_modal(),
-       taggings: [],
-       taggings_query: nil
-     )}
+     socket
+     |> assign(access_grants: [])
+     |> assign(available_tags: [])
+     |> assign(editable?: false)
+     |> assign(membership: nil)
+     |> assign(page_tree: nil)
+     |> assign(primary_block: nil)
+     |> assign(primary_block_editable?: false)
+     |> assign(primary_block_editing?: false)
+     |> assign(primary_block_form: nil)
+     |> assign(selected_tag_slug: nil)
+     |> assign(selected_tagging_sort: "interest_level")
+     |> assign(subscribed_space_id: nil)
+     |> assign(subscribed_target_id: nil)
+     |> assign(tagging_count: 0)
+     |> assign(tagging_modal: new_tagging_modal())
+     |> assign(taggings: [])
+     |> assign(taggings_query: nil)}
   end
 
   @impl true
@@ -200,43 +199,16 @@ defmodule WikWeb.MemberProfileLive do
           </section>
 
           <section class="mt-12" data-testid="primary-block">
-            <.form
-              :if={@primary_block_editing? and @primary_block != nil and @primary_block_form != nil}
-              for={@primary_block_form}
-              id="primary-block-form"
-              phx-submit="primary_block_submit"
-            >
-              <Markdown.form_fields
-                block={@primary_block}
-                form={@primary_block_form}
-                page_tree={@page_tree}
-                scope={@current_scope}
-              />
-
-              <div class="mt-3 flex justify-end gap-2">
-                <button
-                  class="btn btn-sm btn-ghost"
-                  data-testid="primary-block-cancel"
-                  phx-click="primary_block_cancel"
-                  type="button"
-                >
-                  Cancel
-                </button>
-
-                <button class="btn btn-sm btn-accent btn-soft" data-testid="primary-block-submit">
-                  Save
-                </button>
-              </div>
-            </.form>
-
-            <div class="flex gap-2 items-baseline justify-between">
-              <Markdown.render
-                :if={!@primary_block_editing? and @primary_block != nil}
-                block={@primary_block}
-                page_tree={@page_tree}
-                scope={@current_scope}
-              />
-            </div>
+            <Markdown.editable
+              block={@primary_block}
+              cancel="primary_block_cancel"
+              editing?={@primary_block_editing?}
+              form={@primary_block_form}
+              id="primary-block"
+              page_tree={@page_tree}
+              scope={@current_scope}
+              submit="primary_block_submit"
+            />
           </section>
         </div>
 

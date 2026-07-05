@@ -34,6 +34,21 @@ defmodule Wik.Blocks do
 
   def version_to_text(block, version, opts), do: Types.version_to_text(block, version, opts)
 
+  def get_or_create_primary_block(parent, opts) do
+    get_existing = Keyword.fetch!(opts, :get_existing)
+    create_block = Keyword.fetch!(opts, :create_block)
+    attach_block = Keyword.fetch!(opts, :attach_block)
+
+    with nil <- get_existing.(parent),
+         {:ok, block} <- create_block.(),
+         {:ok, parent} <- attach_block.(parent, block) do
+      {:ok, parent, block}
+    else
+      %Block{} = block -> {:ok, parent, block}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   def count_versions(block, opts) do
     block
     |> version_query()

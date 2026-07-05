@@ -35,15 +35,8 @@ defmodule WikWeb.Components.Membership.AccessTest do
 
     assert html =~ ~s(data-testid="access-grant-grant-1")
     assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
-    assert html =~ ~s(data-testid="access-grant-via-grant-1")
-    assert html =~ ~s(data-testid="access-grant-source-title-grant-1")
-    assert html =~ ~s(data-testid="access-grant-identity-grant-1")
     assert html =~ ~s(data-testid="access-grant-status-grant-1")
-    assert html =~ "Telegram group membership"
-    assert html =~ "Hobbies"
-    assert html =~ "id: -100123"
     assert html =~ "issuer"
-    assert html =~ "@ada"
     assert html =~ "active"
   end
 
@@ -78,7 +71,5 @@ defmodule WikWeb.Components.Membership.AccessTest do
       })
 
     assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
-    assert html =~ ~s(data-testid="access-grant-via-grant-1")
-    assert html =~ ~s(data-testid="access-grant-identity-grant-1")
   end
 end

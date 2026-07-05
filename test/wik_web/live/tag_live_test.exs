@@ -25,8 +25,7 @@ defmodule WikWeb.TagLiveTest do
 
     assert has_element?(view, testid("tag-page"))
     assert has_element?(view, testid("tag-edit-mode-toggle"))
-    assert has_element?(view, testid("tag-content"))
-    assert has_element?(view, testid("tag-content-empty"))
+    assert has_element?(view, testid("tag-primary-block"))
     refute has_element?(view, testid("tag-form-form"))
 
     render_click(element(view, testid("tag-edit-mode-toggle")))

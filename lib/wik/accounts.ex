@@ -15,7 +15,6 @@ defmodule Wik.Accounts do
   resources do
     resource Wik.Accounts.Token
     resource Wik.Accounts.User
-    resource Wik.Accounts.Profile
 
     resource Wik.Accounts.Space do
       define :get_space_by_slug, action: :read, get_by_identity: :unique_slug
@@ -37,6 +36,8 @@ defmodule Wik.Accounts do
 
   alias Wik.Accounts.Space
   alias Wik.Accounts.Membership
+  alias Wik.Blocks
+  alias Wik.Blocks.Block
   alias Wik.Repo
   alias Wik.Accounts.User
   alias Utils.Values
@@ -174,6 +175,38 @@ defmodule Wik.Accounts do
   def present_membership(_membership),
     do: %{avatar_url: nil, display_name: nil, space: nil, user: nil, username: nil}
 
+  def get_primary_block(%Membership{} = membership, _opts \\ []),
+    do: membership_primary_block(membership)
+
+  def get_or_create_primary_block(%Membership{} = membership, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    Blocks.get_or_create_primary_block(membership,
+      get_existing: fn membership ->
+        case membership_primary_block(membership) do
+          {:ok, block} -> block
+          {:error, error} -> {:error, error}
+        end
+      end,
+      create_block: fn -> Blocks.create_user_owned_block(%{type: :markdown}, scope: scope) end,
+      attach_block: fn membership, block ->
+        Ash.update(
+          membership,
+          %{primary_block_id: block.id},
+          action: :set_primary_block,
+          scope: scope
+        )
+      end
+    )
+  end
+
+  def update_primary_block(%Membership{} = membership, params, opts \\ []) do
+    with {:ok, _membership, %Block{} = block} <-
+           get_or_create_primary_block(membership, opts) do
+      Blocks.update_block(block, params, opts)
+    end
+  end
+
   defp present_membership_display_name(username, _user)
        when is_binary(username) and username != "",
        do: username
@@ -211,6 +244,16 @@ defmodule Wik.Accounts do
     |> Ash.Query.sort(username: :asc)
     |> Ash.read!(authorize?: false, domain: __MODULE__)
   end
+
+  defp membership_primary_block(%Membership{primary_block_id: nil}), do: {:ok, nil}
+
+  defp membership_primary_block(%Membership{primary_block_id: primary_block_id}) do
+    Block
+    |> Ash.Query.filter(id == ^primary_block_id)
+    |> Ash.read_one(authorize?: false, domain: Blocks)
+  end
+
+  defp membership_primary_block(_membership), do: {:ok, nil}
 
   defp membership_load, do: [:space, :avatar_url, user: [:external_identities]]
 end

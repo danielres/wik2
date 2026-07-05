@@ -667,7 +667,7 @@ defmodule WikWeb.Components.MembershipTagging do
     assigns = assign(assigns, :chunks, split_description(assigns.description))
 
     ~H"""
-    <div :for={chunk <- @chunks} class="break-all">{chunk}</div>
+    <div :for={chunk <- @chunks}>{chunk}</div>
     """
   end
 

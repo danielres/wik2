@@ -233,6 +233,26 @@ defmodule WikWeb.Components.UI do
 
   attr :rest, :global, include: ~w(phx-click phx-target data-testid data-tip)
 
+  def button_add_to_user(assigns) do
+    ~H"""
+    <button
+      class={[
+        "btn btn-sm btn-soft btn-accent btn-circle",
+        "tooltip tooltip-xs tooltip-left tooltip-accent"
+      ]}
+      type="button"
+      {@rest}
+    >
+      <div class="indicator">
+        <div class="relative -left-0.5 top-0.5">
+          <.icon name="hero-user-micro" class="opacity-70" />
+          <.icon name="hero-plus-micro" class="indicator-item size-3 mt-0.5" />
+        </div>
+      </div>
+    </button>
+    """
+  end
+
   attr :rest, :global, include: ~w(phx-click phx-target data-testid data-tip)
 
   def button_add_topic(assigns) do

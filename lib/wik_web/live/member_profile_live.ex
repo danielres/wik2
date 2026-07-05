@@ -173,24 +173,27 @@ defmodule WikWeb.MemberProfileLive do
             <div class="flex justify-end">
               <button
                 :if={@editable?}
-                class="btn btn-sm btn-soft btn-accent btn-circle"
+                class={[
+                  "btn btn-sm btn-soft btn-accent btn-circle",
+                  "tooltip tooltip-xs tooltip-left tooltip-accent"
+                ]}
                 data-testid="member-tagging-add"
                 phx-click="tagging_create_start"
                 type="button"
+                data-tip="Insert topics"
               >
-                <.icon name="hero-plus-mini" class="size-4" />
+                <div class="indicator">
+                  <div class="relative -left-0.5 top-0.5">
+                    <.icon name="hero-tag-micro" class="opacity-70" />
+                    <.icon name="hero-plus-micro" class="indicator-item size-3 mt-0.5" />
+                  </div>
+                </div>
               </button>
             </div>
 
-            <div
-              :if={@tagging_count == 0}
-              class="rounded-box border border-dashed border-base-300 bg-base-200/40 px-4 py-6 text-sm opacity-60"
-              data-testid="member-tagging-empty"
-            >
-              No taggings yet.
-            </div>
-
             <MembershipTagging.list
+              :if={@tagging_count > 0}
+              sort_controls?={@tagging_count >= 3}
               active_sort={@selected_tagging_sort}
               membership={@membership}
               query={@taggings_query}

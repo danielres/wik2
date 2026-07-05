@@ -15,6 +15,7 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :membership, :map, required: true
   attr :query, :any, required: true
   attr :scope, :map, required: true
+  attr :sort_controls?, :boolean, default: true
 
   def list(assigns) do
     assigns =
@@ -30,9 +31,9 @@ defmodule WikWeb.Components.MembershipTagging do
       data-testid="member-taggings-table"
     >
       <div
+        :if={@sort_controls?}
         class={[
-          "mb-1 flex items-center justify-end gap-2",
-          "group"
+          "mb-1 flex items-center justify-end gap-2"
         ]}
         data-testid="member-tagging-sort-controls"
       >
@@ -52,14 +53,6 @@ defmodule WikWeb.Components.MembershipTagging do
         <%!--   <.icon name="hero-arrow-down-mini" class="size-3 -mr-1.5" /> --%>
         <%!--   <span>Aa</span> --%>
         <%!-- </button> --%>
-
-        <.icon
-          name="hero-arrows-up-down-micro"
-          class={[
-            "opacity-20 group-hover:opacity-60 transition",
-            "size-4"
-          ]}
-        />
 
         <button
           id="member-tagging-sort-interest"

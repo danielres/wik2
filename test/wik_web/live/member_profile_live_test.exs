@@ -99,7 +99,6 @@ defmodule WikWeb.MemberProfileLiveTest do
     render_async(view)
 
     assert {:ok, []} = Tags.list_membership_taggings(membership, scope: member_scope)
-    assert has_element?(view, testid("member-tagging-empty"))
     assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}")
   end
 

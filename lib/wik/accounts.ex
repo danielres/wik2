@@ -182,15 +182,15 @@ defmodule Wik.Accounts do
   def present_membership(_membership),
     do: %{avatar_url: nil, display_name: nil, space: nil, user: nil, username: nil}
 
-  def get_primary_block(%Membership{} = membership, _opts \\ []),
-    do: membership_primary_block(membership)
+  def get_primary_block(%Membership{} = membership, opts \\ []),
+    do: membership_primary_block(membership, opts)
 
   def get_or_create_primary_block(%Membership{} = membership, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
 
     Blocks.get_or_create_primary_block(membership,
       get_existing: fn membership ->
-        case membership_primary_block(membership) do
+        case get_primary_block(membership, scope: scope) do
           {:ok, block} -> block
           {:error, error} -> {:error, error}
         end
@@ -252,15 +252,15 @@ defmodule Wik.Accounts do
     |> Ash.read!(authorize?: false, domain: __MODULE__)
   end
 
-  defp membership_primary_block(%Membership{primary_block_id: nil}), do: {:ok, nil}
+  defp membership_primary_block(%Membership{primary_block_id: nil}, _opts), do: {:ok, nil}
 
-  defp membership_primary_block(%Membership{primary_block_id: primary_block_id}) do
+  defp membership_primary_block(%Membership{primary_block_id: primary_block_id}, opts) do
     Block
     |> Ash.Query.filter(id == ^primary_block_id)
-    |> Ash.read_one(authorize?: false, domain: Blocks)
+    |> Ash.read_one(Keyword.put(opts, :domain, Blocks))
   end
 
-  defp membership_primary_block(_membership), do: {:ok, nil}
+  defp membership_primary_block(_membership, _opts), do: {:ok, nil}
 
   defp membership_load, do: [:space, :avatar_url, user: [:external_identities]]
 end

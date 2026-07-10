@@ -28,6 +28,9 @@ defmodule Wik.Accounts.MembershipPrimaryBlockTest do
       assert {:ok, fetched_block} = Accounts.get_primary_block(updated_membership, scope: scope)
       assert fetched_block.id == block.id
 
+      other_user = generate(user())
+      assert {:ok, nil} = Accounts.get_primary_block(updated_membership, scope: scope(other_user))
+
       assert {:ok, _membership, reused_block} =
                Accounts.get_or_create_primary_block(updated_membership, scope: scope)
 

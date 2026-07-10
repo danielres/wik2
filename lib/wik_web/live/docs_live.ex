@@ -31,7 +31,7 @@ defmodule WikWeb.DocsLive do
     ]}>
       <h1 class="flex items-center gap-2">
         <span class="flex items-end">
-          <.link patch={~p"/"} class="opacity-50 hover:opacity-100 transition" aria-label="Home">
+          <.link navigate={~p"/"} class="opacity-50 hover:opacity-100 transition" aria-label="Home">
             <.icon name="hero-home-micro" />
           </.link>
 

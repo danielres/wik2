@@ -60,7 +60,10 @@ defmodule WikWeb.DocsLive do
 
       <main>
         <.container class="py-8">
-          <div class="prose">
+          <div
+            class="prose"
+            data-testid={if @page, do: "docs-page-#{@page.slug()}", else: "docs-page-not-found"}
+          >
             <%= if @page do %>
               {render_page(@page, assigns)}
             <% else %>

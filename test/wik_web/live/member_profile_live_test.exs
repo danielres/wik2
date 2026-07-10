@@ -165,6 +165,10 @@ defmodule WikWeb.MemberProfileLiveTest do
     refute has_element?(view, testid("member-tagging-add"))
     refute has_element?(view, testid("primary-block-edit"))
 
+    render_click(view, "primary_block_edit")
+
+    refute has_element?(view, "#primary-block-form")
+
     assert has_element?(view, testid("member-tagging-row-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-interest-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-skill-#{dance.id}"))

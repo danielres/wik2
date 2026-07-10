@@ -613,7 +613,7 @@ defmodule WikWeb.MemberProfileLive do
 
   defp profile_state(membership, taggings, current_membership, actor) do
     %{
-      primary_block_editable?: current_membership && current_membership.id == membership.id,
+      primary_block_editable?: !!(current_membership && current_membership.id == membership.id),
       editable?:
         (current_membership && current_membership.id == membership.id) ||
           actor_superadmin?(actor),

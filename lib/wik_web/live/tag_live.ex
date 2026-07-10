@@ -41,7 +41,7 @@ defmodule WikWeb.TagLive do
      |> assign(primary_block_author_membership: nil)
      |> assign(primary_block_editing?: false)
      |> assign(primary_block_form: nil)
-     |> assign(primary_block_selected_text: nil)
+     |> assign(primary_block_version_text: nil)
      |> assign(primary_block_version: nil)
      |> assign(primary_block_version_count: 0)
      |> assign(selected_member_tagging_sort: "interest_level")
@@ -454,6 +454,7 @@ defmodule WikWeb.TagLive do
               page_tree={@page_tree}
               scope={@current_scope}
               submit="primary_block_submit"
+              text={@primary_block_version_text}
             />
           </section>
         </div>
@@ -501,7 +502,7 @@ defmodule WikWeb.TagLive do
       primary_block_author_membership: nil,
       primary_block: nil,
       primary_block_version: nil,
-      primary_block_selected_text: nil,
+      primary_block_version_text: nil,
       primary_block_version_count: 0
     )
   end
@@ -534,7 +535,7 @@ defmodule WikWeb.TagLive do
       {:ok, nil} ->
         assign(socket,
           primary_block_author_membership: nil,
-          primary_block_selected_text: nil,
+          primary_block_version_text: nil,
           primary_block_version: nil
         )
 
@@ -546,7 +547,7 @@ defmodule WikWeb.TagLive do
 
         assign(socket,
           primary_block_author_membership: nil,
-          primary_block_selected_text: nil,
+          primary_block_version_text: nil,
           primary_block_version: nil
         )
     end
@@ -558,7 +559,7 @@ defmodule WikWeb.TagLive do
         assign(socket,
           primary_block_author_membership:
             load_primary_block_author_membership(scope, version.author),
-          primary_block_selected_text: text,
+          primary_block_version_text: text,
           primary_block_version: version
         )
 

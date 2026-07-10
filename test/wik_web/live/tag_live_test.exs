@@ -222,6 +222,37 @@ defmodule WikWeb.TagLiveTest do
     refute has_element?(view, testid("member-tagging-add"))
   end
 
+  test "tag primary block history navigation renders the selected revision", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, tag} = Tags.create_tag("history", "History", nil, scope: scope)
+
+    assert {:ok, _block} =
+             Tags.update_primary_block(tag, %{"text" => "First revision"}, scope: scope)
+
+    assert {:ok, tag} = Tags.get_tag(tag.id, scope: scope)
+
+    assert {:ok, _block} =
+             Tags.update_primary_block(tag, %{"text" => "Second revision"}, scope: scope)
+
+    assert {:ok, tag} = Tags.get_tag(tag.id, scope: scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics/#{tag.slug}")
+
+    assert has_element?(view, testid("markdown-block"), "Second revision")
+
+    render_click(element(view, testid("primary-block-history-prev")))
+
+    assert has_element?(view, testid("markdown-block"), "First revision")
+    refute has_element?(view, testid("markdown-block"), "Second revision")
+  end
+
   test "tag page uses breadcrumbs for parents and relationship components for children and descendants",
        %{
          conn: conn

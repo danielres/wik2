@@ -14,6 +14,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   attr :id, :string, required: true
   attr :submit, :string, required: true
   attr :cancel, :string, required: true
+  attr :text, :string, default: nil
 
   def editable(assigns) do
     ~H"""
@@ -54,6 +55,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       block={@block}
       page_tree={@page_tree}
       scope={@scope}
+      text={@text}
     />
     """
   end
@@ -61,9 +63,10 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   attr :block, :map, required: true
   attr :page_tree, :map, required: true
   attr :scope, :map, default: nil
+  attr :text, :string, default: nil
 
   def render(assigns) do
-    %{"text" => md} = assigns.block.data
+    md = assigns.text || Map.get(assigns.block.data, "text", "")
     scope = assigns.scope
     page_tree = assigns.page_tree
     html = md |> markdown_to_html(scope, page_tree)

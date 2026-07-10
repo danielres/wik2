@@ -30,13 +30,13 @@ defmodule WikWeb.DocsLive do
       "px-4"
     ]}>
       <h1 class="flex items-center gap-2">
-        <div class="flex items-end">
-          <.link patch={~p"/"} class="opacity-50 hover:opacity-100 transition">
+        <span class="flex items-end">
+          <.link patch={~p"/"} class="opacity-50 hover:opacity-100 transition" arial-label="Home">
             <.icon name="hero-home-micro" />
           </.link>
 
           <.icon name="hero-chevron-right-micro" class="opacity-20 mb-1" />
-        </div>
+        </span>
 
         <.link patch={~p"/docs"} class="text-xl">
           Wik docs

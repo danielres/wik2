@@ -57,27 +57,34 @@ defmodule Wik.Accounts do
     |> Ash.read(authorize?: false, domain: __MODULE__)
   end
 
-  def space_slug_to_id(%Space{id: id}), do: id
-
-  def space_slug_to_id(space_slug_or_id) when is_binary(space_slug_or_id) do
-    case Ecto.UUID.cast(space_slug_or_id) do
-      {:ok, space_id} ->
-        space_id
-
-      :error ->
-        case get_space_by_slug(space_slug_or_id, authorize?: false) do
-          {:ok, %{id: id}} -> id
-          {:error, _reason} -> nil
-        end
+  def space_slug_to_id(space_slug) when is_binary(space_slug) do
+    case get_space_by_slug(space_slug, authorize?: false) do
+      {:ok, %{id: id}} -> id
+      {:error, _reason} -> nil
     end
   end
 
   def space_slug_to_id(_), do: nil
 
   # TODO: inline?
-  def tenant_to_space_id(%{id: space_id}), do: space_id
-  def tenant_to_space_id(space_slug) when is_binary(space_slug), do: space_slug_to_id(space_slug)
+  def tenant_to_space_id(%Space{id: space_id}), do: space_id
+
+  def tenant_to_space_id(space_id_or_slug) when is_binary(space_id_or_slug) do
+    if canonical_uuid?(space_id_or_slug) do
+      space_id_or_slug
+    else
+      space_slug_to_id(space_id_or_slug)
+    end
+  end
+
   def tenant_to_space_id(_), do: nil
+
+  defp canonical_uuid?(value) do
+    String.match?(
+      value,
+      ~r/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    )
+  end
 
   def get_membership(space_or_space_id, user_or_user_id)
 

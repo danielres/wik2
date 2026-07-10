@@ -15,7 +15,7 @@ defmodule Wik.Accounts.Space do
     authorizers: [Ash.Policy.Authorizer]
 
   defimpl Ash.ToTenant do
-    def to_tenant(%{slug: slug}, _resource), do: slug
+    def to_tenant(%{id: id}, _resource), do: id
   end
 
   postgres do

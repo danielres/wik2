@@ -3,6 +3,7 @@ defmodule Wik.Accounts.SpaceSlugTest do
 
   import Wik.TestGenerators
 
+  alias Wik.Accounts
   alias Wik.Accounts.Space
 
   test "allows duplicate names with different slugs" do
@@ -48,5 +49,19 @@ defmodule Wik.Accounts.SpaceSlugTest do
              )
 
     assert Exception.message(error) =~ "slug"
+  end
+
+  test "space_slug_to_id resolves a 16-character slug as a slug" do
+    space = generate(space(slug: "damn-interesting"))
+
+    assert Accounts.space_slug_to_id("damn-interesting") == space.id
+  end
+
+  test "tenant_to_space_id resolves supported tenant shapes" do
+    space = generate(space(slug: "tenant-fixture"))
+
+    assert Accounts.tenant_to_space_id(space) == space.id
+    assert Accounts.tenant_to_space_id(space.id) == space.id
+    assert Accounts.tenant_to_space_id(space.slug) == space.id
   end
 end

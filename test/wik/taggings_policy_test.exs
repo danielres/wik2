@@ -28,7 +28,8 @@ defmodule Wik.TaggingsPolicyTest do
       assert Ash.can?({tagging, :read}, scope(other_member, space))
 
       assert {:ok, _} =
-               Tags.upsert_membership_tagging(
+               Tags.upsert_tagging(
+                 member_membership,
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 4}, description: nil},
@@ -36,7 +37,8 @@ defmodule Wik.TaggingsPolicyTest do
                )
 
       assert {:error, _} =
-               Tags.upsert_membership_tagging(
+               Tags.upsert_tagging(
+                 member_membership,
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
@@ -44,7 +46,8 @@ defmodule Wik.TaggingsPolicyTest do
                )
 
       assert {:error, _} =
-               Tags.upsert_membership_tagging(
+               Tags.upsert_tagging(
+                 member_membership,
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
@@ -52,7 +55,8 @@ defmodule Wik.TaggingsPolicyTest do
                )
 
       assert {:error, _} =
-               Tags.upsert_membership_tagging(
+               Tags.upsert_tagging(
+                 member_membership,
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
@@ -62,7 +66,8 @@ defmodule Wik.TaggingsPolicyTest do
       assert Ash.can?({tagging, :destroy}, scope(superadmin, space))
 
       assert {:ok, _} =
-               Tags.upsert_membership_tagging(
+               Tags.upsert_tagging(
+                 member_membership,
                  member_membership,
                  tag.id,
                  %{dimensions: %{"interest" => 3}, description: nil},
@@ -114,7 +119,8 @@ defmodule Wik.TaggingsPolicyTest do
     {:ok, other_tag} = Tags.create_tag("music", "Music", nil, scope: scope(owner, space))
 
     {:ok, tagging} =
-      Tags.upsert_membership_tagging(
+      Tags.upsert_tagging(
+        member_membership,
         member_membership,
         tag.id,
         %{dimensions: %{"interest" => 5}, description: nil},

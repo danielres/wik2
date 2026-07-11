@@ -87,7 +87,8 @@ defmodule WikWeb.TagLiveTest do
     {:ok, tag} = Tags.create_tag("fusion", "Fusion", "Late-night socials", scope: owner_scope)
 
     {:ok, first_tagging} =
-      Tags.upsert_membership_tagging(
+      Tags.upsert_tagging(
+        first_membership,
         first_membership,
         tag.id,
         %{dimensions: %{"interest" => 9, "skill" => 2}, description: "Hosts practice nights"},
@@ -95,7 +96,8 @@ defmodule WikWeb.TagLiveTest do
       )
 
     {:ok, second_tagging} =
-      Tags.upsert_membership_tagging(
+      Tags.upsert_tagging(
+        second_membership,
         second_membership,
         tag.id,
         %{dimensions: %{"interest" => 7, "skill" => 2}, description: "Weekend regular"},
@@ -103,7 +105,8 @@ defmodule WikWeb.TagLiveTest do
       )
 
     {:ok, third_tagging} =
-      Tags.upsert_membership_tagging(
+      Tags.upsert_tagging(
+        third_membership,
         third_membership,
         tag.id,
         %{dimensions: %{"interest" => 4, "skill" => 6}, description: nil},
@@ -215,7 +218,7 @@ defmodule WikWeb.TagLiveTest do
       )
     )
 
-    assert {:ok, [tagging]} = Tags.list_membership_taggings(membership, scope: member_scope)
+    assert {:ok, [tagging]} = Tags.list_taggings(membership, scope: member_scope)
     assert tagging.tag_id == tag.id
     assert tagging.description == "I like this topic"
     assert has_element?(view, testid("tag-member-taggings-table"))

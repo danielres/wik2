@@ -663,7 +663,7 @@ defmodule WikWeb.TagLive do
       if empty_dimensions?(attrs.dimensions) do
         remove_tagging_entry(membership, tagging_params.tag_id, scope)
       else
-        Tags.upsert_membership_tagging(membership, tagging_params.tag_id, attrs, scope: scope)
+        Tags.upsert_tagging(membership, membership, tagging_params.tag_id, attrs, scope: scope)
       end
 
     case result do
@@ -694,7 +694,7 @@ defmodule WikWeb.TagLive do
   end
 
   defp remove_tagging_entry(membership, tag_id, scope) do
-    case Tags.remove_membership_tagging(membership, tag_id, scope: scope) do
+    case Tags.remove_tagging(membership, membership, tag_id, scope: scope) do
       {:ok, _tagging} -> :ok
       {:error, :not_found} -> :ok
       {:error, error} -> {:error, error}
@@ -730,7 +730,7 @@ defmodule WikWeb.TagLive do
   defp current_member_tagged?(nil, _tag, _scope), do: false
 
   defp current_member_tagged?(current_membership, tag, scope) do
-    case Tags.list_membership_taggings(current_membership, scope: scope) do
+    case Tags.list_taggings(current_membership, scope: scope) do
       {:ok, taggings} ->
         Enum.any?(taggings, &(&1.tag_id == tag.id))
 

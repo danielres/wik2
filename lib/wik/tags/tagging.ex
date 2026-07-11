@@ -3,8 +3,8 @@ defmodule Wik.Tags.Tagging do
   alias Wik.Accounts.Membership
   alias Wik.Changes.SetSpaceFromCurrentTenant
   alias Wik.Tags.Tag
-  alias Wik.Tags.Tagging.Checks.ActorCanManageOwnMembershipTagging
-  alias Wik.Tags.Tagging.Changes.NormalizeMembershipFields
+  alias Wik.Tags.Tagging.Checks.ActorCanManageTagging
+  alias Wik.Tags.Tagging.Changes.NormalizeFields
   alias Wik.Tags.Tagging.Changes.ValidateTarget
 
   use Ash.Resource,
@@ -22,13 +22,11 @@ defmodule Wik.Tags.Tagging do
     references do
       reference :tag, on_delete: :delete, match_with: [space_id: :space_id]
 
-      reference :target_membership,
-        on_delete: :delete,
-        match_with: [space_id: :space_id]
-
       reference :tagged_by_membership,
         on_delete: :delete,
         match_with: [space_id: :space_id]
+
+      reference :target_membership, ignore?: true
     end
   end
 
@@ -49,14 +47,14 @@ defmodule Wik.Tags.Tagging do
 
       change SetSpaceFromCurrentTenant
       change ValidateTarget
-      change NormalizeMembershipFields
+      change NormalizeFields
     end
 
     update :update_details do
       accept [:dimensions, :description]
       require_atomic? false
 
-      change NormalizeMembershipFields
+      change NormalizeFields
     end
   end
 
@@ -70,15 +68,15 @@ defmodule Wik.Tags.Tagging do
     end
 
     policy action(:create) do
-      authorize_if ActorCanManageOwnMembershipTagging
+      authorize_if ActorCanManageTagging
     end
 
     policy action(:update_details) do
-      authorize_if ActorCanManageOwnMembershipTagging
+      authorize_if ActorCanManageTagging
     end
 
     policy action_type(:destroy) do
-      authorize_if ActorCanManageOwnMembershipTagging
+      authorize_if ActorCanManageTagging
     end
   end
 
@@ -160,6 +158,13 @@ defmodule Wik.Tags.Tagging do
     calculate :skill_level,
               :integer,
               expr(fragment("coalesce((?->>'skill')::int, 0)", dimensions)) do
+      public? true
+      filterable? false
+    end
+
+    calculate :relevancy_level,
+              :integer,
+              expr(fragment("coalesce((?->>'relevancy')::int, 0)", dimensions)) do
       public? true
       filterable? false
     end

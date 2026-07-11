@@ -1,0 +1,42 @@
+.LEXICAL_LINK_EDITOR {
+  @apply fixed z-50 max-w-[calc(100vw-1rem)];
+  @apply rounded-md border border-base-content/15 bg-base-100 p-1.5;
+  @apply text-base-content shadow-xl;
+
+  &[hidden] {
+    @apply hidden;
+  }
+}
+
+.LEXICAL_LINK_EDITOR_VIEW,
+.LEXICAL_LINK_EDITOR_EDIT {
+  @apply flex items-center gap-1;
+
+  &[hidden] {
+    @apply hidden;
+  }
+}
+
+.LEXICAL_LINK_EDITOR_URL {
+  @apply max-w-64 truncate px-2 text-sm underline decoration-dashed underline-offset-4;
+}
+
+.LEXICAL_LINK_EDITOR_INPUT {
+  @apply input input-sm w-72 max-w-[calc(100vw-8rem)];
+}
+
+.LEXICAL_LINK_EDITOR_BUTTON {
+  @apply btn btn-sm;
+
+  &.secondary {
+    @apply btn-ghost;
+  }
+
+  &.primary {
+    @apply btn-neutral;
+  }
+
+  svg {
+    @apply size-4;
+  }
+}

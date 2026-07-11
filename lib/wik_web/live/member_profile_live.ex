@@ -169,6 +169,7 @@ defmodule WikWeb.MemberProfileLive do
             tenant={@current_scope.tenant}
             tooltip?
           />
+
           <section class="space-y-3">
             <div class="flex justify-end">
               <UI.button_add_topic

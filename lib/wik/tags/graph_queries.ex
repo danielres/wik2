@@ -7,6 +7,8 @@ defmodule Wik.Tags.GraphQueries do
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
   alias Wik.Tags.Tagging
+  alias Wik.Wiki
+  alias Wik.Wiki.PageTree
 
   require Ash.Query
 
@@ -33,6 +35,7 @@ defmodule Wik.Tags.GraphQueries do
   def load_graph(scope) do
     space_id = tenant_space_id!(scope)
     tagging_stats_by_tag_id = membership_tagging_stats(space_id)
+    page_taggings_by_tag_id = page_taggings_by_tag_id(scope, space_id)
 
     tags =
       Tag
@@ -40,6 +43,7 @@ defmodule Wik.Tags.GraphQueries do
       |> Ash.read!(scope: scope, domain: Tags)
       |> Enum.map(fn tag ->
         stats = Map.get(tagging_stats_by_tag_id, tag.id, empty_final_tagging_stats())
+        page_taggings = Map.get(page_taggings_by_tag_id, tag.id, [])
 
         tag
         |> Map.put(:membership_interest_average, stats.interest_average)
@@ -48,6 +52,8 @@ defmodule Wik.Tags.GraphQueries do
         |> Map.put(:membership_skill_distribution, stats.skill_distribution)
         |> Map.put(:membership_interest_unspecified_count, stats.interest_unspecified_count)
         |> Map.put(:membership_skill_unspecified_count, stats.skill_unspecified_count)
+        |> Map.put(:page_tagging_count, length(page_taggings))
+        |> Map.put(:page_taggings, page_taggings)
       end)
       |> sort_tags()
 
@@ -330,6 +336,66 @@ defmodule Wik.Tags.GraphQueries do
       end)
     end)
     |> Map.new(fn {tag_id, stats} -> {tag_id, finalize_tagging_stats(stats)} end)
+  end
+
+  defp page_taggings_by_tag_id(scope, space_id) do
+    pages_by_id =
+      scope
+      |> Wiki.load_page_tree()
+      |> Map.get(:nodes, [])
+      |> page_tree_pages_by_id()
+
+    from(tagging in Tagging,
+      where: tagging.space_id == ^space_id and tagging.taggable_type == "page",
+      select: %{
+        tag_id: tagging.tag_id,
+        page_id: tagging.taggable_id,
+        relevancy: fragment("coalesce((?->>'relevancy')::int, 0)", tagging.dimensions)
+      }
+    )
+    |> Repo.all()
+    |> Enum.group_by(&{&1.tag_id, &1.page_id})
+    |> Enum.reduce(%{}, fn {{tag_id, page_id}, rows}, acc ->
+      case Map.fetch(pages_by_id, page_id) do
+        {:ok, page} ->
+          page = Map.put(page, :relevancy_level, average_relevancy(rows))
+          Map.update(acc, tag_id, [page], &[page | &1])
+
+        :error ->
+          acc
+      end
+    end)
+    |> Map.new(fn {tag_id, pages} ->
+      {tag_id, Enum.sort_by(pages, &{String.downcase(&1.title), &1.path, &1.id})}
+    end)
+  end
+
+  defp average_relevancy(rows) do
+    levels =
+      rows
+      |> Enum.map(& &1.relevancy)
+      |> Enum.reject(&(&1 == 0))
+
+    case levels do
+      [] -> nil
+      levels -> round(Enum.sum(levels) / length(levels))
+    end
+  end
+
+  defp page_tree_pages_by_id(nodes) do
+    nodes
+    |> Enum.reject(&is_nil(&1.page_id))
+    |> Map.new(fn node ->
+      path = PageTree.get_node_path(nodes, node.id)
+
+      {node.page_id,
+       %{
+         id: node.page_id,
+         path: path,
+         path_segments: String.split(path, "/", trim: true),
+         title: node.title
+       }}
+    end)
   end
 
   defp empty_tagging_stats do

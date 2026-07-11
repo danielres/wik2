@@ -1,4 +1,4 @@
-defmodule Wik.Tags.Tagging.Changes.NormalizeMembershipFields do
+defmodule Wik.Tags.Tagging.Changes.NormalizeFields do
   use Ash.Resource.Change
 
   alias Ash.Changeset
@@ -6,8 +6,13 @@ defmodule Wik.Tags.Tagging.Changes.NormalizeMembershipFields do
 
   @impl true
   def change(changeset, _opts, _context) do
+    taggable_type = Changeset.get_argument_or_attribute(changeset, :taggable_type)
+
     with {:ok, dimensions} <-
-           normalize_dimensions(Changeset.get_argument_or_attribute(changeset, :dimensions)) do
+           normalize_dimensions(
+             Changeset.get_argument_or_attribute(changeset, :dimensions),
+             taggable_type
+           ) do
       changeset
       |> Changeset.force_change_attribute(:dimensions, dimensions)
       |> Changeset.force_change_attribute(
@@ -20,14 +25,14 @@ defmodule Wik.Tags.Tagging.Changes.NormalizeMembershipFields do
     end
   end
 
-  defp normalize_dimensions(nil), do: {:error, :dimensions, "is required"}
+  defp normalize_dimensions(nil, _taggable_type), do: {:error, :dimensions, "is required"}
 
-  defp normalize_dimensions(dimensions) when not is_map(dimensions),
+  defp normalize_dimensions(dimensions, _taggable_type) when not is_map(dimensions),
     do: {:error, :dimensions, "must be a map"}
 
-  defp normalize_dimensions(dimensions) do
+  defp normalize_dimensions(dimensions, taggable_type) when is_binary(taggable_type) do
     dimensions_by_key =
-      "membership"
+      taggable_type
       |> Dimensions.all_for()
       |> Map.new(&{&1.key, &1})
 
@@ -61,6 +66,9 @@ defmodule Wik.Tags.Tagging.Changes.NormalizeMembershipFields do
         {:ok, dimensions}
     end
   end
+
+  defp normalize_dimensions(_dimensions, _taggable_type),
+    do: {:error, :taggable_type, "is required"}
 
   defp normalize_dimension_key(key) when is_binary(key), do: key
   defp normalize_dimension_key(key) when is_atom(key), do: Atom.to_string(key)

@@ -9,6 +9,7 @@ defmodule WikWeb.TagLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
+  alias Wik.Wiki
 
   test "tag page defaults to view mode and can be edited", %{conn: conn} do
     owner = generate(user())
@@ -87,7 +88,8 @@ defmodule WikWeb.TagLiveTest do
     {:ok, tag} = Tags.create_tag("fusion", "Fusion", "Late-night socials", scope: owner_scope)
 
     {:ok, first_tagging} =
-      Tags.upsert_membership_tagging(
+      Tags.upsert_tagging(
+        first_membership,
         first_membership,
         tag.id,
         %{dimensions: %{"interest" => 9, "skill" => 2}, description: "Hosts practice nights"},
@@ -95,7 +97,8 @@ defmodule WikWeb.TagLiveTest do
       )
 
     {:ok, second_tagging} =
-      Tags.upsert_membership_tagging(
+      Tags.upsert_tagging(
+        second_membership,
         second_membership,
         tag.id,
         %{dimensions: %{"interest" => 7, "skill" => 2}, description: "Weekend regular"},
@@ -103,7 +106,8 @@ defmodule WikWeb.TagLiveTest do
       )
 
     {:ok, third_tagging} =
-      Tags.upsert_membership_tagging(
+      Tags.upsert_tagging(
+        third_membership,
         third_membership,
         tag.id,
         %{dimensions: %{"interest" => 4, "skill" => 6}, description: nil},
@@ -215,7 +219,7 @@ defmodule WikWeb.TagLiveTest do
       )
     )
 
-    assert {:ok, [tagging]} = Tags.list_membership_taggings(membership, scope: member_scope)
+    assert {:ok, [tagging]} = Tags.list_taggings(membership, scope: member_scope)
     assert tagging.tag_id == tag.id
     assert tagging.description == "I like this topic"
     assert has_element?(view, testid("tag-member-taggings-table"))
@@ -251,6 +255,60 @@ defmodule WikWeb.TagLiveTest do
 
     assert has_element?(view, testid("markdown-block"), "First revision")
     refute has_element?(view, testid("markdown-block"), "Second revision")
+  end
+
+  test "tag page lists tagged pages with relevancy", %{conn: conn} do
+    assert_tag_page_pages_section_works(conn)
+  end
+
+  defp assert_tag_page_pages_section_works(conn) do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: scope)
+    {:ok, _home_node, home_page} = Wiki.ensure_page_and_node_at_path("home", scope: scope)
+    {:ok, _guide_node, guide_page} = Wiki.ensure_page_and_node_at_path("docs/guide", scope: scope)
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               home_page,
+               owner_membership,
+               tag.id,
+               %{dimensions: %{"relevancy" => 7}},
+               scope: scope
+             )
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               guide_page,
+               owner_membership,
+               tag.id,
+               %{dimensions: %{"relevancy" => 3}},
+               scope: scope
+             )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics/#{tag.slug}")
+
+    assert has_element?(view, testid("tag-pages"))
+    assert has_element?(view, testid("tag-page-list"))
+
+    assert has_element?(
+             view,
+             ~s(a[href="/#{space.slug}/wiki/home"][data-testid="tag-page-#{home_page.id}"])
+           )
+
+    assert has_element?(
+             view,
+             ~s(a[href="/#{space.slug}/wiki/docs/guide"][data-testid="tag-page-#{guide_page.id}"])
+           )
+
+    assert has_element?(view, testid("tag-page-relevancy-#{home_page.id}"))
+    assert has_element?(view, testid("tag-page-relevancy-#{guide_page.id}"))
   end
 
   test "tag page uses breadcrumbs for parents and relationship components for children and descendants",

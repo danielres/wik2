@@ -134,7 +134,7 @@ defmodule WikWeb.Components.MembershipTagging do
                 </div>
               </div>
 
-              <div>
+              <div class="space-y-1">
                 <LevelMeter.render
                   :if={interest_level}
                   dimension={@interest_dimension}
@@ -348,7 +348,7 @@ defmodule WikWeb.Components.MembershipTagging do
                 </div>
               </div>
 
-              <div>
+              <div class="space-y-1">
                 <LevelMeter.render
                   :if={interest_level}
                   dimension={@interest_dimension}

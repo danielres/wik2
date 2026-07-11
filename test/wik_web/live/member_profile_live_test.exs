@@ -46,7 +46,7 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_async(view)
 
-    assert {:ok, taggings} = Tags.list_membership_taggings(membership, scope: member_scope)
+    assert {:ok, taggings} = Tags.list_taggings(membership, scope: member_scope)
 
     assert Enum.map(taggings, &{&1.dimensions, &1.description}) == [
              {%{"interest" => 5}, "Loves partnerwork"}
@@ -77,7 +77,7 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_async(view)
 
-    assert {:ok, taggings} = Tags.list_membership_taggings(membership, scope: member_scope)
+    assert {:ok, taggings} = Tags.list_taggings(membership, scope: member_scope)
 
     assert Enum.map(taggings, &{&1.dimensions, &1.description}) == [
              {%{"skill" => 4}, "Teaches occasionally"}
@@ -98,7 +98,7 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_async(view)
 
-    assert {:ok, []} = Tags.list_membership_taggings(membership, scope: member_scope)
+    assert {:ok, []} = Tags.list_taggings(membership, scope: member_scope)
     assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}")
   end
 
@@ -144,7 +144,8 @@ defmodule WikWeb.MemberProfileLiveTest do
     {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
     assert {:ok, _} =
-             Tags.upsert_membership_tagging(
+             Tags.upsert_tagging(
+               membership,
                membership,
                dance.id,
                %{
@@ -214,7 +215,7 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     render_async(view)
 
-    assert {:ok, taggings} = Tags.list_membership_taggings(membership, scope: superadmin_scope)
+    assert {:ok, taggings} = Tags.list_taggings(membership, scope: superadmin_scope)
 
     assert Enum.map(taggings, &{&1.dimensions, &1.description}) == [
              {%{"interest" => 4}, "Observed by superadmin"}
@@ -297,7 +298,8 @@ defmodule WikWeb.MemberProfileLiveTest do
     {:ok, tango} = Tags.create_tag("tango", "Tango", nil, scope: owner_scope)
 
     assert {:ok, _} =
-             Tags.upsert_membership_tagging(
+             Tags.upsert_tagging(
+               membership,
                membership,
                tango.id,
                %{dimensions: %{"interest" => 4, "skill" => 5}, description: nil},
@@ -305,7 +307,8 @@ defmodule WikWeb.MemberProfileLiveTest do
              )
 
     assert {:ok, _} =
-             Tags.upsert_membership_tagging(
+             Tags.upsert_tagging(
+               membership,
                membership,
                dance.id,
                %{dimensions: %{"interest" => 2, "skill" => 3}, description: nil},
@@ -313,7 +316,8 @@ defmodule WikWeb.MemberProfileLiveTest do
              )
 
     assert {:ok, _} =
-             Tags.upsert_membership_tagging(
+             Tags.upsert_tagging(
+               membership,
                membership,
                acro.id,
                %{dimensions: %{"interest" => 2, "skill" => 1}, description: nil},
@@ -380,7 +384,8 @@ defmodule WikWeb.MemberProfileLiveTest do
     {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
 
     assert {:ok, _} =
-             Tags.upsert_membership_tagging(
+             Tags.upsert_tagging(
+               membership,
                membership,
                dance.id,
                %{dimensions: %{"interest" => 7}, description: "Late-night social regular"},

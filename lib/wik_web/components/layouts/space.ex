@@ -22,6 +22,35 @@ defmodule WikWeb.Layouts.Space do
 
   def space(assigns) do
     ~H"""
+    <div
+      :if={@presences |> length() > 1}
+      class={[
+        "py-0",
+        "-mt-2",
+        "group",
+        "bg-base-300"
+      ]}
+    >
+      <.container>
+        <div
+          class={[
+            "flex gap-2 items-center justify-start",
+            "tooltip tooltip-left",
+            "overflow-x-auto"
+          ]}
+          data-tip={ "#{@presences |> length() } members online" }
+        >
+          <span class={[
+            "text-xs small-caps text-base-content/50",
+            "opacity-50 group-hover:opacity-100 transition-opacity"
+          ]}>
+            Online members:
+          </span>
+          <Components.Presences.avatars presences={@presences} tenant={@scope.tenant} />
+        </div>
+      </.container>
+    </div>
+
     <div class={[
       "sticky top-0 z-30",
       "bg-base-300",
@@ -66,29 +95,6 @@ defmodule WikWeb.Layouts.Space do
           {render_slot(@aside)}
         </div>
       </:aside>
-
-      <div
-        :if={@presences |> length() > 1}
-        class={[
-          "absolute",
-          "right-2 sm:right-2",
-          "w-[50svw]",
-          "flex items-end",
-          "z-40",
-          "pt-0.5",
-          "tooltip tooltip-left"
-        ]}
-        data-tip={ "#{@presences |> length() } members online" }
-      >
-        <div class={[
-          "flex gap-1",
-          "[&>:first-child]:ml-auto",
-          "w-[50svw]",
-          "overflow-x-auto"
-        ]}>
-          <Components.Presences.avatars presences={@presences} tenant={@scope.tenant} />
-        </div>
-      </div>
 
       <.container class="my-8 max-w-3xl z-0">
         {render_slot(@inner_block)}

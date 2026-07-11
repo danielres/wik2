@@ -17,6 +17,7 @@ defmodule Wik.Tags do
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
   alias Wik.Tags.Tagging
+  alias Wik.Wiki.Page
 
   require Ash.Query
 
@@ -193,28 +194,29 @@ defmodule Wik.Tags do
       GraphQueries.empty_graph()
   end
 
-  def list_taggings_for(taggable_type, taggable_id, opts \\ []) do
+  def list_taggings(taggable, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
+    %{type: taggable_type, id: taggable_id} = taggable_ref!(taggable)
 
     taggings_query_for(taggable_type, taggable_id)
     |> Ash.read(scope: scope)
   end
 
   def upsert_tagging(
-        taggable_type,
-        taggable_id,
-        tagged_by_membership_id,
+        taggable,
+        %Membership{} = tagged_by_membership,
         tag_id,
         attrs,
         opts \\ []
       ) do
     scope = Keyword.fetch!(opts, :scope)
+    %{type: taggable_type, id: taggable_id} = taggable_ref!(taggable)
 
     attrs =
       tagging_identity_attrs(
         taggable_type,
         taggable_id,
-        tagged_by_membership_id,
+        tagged_by_membership.id,
         tag_id
       )
       |> Map.merge(attrs)
@@ -240,19 +242,19 @@ defmodule Wik.Tags do
   end
 
   def remove_tagging(
-        taggable_type,
-        taggable_id,
-        tagged_by_membership_id,
+        taggable,
+        %Membership{} = tagged_by_membership,
         tag_id,
         opts \\ []
       ) do
     scope = Keyword.fetch!(opts, :scope)
+    %{type: taggable_type, id: taggable_id} = taggable_ref!(taggable)
 
     attrs =
       tagging_identity_attrs(
         taggable_type,
         taggable_id,
-        tagged_by_membership_id,
+        tagged_by_membership.id,
         tag_id
       )
 
@@ -270,12 +272,9 @@ defmodule Wik.Tags do
     end
   end
 
-  def list_membership_taggings(%Membership{} = membership, opts \\ []) do
-    list_taggings_for("membership", membership.id, opts)
-  end
-
-  def membership_taggings_query(%Membership{} = membership) do
-    taggings_query_for("membership", membership.id)
+  def taggings_query(taggable) do
+    %{type: taggable_type, id: taggable_id} = taggable_ref!(taggable)
+    taggings_query_for(taggable_type, taggable_id)
   end
 
   def tag_taggings_query(%Tag{} = tag) do
@@ -315,26 +314,14 @@ defmodule Wik.Tags do
 
   def tag_name_to_slug_map(_space_id), do: %{}
 
-  def upsert_membership_tagging(%Membership{} = membership, tag_id, attrs, opts \\ []) do
-    upsert_tagging(
-      "membership",
-      membership.id,
-      membership.id,
-      tag_id,
-      attrs,
-      opts
-    )
-  end
+  defp taggable_ref!(%Membership{id: id, space_id: space_id}),
+    do: %{id: id, space_id: space_id, type: "membership"}
 
-  def remove_membership_tagging(%Membership{} = membership, tag_id, opts \\ []) do
-    remove_tagging(
-      "membership",
-      membership.id,
-      membership.id,
-      tag_id,
-      opts
-    )
-  end
+  defp taggable_ref!(%Page{id: id, space_id: space_id}),
+    do: %{id: id, space_id: space_id, type: "page"}
+
+  defp taggable_ref!(taggable),
+    do: raise(ArgumentError, "unsupported taggable: #{inspect(taggable)}")
 
   defp get_tagging_by_identity(attrs, scope) do
     %{tag_id: tag_id, tagged_by_membership_id: author_id} = attrs

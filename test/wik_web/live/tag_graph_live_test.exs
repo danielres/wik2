@@ -10,6 +10,7 @@ defmodule WikWeb.TagGraphLiveTest do
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Tags.Tagging
+  alias Wik.Wiki
 
   test "renders root tags, creates and edits tags, links an existing child, and detaches a branch",
        %{conn: conn} do
@@ -188,6 +189,40 @@ defmodule WikWeb.TagGraphLiveTest do
     assert alpha_modal_html =~ ~s(data-testid="tag-skill-chart-tag-path-#{alpha.id}")
   end
 
+  test "renders page tagging counts and opens a modal with tagged pages", %{conn: conn} do
+    assert_page_count_modal_works(conn)
+  end
+
+  defp assert_page_count_modal_works(conn) do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
+    {:ok, _home_node, home_page} = Wiki.ensure_page_and_node_at_path("home", scope: scope)
+    {:ok, _guide_node, guide_page} = Wiki.ensure_page_and_node_at_path("docs/guide", scope: scope)
+
+    create_page_tagging(home_page, alpha, owner_membership, scope)
+    create_page_tagging(guide_page, alpha, owner_membership, scope)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics")
+
+    assert has_element?(view, "#{testid("tag-page-count-tag-path-#{alpha.id}")}", "2")
+
+    page_modal_html =
+      view
+      |> element("#tag-path-#{alpha.id}-pages-count-details-modal_portal")
+      |> render()
+
+    assert page_modal_html =~ ~s(data-testid="tag-page-list-tag-path-#{alpha.id}")
+    assert page_modal_html =~ ~s(href="/#{space.slug}/wiki/home")
+    assert page_modal_html =~ ~s(href="/#{space.slug}/wiki/docs/guide")
+  end
+
   defp add_membership(space, user, type) do
     Ash.create!(
       Membership,
@@ -212,6 +247,24 @@ defmodule WikWeb.TagGraphLiveTest do
         taggable_id: target_membership.id,
         tagged_by_membership_id: tagged_by_membership.id,
         dimensions: dimensions,
+        description: nil
+      },
+      authorize?: false,
+      domain: Wik.Tags,
+      action: :create,
+      scope: scope
+    )
+  end
+
+  defp create_page_tagging(page, tag, tagged_by_membership, scope) do
+    Ash.create!(
+      Tagging,
+      %{
+        tag_id: tag.id,
+        taggable_type: "page",
+        taggable_id: page.id,
+        tagged_by_membership_id: tagged_by_membership.id,
+        dimensions: %{"relevancy" => 5},
         description: nil
       },
       authorize?: false,

@@ -5,10 +5,11 @@ defmodule Wik.Tags.Tagging.Changes.ValidateTarget do
   alias Ash.Query
   alias Wik.Accounts
   alias Wik.Accounts.Membership
+  alias Wik.Wiki.Page
 
   require Ash.Query
 
-  @supported_taggable_types ["membership"]
+  @supported_taggable_types ["membership", "page"]
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -41,6 +42,18 @@ defmodule Wik.Tags.Tagging.Changes.ValidateTarget do
       :ok
     else
       {:error, :taggable_id, "does not match a membership in this space"}
+    end
+  end
+
+  defp validate_target(space_id, "page", taggable_id) do
+    query =
+      Page
+      |> Query.filter(space_id == ^space_id and id == ^taggable_id)
+
+    if Ash.exists?(query, authorize?: false, domain: Wik.Wiki, tenant: space_id) do
+      :ok
+    else
+      {:error, :taggable_id, "does not match a page in this space"}
     end
   end
 end

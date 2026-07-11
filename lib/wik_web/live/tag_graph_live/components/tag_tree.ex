@@ -62,7 +62,9 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   defp tag_node(assigns) do
     selected? = assigns.selected_tag_id == assigns.node.tag.id
-    tagging_count = assigns.node.tag.membership_tagging_count || 0
+    membership_tagging_count = assigns.node.tag.membership_tagging_count || 0
+    page_tagging_count = Map.get(assigns.node.tag, :page_tagging_count, 0) || 0
+    page_taggings = Map.get(assigns.node.tag, :page_taggings, []) || []
 
     interest_distribution =
       assigns.node.tag.membership_interest_distribution || empty_distribution()
@@ -72,7 +74,9 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
     assigns =
       assigns
       |> assign(:selected?, selected?)
-      |> assign(:tagging_count, tagging_count)
+      |> assign(:membership_tagging_count, membership_tagging_count)
+      |> assign(:page_tagging_count, page_tagging_count)
+      |> assign(:page_taggings, page_taggings)
       |> assign(:interest_distribution, interest_distribution)
       |> assign(:skill_distribution, skill_distribution)
 
@@ -111,7 +115,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
                 class="badge badge-xs badge-ghost shrink-0"
                 data-testid={"tag-count-#{@node.dom_id}"}
               >
-                {@tagging_count}
+                {@membership_tagging_count}
               </span>
             </div>
           </div>
@@ -145,20 +149,70 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         </.link>
 
         <.button
-          :if={not @editing? and @tagging_count > 0}
+          :if={not @editing?}
           class={[
             "ml-auto",
-            "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity",
-            "cursor-pointer"
+            @page_tagging_count == 0 && "opacity-10",
+            @page_tagging_count > 0 &&
+              "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+          ]}
+          data-testid={"tag-page-count-#{@node.dom_id}"}
+          phx-click={UI.modal_open("#{@node.dom_id}-pages-count-details-modal")}
+        >
+          <UI.icon_document_with_count count={@page_tagging_count} />
+        </.button>
+
+        <.button
+          :if={not @editing?}
+          class={[
+            "ml-auto",
+            @membership_tagging_count == 0 && "opacity-10",
+            @membership_tagging_count > 0 &&
+              "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
           ]}
           data-testid={"tag-count-#{@node.dom_id}"}
           phx-click={UI.modal_open("#{@node.dom_id}-members-count-details-modal")}
         >
-          <UI.icon_user_with_count count={@tagging_count} />
+          <UI.icon_user_with_count count={@membership_tagging_count} />
         </.button>
 
         <UI.modal
-          :if={not @editing? and @tagging_count > 0}
+          :if={not @editing? and @page_tagging_count > 0}
+          id={"#{@node.dom_id}-pages-count-details-modal"}
+        >
+          <div class="space-y-4">
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl">
+                <.link
+                  navigate={~p"/#{@space_slug}/topics/#{@node.tag.slug}"}
+                  class="link link-hover underline decoration-dashed underline-offset-2"
+                >
+                  {@node.tag.name}
+                </.link>
+              </h2>
+              <div class="flex gap-4">
+                <UI.icon_document_with_count count={@page_tagging_count} />
+              </div>
+            </div>
+
+            <div class="space-y-1" data-testid={"tag-page-list-#{@node.dom_id}"}>
+              <.link
+                :for={page <- @page_taggings}
+                navigate={~p"/#{@space_slug}/wiki/#{page.path_segments}"}
+                class={[
+                  "block rounded-lg bg-base-200 px-3 py-2 text-sm",
+                  "opacity-80 hover:opacity-100 transition-opacity"
+                ]}
+                data-testid={"tag-page-#{@node.dom_id}-#{page.id}"}
+              >
+                {page.title}
+              </.link>
+            </div>
+          </div>
+        </UI.modal>
+
+        <UI.modal
+          :if={not @editing? and @membership_tagging_count > 0}
           id={"#{@node.dom_id}-members-count-details-modal"}
         >
           <div class={["space-y-4"]}>
@@ -174,7 +228,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
                 </.link>
               </h2>
               <div class="flex gap-4">
-                <UI.icon_user_with_count count={@tagging_count} />
+                <UI.icon_user_with_count count={@membership_tagging_count} />
               </div>
             </div>
 

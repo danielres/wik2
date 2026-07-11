@@ -5,34 +5,43 @@ defmodule WikWeb.Components.LevelMeter do
   attr :level, :integer, required: true
   attr :dimension, :map, required: true
   attr :testid, :string, required: true
-  attr :width_class, :string, default: "w-24"
   attr :class, :string, default: ""
+  attr :width_class, :string, default: "min-w-16"
 
   def render(assigns) do
+    assigns = assign(assigns, :percentage, meter_value(assigns.level, assigns.dimension.max))
+
     ~H"""
-    <div class={[
-      "flex items-center gap-1",
-      @class
-    ]}>
+    <div class={["flex min-w-0 items-center gap-1", @class]}>
       <div
-        class="tooltip leading-none"
+        class={[
+          "tooltip flex-1 leading-none",
+          @width_class
+        ]}
         style={"--tt-bg: color-mix(#{@dimension.color} 0%, var(--color-base-300))"}
       >
         <div class="tooltip-content">
-          <div class="font-bold text-xs">
+          <div class="text-xs font-bold">
             <span>{@label}:</span>
             <span>{"#{@level}/#{@dimension.max}"}</span>
           </div>
         </div>
 
-        <progress
-          class={["progress", @width_class]}
+        <div
+          role="progressbar"
+          aria-label={@label}
+          aria-valuemin="0"
+          aria-valuemax={@dimension.max}
+          aria-valuenow={@level}
           data-testid={@testid}
-          style={"color: #{@dimension.color};"}
-          value={meter_value(@level, @dimension.max)}
-          max="100"
+          class="h-2 w-full min-w-0 overflow-hidden rounded-full bg-base-300"
         >
-        </progress>
+          <div
+            class="h-full rounded-full transition-[width] duration-300"
+            style={"width: #{Float.round(@percentage, 1)}%; background-color: #{@dimension.color}"}
+          >
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -40,7 +49,11 @@ defmodule WikWeb.Components.LevelMeter do
 
   defp meter_value(level, max_level)
        when is_integer(level) and is_integer(max_level) and max_level > 0 do
-    trunc(level / max_level * 100)
+    level
+    |> Kernel./(max_level)
+    |> Kernel.*(100)
+    |> min(100)
+    |> max(0)
   end
 
   defp meter_value(_level, _max_level), do: 0

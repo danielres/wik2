@@ -49,33 +49,6 @@ defmodule WikWeb.MembersLive do
             <UI.button_unlock phx-click="toggle_edit_mode" />
           <% end %>
         </:actions>
-
-        <Modal.render
-          cancel="membership_type_change_cancel"
-          cancel_testid="membership-type-change-cancel"
-          open?={@membership_type_form != nil}
-          testid="membership-type-change-dialog"
-        >
-          <MembershipTypeSelector.render
-            :if={@membership_type_form != nil and @selected_membership != nil}
-            event_submit="membership_type_change_submit"
-            form={@membership_type_form}
-            membership={@selected_membership}
-            type_options={Membership.updatable_types()}
-          />
-        </Modal.render>
-
-        <Modal.render
-          cancel="transfer_ownership_cancel"
-          cancel_testid="transfer-ownership-cancel"
-          open?={@transfer_ownership_form != nil}
-          testid="transfer-ownership-dialog"
-        >
-          <NewOwnerSelector.render
-            event_transfer_ownership="transfer_ownership"
-            memberships={@space.memberships}
-          />
-        </Modal.render>
         <Components.Block.Types.Members.render
           event_membership_type_change_start="membership_type_change_start"
           event_transfer_ownership_start="transfer_ownership_start"
@@ -85,6 +58,33 @@ defmodule WikWeb.MembersLive do
         />
       </Layouts.space>
     </Layouts.app>
+
+    <Modal.render
+      cancel="membership_type_change_cancel"
+      cancel_testid="membership-type-change-cancel"
+      open?={@membership_type_form != nil}
+      testid="membership-type-change-dialog"
+    >
+      <MembershipTypeSelector.render
+        :if={@membership_type_form != nil and @selected_membership != nil}
+        event_submit="membership_type_change_submit"
+        form={@membership_type_form}
+        membership={@selected_membership}
+        type_options={Membership.updatable_types()}
+      />
+    </Modal.render>
+
+    <Modal.render
+      cancel="transfer_ownership_cancel"
+      cancel_testid="transfer-ownership-cancel"
+      open?={@transfer_ownership_form != nil}
+      testid="transfer-ownership-dialog"
+    >
+      <NewOwnerSelector.render
+        event_transfer_ownership="transfer_ownership"
+        memberships={@space.memberships}
+      />
+    </Modal.render>
     """
   end
 

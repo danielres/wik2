@@ -60,6 +60,36 @@ defmodule WikWeb.Components.UI do
   attr :color, :string, required: false
   attr :class, :string, default: ""
 
+  def icon_document_with_count(assigns) do
+    ~H"""
+    <div class={[
+      "indicator p-1",
+      @class
+    ]}>
+      <.icon
+        name="hero-document-micro"
+        class="opacity-80"
+        style={if assigns[:color], do: "color: color-mix(#{@color} 80%, var(--color-base-content))"}
+      />
+      <span
+        class={[
+          "indicator-item",
+          "top-2 left-3",
+          "opacity-70",
+          "font-bold text-[11px]"
+        ]}
+        style={if assigns[:color], do: "color: color-mix(#{@color} 30%, var(--color-base-content))"}
+      >
+        {@count}
+      </span>
+    </div>
+    """
+  end
+
+  attr :count, :integer, required: true
+  attr :color, :string, required: false
+  attr :class, :string, default: ""
+
   def icon_user_with_count(assigns) do
     ~H"""
     <div class={[

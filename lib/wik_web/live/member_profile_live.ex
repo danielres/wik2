@@ -169,6 +169,7 @@ defmodule WikWeb.MemberProfileLive do
             tenant={@current_scope.tenant}
             tooltip?
           />
+
           <section class="space-y-3">
             <div class="flex justify-end">
               <UI.button_add_topic
@@ -421,7 +422,7 @@ defmodule WikWeb.MemberProfileLive do
         {:error, :not_found}
 
       {:ok, membership} ->
-        with {:ok, taggings} <- Tags.list_membership_taggings(membership, scope: scope),
+        with {:ok, taggings} <- Tags.list_taggings(membership, scope: scope),
              {:ok, available_tags} <- Tags.list_space_tags(scope),
              {:ok, access_grants} <-
                Access.list_space_user_grants(membership.space_id, membership.user_id) do
@@ -486,7 +487,7 @@ defmodule WikWeb.MemberProfileLive do
     |> assign(:primary_block_form, nil)
     |> assign(:page_tree, page_tree)
     |> assign(:taggings, taggings)
-    |> assign(:taggings_query, Tags.membership_taggings_query(membership))
+    |> assign(:taggings_query, Tags.taggings_query(membership))
     |> assign(profile_state)
     |> assign_primary_block(primary_block)
   end
@@ -590,7 +591,7 @@ defmodule WikWeb.MemberProfileLive do
     if empty_dimensions?(attrs.dimensions) do
       remove_tagging_entry(membership, tag_id, scope)
     else
-      case Tags.upsert_membership_tagging(membership, tag_id, attrs, scope: scope) do
+      case Tags.upsert_tagging(membership, membership, tag_id, attrs, scope: scope) do
         {:ok, _tagging} -> :ok
         {:error, error} -> {:error, error}
       end
@@ -598,7 +599,7 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   defp remove_tagging_entry(membership, tag_id, scope) do
-    case Tags.remove_membership_tagging(membership, tag_id, scope: scope) do
+    case Tags.remove_tagging(membership, membership, tag_id, scope: scope) do
       {:ok, _tagging} -> :ok
       {:error, :not_found} -> :ok
       {:error, error} -> {:error, error}

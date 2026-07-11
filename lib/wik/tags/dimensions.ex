@@ -15,6 +15,15 @@ defmodule Wik.Tags.Dimensions do
         label: "Experience",
         max: 10
       }
+    },
+    "page" => %{
+      "relevancy" => %{
+        color: "oklch(50% 0.06 145)",
+        icon: "hero-sparkles-micro",
+        key: "relevancy",
+        label: "Relevancy",
+        max: 10
+      }
     }
   }
 

@@ -414,7 +414,12 @@ defmodule WikWeb.PageLive do
       }
     end)
     |> Enum.reject(&is_nil(&1.tag))
-    |> Enum.sort_by(&String.downcase(&1.tag.name || ""))
+    |> Enum.sort_by(fn summary ->
+      {
+        -summary.average_relevancy,
+        String.downcase(summary.tag.name || "")
+      }
+    end)
   end
 
   defp current_member_tagging(_taggings, nil), do: nil

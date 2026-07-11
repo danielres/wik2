@@ -38,7 +38,7 @@ defmodule WikWeb.Components.LevelMeter do
         >
           <div
             class="h-full rounded-full transition-[width] duration-300"
-            style={"width: #{@percentage}%; background-color: #{@dimension.color}"}
+            style={"width: #{Float.round(@percentage, 1)}%; background-color: #{@dimension.color}"}
           >
           </div>
         </div>

@@ -8,11 +8,13 @@ defmodule WikWeb.TagLive do
   alias Wik.Accounts
   alias Wik.Blocks
   alias Wik.Tags
+  alias Wik.Tags.Dimensions
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
   alias Wik.Wiki
   alias WikWeb.Components
   alias WikWeb.Components.Block.Types.Markdown
+  alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Modal
   alias WikWeb.Components.Tag, as: TagComponent
@@ -47,6 +49,7 @@ defmodule WikWeb.TagLive do
      |> assign(selected_member_tagging_sort: "interest_level")
      |> assign(show_descendants?: true)
      |> assign(tag: nil)
+     |> assign(tag_page_taggings: [])
      |> assign(tag_form: nil)
      |> assign(tag_graph: nil)
      |> assign(tagging_modal: new_tagging_modal())
@@ -70,8 +73,7 @@ defmodule WikWeb.TagLive do
           |> assign(:page_tree, page_tree)
           |> assign(:primary_block_form, nil)
           |> assign_primary_block(primary_block)
-          |> assign(:tag_graph, tag_graph)
-          |> assign(:tagging_count, tagging_count(tag_graph, tag))
+          |> assign_tag_graph_state(tag_graph, tag)
           |> assign(:taggings_query, Tags.tag_taggings_query(tag))
           |> assign(:show_descendants?, GraphQueries.children_for(tag_graph, tag) != [])
           |> assign_current_member_tagging(tag)
@@ -298,6 +300,36 @@ defmodule WikWeb.TagLive do
               scope={@current_scope}
               tag={@tag}
             />
+          </section>
+
+          <section :if={@tag_page_taggings != []} data-testid="tag-pages">
+            <% relevancy_dimension = Dimensions.get!("page", "relevancy") %>
+
+            <UI.panel_title>
+              <div>Pages</div>
+            </UI.panel_title>
+
+            <div class="space-y-2" data-testid="tag-page-list">
+              <.link
+                :for={page <- @tag_page_taggings}
+                navigate={~p"/#{@current_scope.tenant.slug}/wiki/#{page.path_segments}"}
+                class={[
+                  "block rounded-box bg-base-200 px-3 py-2",
+                  "opacity-80 hover:opacity-100 transition-opacity"
+                ]}
+                data-testid={"tag-page-#{page.id}"}
+              >
+                <div class="text-sm truncate">{page.title}</div>
+
+                <LevelMeter.render
+                  :if={page.relevancy_level}
+                  dimension={relevancy_dimension}
+                  label={relevancy_dimension.label}
+                  level={page.relevancy_level}
+                  testid={"tag-page-relevancy-#{page.id}"}
+                />
+              </.link>
+            </div>
           </section>
 
           <section>
@@ -712,8 +744,7 @@ defmodule WikWeb.TagLive do
     tag_graph = Tags.load_tag_graph(scope)
 
     socket
-    |> assign(:tag_graph, tag_graph)
-    |> assign(:tagging_count, tagging_count(tag_graph, socket.assigns.tag))
+    |> assign_tag_graph_state(tag_graph, socket.assigns.tag)
     |> assign_current_member_tagging(socket.assigns.tag)
   end
 
@@ -762,6 +793,21 @@ defmodule WikWeb.TagLive do
     |> Map.get(tag.id, tag)
     |> Map.get(:membership_tagging_count, 0)
     |> Kernel.||(0)
+  end
+
+  defp assign_tag_graph_state(socket, tag_graph, tag) do
+    socket
+    |> assign(:tag_graph, tag_graph)
+    |> assign(:tagging_count, tagging_count(tag_graph, tag))
+    |> assign(:tag_page_taggings, tag_page_taggings(tag_graph, tag))
+  end
+
+  defp tag_page_taggings(tag_graph, tag) do
+    tag_graph
+    |> Map.get(:tags_by_id, %{})
+    |> Map.get(tag.id, tag)
+    |> Map.get(:page_taggings, [])
+    |> Kernel.||([])
   end
 
   defp primary_block_version_label(nil, _count), do: "None"

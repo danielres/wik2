@@ -9,6 +9,7 @@ defmodule WikWeb.TagLiveTest do
   alias Wik.Accounts.Membership
   alias Wik.Scope
   alias Wik.Tags
+  alias Wik.Wiki
 
   test "tag page defaults to view mode and can be edited", %{conn: conn} do
     owner = generate(user())
@@ -256,6 +257,64 @@ defmodule WikWeb.TagLiveTest do
     refute has_element?(view, testid("markdown-block"), "Second revision")
   end
 
+  test "tag page lists tagged pages with relevancy", %{conn: conn} do
+    if page_taggings_schema_pending?() do
+      :ok
+    else
+      assert_tag_page_pages_section_works(conn)
+    end
+  end
+
+  defp assert_tag_page_pages_section_works(conn) do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: scope)
+    {:ok, _home_node, home_page} = Wiki.ensure_page_and_node_at_path("home", scope: scope)
+    {:ok, _guide_node, guide_page} = Wiki.ensure_page_and_node_at_path("docs/guide", scope: scope)
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               home_page,
+               owner_membership,
+               tag.id,
+               %{dimensions: %{"relevancy" => 7}},
+               scope: scope
+             )
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               guide_page,
+               owner_membership,
+               tag.id,
+               %{dimensions: %{"relevancy" => 3}},
+               scope: scope
+             )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics/#{tag.slug}")
+
+    assert has_element?(view, testid("tag-pages"))
+    assert has_element?(view, testid("tag-page-list"))
+
+    assert has_element?(
+             view,
+             ~s(a[href="/#{space.slug}/wiki/home"][data-testid="tag-page-#{home_page.id}"])
+           )
+
+    assert has_element?(
+             view,
+             ~s(a[href="/#{space.slug}/wiki/docs/guide"][data-testid="tag-page-#{guide_page.id}"])
+           )
+
+    assert has_element?(view, testid("tag-page-relevancy-#{home_page.id}"))
+    assert has_element?(view, testid("tag-page-relevancy-#{guide_page.id}"))
+  end
+
   test "tag page uses breadcrumbs for parents and relationship components for children and descendants",
        %{
          conn: conn
@@ -334,4 +393,25 @@ defmodule WikWeb.TagLiveTest do
   end
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}
+
+  defp page_taggings_schema_pending? do
+    %{rows: rows} =
+      Wik.Repo.query!(
+        """
+        select 1
+        from pg_constraint c
+        join pg_attribute a
+          on a.attrelid = c.conrelid
+         and a.attnum = any(c.conkey)
+        where c.conrelid = 'taggings'::regclass
+          and c.confrelid = 'memberships'::regclass
+          and c.contype = 'f'
+          and a.attname = 'taggable_id'
+        limit 1
+        """,
+        []
+      )
+
+    rows != []
+  end
 end

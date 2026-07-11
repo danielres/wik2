@@ -347,22 +347,39 @@ defmodule Wik.Tags.GraphQueries do
 
     from(tagging in Tagging,
       where: tagging.space_id == ^space_id and tagging.taggable_type == "page",
-      distinct: [tagging.tag_id, tagging.taggable_id],
       select: %{
         tag_id: tagging.tag_id,
-        page_id: tagging.taggable_id
+        page_id: tagging.taggable_id,
+        relevancy: fragment("coalesce((?->>'relevancy')::int, 0)", tagging.dimensions)
       }
     )
     |> Repo.all()
-    |> Enum.reduce(%{}, fn %{tag_id: tag_id, page_id: page_id}, acc ->
+    |> Enum.group_by(&{&1.tag_id, &1.page_id})
+    |> Enum.reduce(%{}, fn {{tag_id, page_id}, rows}, acc ->
       case Map.fetch(pages_by_id, page_id) do
-        {:ok, page} -> Map.update(acc, tag_id, [page], &[page | &1])
-        :error -> acc
+        {:ok, page} ->
+          page = Map.put(page, :relevancy_level, average_relevancy(rows))
+          Map.update(acc, tag_id, [page], &[page | &1])
+
+        :error ->
+          acc
       end
     end)
     |> Map.new(fn {tag_id, pages} ->
       {tag_id, Enum.sort_by(pages, &{String.downcase(&1.title), &1.path, &1.id})}
     end)
+  end
+
+  defp average_relevancy(rows) do
+    levels =
+      rows
+      |> Enum.map(& &1.relevancy)
+      |> Enum.reject(&(&1 == 0))
+
+    case levels do
+      [] -> nil
+      levels -> round(Enum.sum(levels) / length(levels))
+    end
   end
 
   defp page_tree_pages_by_id(nodes) do

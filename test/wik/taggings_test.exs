@@ -198,11 +198,7 @@ defmodule Wik.TaggingsTest do
 
   describe "page taggings" do
     test "stores one row per member, page, and tag and normalizes relevancy" do
-      if page_taggings_schema_pending?() do
-        :ok
-      else
-        assert_page_taggings_work()
-      end
+      assert_page_taggings_work()
     end
   end
 
@@ -284,25 +280,4 @@ defmodule Wik.TaggingsTest do
   end
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}
-
-  defp page_taggings_schema_pending? do
-    %{rows: rows} =
-      Wik.Repo.query!(
-        """
-        select 1
-        from pg_constraint c
-        join pg_attribute a
-          on a.attrelid = c.conrelid
-         and a.attnum = any(c.conkey)
-        where c.conrelid = 'taggings'::regclass
-          and c.confrelid = 'memberships'::regclass
-          and c.contype = 'f'
-          and a.attname = 'taggable_id'
-        limit 1
-        """,
-        []
-      )
-
-    rows != []
-  end
 end

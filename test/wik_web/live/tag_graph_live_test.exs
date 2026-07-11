@@ -190,11 +190,7 @@ defmodule WikWeb.TagGraphLiveTest do
   end
 
   test "renders page tagging counts and opens a modal with tagged pages", %{conn: conn} do
-    if page_taggings_schema_pending?() do
-      :ok
-    else
-      assert_page_count_modal_works(conn)
-    end
+    assert_page_count_modal_works(conn)
   end
 
   defp assert_page_count_modal_works(conn) do
@@ -288,25 +284,4 @@ defmodule WikWeb.TagGraphLiveTest do
   end
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}
-
-  defp page_taggings_schema_pending? do
-    %{rows: rows} =
-      Wik.Repo.query!(
-        """
-        select 1
-        from pg_constraint c
-        join pg_attribute a
-          on a.attrelid = c.conrelid
-         and a.attnum = any(c.conkey)
-        where c.conrelid = 'taggings'::regclass
-          and c.confrelid = 'memberships'::regclass
-          and c.contype = 'f'
-          and a.attname = 'taggable_id'
-        limit 1
-        """,
-        []
-      )
-
-    rows != []
-  end
 end

@@ -12,11 +12,7 @@ defmodule WikWeb.PageLiveTopicsTest do
   alias Wik.Wiki
 
   test "page manager can add and remove a topic from the page aside", %{conn: conn} do
-    if page_taggings_schema_pending?() do
-      :ok
-    else
-      assert_page_topic_management_works(conn)
-    end
+    assert_page_topic_management_works(conn)
   end
 
   defp assert_page_topic_management_works(conn) do
@@ -91,25 +87,4 @@ defmodule WikWeb.PageLiveTopicsTest do
   end
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}
-
-  defp page_taggings_schema_pending? do
-    %{rows: rows} =
-      Wik.Repo.query!(
-        """
-        select 1
-        from pg_constraint c
-        join pg_attribute a
-          on a.attrelid = c.conrelid
-         and a.attnum = any(c.conkey)
-        where c.conrelid = 'taggings'::regclass
-          and c.confrelid = 'memberships'::regclass
-          and c.contype = 'f'
-          and a.attname = 'taggable_id'
-        limit 1
-        """,
-        []
-      )
-
-    rows != []
-  end
 end

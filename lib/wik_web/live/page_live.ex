@@ -45,6 +45,7 @@ defmodule WikWeb.PageLive do
         page_topic_options: [],
         page_topic_summaries: [],
         page_taggings: [],
+        page_tagging_topic: nil,
         page_tree: nil,
         path: nil
       )
@@ -71,6 +72,7 @@ defmodule WikWeb.PageLive do
     socket =
       socket
       |> PageState.load_path(path, title_path: title_path)
+      |> sync_page_tagging_subscription()
       |> assign_page_topics()
       |> load_page_author_membership()
       |> Presence.track_in_liveview(url)
@@ -342,7 +344,6 @@ defmodule WikWeb.PageLive do
   defp assign_page_topics(%{assigns: %{page: page, current_scope: scope}} = socket) do
     if connected?(socket) do
       WikWeb.Endpoint.subscribe(Tag.space_pub_sub_topic(scope.tenant.id))
-      WikWeb.Endpoint.subscribe(Tagging.target_pub_sub_topic("page", page.id))
     end
 
     with {:ok, taggings} <- Tags.list_taggings(page, scope: scope),
@@ -361,6 +362,28 @@ defmodule WikWeb.PageLive do
           page_topic_summaries: [],
           page_taggings: []
         )
+    end
+  end
+
+  defp sync_page_tagging_subscription(socket) do
+    if connected?(socket) do
+      current_topic =
+        socket.assigns.page && Tagging.target_pub_sub_topic("page", socket.assigns.page.id)
+
+      previous_topic = socket.assigns.page_tagging_topic
+
+      cond do
+        current_topic == previous_topic ->
+          socket
+
+        true ->
+          if previous_topic, do: WikWeb.Endpoint.unsubscribe(previous_topic)
+          if current_topic, do: WikWeb.Endpoint.subscribe(current_topic)
+
+          assign(socket, :page_tagging_topic, current_topic)
+      end
+    else
+      socket
     end
   end
 

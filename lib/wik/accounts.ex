@@ -15,7 +15,6 @@ defmodule Wik.Accounts do
   resources do
     resource Wik.Accounts.Token
     resource Wik.Accounts.User
-    resource Wik.Accounts.Profile
 
     resource Wik.Accounts.Space do
       define :get_space_by_slug, action: :read, get_by_identity: :unique_slug
@@ -37,6 +36,8 @@ defmodule Wik.Accounts do
 
   alias Wik.Accounts.Space
   alias Wik.Accounts.Membership
+  alias Wik.Blocks
+  alias Wik.Blocks.Block
   alias Wik.Repo
   alias Wik.Accounts.User
   alias Utils.Values
@@ -56,27 +57,34 @@ defmodule Wik.Accounts do
     |> Ash.read(authorize?: false, domain: __MODULE__)
   end
 
-  def space_slug_to_id(%Space{id: id}), do: id
-
-  def space_slug_to_id(space_slug_or_id) when is_binary(space_slug_or_id) do
-    case Ecto.UUID.cast(space_slug_or_id) do
-      {:ok, space_id} ->
-        space_id
-
-      :error ->
-        case get_space_by_slug(space_slug_or_id, authorize?: false) do
-          {:ok, %{id: id}} -> id
-          {:error, _reason} -> nil
-        end
+  def space_slug_to_id(space_slug) when is_binary(space_slug) do
+    case get_space_by_slug(space_slug, authorize?: false) do
+      {:ok, %{id: id}} -> id
+      {:error, _reason} -> nil
     end
   end
 
   def space_slug_to_id(_), do: nil
 
   # TODO: inline?
-  def tenant_to_space_id(%{id: space_id}), do: space_id
-  def tenant_to_space_id(space_slug) when is_binary(space_slug), do: space_slug_to_id(space_slug)
+  def tenant_to_space_id(%Space{id: space_id}), do: space_id
+
+  def tenant_to_space_id(space_id_or_slug) when is_binary(space_id_or_slug) do
+    if canonical_uuid?(space_id_or_slug) do
+      space_id_or_slug
+    else
+      space_slug_to_id(space_id_or_slug)
+    end
+  end
+
   def tenant_to_space_id(_), do: nil
+
+  defp canonical_uuid?(value) do
+    String.match?(
+      value,
+      ~r/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    )
+  end
 
   def get_membership(space_or_space_id, user_or_user_id)
 
@@ -174,6 +182,38 @@ defmodule Wik.Accounts do
   def present_membership(_membership),
     do: %{avatar_url: nil, display_name: nil, space: nil, user: nil, username: nil}
 
+  def get_primary_block(%Membership{} = membership, opts \\ []),
+    do: membership_primary_block(membership, opts)
+
+  def get_or_create_primary_block(%Membership{} = membership, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    Blocks.get_or_create_primary_block(membership,
+      get_existing: fn membership ->
+        case get_primary_block(membership, scope: scope) do
+          {:ok, block} -> block
+          {:error, error} -> {:error, error}
+        end
+      end,
+      create_block: fn -> Blocks.create_user_owned_block(%{type: :markdown}, scope: scope) end,
+      attach_block: fn membership, block ->
+        Ash.update(
+          membership,
+          %{primary_block_id: block.id},
+          action: :set_primary_block,
+          scope: scope
+        )
+      end
+    )
+  end
+
+  def update_primary_block(%Membership{} = membership, params, opts \\ []) do
+    with {:ok, _membership, %Block{} = block} <-
+           get_or_create_primary_block(membership, opts) do
+      Blocks.update_block(block, params, opts)
+    end
+  end
+
   defp present_membership_display_name(username, _user)
        when is_binary(username) and username != "",
        do: username
@@ -211,6 +251,16 @@ defmodule Wik.Accounts do
     |> Ash.Query.sort(username: :asc)
     |> Ash.read!(authorize?: false, domain: __MODULE__)
   end
+
+  defp membership_primary_block(%Membership{primary_block_id: nil}, _opts), do: {:ok, nil}
+
+  defp membership_primary_block(%Membership{primary_block_id: primary_block_id}, opts) do
+    Block
+    |> Ash.Query.filter(id == ^primary_block_id)
+    |> Ash.read_one(Keyword.put(opts, :domain, Blocks))
+  end
+
+  defp membership_primary_block(_membership, _opts), do: {:ok, nil}
 
   defp membership_load, do: [:space, :avatar_url, user: [:external_identities]]
 end

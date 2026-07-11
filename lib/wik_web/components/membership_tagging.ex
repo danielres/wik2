@@ -15,6 +15,7 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :membership, :map, required: true
   attr :query, :any, required: true
   attr :scope, :map, required: true
+  attr :sort_controls?, :boolean, default: true
 
   def list(assigns) do
     assigns =
@@ -30,9 +31,9 @@ defmodule WikWeb.Components.MembershipTagging do
       data-testid="member-taggings-table"
     >
       <div
+        :if={@sort_controls?}
         class={[
-          "mb-1 flex items-center justify-end gap-2",
-          "group"
+          "mb-1 flex items-center justify-end gap-2"
         ]}
         data-testid="member-tagging-sort-controls"
       >
@@ -52,14 +53,6 @@ defmodule WikWeb.Components.MembershipTagging do
         <%!--   <.icon name="hero-arrow-down-mini" class="size-3 -mr-1.5" /> --%>
         <%!--   <span>Aa</span> --%>
         <%!-- </button> --%>
-
-        <.icon
-          name="hero-arrows-up-down-micro"
-          class={[
-            "opacity-20 group-hover:opacity-60 transition",
-            "size-4"
-          ]}
-        />
 
         <button
           id="member-tagging-sort-interest"
@@ -109,7 +102,7 @@ defmodule WikWeb.Components.MembershipTagging do
       >
         <:col
           field="tag.name"
-          label="Tag"
+          label="Topic"
           sort={[cycle: [nil, :asc]]}
         >
         </:col>
@@ -497,8 +490,7 @@ defmodule WikWeb.Components.MembershipTagging do
       </div>
 
       <div :if={present?(@tagging.description)} class="space-y-2">
-        <div class="text-xs font-bold uppercase tracking-[0.14em] opacity-60">Description</div>
-        <div class="space-y-1 text-sm/6 opacity-80" data-testid="member-tagging-details-description">
+        <div class="text-sm/6 opacity-80" data-testid="member-tagging-details-description">
           <.description_chunks description={@tagging.description} />
         </div>
       </div>
@@ -544,7 +536,7 @@ defmodule WikWeb.Components.MembershipTagging do
           <.input
             :if={@mode == :create}
             field={@form[:tag_id]}
-            label="Tag"
+            label="Topic"
             options={Enum.map(@options, &{&1.name, &1.id})}
             prompt="Select a topic"
             type="select"
@@ -582,8 +574,8 @@ defmodule WikWeb.Components.MembershipTagging do
 
           <.input
             field={@form[:description]}
-            label="Description"
             type="textarea"
+            placeholder={selected_topic_placeholder(@form, @options, @tag)}
             class="text-sm w-full textarea h-36"
           />
 
@@ -675,7 +667,7 @@ defmodule WikWeb.Components.MembershipTagging do
     assigns = assign(assigns, :chunks, split_description(assigns.description))
 
     ~H"""
-    <div :for={chunk <- @chunks} class="break-all">{chunk}</div>
+    <div :for={chunk <- @chunks}>{chunk}</div>
     """
   end
 
@@ -695,4 +687,46 @@ defmodule WikWeb.Components.MembershipTagging do
   defp member_tagging_path(scope, tagging, tag) do
     ~p"/#{scope.tenant.slug}/wiki/members/#{tagging.target_membership.username}/tag/#{tag.slug}"
   end
+
+  defp selected_topic_placeholder(form, options, tag) do
+    case selected_topic_name(form, options, tag) do
+      nil ->
+        nil
+
+      name ->
+        "Would you like to share more about your interest & experience in #{name |> String.downcase()}?"
+    end
+  end
+
+  defp selected_topic_name(form, options, tag) do
+    selected_id =
+      form
+      |> Phoenix.HTML.Form.input_value(:tag_id)
+      |> value_to_string()
+
+    if selected_id == "" do
+      nil
+    else
+      option_topic_name(options, selected_id) || tag_topic_name(tag, selected_id)
+    end
+  end
+
+  defp option_topic_name(options, selected_id) do
+    Enum.find_value(options, fn
+      %{id: id, name: name} when is_binary(name) ->
+        if value_to_string(id) == selected_id, do: name
+
+      _option ->
+        nil
+    end)
+  end
+
+  defp tag_topic_name(%{id: id, name: name}, selected_id) when is_binary(name) do
+    if value_to_string(id) == selected_id, do: name
+  end
+
+  defp tag_topic_name(_tag, _selected_id), do: nil
+
+  defp value_to_string(nil), do: ""
+  defp value_to_string(value), do: to_string(value)
 end

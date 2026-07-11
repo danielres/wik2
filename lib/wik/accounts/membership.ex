@@ -10,6 +10,8 @@ defmodule Wik.Accounts.Membership do
   alias Wik.Accounts.Space
   alias Wik.Accounts.Membership.Checks
   alias Wik.Accounts.Membership.Changes
+  alias Wik.Accounts.Membership.Validations.PrimaryBlock
+  alias Wik.Blocks.Block
 
   postgres do
     table "memberships"
@@ -33,11 +35,13 @@ defmodule Wik.Accounts.Membership do
     update :set_type do
       accept [:type]
       public? false
+      require_atomic? false
     end
 
     update :update_membership_type do
       accept [:type]
       public? false
+      require_atomic? false
 
       validate attribute_does_not_equal(:type, :owner)
     end
@@ -57,6 +61,11 @@ defmodule Wik.Accounts.Membership do
       require_atomic? false
 
       change Changes.SetUsername
+    end
+
+    update :set_primary_block do
+      accept [:primary_block_id]
+      require_atomic? false
     end
   end
 
@@ -81,6 +90,11 @@ defmodule Wik.Accounts.Membership do
       authorize_if expr(user_id == ^actor(:id))
     end
 
+    policy action(:set_primary_block) do
+      authorize_if actor_attribute_equals(:role, :superadmin)
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
     policy action_type(:create) do
       authorize_if actor_attribute_equals(:role, :superadmin)
     end
@@ -97,6 +111,10 @@ defmodule Wik.Accounts.Membership do
     publish :set_username, ["user", :user_id]
     publish :update_membership_type, ["space", :space_id]
     publish :update_membership_type, ["user", :user_id]
+  end
+
+  validations do
+    validate PrimaryBlock
   end
 
   attributes do
@@ -127,12 +145,14 @@ defmodule Wik.Accounts.Membership do
       allow_nil? false
     end
 
-    has_one :profile, Wik.Accounts.Profile do
-      destination_attribute :membership_id
-    end
-
     belongs_to :user, Wik.Accounts.User do
       allow_nil? false
+    end
+
+    belongs_to :primary_block, Block do
+      destination_attribute :id
+      allow_nil? true
+      public? true
     end
   end
 

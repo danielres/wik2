@@ -38,9 +38,9 @@ defmodule Wik.Tags do
     Ash.update(tag, attrs, opts)
   end
 
-  def get_tag_content_block(%Tag{primary_block_id: nil}, _opts), do: {:ok, nil}
+  def get_primary_block(%Tag{primary_block_id: nil}, _opts), do: {:ok, nil}
 
-  def get_tag_content_block(%Tag{primary_block_id: primary_block_id}, opts) do
+  def get_primary_block(%Tag{primary_block_id: primary_block_id}, opts) do
     scope = Keyword.fetch!(opts, :scope)
 
     Block
@@ -48,35 +48,36 @@ defmodule Wik.Tags do
     |> Ash.read_one(scope: scope)
   end
 
-  def get_or_create_tag_content_block(%Tag{} = tag, opts \\ []) do
+  def get_or_create_primary_block(%Tag{} = tag, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
 
-    with {:ok, nil} <- get_tag_content_block(tag, opts),
-         {:ok, block} <-
-           Blocks.create_space_owned_block(
-             %{id: tag.space_id},
-             %{type: :markdown},
-             scope: scope
-           ),
-         {:ok, tag} <-
-           Ash.update(
-             tag,
-             %{primary_block_id: block.id},
-             action: :set_primary_block,
-             scope: scope
-           ) do
-      {:ok, tag, block}
-    else
-      {:ok, %Block{} = block} ->
-        {:ok, tag, block}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    Blocks.get_or_create_primary_block(tag,
+      get_existing: fn tag ->
+        case get_primary_block(tag, opts) do
+          {:ok, block} -> block
+          {:error, error} -> {:error, error}
+        end
+      end,
+      create_block: fn ->
+        Blocks.create_space_owned_block(
+          %{id: tag.space_id},
+          %{type: :markdown},
+          scope: scope
+        )
+      end,
+      attach_block: fn tag, block ->
+        Ash.update(
+          tag,
+          %{primary_block_id: block.id},
+          action: :set_primary_block,
+          scope: scope
+        )
+      end
+    )
   end
 
-  def update_tag_content_block(%Tag{} = tag, params, opts \\ []) do
-    with {:ok, %Block{} = block} <- get_or_create_existing_tag_content_block(tag, opts) do
+  def update_primary_block(%Tag{} = tag, params, opts \\ []) do
+    with {:ok, %Block{} = block} <- get_or_create_existing_primary_block(tag, opts) do
       Blocks.update_block(block, params, opts)
     end
   end
@@ -381,8 +382,8 @@ defmodule Wik.Tags do
     |> Ash.read!(authorize?: false, domain: __MODULE__, tenant: space)
   end
 
-  defp get_or_create_existing_tag_content_block(%Tag{} = tag, opts) do
-    case get_or_create_tag_content_block(tag, opts) do
+  defp get_or_create_existing_primary_block(%Tag{} = tag, opts) do
+    case get_or_create_primary_block(tag, opts) do
       {:ok, _tag, %Block{} = block} -> {:ok, block}
       {:error, error} -> {:error, error}
     end

@@ -30,6 +30,14 @@ defmodule WikWeb.DocsLive do
       "px-4"
     ]}>
       <h1 class="flex items-center gap-2">
+        <span class="flex items-end">
+          <.link navigate={~p"/"} class="opacity-50 hover:opacity-100 transition" aria-label="Home">
+            <.icon name="hero-home-micro" />
+          </.link>
+
+          <.icon name="hero-chevron-right-micro" class="opacity-20 mb-1" />
+        </span>
+
         <.link patch={~p"/docs"} class="text-xl">
           Wik docs
         </.link>
@@ -52,7 +60,10 @@ defmodule WikWeb.DocsLive do
 
       <main>
         <.container class="py-8">
-          <div class="prose">
+          <div
+            class="prose"
+            data-testid={if @page, do: "docs-page-#{@page.slug()}", else: "docs-page-not-found"}
+          >
             <%= if @page do %>
               {render_page(@page, assigns)}
             <% else %>

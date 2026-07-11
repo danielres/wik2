@@ -52,7 +52,7 @@ defmodule WikWeb.Docs.Pages.Index do
       Not another place trying to capture your attention.
       <br />
       <br />
-      A calmer tool for making shared possibilities visible, and turning screen time into more meaningful time together.
+      A calmer tool to make shared possibilities visible, and turn screen time into more meaningful time together.
     </div>
 
     """HEEX

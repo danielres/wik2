@@ -7,11 +7,66 @@ defmodule WikWeb.Components.Block.Types.Markdown do
   alias WikWeb.Components.UI
 
   attr :block, :map, required: true
+  attr :editing?, :boolean, default: false
+  attr :form, :map, required: true
+  attr :page_tree, :map, required: true
+  attr :scope, :map, required: true
+  attr :id, :string, required: true
+  attr :submit, :string, required: true
+  attr :cancel, :string, required: true
+  attr :text, :string, default: nil
+
+  def editable(assigns) do
+    ~H"""
+    <.form
+      :if={@editing? and @block != nil and @form != nil}
+      for={@form}
+      id={"#{@id}-form"}
+      phx-submit={@submit}
+    >
+      <.form_fields
+        block={@block}
+        form={@form}
+        page_tree={@page_tree}
+        scope={@scope}
+      />
+
+      <div class="mt-3 flex justify-end gap-2">
+        <button
+          class="btn btn-sm btn-ghost"
+          data-testid={"#{@id}-cancel"}
+          phx-click={@cancel}
+          type="button"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="btn btn-sm btn-accent btn-soft"
+          data-testid={"#{@id}-submit"}
+        >
+          Save
+        </button>
+      </div>
+    </.form>
+
+    <.render
+      :if={!@editing? and @block != nil}
+      block={@block}
+      page_tree={@page_tree}
+      scope={@scope}
+      text={@text}
+    />
+    """
+  end
+
+  attr :block, :map, required: true
   attr :page_tree, :map, required: true
   attr :scope, :map, default: nil
+  attr :text, :string, default: nil
 
   def render(assigns) do
-    %{"text" => md} = assigns.block.data
+    md = assigns.text || Map.get(assigns.block.data, "text", "")
     scope = assigns.scope
     page_tree = assigns.page_tree
     html = md |> markdown_to_html(scope, page_tree)

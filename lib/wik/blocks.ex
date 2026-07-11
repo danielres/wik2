@@ -34,6 +34,21 @@ defmodule Wik.Blocks do
 
   def version_to_text(block, version, opts), do: Types.version_to_text(block, version, opts)
 
+  def get_or_create_primary_block(parent, opts) do
+    get_existing = Keyword.fetch!(opts, :get_existing)
+    create_block = Keyword.fetch!(opts, :create_block)
+    attach_block = Keyword.fetch!(opts, :attach_block)
+
+    with nil <- get_existing.(parent),
+         {:ok, block} <- create_block.(),
+         {:ok, parent} <- attach_block.(parent, block) do
+      {:ok, parent, block}
+    else
+      %Block{} = block -> {:ok, parent, block}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   def count_versions(block, opts) do
     block
     |> version_query()
@@ -222,14 +237,12 @@ defmodule Wik.Blocks do
 
   def list_orphan_space_owned_blocks(%{id: space_id}, opts) do
     scope = Keyword.fetch!(opts, :scope)
-    tag_primary_block_ids = tag_primary_block_ids(space_id, scope)
+    primary_block_ids = primary_block_ids(space_id, scope)
 
     Block
     |> Ash.Query.filter(owner_space_id == ^space_id)
     |> Ash.read!(scope: scope, load: [:placements])
-    |> Enum.filter(
-      &(Enum.empty?(&1.placements) and not MapSet.member?(tag_primary_block_ids, &1.id))
-    )
+    |> Enum.filter(&(Enum.empty?(&1.placements) and not MapSet.member?(primary_block_ids, &1.id)))
   end
 
   def destroy_orphan_space_owned_block(space, block_id, opts) do
@@ -361,7 +374,7 @@ defmodule Wik.Blocks do
     end
   end
 
-  defp tag_primary_block_ids(space_id, scope) do
+  defp primary_block_ids(space_id, scope) do
     Tag
     |> Query.filter(space_id == ^space_id and not is_nil(primary_block_id))
     |> Query.select([:primary_block_id])

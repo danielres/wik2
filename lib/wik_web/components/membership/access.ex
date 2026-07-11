@@ -20,7 +20,7 @@ defmodule WikWeb.Components.Membership.Access do
 
     ~H"""
     <div class="card bg-base-300" data-testid={"access-grant-#{@grant.id}"}>
-      <div class="card-body gap-3 py-4">
+      <div class="px-4 py-4">
         <%= if @variant == :me do %>
           <.grant_card_me grant={@grant} membership={@membership} />
         <% else %>
@@ -119,25 +119,27 @@ defmodule WikWeb.Components.Membership.Access do
           <span :if={!@issuer_membership}>{@issuer_label}</span>
         </dd>
 
-        <dt>Via</dt>
-        <dd data-testid={"access-grant-via-#{@grant.id}"}>{@source_type_label}</dd>
+        <%= if false do %>
+          <dt>Via</dt>
+          <dd data-testid={"access-grant-via-#{@grant.id}"}>{@source_type_label}</dd>
 
-        <dt :if={is_binary(source_title(@grant.source))}>
-          {source_container_label(@grant.source)}
-        </dt>
-        <dd
-          :if={is_binary(source_title(@grant.source))}
-          data-testid={"access-grant-source-title-#{@grant.id}"}
-        >
-          <span class="tooltip" data-tip={"id: #{source_group_id(@grant.source)}"}>
-            {source_title(@grant.source)}
-          </span>
-        </dd>
+          <dt :if={is_binary(source_title(@grant.source))}>
+            {source_container_label(@grant.source)}
+          </dt>
+          <dd
+            :if={is_binary(source_title(@grant.source))}
+            data-testid={"access-grant-source-title-#{@grant.id}"}
+          >
+            <span class="tooltip" data-tip={"id: #{source_group_id(@grant.source)}"}>
+              {source_title(@grant.source)}
+            </span>
+          </dd>
 
-        <dt>As</dt>
-        <dd data-testid={"access-grant-identity-#{@grant.id}"}>
-          {identity_label(@grant.external_identity)}
-        </dd>
+          <dt>As</dt>
+          <dd data-testid={"access-grant-identity-#{@grant.id}"}>
+            {identity_label(@grant.external_identity)}
+          </dd>
+        <% end %>
 
         <dt>Since</dt>
         <dd>
@@ -151,7 +153,7 @@ defmodule WikWeb.Components.Membership.Access do
 
         <dt>Status</dt>
         <dd data-testid={"access-grant-status-#{@grant.id}"}>
-          <span class={grant_status_class(@grant)}>
+          <span class="opacity-80">
             {@grant.status |> Atom.to_string()}
           </span>
         </dd>

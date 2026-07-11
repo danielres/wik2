@@ -69,7 +69,7 @@ defmodule Wik.Events.EventPublication do
   multitenancy do
     strategy :attribute
     attribute :target_space_id
-    parse_attribute {Wik.Accounts, :space_slug_to_id, []}
+    parse_attribute {Wik.Accounts, :tenant_to_space_id, []}
   end
 
   attributes do

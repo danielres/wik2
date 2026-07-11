@@ -88,6 +88,24 @@ defmodule Wik.Wiki.LoadPageAndNodeByPathTest do
     assert loaded_page.id == page.id
   end
 
+  test "ensure_page_and_node_at_path creates home in a space with a 16-character slug" do
+    actor = generate(user())
+    space = generate(space(slug: "damn-interesting"))
+    add_membership(space, actor, :owner)
+    scope = scope(actor, space)
+
+    assert {:ok, node, page} =
+             Wiki.ensure_page_and_node_at_path("home", scope: scope, load: [:author])
+
+    assert node.slug == "home"
+    assert page.id != nil
+
+    page_tree = Wiki.load_page_tree(scope)
+
+    assert {:ok, loaded_node} = Wik.Wiki.PageTree.get_node_by_path(page_tree.nodes, "home")
+    assert loaded_node.page_id == page.id
+  end
+
   test "ensure_page_and_node_at_path creates a page for an existing node without one" do
     actor = generate(user())
     space = generate(space())

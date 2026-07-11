@@ -8,10 +8,13 @@ defmodule WikWeb.MemberProfileLive do
   alias Utils.Log
   alias Wik.Access
   alias Wik.Accounts
+  alias Wik.Blocks
   alias Wik.Tags
   alias Wik.Tags.Tag
   alias Wik.Tags.Tagging
+  alias Wik.Wiki
   alias WikWeb.Components
+  alias WikWeb.Components.Block.Types.Markdown
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
@@ -28,20 +31,24 @@ defmodule WikWeb.MemberProfileLive do
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
-     assign(socket,
-       access_grants: [],
-       available_tags: [],
-       editable?: false,
-       membership: nil,
-       selected_tag_slug: nil,
-       selected_tagging_sort: "interest_level",
-       subscribed_space_id: nil,
-       subscribed_target_id: nil,
-       taggings: [],
-       taggings_query: nil,
-       tagging_count: 0,
-       tagging_modal: new_tagging_modal()
-     )}
+     socket
+     |> assign(access_grants: [])
+     |> assign(available_tags: [])
+     |> assign(editable?: false)
+     |> assign(membership: nil)
+     |> assign(page_tree: nil)
+     |> assign(primary_block: nil)
+     |> assign(primary_block_editable?: false)
+     |> assign(primary_block_editing?: false)
+     |> assign(primary_block_form: nil)
+     |> assign(selected_tag_slug: nil)
+     |> assign(selected_tagging_sort: "interest_level")
+     |> assign(subscribed_space_id: nil)
+     |> assign(subscribed_target_id: nil)
+     |> assign(tagging_count: 0)
+     |> assign(tagging_modal: new_tagging_modal())
+     |> assign(taggings: [])
+     |> assign(taggings_query: nil)}
   end
 
   @impl true
@@ -94,7 +101,54 @@ defmodule WikWeb.MemberProfileLive do
       scope={@current_scope}
     >
       <Layouts.space presences={@presences} scope={@current_scope} view="members">
-        <div :if={@membership} class="space-y-12" data-testid="member-profile-page">
+        <:actions :if={@primary_block_editable?}>
+          <UI.button_edit_soft
+            :if={!@primary_block_editing?}
+            class=""
+            data-testid="primary-block-edit"
+            phx-click="primary_block_edit"
+          />
+        </:actions>
+
+        <:aside>
+          <section class="space-y-3">
+            <UI.panel_title>
+              Membership type
+            </UI.panel_title>
+
+            <span class="badge badge-sm bg-base-300 ml-auto">
+              {@membership.type |> Atom.to_string() |> String.capitalize()}
+            </span>
+          </section>
+
+          <section class="space-y-3">
+            <UI.panel_title>
+              <.icon name="hero-key-micro" /> Access
+            </UI.panel_title>
+
+            <div
+              :if={@access_grants == []}
+              class="rounded-box border border-dashed border-base-300 bg-base-200/40 px-4 py-6 text-sm opacity-60"
+              data-testid="member-access-empty"
+            >
+              No access grants for this space.
+            </div>
+
+            <div
+              :if={@access_grants != []}
+              class=""
+              data-testid="member-access-grants"
+            >
+              <Components.Membership.Access.grant_card
+                :for={grant <- @access_grants}
+                grant={grant}
+                variant={:profile}
+              />
+            </div>
+          </section>
+        </:aside>
+
+        <div :if={@membership} class="" data-testid="member-profile-page">
           <UI.page_head>
             <:prepend>
               <.link
@@ -109,41 +163,25 @@ defmodule WikWeb.MemberProfileLive do
             <UI.page_title>{@membership.username}</UI.page_title>
           </UI.page_head>
 
-          <section class="flex items-center justify-start gap-4">
-            <WikWeb.Components.User.avatar
-              membership={@membership}
-              size="xl"
-              tenant={@current_scope.tenant}
-              tooltip?
-            />
-
-            <span class="badge badge-sm bg-base-300 ml-auto">
-              {@membership.type |> Atom.to_string() |> String.capitalize()}
-            </span>
-          </section>
-
+          <WikWeb.Components.User.avatar
+            membership={@membership}
+            size="xl"
+            tenant={@current_scope.tenant}
+            tooltip?
+          />
           <section class="space-y-3">
             <div class="flex justify-end">
-              <button
+              <UI.button_add_topic
                 :if={@editable?}
-                class="btn btn-sm btn-soft btn-accent btn-circle"
                 data-testid="member-tagging-add"
                 phx-click="tagging_create_start"
-                type="button"
-              >
-                <.icon name="hero-plus-mini" class="size-4" />
-              </button>
-            </div>
-
-            <div
-              :if={@tagging_count == 0}
-              class="rounded-box border border-dashed border-base-300 bg-base-200/40 px-4 py-6 text-sm opacity-60"
-              data-testid="member-tagging-empty"
-            >
-              No taggings yet.
+                data-tip="Insert topics"
+              />
             </div>
 
             <MembershipTagging.list
+              :if={@tagging_count > 0}
+              sort_controls?={@tagging_count >= 3}
               active_sort={@selected_tagging_sort}
               membership={@membership}
               query={@taggings_query}
@@ -151,31 +189,17 @@ defmodule WikWeb.MemberProfileLive do
             />
           </section>
 
-          <section class="space-y-3">
-            <h2 class="text-lg font-semibold flex items-center gap-2">
-              <.icon name="hero-key-micro" />
-              <span>Access</span>
-            </h2>
-
-            <div
-              :if={@access_grants == []}
-              class="rounded-box border border-dashed border-base-300 bg-base-200/40 px-4 py-6 text-sm opacity-60"
-              data-testid="member-access-empty"
-            >
-              No access grants for this space.
-            </div>
-
-            <div
-              :if={@access_grants != []}
-              class="grid md:grid-cols-2 gap-2"
-              data-testid="member-access-grants"
-            >
-              <Components.Membership.Access.grant_card
-                :for={grant <- @access_grants}
-                grant={grant}
-                variant={:profile}
-              />
-            </div>
+          <section class="mt-12" data-testid="primary-block">
+            <Markdown.editable
+              block={@primary_block}
+              cancel="primary_block_cancel"
+              editing?={@primary_block_editing?}
+              form={@primary_block_form}
+              id="primary-block"
+              page_tree={@page_tree}
+              scope={@current_scope}
+              submit="primary_block_submit"
+            />
           </section>
         </div>
 
@@ -226,6 +250,70 @@ defmodule WikWeb.MemberProfileLive do
   end
 
   def handle_event("tagging_sort", _params, socket), do: {:noreply, socket}
+
+  def handle_event(
+        "primary_block_edit",
+        _params,
+        %{assigns: %{primary_block_editable?: false}} = socket
+      ) do
+    {:noreply, socket}
+  end
+
+  def handle_event("primary_block_edit", _params, socket) do
+    scope = socket.assigns.current_scope
+
+    case Accounts.get_or_create_primary_block(socket.assigns.membership, scope: scope) do
+      {:ok, _membership, block} ->
+        {:noreply,
+         socket
+         |> assign_primary_block(block)
+         |> assign(:primary_block_editing?, true)
+         |> assign_primary_block_form(block)}
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "member primary block creation failed")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Couldn't start editing primary block")}
+    end
+  end
+
+  def handle_event("primary_block_cancel", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:primary_block_editing?, false)
+     |> assign(:primary_block_form, nil)}
+  end
+
+  def handle_event(
+        "primary_block_submit",
+        _params,
+        %{assigns: %{primary_block_editable?: false}} = socket
+      ) do
+    {:noreply, socket}
+  end
+
+  def handle_event("primary_block_submit", %{"block" => params}, socket) do
+    scope = socket.assigns.current_scope
+
+    case Accounts.update_primary_block(socket.assigns.membership, params, scope: scope) do
+      {:ok, block} ->
+        {:noreply,
+         socket
+         |> assign_primary_block(block)
+         |> assign(:primary_block_editing?, false)
+         |> assign(:primary_block_form, nil)}
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "member primary block update failed")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Couldn't update primary block")
+         |> assign_primary_block_form(socket.assigns.primary_block, params)}
+    end
+  end
 
   def handle_event("tagging_create_start", _params, socket) do
     {:noreply,
@@ -337,6 +425,9 @@ defmodule WikWeb.MemberProfileLive do
              {:ok, available_tags} <- Tags.list_space_tags(scope),
              {:ok, access_grants} <-
                Access.list_space_user_grants(membership.space_id, membership.user_id) do
+          page_tree = Wiki.load_page_tree(scope)
+          primary_block = load_primary_block(membership, scope)
+
           if connected?(socket) and socket.assigns.subscribed_space_id != scope.tenant.id do
             :ok = WikWeb.Endpoint.subscribe(Tag.space_pub_sub_topic(scope.tenant.id))
           end
@@ -346,7 +437,16 @@ defmodule WikWeb.MemberProfileLive do
               WikWeb.Endpoint.subscribe(Tagging.target_pub_sub_topic("membership", membership.id))
           end
 
-          {:ok, assign_profile_state(socket, membership, taggings, available_tags, access_grants)}
+          {:ok,
+           assign_profile_state(
+             socket,
+             membership,
+             taggings,
+             available_tags,
+             access_grants,
+             page_tree,
+             primary_block
+           )}
         else
           {:error, error} -> {:error, error}
         end
@@ -363,7 +463,15 @@ defmodule WikWeb.MemberProfileLive do
     end
   end
 
-  defp assign_profile_state(socket, membership, taggings, available_tags, access_grants) do
+  defp assign_profile_state(
+         socket,
+         membership,
+         taggings,
+         available_tags,
+         access_grants,
+         page_tree,
+         primary_block
+       ) do
     current_membership =
       socket.assigns.tenant_context && socket.assigns.tenant_context.current_membership
 
@@ -373,10 +481,42 @@ defmodule WikWeb.MemberProfileLive do
     socket
     |> assign(:access_grants, access_grants)
     |> assign(:available_tags, available_tags)
+    |> assign(:primary_block_editing?, false)
     |> assign(:membership, membership)
+    |> assign(:primary_block_form, nil)
+    |> assign(:page_tree, page_tree)
     |> assign(:taggings, taggings)
     |> assign(:taggings_query, Tags.membership_taggings_query(membership))
     |> assign(profile_state)
+    |> assign_primary_block(primary_block)
+  end
+
+  defp assign_primary_block(socket, nil) do
+    assign(socket, :primary_block, nil)
+  end
+
+  defp assign_primary_block(socket, block) do
+    assign(socket, :primary_block, block)
+  end
+
+  defp assign_primary_block_form(socket, block, params \\ %{}) do
+    form =
+      block
+      |> Blocks.block_to_form_params(params, socket.assigns.page_tree)
+      |> to_form(as: :block)
+
+    assign(socket, :primary_block_form, form)
+  end
+
+  defp load_primary_block(membership, scope) do
+    case Accounts.get_primary_block(membership, scope: scope) do
+      {:ok, block} ->
+        block
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "member primary block load failed")
+        nil
+    end
   end
 
   defp init_tagging_form(nil) do
@@ -473,6 +613,7 @@ defmodule WikWeb.MemberProfileLive do
 
   defp profile_state(membership, taggings, current_membership, actor) do
     %{
+      primary_block_editable?: !!(current_membership && current_membership.id == membership.id),
       editable?:
         (current_membership && current_membership.id == membership.id) ||
           actor_superadmin?(actor),

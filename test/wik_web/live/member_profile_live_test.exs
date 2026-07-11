@@ -99,8 +99,39 @@ defmodule WikWeb.MemberProfileLiveTest do
     render_async(view)
 
     assert {:ok, []} = Tags.list_membership_taggings(membership, scope: member_scope)
-    assert has_element?(view, testid("member-tagging-empty"))
     assert_patch(view, ~p"/#{space.slug}/wiki/members/#{membership.username}")
+  end
+
+  test "membership owner can edit markdown content on their profile page", %{conn: conn} do
+    %{space: space, membership: membership, user: user} = member_fixture()
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/#{space.slug}/wiki/members/#{membership.username}")
+
+    render_async(view)
+
+    assert has_element?(view, testid("primary-block"))
+    assert has_element?(view, testid("primary-block-edit"))
+
+    render_click(element(view, testid("primary-block-edit")))
+
+    assert has_element?(view, "#primary-block-form")
+
+    render_submit(
+      form(view, "#primary-block-form",
+        block: %{
+          "text" => "## About\n\nI like fusion."
+        }
+      )
+    )
+
+    refute has_element?(view, "#primary-block-form")
+    assert has_element?(view, testid("markdown-block"))
+
+    html = render(view)
+    assert html =~ "I like fusion."
   end
 
   test "other space members can read but not edit another member's taggings", %{conn: conn} do
@@ -132,6 +163,11 @@ defmodule WikWeb.MemberProfileLiveTest do
 
     assert has_element?(view, testid("member-profile-page"))
     refute has_element?(view, testid("member-tagging-add"))
+    refute has_element?(view, testid("primary-block-edit"))
+
+    render_click(view, "primary_block_edit")
+
+    refute has_element?(view, "#primary-block-form")
 
     assert has_element?(view, testid("member-tagging-row-#{dance.id}"))
     assert has_element?(view, testid("member-tagging-interest-#{dance.id}"))
@@ -161,6 +197,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     render_async(view)
 
     assert has_element?(view, testid("member-tagging-add"))
+    refute has_element?(view, testid("primary-block-edit"))
 
     render_click(element(view, testid("member-tagging-add")))
 
@@ -220,10 +257,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     assert has_element?(view, testid("member-access-grants"))
     assert has_element?(view, testid("access-grant-#{visible_grant.id}"))
     refute has_element?(view, testid("access-grant-#{hidden_grant.id}"))
-    assert has_element?(view, testid("access-grant-via-#{visible_grant.id}"))
-    assert has_element?(view, testid("access-grant-source-title-#{visible_grant.id}"))
     assert has_element?(view, testid("access-grant-issuer-#{visible_grant.id}"))
-    assert has_element?(view, testid("access-grant-identity-#{visible_grant.id}"))
     assert has_element?(view, testid("access-grant-status-#{visible_grant.id}"))
     refute has_element?(view, testid("access-grant-identity-#{hidden_grant.id}"))
   end

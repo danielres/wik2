@@ -29,7 +29,7 @@
               :if={@editing? and @can_manage_page? and @page_topic_options != []}
               data-testid="page-topic-add"
               data-tip="Add topic"
-              phx-click="page_topic_add_start"
+              phx-click={JS.push("page_topic_add_start") |> UI.modal_open("page-topic-modal")}
             />
           </div>
         </div>
@@ -98,7 +98,7 @@
             class="mt-4 space-y-4"
             data-testid="page-topic-form"
             phx-change="page_topic_validate"
-            phx-submit="page_topic_submit"
+            phx-submit={JS.push("page_topic_submit") |> UI.modal_close("page-topic-modal")}
           >
             <.input
               field={@page_topic_form[:tag_id]}
@@ -120,7 +120,7 @@
                 type="button"
                 class="btn btn-ghost btn-sm"
                 data-testid="page-topic-cancel"
-                phx-click="page_topic_cancel"
+                phx-click={JS.push("page_topic_cancel") |> UI.modal_close("page-topic-modal")}
               >
                 Cancel
               </button>

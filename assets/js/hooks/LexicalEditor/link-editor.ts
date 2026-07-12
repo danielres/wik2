@@ -1,4 +1,4 @@
-import { $isLinkNode, $toggleLink, type LinkNode } from "@lexical/link";
+import { $isLinkNode, $toggleLink, formatUrl, type LinkNode } from "@lexical/link";
 import {
   $getNodeByKey,
   $getNearestNodeFromDOMNode,
@@ -124,6 +124,39 @@ function unwrapLink(link: LinkNode): void {
   link.remove();
 }
 
+function safeRelativeUrl(url: string): string | undefined {
+  if (/[\x00-\x1F\x7F\\]/.test(url)) return undefined;
+  if (url.startsWith("//")) return undefined;
+  if (url.startsWith("/") || url.startsWith("#") || url.startsWith("./") || url.startsWith("../")) {
+    return url;
+  }
+
+  return undefined;
+}
+
+function safeLinkUrl(url: string): string | undefined {
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+
+  const relativeUrl = safeRelativeUrl(trimmed);
+  if (relativeUrl) return relativeUrl;
+
+  const formatted = formatUrl(trimmed);
+  if (/[\x00-\x1F\x7F\\]/.test(formatted)) return undefined;
+
+  try {
+    const protocol = new URL(formatted).protocol;
+    return protocol === "http:" ||
+      protocol === "https:" ||
+      protocol === "mailto:" ||
+      protocol === "tel:"
+      ? formatted
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function createLinkEditor({
   editor,
   root,
@@ -164,9 +197,16 @@ export function createLinkEditor({
   const show = (active: ActiveLink, selection: RangeSelection | null) => {
     activeKey = active.key;
     lastSelection = selection;
-    urlView.href = active.url;
     urlView.textContent = active.url;
     urlInput.value = active.url;
+
+    const safeUrl = safeLinkUrl(active.url);
+    if (safeUrl) {
+      urlView.href = safeUrl;
+    } else {
+      urlView.removeAttribute("href");
+    }
+
     positionFloating({
       anchorRect: active.rect,
       floating: element,
@@ -210,18 +250,28 @@ export function createLinkEditor({
     const url = urlInput.value.trim();
     if (!key) return;
 
+    const safeUrl = safeLinkUrl(url);
+    if (url !== "" && !safeUrl) {
+      urlInput.setCustomValidity("Enter a safe http, https, mailto, tel, or relative URL.");
+      urlInput.reportValidity();
+      return;
+    }
+
+    const linkUrl = url === "" ? null : safeUrl!;
+    urlInput.setCustomValidity("");
+
     editor.update(() => {
       if (lastSelection) {
         $setSelection(lastSelection.clone());
-        $toggleLink(url === "" ? null : url);
+        $toggleLink(linkUrl);
       } else {
         const node = $getNodeByKey(key);
         if (!$isLinkNode(node)) return;
 
-        if (url === "") {
+        if (linkUrl === null) {
           unwrapLink(node);
         } else {
-          node.setURL(url);
+          node.setURL(linkUrl);
         }
       }
     });

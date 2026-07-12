@@ -2,8 +2,8 @@ defmodule WikWeb.Components.Event.ExternalDetails do
   use WikWeb, :html
 
   alias Wik.Tags.Dimensions, as: TagDimensions
+  alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.Event
-  alias WikWeb.Components.TopicSummary
 
   attr :current_membership, :map, default: nil
   attr :current_scope, :map, default: nil
@@ -109,13 +109,28 @@ defmodule WikWeb.Components.Event.ExternalDetails do
     <section :if={@topic_summaries != []} class="space-y-2" data-testid="external-event-topics">
       <h3 class="text-xs uppercase tracking-wide opacity-50">Topics</h3>
 
-      <TopicSummary.list
-        current_scope={@current_scope}
+      <DimensionsList.render
         dimension={@relevancy_dimension}
+        item_id={& &1.tag.id}
+        items={@topic_summaries}
+        level={& &1.average_relevancy}
         list_testid="external-event-topic-list"
-        summaries={@topic_summaries}
         testid_prefix="external-event-topic"
-      />
+      >
+        <:title :let={summary}>
+          <.link
+            :if={@current_scope}
+            navigate={~p"/#{@current_scope.tenant.slug}/topics/#{summary.tag.slug}"}
+            class="truncate text-sm hover:underline"
+          >
+            {summary.tag.name}
+          </.link>
+
+          <span :if={is_nil(@current_scope)} class="truncate text-sm">
+            {summary.tag.name}
+          </span>
+        </:title>
+      </DimensionsList.render>
     </section>
     """
   end

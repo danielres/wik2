@@ -3,8 +3,8 @@ defmodule WikWeb.PageLive.Components.Aside do
 
   alias Wik.Tags.Dimensions
   alias WikWeb.Components
+  alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.RangeInput
-  alias WikWeb.Components.TopicSummary
   alias WikWeb.Components.UI
 
   attr :author_membership, :map, default: nil
@@ -92,13 +92,23 @@ defmodule WikWeb.PageLive.Components.Aside do
       />
     </div>
 
-    <TopicSummary.list
-      current_scope={@current_scope}
+    <DimensionsList.render
       dimension={relevancy_dimension}
+      item_id={& &1.tag.id}
+      items={@page_topic_summaries}
+      level={& &1.average_relevancy}
       list_testid="page-topic-list"
-      summaries={@page_topic_summaries}
       testid_prefix="page-topic"
     >
+      <:title :let={summary}>
+        <.link
+          navigate={~p"/#{@current_scope.tenant.slug}/topics/#{summary.tag.slug}"}
+          class="truncate text-sm hover:underline"
+        >
+          {summary.tag.name}
+        </.link>
+      </:title>
+
       <:action :let={summary}>
         <button
           :if={@editing? and summary.current_member_tagging}
@@ -115,7 +125,7 @@ defmodule WikWeb.PageLive.Components.Aside do
           <.icon name="hero-x-mark" class="size-3" />
         </button>
       </:action>
-    </TopicSummary.list>
+    </DimensionsList.render>
 
     <UI.modal id="page-topic-modal" open?={@page_topic_form != nil}>
       <UI.modal_title>Add topic</UI.modal_title>

@@ -8,9 +8,9 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
   alias Wik.Tags
   alias Wik.Tags.Dimensions
   alias Wik.Tags.Tagging
+  alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.RangeInput
   alias WikWeb.Components.Time
-  alias WikWeb.Components.TopicSummary
   alias WikWeb.EventsLive.SubscriptionState
 
   @impl true
@@ -170,13 +170,23 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
                 </button>
               </div>
 
-              <TopicSummary.list
-                current_scope={@current_scope}
+              <DimensionsList.render
                 dimension={relevancy_dimension}
+                item_id={& &1.tag.id}
+                items={@subscription_topic_summaries}
+                level={& &1.average_relevancy}
                 list_testid="events-subscription-topic-list"
-                summaries={@subscription_topic_summaries}
                 testid_prefix="events-subscription-topic"
               >
+                <:title :let={summary}>
+                  <.link
+                    navigate={~p"/#{@current_scope.tenant.slug}/topics/#{summary.tag.slug}"}
+                    class="truncate text-sm hover:underline"
+                  >
+                    {summary.tag.name}
+                  </.link>
+                </:title>
+
                 <:action :let={summary}>
                   <button
                     :if={
@@ -197,7 +207,7 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
                     <.icon name="hero-x-mark" class="size-3" />
                   </button>
                 </:action>
-              </TopicSummary.list>
+              </DimensionsList.render>
 
               <.form
                 :if={@subscription_topic_form}

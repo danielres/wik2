@@ -24,6 +24,15 @@ defmodule Wik.Tags.Dimensions do
         label: "Relevancy",
         max: 10
       }
+    },
+    "external_calendar_subscription" => %{
+      "relevancy" => %{
+        color: "oklch(50% 0.06 145)",
+        icon: "hero-sparkles-micro",
+        key: "relevancy",
+        label: "Relevancy",
+        max: 10
+      }
     }
   }
 

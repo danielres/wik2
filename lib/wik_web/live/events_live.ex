@@ -91,6 +91,7 @@ defmodule WikWeb.EventsLive do
         <% {:external_event, item} -> %>
           <Components.Event.ExternalDetails.render
             current_membership={@tenant_context && @tenant_context.current_membership}
+            current_scope={@current_scope}
             item={item}
             user_tz={@active_tz}
           />
@@ -145,6 +146,7 @@ defmodule WikWeb.EventsLive do
             module={SubscriptionDetails}
             id={"events-subscription-detail-#{subscription_id}"}
             current_scope={@current_scope}
+            current_membership={@tenant_context && @tenant_context.current_membership}
             metadata={metadata}
             subscription={subscription}
           />

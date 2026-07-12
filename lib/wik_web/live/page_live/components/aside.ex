@@ -3,8 +3,8 @@ defmodule WikWeb.PageLive.Components.Aside do
 
   alias Wik.Tags.Dimensions
   alias WikWeb.Components
-  alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.RangeInput
+  alias WikWeb.Components.TopicSummary
   alias WikWeb.Components.UI
 
   attr :author_membership, :map, default: nil
@@ -92,59 +92,30 @@ defmodule WikWeb.PageLive.Components.Aside do
       />
     </div>
 
-    <div class="space-y-2" data-testid="page-topic-list">
-      <div :if={@page_topic_summaries == []} class="text-sm opacity-50">
-        No topics yet
-      </div>
-
-      <div
-        :for={summary <- @page_topic_summaries}
-        class="rounded-box bg-base-200 px-3 py-2"
-        data-testid={"page-topic-#{summary.tag.id}"}
-      >
-        <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-          <.link
-            navigate={~p"/#{@current_scope.tenant.slug}/topics/#{summary.tag.slug}"}
-            class="truncate text-sm hover:underline"
-          >
-            {summary.tag.name}
-          </.link>
-
-          <div class="flex items-center gap-2">
-            <span
-              :if={summary.count > 1}
-              class="badge badge-sm bg-base-300"
-              data-testid={"page-topic-count-#{summary.tag.id}"}
-            >
-              {summary.count}
-            </span>
-
-            <button
-              :if={@editing? and summary.current_member_tagging}
-              type="button"
-              class={[
-                "btn btn-xs btn-circle btn-ghost text-error",
-                "opacity-50 hover:opacity-100 transition-opacity"
-              ]}
-              data-testid={"page-topic-remove-#{summary.tag.id}"}
-              phx-click="page_topic_remove"
-              phx-value-tag_id={summary.tag.id}
-            >
-              <span class="sr-only">Remove topic</span>
-              <.icon name="hero-x-mark" class="size-3" />
-            </button>
-          </div>
-        </div>
-
-        <LevelMeter.render
-          :if={summary.average_relevancy}
-          dimension={relevancy_dimension}
-          label={relevancy_dimension.label}
-          level={summary.average_relevancy}
-          testid={"page-topic-relevancy-#{summary.tag.id}"}
-        />
-      </div>
-    </div>
+    <TopicSummary.list
+      current_scope={@current_scope}
+      dimension={relevancy_dimension}
+      list_testid="page-topic-list"
+      summaries={@page_topic_summaries}
+      testid_prefix="page-topic"
+    >
+      <:action :let={summary}>
+        <button
+          :if={@editing? and summary.current_member_tagging}
+          type="button"
+          class={[
+            "btn btn-xs btn-circle btn-ghost text-error",
+            "opacity-50 hover:opacity-100 transition-opacity"
+          ]}
+          data-testid={"page-topic-remove-#{summary.tag.id}"}
+          phx-click="page_topic_remove"
+          phx-value-tag_id={summary.tag.id}
+        >
+          <span class="sr-only">Remove topic</span>
+          <.icon name="hero-x-mark" class="size-3" />
+        </button>
+      </:action>
+    </TopicSummary.list>
 
     <UI.modal id="page-topic-modal" open?={@page_topic_form != nil}>
       <UI.modal_title>Add topic</UI.modal_title>

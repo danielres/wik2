@@ -15,6 +15,7 @@ defmodule WikWeb.EventsLiveTest do
   alias Wik.Events.ExternalCalendar
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
+  alias Wik.Tags
 
   require Ash.Query
 
@@ -1475,6 +1476,60 @@ defmodule WikWeb.EventsLiveTest do
       )
 
     assert subscription.ics_url == "https://calendar.example.test/community.ics"
+  end
+
+  test "owner can assign topics to an external calendar subscription and events inherit them", %{
+    conn: conn
+  } do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?calendars")
+
+    render_click(element(view, testid("events-subscribe-to-calendar-button")))
+
+    render_submit(
+      form(view, testid("events-subscription-form"),
+        subscription: %{"ics_url" => "https://calendar.example.test/community.ics"}
+      )
+    )
+
+    [subscription] =
+      Ash.read!(
+        Wik.Events.ExternalCalendarSubscription,
+        authorize?: false,
+        scope: scope(owner, space)
+      )
+
+    render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
+    render_click(element(view, testid("events-subscription-topic-add")))
+
+    assert has_element?(view, testid("events-subscription-topic-form"))
+
+    render_submit(
+      form(view, testid("events-subscription-topic-form"),
+        subscription_topic: %{"tag_id" => tag.id, "relevancy_level" => "7"}
+      )
+    )
+
+    assert has_element?(view, testid("events-subscription-topic-#{tag.id}"))
+    assert has_element?(view, testid("events-subscription-topic-relevancy-#{tag.id}"))
+    refute has_element?(view, testid("events-subscription-topic-form"))
+
+    external_event = first_external_event(subscription)
+    external_event_id = external_event_id(subscription)
+
+    render_click(element(view, testid("event-open-#{external_event_id}")))
+
+    assert_patch(view, ~p"/#{space.slug}/events?#{%{ext: external_event.id}}")
+    assert has_element?(view, testid("external-event-topics"))
+    assert has_element?(view, testid("external-event-topic-#{tag.id}"))
+    assert has_element?(view, testid("external-event-topic-relevancy-#{tag.id}"))
   end
 
   test "external event rows fall back to the subscription url when the feed has no calendar name",

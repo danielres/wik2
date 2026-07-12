@@ -32,7 +32,8 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
         loaded_data.external_events,
         loaded_subscriptions,
         loaded_data.participations_by_external_event_id,
-        loaded_data.current_membership
+        loaded_data.current_membership,
+        loaded_data.taggings_by_subscription_id
       )
 
     items = timeline_items(internal_items, external_items, show_external?)
@@ -245,7 +246,8 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
          events,
          loaded_subscriptions,
          participations_by_external_event_id,
-         current_membership
+         current_membership,
+         taggings_by_subscription_id
        ) do
     subscription_by_id = Map.new(loaded_subscriptions.records, &{&1.id, &1})
 
@@ -255,11 +257,28 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       calendar_name = resolved_calendar_name(event, subscription, loaded_subscriptions)
       participations = Map.get(participations_by_external_event_id, event.id, [])
 
-      normalize_external_event(event, calendar_name, participations, current_membership)
+      topic_summaries =
+        taggings_by_subscription_id
+        |> Map.get(event.subscription_id, [])
+        |> topic_summaries()
+
+      normalize_external_event(
+        event,
+        calendar_name,
+        participations,
+        current_membership,
+        topic_summaries
+      )
     end)
   end
 
-  defp normalize_external_event(event, calendar_name, participations, current_membership) do
+  defp normalize_external_event(
+         event,
+         calendar_name,
+         participations,
+         current_membership,
+         topic_summaries \\ []
+       ) do
     %{
       id: "external:#{event.id}",
       source_type: :external,
@@ -276,9 +295,47 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
         current_member_participation(participations, current_membership),
       participations: participations,
       source_url: nil,
-      subscription_id: event.subscription_id
+      subscription_id: event.subscription_id,
+      topic_summaries: topic_summaries
     }
   end
+
+  defp topic_summaries(taggings) do
+    taggings
+    |> Enum.group_by(& &1.tag_id)
+    |> Enum.map(fn {_tag_id, taggings} ->
+      tag = taggings |> List.first() |> Map.get(:tag)
+      relevancy_levels = Enum.map(taggings, &dimension_level(&1, "relevancy"))
+
+      %{
+        average_relevancy: average_level(relevancy_levels),
+        count: length(taggings),
+        tag: tag
+      }
+    end)
+    |> Enum.reject(&is_nil(&1.tag))
+    |> Enum.sort_by(fn summary ->
+      {
+        -summary.average_relevancy,
+        String.downcase(summary.tag.name || "")
+      }
+    end)
+  end
+
+  defp average_level(levels) do
+    levels = Enum.reject(levels, &is_nil/1)
+
+    case levels do
+      [] -> nil
+      levels -> round(Enum.sum(levels) / length(levels))
+    end
+  end
+
+  defp dimension_level(%{dimensions: dimensions}, key) when is_map(dimensions) do
+    Map.get(dimensions, key)
+  end
+
+  defp dimension_level(_tagging, _key), do: nil
 
   defp current_member_participation(_participations, nil), do: nil
 

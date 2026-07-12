@@ -4,6 +4,7 @@ defmodule Wik.TaggingsTest do
   import Wik.TestGenerators
 
   alias Wik.Accounts.Membership
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Tags.Tagging
@@ -199,6 +200,61 @@ defmodule Wik.TaggingsTest do
   describe "page taggings" do
     test "stores one row per member, page, and tag and normalizes relevancy" do
       assert_page_taggings_work()
+    end
+  end
+
+  describe "external calendar subscription taggings" do
+    test "stores one row per member, subscription, and tag and normalizes relevancy" do
+      %{
+        owner_membership: owner_membership,
+        space: space,
+        owner: owner
+      } =
+        member_fixture()
+
+      owner_scope = scope(owner, space)
+
+      {:ok, subscription} =
+        ExternalCalendarSubscription.create(
+          %{ics_url: "https://calendar.example.test/community.ics"},
+          scope: owner_scope
+        )
+
+      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+
+      assert {:error, _error} =
+               Tags.upsert_tagging(
+                 subscription,
+                 owner_membership,
+                 dance.id,
+                 %{dimensions: %{"interest" => 4}},
+                 scope: owner_scope
+               )
+
+      assert {:ok, first_tagging} =
+               Tags.upsert_tagging(
+                 subscription,
+                 owner_membership,
+                 dance.id,
+                 %{dimensions: %{"relevancy" => 4}},
+                 scope: owner_scope
+               )
+
+      assert {:ok, second_tagging} =
+               Tags.upsert_tagging(
+                 subscription,
+                 owner_membership,
+                 dance.id,
+                 %{dimensions: %{"relevancy" => 8}},
+                 scope: owner_scope
+               )
+
+      assert first_tagging.id == second_tagging.id
+
+      assert {:ok, [tagging]} = Tags.list_taggings(subscription, scope: owner_scope)
+      assert tagging.dimensions == %{"relevancy" => 8}
+      assert tagging.tag_id == dance.id
+      assert tagging.tagged_by_membership_id == owner_membership.id
     end
   end
 

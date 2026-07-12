@@ -1,9 +1,12 @@
 defmodule WikWeb.Components.Event.ExternalDetails do
   use WikWeb, :html
 
+  alias Wik.Tags.Dimensions, as: TagDimensions
   alias WikWeb.Components.Event
+  alias WikWeb.Components.TopicSummary
 
   attr :current_membership, :map, default: nil
+  attr :current_scope, :map, default: nil
   attr :item, :map, required: true
   attr :user_tz, :string, required: true
 
@@ -41,6 +44,11 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         source_id={@event.id}
         source_type="external"
         testid_prefix="external-event"
+      />
+
+      <.topics
+        current_scope={@current_scope}
+        topic_summaries={Map.get(@item, :topic_summaries, [])}
       />
 
       <Event.Panels.Description.render description={@event.description} />
@@ -85,4 +93,30 @@ defmodule WikWeb.Components.Event.ExternalDetails do
 
   defp item_event(%{event: event}), do: event
   defp item_event(item), do: item
+
+  attr :current_scope, :map, default: nil
+  attr :topic_summaries, :list, default: []
+
+  defp topics(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :relevancy_dimension,
+        TagDimensions.get!("external_calendar_subscription", "relevancy")
+      )
+
+    ~H"""
+    <section :if={@topic_summaries != []} class="space-y-2" data-testid="external-event-topics">
+      <h3 class="text-xs uppercase tracking-wide opacity-50">Topics</h3>
+
+      <TopicSummary.list
+        current_scope={@current_scope}
+        dimension={@relevancy_dimension}
+        list_testid="external-event-topic-list"
+        summaries={@topic_summaries}
+        testid_prefix="external-event-topic"
+      />
+    </section>
+    """
+  end
 end

@@ -4,6 +4,7 @@ defmodule Wik.TaggingsPolicyTest do
   import Wik.TestGenerators
 
   alias Wik.Accounts.Membership
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Tags.Tagging
@@ -94,6 +95,46 @@ defmodule Wik.TaggingsPolicyTest do
     test "outsiders cannot read another space's member taggings" do
       %{space: space, outsider: outsider, tagging: tagging} = access_fixture()
       refute Ash.can?({tagging, :read}, scope(outsider, space))
+    end
+  end
+
+  describe "external calendar subscription tagging access" do
+    test "space managers can tag subscriptions they manage" do
+      owner = generate(user())
+      member = generate(user())
+      space = generate(space(author: owner))
+      owner_membership = add_membership(space, owner, :owner)
+      member_membership = add_membership(space, member, :member)
+      grant_active_telegram_access(space, member)
+
+      owner_scope = scope(owner, space)
+      member_scope = scope(member, space)
+
+      {:ok, subscription} =
+        ExternalCalendarSubscription.create(
+          %{ics_url: "https://calendar.example.test/community.ics"},
+          scope: owner_scope
+        )
+
+      {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+
+      assert {:ok, _tagging} =
+               Tags.upsert_tagging(
+                 subscription,
+                 owner_membership,
+                 tag.id,
+                 %{dimensions: %{"relevancy" => 5}},
+                 scope: owner_scope
+               )
+
+      assert {:error, _error} =
+               Tags.upsert_tagging(
+                 subscription,
+                 member_membership,
+                 tag.id,
+                 %{dimensions: %{"relevancy" => 5}},
+                 scope: member_scope
+               )
     end
   end
 

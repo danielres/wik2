@@ -5,9 +5,54 @@ defmodule WikWeb.Components.UI.Lexical do
     ~H"""
     <.toolbar block={@block} />
     <.floating_toolbar block={@block} />
+    <.link_editor block={@block} />
     <.insert_menu block={@block} />
     <.wikilink_completion_menu block={@block} />
     <.youtube_dialog block={@block} />
+    """
+  end
+
+  def link_editor(assigns) do
+    assigns = assign(assigns, :form, to_form(%{"url" => ""}, as: :link))
+
+    ~H"""
+    <template id={"edit-block-markdown-link-editor-template-#{@block.id}"}>
+      <.form for={@form} class="LEXICAL_LINK_EDITOR" hidden>
+        <div class="LEXICAL_LINK_EDITOR_VIEW" data-link-view>
+          <a
+            class="LEXICAL_LINK_EDITOR_URL"
+            href=""
+            target="_blank"
+            rel="noopener noreferrer"
+            data-link-url-view
+          >
+          </a>
+          <button type="button" class="LEXICAL_LINK_EDITOR_BUTTON secondary" data-link-edit>
+            <.icon name="hero-pencil-square" />
+            <span class="sr-only">Edit link</span>
+          </button>
+          <button type="button" class="LEXICAL_LINK_EDITOR_BUTTON secondary" data-link-unlink>
+            <.icon name="hero-link-slash" />
+            <span class="sr-only">Remove link</span>
+          </button>
+        </div>
+        <div class="LEXICAL_LINK_EDITOR_EDIT" data-link-edit-mode hidden>
+          <.input
+            field={@form[:url]}
+            type="url"
+            placeholder="https://example.com"
+            class="LEXICAL_LINK_EDITOR_INPUT"
+            data-link-url-input
+          />
+          <button type="button" class="LEXICAL_LINK_EDITOR_BUTTON secondary" data-link-cancel>
+            Cancel
+          </button>
+          <button type="submit" class="LEXICAL_LINK_EDITOR_BUTTON primary">
+            Save
+          </button>
+        </div>
+      </.form>
+    </template>
     """
   end
 

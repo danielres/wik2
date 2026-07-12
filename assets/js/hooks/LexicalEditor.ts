@@ -20,6 +20,7 @@ import {
 
 import { markdownEditorBehaviorExtension } from "./LexicalEditor/behavior";
 import { createBlockControls, type BlockControls } from "./LexicalEditor/block-controls";
+import { createLinkEditor, type LinkEditor } from "./LexicalEditor/link-editor";
 import { markdownTransformers, normalizeExportedMarkdown, preserveNewLines } from "./LexicalEditor/markdown";
 import {
   floatingToolbarFor,
@@ -41,6 +42,7 @@ type LexicalHook = {
   editor?: LexicalEditorWithDispose;
   el: HTMLElement;
   floatingToolbar?: HTMLDivElement;
+  linkEditor?: LinkEditor;
   pendingYoutubeInsertKey?: NodeKey;
   root?: HTMLDivElement;
   textarea?: HTMLTextAreaElement;
@@ -142,6 +144,11 @@ export const LexicalEditor = {
       editor,
       requiredDatasetValue(this.el, "floatingToolbarTemplateId"),
     );
+    this.linkEditor = createLinkEditor({
+      editor,
+      root: this.root,
+      templateId: requiredDatasetValue(this.el, "linkEditorTemplateId"),
+    });
     this.youtubeDialog = youtubeDialogFor(
       requiredDatasetValue(this.el, "youtubeDialogTemplateId"),
       (videoId) => {
@@ -177,6 +184,7 @@ export const LexicalEditor = {
     this.el.prepend(this.toolbar);
     document.body.appendChild(this.floatingToolbar);
     document.body.append(
+      this.linkEditor.element,
       this.blockControls.dragHandle,
       this.blockControls.insertMenu,
       this.blockControls.dropIndicator,
@@ -192,6 +200,7 @@ export const LexicalEditor = {
       if (this.root && this.floatingToolbar) {
         updateFloatingToolbar(editor, this.root, this.floatingToolbar);
       }
+      this.linkEditor?.update();
       this.wikilinkCompletions?.update();
     };
 
@@ -202,6 +211,7 @@ export const LexicalEditor = {
       () => window.removeEventListener("resize", updateFloating),
       () => window.removeEventListener("scroll", updateFloating, true),
       () => this.blockControls?.unregister(),
+      () => this.linkEditor?.unregister(),
       () => this.wikilinkCompletions?.unregister(),
     );
 
@@ -224,6 +234,7 @@ export const LexicalEditor = {
     this.unregister?.();
     this.editor?.dispose();
     this.blockControls?.insertMenu.remove();
+    this.linkEditor?.element.remove();
     this.wikilinkCompletions?.menu.remove();
     this.youtubeDialog?.remove();
     this.blockControls?.dragHandle.remove();

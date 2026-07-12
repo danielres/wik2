@@ -12,11 +12,8 @@ defmodule WikWeb.PageLive do
   alias WikWeb.Presence
   alias WikWeb.Presence.Handlers
   alias Wik.Tags
-  alias Wik.Tags.Dimensions
   alias Wik.Tags.Tag
   alias Wik.Tags.Tagging
-  alias WikWeb.Components.LevelMeter
-  alias WikWeb.Components.RangeInput
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}

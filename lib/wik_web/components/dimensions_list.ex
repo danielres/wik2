@@ -9,7 +9,7 @@ defmodule WikWeb.Components.DimensionsList do
   attr :items, :list, required: true
   attr :level, :any, required: true
   attr :list_testid, :string, required: true
-  attr :navigate, :any, default: nil
+  attr :navigate, :any, required: true
   attr :testid_prefix, :string, required: true
 
   slot :title, required: true do
@@ -22,93 +22,77 @@ defmodule WikWeb.Components.DimensionsList do
 
   def render(assigns) do
     ~H"""
-    <div class="space-y-2" data-testid={@list_testid}>
+    <div class="space-y-1" data-testid={@list_testid}>
       <div :if={@items == []} class="text-sm opacity-50">
         {@empty_text}
       </div>
 
-      <%= for item <- @items do %>
-        <% item_id = item_id(@item_id, item) %>
-        <% item_level = level(@level, item) %>
-        <% item_count = count(item) %>
-        <% item_path = navigate(@navigate, item) %>
-
-        <.link
-          :if={item_path}
-          navigate={item_path}
-          class={[
-            "block rounded-box bg-base-200 px-3 py-2",
-            "opacity-80 hover:opacity-100 transition-opacity"
-          ]}
-          data-testid={"#{@testid_prefix}-#{item_id}"}
-        >
-          <.content
-            action={@action}
-            count={item_count}
-            dimension={@dimension}
-            item={item}
-            item_id={item_id}
-            level={item_level}
-            testid_prefix={@testid_prefix}
-            title={@title}
-          />
-        </.link>
-
-        <div
-          :if={is_nil(item_path)}
-          class="rounded-box bg-base-200 px-3 py-2"
-          data-testid={"#{@testid_prefix}-#{item_id}"}
-        >
-          <.content
-            action={@action}
-            count={item_count}
-            dimension={@dimension}
-            item={item}
-            item_id={item_id}
-            level={item_level}
-            testid_prefix={@testid_prefix}
-            title={@title}
-          />
-        </div>
-      <% end %>
+      <.item
+        :for={item <- @items}
+        action={@action}
+        dimension={@dimension}
+        item={item}
+        item_id={@item_id}
+        level={@level}
+        navigate={@navigate}
+        testid_prefix={@testid_prefix}
+        title={@title}
+      />
     </div>
     """
   end
 
-  attr :action, :any, required: true
-  attr :count, :integer, default: nil
+  attr :action, :any, default: []
   attr :dimension, :map, required: true
   attr :item, :any, required: true
-  attr :item_id, :string, required: true
-  attr :level, :integer, default: nil
+  attr :item_id, :any, required: true
+  attr :level, :any, required: true
+  attr :navigate, :any, required: true
   attr :testid_prefix, :string, required: true
   attr :title, :any, required: true
 
-  defp content(assigns) do
+  defp item(assigns) do
+    assigns =
+      assigns
+      |> assign(:resolved_item_id, item_id(assigns.item_id, assigns.item))
+      |> assign(:resolved_level, level(assigns.level, assigns.item))
+      |> assign(:count, count(assigns.item))
+      |> assign(:path, navigate(assigns.navigate, assigns.item))
+
     ~H"""
-    <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-      {render_slot(@title, @item)}
+    <.link
+      navigate={@path}
+      class={[
+        "grid grid-cols-[4fr_1fr]",
+        "opacity-60 hover:opacity-100 transition-opacity"
+      ]}
+      data-testid={"#{@testid_prefix}-#{@resolved_item_id}"}
+    >
+      <div class="grid grid-cols-[1fr_auto] items-center gap-2">
+        {render_slot(@title, @item)}
 
-      <div class="flex items-center gap-2">
-        <span
-          :if={@count && @count > 1}
-          class="badge badge-sm bg-base-300"
-          data-testid={"#{@testid_prefix}-count-#{@item_id}"}
-        >
-          {@count}
-        </span>
+        <div class="flex items-center gap-2">
+          <span
+            :if={@count && @count > 1}
+            class="badge badge-sm bg-base-300"
+            data-testid={"#{@testid_prefix}-count-#{@resolved_item_id}"}
+          >
+            {@count}
+          </span>
 
-        {render_slot(@action, @item)}
+          {render_slot(@action, @item)}
+        </div>
       </div>
-    </div>
 
-    <LevelMeter.render
-      :if={@level}
-      dimension={@dimension}
-      label={@dimension.label}
-      level={@level}
-      testid={"#{@testid_prefix}-relevancy-#{@item_id}"}
-    />
+      <LevelMeter.render
+        :if={@resolved_level}
+        dimension={@dimension}
+        label={@dimension.label}
+        level={@resolved_level}
+        testid={"#{@testid_prefix}-relevancy-#{@resolved_item_id}"}
+        width_class=""
+      />
+    </.link>
     """
   end
 
@@ -118,7 +102,6 @@ defmodule WikWeb.Components.DimensionsList do
   defp level(fun, item) when is_function(fun, 1), do: fun.(item)
   defp level(field, item) when is_atom(field), do: Map.get(item, field)
 
-  defp navigate(nil, _item), do: nil
   defp navigate(fun, item) when is_function(fun, 1), do: fun.(item)
 
   defp count(%{count: count}), do: count

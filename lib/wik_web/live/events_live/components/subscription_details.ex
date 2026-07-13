@@ -176,15 +176,11 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
                 items={@subscription_topic_summaries}
                 level={& &1.average_relevancy}
                 list_testid="events-subscription-topic-list"
+                navigate={&~p"/#{@current_scope.tenant.slug}/topics/#{&1.tag.slug}"}
                 testid_prefix="events-subscription-topic"
               >
                 <:title :let={summary}>
-                  <.link
-                    navigate={~p"/#{@current_scope.tenant.slug}/topics/#{summary.tag.slug}"}
-                    class="truncate text-sm hover:underline"
-                  >
-                    {summary.tag.name}
-                  </.link>
+                  <div class="truncate text-sm">{summary.tag.name}</div>
                 </:title>
 
                 <:action :let={summary}>

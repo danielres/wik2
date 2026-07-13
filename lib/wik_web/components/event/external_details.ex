@@ -115,20 +115,11 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         items={@topic_summaries}
         level={& &1.average_relevancy}
         list_testid="external-event-topic-list"
+        navigate={&~p"/#{@current_scope.tenant.slug}/topics/#{&1.tag.slug}"}
         testid_prefix="external-event-topic"
       >
         <:title :let={summary}>
-          <.link
-            :if={@current_scope}
-            navigate={~p"/#{@current_scope.tenant.slug}/topics/#{summary.tag.slug}"}
-            class="truncate text-sm hover:underline"
-          >
-            {summary.tag.name}
-          </.link>
-
-          <span :if={is_nil(@current_scope)} class="truncate text-sm">
-            {summary.tag.name}
-          </span>
+          <div class="truncate text-sm">{summary.tag.name}</div>
         </:title>
       </DimensionsList.render>
     </section>

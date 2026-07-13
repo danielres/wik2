@@ -84,7 +84,7 @@ defmodule WikWeb.PageLive.Components.Aside do
     <div class="mb-2 flex items-center justify-between gap-2">
       <UI.panel_title class="mb-0">Topics</UI.panel_title>
 
-      <UI.button_add_topic
+      <UI.button_add
         :if={@editing? and @can_manage_page? and @page_topic_options != []}
         data-testid="page-topic-add"
         data-tip="Add topic"
@@ -110,8 +110,8 @@ defmodule WikWeb.PageLive.Components.Aside do
           :if={@editing? and summary.current_member_tagging}
           type="button"
           class={[
-            "btn btn-xs btn-circle btn-ghost text-error",
-            "opacity-50 hover:opacity-100 transition-opacity"
+            "btn btn-xs btn-circle text-error btn-ghost",
+            "opacity-80 hover:opacity-100 transition-opacity"
           ]}
           data-testid={"page-topic-remove-#{summary.tag.id}"}
           phx-click="page_topic_remove"

@@ -60,39 +60,41 @@ defmodule WikWeb.Components.DimensionsList do
       |> assign(:path, navigate(assigns.navigate, assigns.item))
 
     ~H"""
-    <.link
-      navigate={@path}
-      class={[
-        "grid grid-cols-[4fr_1fr]",
-        "opacity-60 hover:opacity-100 transition-opacity"
-      ]}
-      data-testid={"#{@testid_prefix}-#{@resolved_item_id}"}
-    >
-      <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-        {render_slot(@title, @item)}
+    <div class="grid grid-cols-[1fr_auto]">
+      <.link
+        navigate={@path}
+        class={[
+          "grid grid-cols-[4fr_1fr]",
+          "opacity-60 hover:opacity-100 transition-opacity"
+        ]}
+        data-testid={"#{@testid_prefix}-#{@resolved_item_id}"}
+      >
+        <div class="grid grid-cols-[1fr_auto] items-center gap-2">
+          {render_slot(@title, @item)}
 
-        <div class="flex items-center gap-2">
-          <span
-            :if={@count && @count > 1}
-            class="badge badge-sm bg-base-300"
-            data-testid={"#{@testid_prefix}-count-#{@resolved_item_id}"}
-          >
-            {@count}
-          </span>
-
-          {render_slot(@action, @item)}
+          <div class="flex items-center gap-2">
+            <span
+              :if={@count && @count > 1}
+              class="badge badge-sm bg-base-300"
+              data-testid={"#{@testid_prefix}-count-#{@resolved_item_id}"}
+            >
+              {@count}
+            </span>
+          </div>
         </div>
-      </div>
 
-      <LevelMeter.render
-        :if={@resolved_level}
-        dimension={@dimension}
-        label={@dimension.label}
-        level={@resolved_level}
-        testid={"#{@testid_prefix}-relevancy-#{@resolved_item_id}"}
-        width_class=""
-      />
-    </.link>
+        <LevelMeter.render
+          :if={@resolved_level}
+          dimension={@dimension}
+          label={@dimension.label}
+          level={@resolved_level}
+          testid={"#{@testid_prefix}-relevancy-#{@resolved_item_id}"}
+          width_class=""
+        />
+      </.link>
+
+      <div>{render_slot(@action, @item)}</div>
+    </div>
     """
   end
 

@@ -105,7 +105,7 @@ defmodule WikWeb.PageLive.Components.Aside do
         <div class="truncate text-sm">{summary.tag.name}</div>
       </:title>
 
-      <:action :let={summary}>
+      <:action :let={summary} :if={@editing?}>
         <button
           :if={@editing? and summary.current_member_tagging}
           type="button"

@@ -60,7 +60,9 @@ defmodule WikWeb.Components.DimensionsList do
       |> assign(:path, navigate(assigns.navigate, assigns.item))
 
     ~H"""
-    <div class="grid grid-cols-[1fr_auto]">
+    <div class={[
+      @action != [] && "grid grid-cols-[1fr_auto] gap-2 items-center"
+    ]}>
       <.link
         navigate={@path}
         class={[
@@ -93,7 +95,9 @@ defmodule WikWeb.Components.DimensionsList do
         />
       </.link>
 
-      <div>{render_slot(@action, @item)}</div>
+      <div :if={@action != []}>
+        {render_slot(@action, @item)}
+      </div>
     </div>
     """
   end

@@ -100,6 +100,7 @@ defmodule WikWeb.PageLive.Components.Aside do
 
     <DimensionsList.render
       dimension={relevancy_dimension}
+      empty_text="No topics yet"
       item_id={& &1.tag.id}
       items={@page_topic_summaries}
       level={& &1.average_relevancy}

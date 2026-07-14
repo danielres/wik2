@@ -10,7 +10,10 @@ kill_signal = 'SIGTERM'
 [build]
 
 [env]
+  # Keep the app warm but avoid idle DB pings that prevent Neon from sleeping.
+  DB_IDLE_INTERVAL_MS = '3600000'
   PHX_HOST = 'wik2.fly.dev'
+  POOL_SIZE = '2'
   PORT = '8080'
 
 [http_service]
@@ -18,7 +21,7 @@ kill_signal = 'SIGTERM'
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
   processes = ['app']
 
   [http_service.concurrency]

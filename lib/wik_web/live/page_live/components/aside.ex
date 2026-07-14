@@ -20,6 +20,18 @@ defmodule WikWeb.PageLive.Components.Aside do
 
   def sections(assigns) do
     ~H"""
+    <section data-testid="page-backlinks">
+      <UI.panel_title>
+        <.icon name="hero-book-open-micro" class="opacity-70 size-4" /> Backlinks
+      </UI.panel_title>
+      <Components.Block.Types.Backlinks.render
+        block={%{data: %{"title" => "Backlinks"}, type: :backlinks}}
+        node={@node}
+        page_tree={@page_tree}
+        scope={@current_scope}
+      />
+    </section>
+
     <section data-testid="page-topics">
       <.topics
         can_manage_page?={@can_manage_page?}
@@ -31,18 +43,10 @@ defmodule WikWeb.PageLive.Components.Aside do
       />
     </section>
 
-    <section data-testid="page-backlinks">
-      <UI.panel_title>Backlinks</UI.panel_title>
-      <Components.Block.Types.Backlinks.render
-        block={%{data: %{"title" => "Backlinks"}, type: :backlinks}}
-        node={@node}
-        page_tree={@page_tree}
-        scope={@current_scope}
-      />
-    </section>
-
     <section>
-      <UI.panel_title>Details</UI.panel_title>
+      <UI.panel_title>
+        <.icon name="hero-information-circle-micro" class="opacity-70 size-4" /> Details
+      </UI.panel_title>
       <div class={[
         "grid grid-cols-2 gap-x-4 gap-y-2 mt-0",
         "items-baseline",
@@ -82,7 +86,9 @@ defmodule WikWeb.PageLive.Components.Aside do
     <% relevancy_dimension = Dimensions.get!("page", "relevancy") %>
 
     <div class="mb-2 flex items-center justify-between gap-2">
-      <UI.panel_title class="mb-0">Topics</UI.panel_title>
+      <UI.panel_title class="mb-0">
+        <.icon name="hero-tag-micro" class="opacity-70 size-4" /> Topics
+      </UI.panel_title>
 
       <UI.button_add
         :if={@editing? and @can_manage_page? and @page_topic_options != []}

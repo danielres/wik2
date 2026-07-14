@@ -75,7 +75,7 @@
   }
 
   hr {
-    @apply border-base-content/30 my-16 w-3/4 mx-auto;
+    @apply border-base-content/20 my-16 mx-auto;
   }
 
   .warning {

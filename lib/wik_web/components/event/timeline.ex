@@ -20,7 +20,14 @@ defmodule WikWeb.Components.Event.Timeline do
 
   def grouped_list(assigns) do
     ~H"""
-    <div class="space-y-6" data-testid="events-timeline" style="--_top: var(--top, 2.25rem)">
+    <div
+      class={[
+        "space-y-6",
+        "[--_top:var(--top,3rem)]",
+        "sm:[--_top:var(--top,2rem)]"
+      ]}
+      data-testid="events-timeline"
+    >
       <div
         :if={@grouped_items == []}
         class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
@@ -36,7 +43,7 @@ defmodule WikWeb.Components.Event.Timeline do
         data-testid={"events-year-#{year_group.year}"}
       >
         <h2
-          class={["text-xl font-semibold", "sticky bg-base-100 z-40 pt-4"]}
+          class={["text-xl font-semibold", "sticky bg-base-100 z-[29] pt-4"]}
           style="top: var(--_top)"
         >
           {year_group.year}
@@ -51,7 +58,7 @@ defmodule WikWeb.Components.Event.Timeline do
           <h3
             class={[
               "text-sm font-semibold uppercase tracking-wide text-base-content/80",
-              "sticky bg-base-100 z-30"
+              "sticky bg-base-100 z-[28]"
             ]}
             style="top: calc(var(--_top) + 2.5rem)"
           >
@@ -67,7 +74,7 @@ defmodule WikWeb.Components.Event.Timeline do
             <h4
               class={[
                 "text-sm font-medium tracking-wide text-base-content/70",
-                "sticky bg-base-100 z-20",
+                "sticky bg-base-100 z-[27]",
                 "pb-2"
               ]}
               style="top: calc(var(--_top) + 2.5rem + 1rem)"

@@ -41,6 +41,7 @@ defmodule WikWeb.Components.Event.Details do
         participations={@participations}
         publication={@publication}
         relayer_membership={@relayer_membership}
+        scope={@current_scope}
         show_origin_space?={@show_origin_space?}
         target={@myself}
         user_tz={@user_tz}

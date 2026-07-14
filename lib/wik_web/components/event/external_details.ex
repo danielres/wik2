@@ -41,6 +41,7 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         current_membership={@current_membership}
         current_member_participation={@item.current_member_participation}
         participations={@item.participations}
+        scope={@current_scope}
         source_id={@event.id}
         source_type="external"
         testid_prefix="external-event"

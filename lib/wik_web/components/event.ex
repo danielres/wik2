@@ -278,6 +278,7 @@ defmodule WikWeb.Components.Event do
   attr :participations, :list, default: []
   attr :publication, :map, required: true
   attr :relayer_membership, :map, default: nil
+  attr :scope, :map, required: true
   attr :show_origin_space?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
@@ -338,6 +339,7 @@ defmodule WikWeb.Components.Event do
         current_membership={@current_membership}
         current_member_participation={@current_member_participation}
         participations={@participations}
+        scope={@scope}
         source_id={@publication.id}
         source_type="internal"
         testid_prefix="event"

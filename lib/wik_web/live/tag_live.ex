@@ -439,7 +439,10 @@ defmodule WikWeb.TagLive do
             </:prepend>
 
             <div class="flex justify-between">
-              <UI.page_title>{@tag.name}</UI.page_title>
+              <UI.page_title>
+                <.icon name="hero-tag-micro" class="opacity-30 size-5" />
+                {@tag.name}
+              </UI.page_title>
 
               <UI.button_add_to_user
                 :if={@tenant_context.current_membership && !@current_member_tagged?}

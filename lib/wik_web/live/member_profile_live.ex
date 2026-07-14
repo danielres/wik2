@@ -160,7 +160,10 @@ defmodule WikWeb.MemberProfileLive do
               <.icon name="hero-chevron-right-mini" class="opacity-50" />
             </:prepend>
 
-            <UI.page_title>{@membership.username}</UI.page_title>
+            <UI.page_title>
+              <.icon name="hero-user-micro" class="opacity-30 size-5" />
+              {@membership.username}
+            </UI.page_title>
           </UI.page_head>
 
           <WikWeb.Components.User.avatar

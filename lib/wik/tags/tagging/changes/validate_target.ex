@@ -5,11 +5,13 @@ defmodule Wik.Tags.Tagging.Changes.ValidateTarget do
   alias Ash.Query
   alias Wik.Accounts
   alias Wik.Accounts.Membership
+  alias Wik.Events
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Wiki.Page
 
   require Ash.Query
 
-  @supported_taggable_types ["membership", "page"]
+  @supported_taggable_types ["external_calendar_subscription", "membership", "page"]
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -54,6 +56,18 @@ defmodule Wik.Tags.Tagging.Changes.ValidateTarget do
       :ok
     else
       {:error, :taggable_id, "does not match a page in this space"}
+    end
+  end
+
+  defp validate_target(space_id, "external_calendar_subscription", taggable_id) do
+    query =
+      ExternalCalendarSubscription
+      |> Query.filter(space_id == ^space_id and id == ^taggable_id)
+
+    if Ash.exists?(query, authorize?: false, domain: Events, tenant: space_id) do
+      :ok
+    else
+      {:error, :taggable_id, "does not match an external calendar subscription in this space"}
     end
   end
 end

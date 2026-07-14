@@ -64,6 +64,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
     selected? = assigns.selected_tag_id == assigns.node.tag.id
     membership_tagging_count = assigns.node.tag.membership_tagging_count || 0
     page_tagging_count = Map.get(assigns.node.tag, :page_tagging_count, 0) || 0
+    external_event_count = Map.get(assigns.node.tag, :external_event_count, 0) || 0
     page_taggings = Map.get(assigns.node.tag, :page_taggings, []) || []
 
     interest_distribution =
@@ -76,6 +77,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       |> assign(:selected?, selected?)
       |> assign(:membership_tagging_count, membership_tagging_count)
       |> assign(:page_tagging_count, page_tagging_count)
+      |> assign(:external_event_count, external_event_count)
       |> assign(:page_taggings, page_taggings)
       |> assign(:interest_distribution, interest_distribution)
       |> assign(:skill_distribution, skill_distribution)
@@ -147,6 +149,19 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             </div>
           </div>
         </.link>
+
+        <.button
+          :if={not @editing?}
+          class={[
+            "ml-auto",
+            @external_event_count == 0 && "opacity-10",
+            @external_event_count > 0 &&
+              "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+          ]}
+          data-testid={"tag-event-count-#{@node.dom_id}"}
+        >
+          <UI.icon_event_with_count count={@external_event_count} />
+        </.button>
 
         <.button
           :if={not @editing?}

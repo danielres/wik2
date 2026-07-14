@@ -54,24 +54,87 @@ defmodule WikWeb.Layouts.Space do
     <div class={[
       "sticky top-0 z-30",
       "bg-base-300",
-      "py-1",
-      "border-y border-base-content/10 shadow"
+      "border-y border-base-content/20 shadow-lg"
     ]}>
       <.container>
         <div class={[
-          "flex gap-1 sm:gap-3 items-center",
-          "h-7",
-          "[&>.item]:px-2",
-          "[&>.item]:py-2",
-          "[&>.item]:text-sm",
-          "[&_a]:opacity-40",
-          "[&_a]:transition-opacity",
-          "[&_a]:hover:opacity-80",
-          "[&_a.active]:opacity-100",
-          @editing? and "[&>.item]:hidden"
+          "grid",
+          "grid-cols-[1fr_1fr_1fr_1fr_auto]",
+          "items-center",
+          "[&>a]:justify-center",
+          "[&>*]:min-h-10",
+          "[&>a+a]:border-r",
+          "sm:[&>a:first-child]:border-x",
+          "max-sm:[&>a:first-child]:border-r",
+          "[&>*]:py-2",
+          "[&>a]:text-center",
+          "[&>a]:border-base-content/15",
+          "[&>a]:text-xs",
+          "sm:[&>a]:text-sm",
+          "[&>a]:sm:flex",
+          "[&>a]:sm:gap-2",
+          "[&>a]:sm:items-center",
+          "[&>a>div]:opacity-50",
+          "[&>a.active>div]:opacity-70",
+          "[&>a:hover>div]:opacity-70",
+          "[&>a>.icon]:opacity-20",
+          "[&>a:hover>.icon]:opacity-100",
+          "[&>a.active>.icon]:opacity-100",
+          "max-sm:[&>a]:px-4",
+          @editing? and "[&>a]:opacity-0 [&>a]:pointer-events-none"
         ]}>
-          <.menu {assigns} />
-          <div :if={@actions != []} class="ml-auto flex items-center gap-2">
+          <.link
+            patch={"/#{@scope.tenant.slug}/wiki"}
+            class={[@view == "wiki/home" and "active"]}
+          >
+            <.icon name="hero-book-open-micro" />
+            <div class={[
+              "small-caps"
+            ]}>
+              Wiki
+            </div>
+          </.link>
+
+          <.link
+            patch={"/#{@scope.tenant.slug}/topics"}
+            class={[@view == "tags" and "active"]}
+          >
+            <.icon name="hero-tag-micro" />
+            <div class={[
+              "small-caps"
+            ]}>
+              Topics
+            </div>
+          </.link>
+
+          <.link
+            patch={"/#{@scope.tenant.slug}/events"}
+            class={[@view == "events" and "active"]}
+          >
+            <.icon name="hero-calendar-micro" />
+            <div class={[
+              "small-caps"
+            ]}>
+              Events
+            </div>
+          </.link>
+
+          <.link
+            patch={"/#{@scope.tenant.slug}/members"}
+            class={[@view == "members" and "active"]}
+          >
+            <.icon name="hero-user-micro" />
+            <div class={[
+              "small-caps"
+            ]}>
+              Members
+            </div>
+          </.link>
+
+          <div class={[
+            "pl-2 sm:pl-4 min-w-12 flex justify-end gap-3",
+            @actions == [] && "opacity-0 pointer-events-none"
+          ]}>
             {render_slot(@actions)}
           </div>
         </div>
@@ -92,6 +155,10 @@ defmodule WikWeb.Layouts.Space do
           "[&>*]:border-base-content/10",
           "[&>*]:rounded-box"
         ]}>
+          <section :if={@view == "wiki/home"}>
+            <.wiki_section {assigns} />
+          </section>
+
           {render_slot(@aside)}
         </div>
       </:aside>
@@ -100,23 +167,6 @@ defmodule WikWeb.Layouts.Space do
         {render_slot(@inner_block)}
       </.container>
     </UI.drawer>
-    """
-  end
-
-  def menu_item(assigns) do
-    ~H"""
-    <li class={[
-      "bg-base-200 rounded",
-      @view != @target and "opacity-40"
-    ]}>
-      <.link :if={assigns[:tenant]} patch={"/#{@tenant.slug}/#{@target}"}>
-        {render_slot(@inner_block)}
-      </.link>
-
-      <.link :if={assigns[:tenant] == nil} patch={"/#{@target}"}>
-        {render_slot(@inner_block)}
-      </.link>
-    </li>
     """
   end
 
@@ -471,82 +521,30 @@ defmodule WikWeb.Layouts.Space do
 
   def menu(assigns) do
     ~H"""
-    <div class="item flex gap-0.5">
-      <.link
-        :if={@view != "wiki/home" and @view != "tree"}
-        patch={"/#{@scope.tenant.slug}/wiki"}
-      >
-        <span>Wiki</span>
-      </.link>
+    """
+  end
 
-      <button
-        :if={@view == "wiki/home" or @view == "tree"}
-        class={[
-          (@view == "wiki/home" or @view == "tree") and "active",
-          "flex items-center gap-0.5",
-          "dropdown dropdown-start",
-          "cursor-pointer"
-        ]}
-        type="button"
-      >
-        <span>Wiki</span>
-        <.icon name="hero-chevron-down" class="size-2 -mr-3" />
+  def wiki_section(assigns) do
+    ~H"""
+    <UI.panel_title>
+      <.icon name="hero-book-open-micro" class="opacity-70 size-4" /> Wiki
+    </UI.panel_title>
 
-        <ul
-          tabindex="-1"
+    <ul class={[
+      "text-sm",
+      "[&_a]:cursor-pointer"
+    ]}>
+      <li>
+        <.link
           class={[
-            "dropdown-content",
-            "bg-base-300 rounded-lg",
-            "border border-base-content/15",
-            "shadow",
-            "menu menu-sm",
-            "min-w-36 mt-3"
+            @view == "tree" and "!opacity-80 pointer-events-none"
           ]}
+          navigate={~p"/#{@scope.tenant.slug}/tree"}
         >
-          <li>
-            <.link
-              class={[
-                @view == "wiki/home" and "!opacity-80 pointer-events-none"
-              ]}
-              navigate={~p"/#{@scope.tenant.slug}/wiki/home"}
-            >
-              Home
-            </.link>
-          </li>
-          <li>
-            <.link
-              class={[
-                @view == "tree" and "!opacity-80 pointer-events-none"
-              ]}
-              navigate={~p"/#{@scope.tenant.slug}/tree"}
-            >
-              All pages
-            </.link>
-          </li>
-        </ul>
-      </button>
-    </div>
-
-    <.link
-      patch={"/#{@scope.tenant.slug}/topics"}
-      class={["item", @view == "tags" and "active"]}
-    >
-      <span>Topics</span>
-    </.link>
-
-    <.link
-      patch={"/#{@scope.tenant.slug}/events"}
-      class={["item", @view == "events" and "active"]}
-    >
-      <span>Events</span>
-    </.link>
-
-    <.link
-      patch={"/#{@scope.tenant.slug}/members"}
-      class={["item", @view == "members" and "active"]}
-    >
-      <span>Members</span>
-    </.link>
+          All pages
+        </.link>
+      </li>
+    </ul>
     """
   end
 end

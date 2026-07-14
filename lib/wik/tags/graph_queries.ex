@@ -3,6 +3,7 @@ defmodule Wik.Tags.GraphQueries do
   import Ecto.Query
 
   alias Wik.Repo
+  alias Wik.Events.ExternalEvent
   alias Wik.Tags
   alias Wik.Tags.Tag
   alias Wik.Tags.TagEdge
@@ -36,6 +37,7 @@ defmodule Wik.Tags.GraphQueries do
     space_id = tenant_space_id!(scope)
     tagging_stats_by_tag_id = membership_tagging_stats(space_id)
     page_taggings_by_tag_id = page_taggings_by_tag_id(scope, space_id)
+    external_event_counts_by_tag_id = external_event_counts_by_tag_id(space_id)
 
     tags =
       Tag
@@ -54,6 +56,7 @@ defmodule Wik.Tags.GraphQueries do
         |> Map.put(:membership_skill_unspecified_count, stats.skill_unspecified_count)
         |> Map.put(:page_tagging_count, length(page_taggings))
         |> Map.put(:page_taggings, page_taggings)
+        |> Map.put(:external_event_count, Map.get(external_event_counts_by_tag_id, tag.id, 0))
       end)
       |> sort_tags()
 
@@ -368,6 +371,27 @@ defmodule Wik.Tags.GraphQueries do
     |> Map.new(fn {tag_id, pages} ->
       {tag_id, Enum.sort_by(pages, &{String.downcase(&1.title), &1.path, &1.id})}
     end)
+  end
+
+  defp external_event_counts_by_tag_id(space_id) do
+    today_start = Date.utc_today() |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+
+    from(tagging in Tagging,
+      join: event in ExternalEvent,
+      on:
+        event.space_id == tagging.space_id and
+          event.subscription_id == tagging.taggable_id,
+      where:
+        tagging.space_id == ^space_id and
+          tagging.taggable_type == "external_calendar_subscription" and
+          not is_nil(event.starts_at) and
+          not is_nil(event.tz) and
+          (event.starts_at >= ^today_start or event.ends_at >= ^today_start),
+      group_by: tagging.tag_id,
+      select: %{tag_id: tagging.tag_id, count: count(event.id, :distinct)}
+    )
+    |> Repo.all()
+    |> Map.new(fn %{tag_id: tag_id, count: count} -> {tag_id, count} end)
   end
 
   defp average_relevancy(rows) do

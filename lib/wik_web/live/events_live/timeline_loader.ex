@@ -6,6 +6,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   alias Wik.Accounts
   alias Wik.Events
   alias Wik.Events.EventPublication
+  alias Wik.Tags.Tagging
 
   @future_window_months 2
 
@@ -39,6 +40,8 @@ defmodule WikWeb.EventsLive.TimelineLoader do
            load_participations_by_publication_id(publications, scope),
          {:ok, subscriptions} <-
            Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
+         {:ok, taggings_by_subscription_id} <-
+           load_taggings_by_subscription_id(subscriptions, scope),
          {:ok, external_events} <- read_external_events(scope, future_windows),
          {:ok, participations_by_external_event_id} <-
            load_participations_by_external_event_id(external_events, scope) do
@@ -50,9 +53,27 @@ defmodule WikWeb.EventsLive.TimelineLoader do
          participations_by_publication_id: participations_by_publication_id,
          participations_by_external_event_id: participations_by_external_event_id,
          subscription_records: subscriptions,
+         taggings_by_subscription_id: taggings_by_subscription_id,
          external_events: external_events,
          more_external_future?: more_external_future?(scope, show_external?, future_windows)
        }}
+    end
+  end
+
+  defp load_taggings_by_subscription_id([], _scope), do: {:ok, %{}}
+
+  defp load_taggings_by_subscription_id(subscriptions, scope) do
+    subscription_ids = Enum.map(subscriptions, & &1.id)
+
+    Tagging
+    |> Query.filter(
+      taggable_type == "external_calendar_subscription" and taggable_id in ^subscription_ids
+    )
+    |> Query.load([:tag])
+    |> Ash.read(scope: scope)
+    |> case do
+      {:ok, taggings} -> {:ok, Enum.group_by(taggings, & &1.taggable_id)}
+      {:error, error} -> {:error, error}
     end
   end
 

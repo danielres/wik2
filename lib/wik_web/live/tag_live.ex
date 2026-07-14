@@ -14,7 +14,7 @@ defmodule WikWeb.TagLive do
   alias Wik.Wiki
   alias WikWeb.Components
   alias WikWeb.Components.Block.Types.Markdown
-  alias WikWeb.Components.LevelMeter
+  alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.MembershipTagging
   alias WikWeb.Components.Modal
   alias WikWeb.Components.Tag, as: TagComponent
@@ -309,27 +309,19 @@ defmodule WikWeb.TagLive do
               <div>Pages</div>
             </UI.panel_title>
 
-            <div class="space-y-2" data-testid="tag-page-list">
-              <.link
-                :for={page <- @tag_page_taggings}
-                navigate={~p"/#{@current_scope.tenant.slug}/wiki/#{page.path_segments}"}
-                class={[
-                  "block rounded-box bg-base-200 px-3 py-2",
-                  "opacity-80 hover:opacity-100 transition-opacity"
-                ]}
-                data-testid={"tag-page-#{page.id}"}
-              >
+            <DimensionsList.render
+              dimension={relevancy_dimension}
+              item_id={:id}
+              items={@tag_page_taggings}
+              level={:relevancy_level}
+              list_testid="tag-page-list"
+              navigate={&~p"/#{@current_scope.tenant.slug}/wiki/#{&1.path_segments}"}
+              testid_prefix="tag-page"
+            >
+              <:title :let={page}>
                 <div class="text-sm truncate">{page.title}</div>
-
-                <LevelMeter.render
-                  :if={page.relevancy_level}
-                  dimension={relevancy_dimension}
-                  label={relevancy_dimension.label}
-                  level={page.relevancy_level}
-                  testid={"tag-page-relevancy-#{page.id}"}
-                />
-              </.link>
-            </div>
+              </:title>
+            </DimensionsList.render>
           </section>
 
           <section>
@@ -447,7 +439,10 @@ defmodule WikWeb.TagLive do
             </:prepend>
 
             <div class="flex justify-between">
-              <UI.page_title>{@tag.name}</UI.page_title>
+              <UI.page_title>
+                <.icon name="hero-tag-micro" class="opacity-30 size-5" />
+                {@tag.name}
+              </UI.page_title>
 
               <UI.button_add_to_user
                 :if={@tenant_context.current_membership && !@current_member_tagged?}

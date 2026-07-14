@@ -7,6 +7,9 @@ defmodule WikWeb.TagGraphLiveTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
+  alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Events.ExternalEvent
+  alias Wik.Repo
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Tags.Tagging
@@ -193,6 +196,40 @@ defmodule WikWeb.TagGraphLiveTest do
     assert_page_count_modal_works(conn)
   end
 
+  test "renders upcoming external event counts inherited from subscription topics", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
+
+    {:ok, subscription} =
+      Ash.create(
+        ExternalCalendarSubscription,
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        action: :create,
+        scope: scope
+      )
+
+    create_subscription_tagging(subscription, alpha, owner_membership, scope)
+
+    upcoming_date = Date.utc_today() |> Date.add(7)
+    next_upcoming_date = Date.utc_today() |> Date.add(8)
+    past_date = Date.utc_today() |> Date.add(-7)
+
+    create_external_event(subscription, "external-dinner", starts_at(upcoming_date))
+    create_external_event(subscription, "external-social", starts_at(next_upcoming_date))
+    create_external_event(subscription, "past-external-dinner", starts_at(past_date))
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics")
+
+    assert has_element?(view, "#{testid("tag-event-count-tag-path-#{alpha.id}")}", "2")
+  end
+
   defp assert_page_count_modal_works(conn) do
     owner = generate(user())
     space = generate(space(author: owner))
@@ -272,6 +309,42 @@ defmodule WikWeb.TagGraphLiveTest do
       action: :create,
       scope: scope
     )
+  end
+
+  defp create_subscription_tagging(subscription, tag, tagged_by_membership, scope) do
+    Ash.create!(
+      Tagging,
+      %{
+        tag_id: tag.id,
+        taggable_type: "external_calendar_subscription",
+        taggable_id: subscription.id,
+        tagged_by_membership_id: tagged_by_membership.id,
+        dimensions: %{"relevancy" => 5},
+        description: nil
+      },
+      authorize?: false,
+      domain: Wik.Tags,
+      action: :create,
+      scope: scope
+    )
+  end
+
+  defp create_external_event(subscription, uid, starts_at) do
+    Repo.insert!(%ExternalEvent{
+      space_id: subscription.space_id,
+      subscription_id: subscription.id,
+      external_uid: uid,
+      external_occurrence_key: uid,
+      title: uid,
+      starts_at: starts_at,
+      ends_at: DateTime.add(starts_at, 2, :hour),
+      tz: "Etc/UTC",
+      last_seen_at: DateTime.utc_now()
+    })
+  end
+
+  defp starts_at(date) do
+    DateTime.new!(date, ~T[18:00:00.000000], "Etc/UTC")
   end
 
   defp log_in(conn, user) do

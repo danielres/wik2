@@ -3,6 +3,8 @@ defmodule Wik.Tags.Tagging.Checks.ActorCanManageTagging do
 
   alias Wik.Accounts
   alias Wik.Accounts.Membership
+  alias Wik.Events
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Scope
   alias Wik.Wiki.Page
 
@@ -46,6 +48,28 @@ defmodule Wik.Tags.Tagging.Checks.ActorCanManageTagging do
       {:ok, nil} -> {:ok, false}
       {:ok, %Page{} = page} -> {:ok, Ash.can?({page, :manage_page}, scope)}
       {:error, error} -> {:error, error}
+    end
+  end
+
+  defp actor_can_manage_target?(
+         scope,
+         space_id,
+         "external_calendar_subscription",
+         subscription_id,
+         _author_id
+       ) do
+    ExternalCalendarSubscription
+    |> Ash.Query.filter(space_id == ^space_id and id == ^subscription_id)
+    |> Ash.read_one(authorize?: false, domain: Events, tenant: space_id)
+    |> case do
+      {:ok, nil} ->
+        {:ok, false}
+
+      {:ok, %ExternalCalendarSubscription{} = subscription} ->
+        {:ok, Ash.can?({subscription, :update_custom_name}, scope)}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

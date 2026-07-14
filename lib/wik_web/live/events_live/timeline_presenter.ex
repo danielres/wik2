@@ -2,6 +2,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   alias Utils.Tz
   alias Wik.Accounts
   alias Wik.Events.ExternalCalendar
+  alias Wik.Tags.TopicSummaries
 
   def aggregate_items(entries, user, opts \\ []) do
     internal_publications = aggregate_internal_publications(entries)
@@ -32,7 +33,8 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
         loaded_data.external_events,
         loaded_subscriptions,
         loaded_data.participations_by_external_event_id,
-        loaded_data.current_membership
+        loaded_data.current_membership,
+        loaded_data.taggings_by_subscription_id
       )
 
     items = timeline_items(internal_items, external_items, show_external?)
@@ -245,7 +247,8 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
          events,
          loaded_subscriptions,
          participations_by_external_event_id,
-         current_membership
+         current_membership,
+         taggings_by_subscription_id
        ) do
     subscription_by_id = Map.new(loaded_subscriptions.records, &{&1.id, &1})
 
@@ -255,11 +258,28 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       calendar_name = resolved_calendar_name(event, subscription, loaded_subscriptions)
       participations = Map.get(participations_by_external_event_id, event.id, [])
 
-      normalize_external_event(event, calendar_name, participations, current_membership)
+      topic_summaries =
+        taggings_by_subscription_id
+        |> Map.get(event.subscription_id, [])
+        |> topic_summaries()
+
+      normalize_external_event(
+        event,
+        calendar_name,
+        participations,
+        current_membership,
+        topic_summaries
+      )
     end)
   end
 
-  defp normalize_external_event(event, calendar_name, participations, current_membership) do
+  defp normalize_external_event(
+         event,
+         calendar_name,
+         participations,
+         current_membership,
+         topic_summaries \\ []
+       ) do
     %{
       id: "external:#{event.id}",
       source_type: :external,
@@ -276,8 +296,13 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
         current_member_participation(participations, current_membership),
       participations: participations,
       source_url: nil,
-      subscription_id: event.subscription_id
+      subscription_id: event.subscription_id,
+      topic_summaries: topic_summaries
     }
+  end
+
+  defp topic_summaries(taggings) do
+    TopicSummaries.build(taggings)
   end
 
   defp current_member_participation(_participations, nil), do: nil

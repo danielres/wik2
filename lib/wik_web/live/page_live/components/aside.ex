@@ -3,7 +3,7 @@ defmodule WikWeb.PageLive.Components.Aside do
 
   alias Wik.Tags.Dimensions
   alias WikWeb.Components
-  alias WikWeb.Components.LevelMeter
+  alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.RangeInput
   alias WikWeb.Components.UI
 
@@ -20,6 +20,18 @@ defmodule WikWeb.PageLive.Components.Aside do
 
   def sections(assigns) do
     ~H"""
+    <section data-testid="page-backlinks">
+      <UI.panel_title>
+        <.icon name="hero-book-open-micro" class="opacity-70 size-4" /> Backlinks
+      </UI.panel_title>
+      <Components.Block.Types.Backlinks.render
+        block={%{data: %{"title" => "Backlinks"}, type: :backlinks}}
+        node={@node}
+        page_tree={@page_tree}
+        scope={@current_scope}
+      />
+    </section>
+
     <section data-testid="page-topics">
       <.topics
         can_manage_page?={@can_manage_page?}
@@ -31,18 +43,10 @@ defmodule WikWeb.PageLive.Components.Aside do
       />
     </section>
 
-    <section data-testid="page-backlinks">
-      <UI.panel_title>Backlinks</UI.panel_title>
-      <Components.Block.Types.Backlinks.render
-        block={%{data: %{"title" => "Backlinks"}, type: :backlinks}}
-        node={@node}
-        page_tree={@page_tree}
-        scope={@current_scope}
-      />
-    </section>
-
     <section>
-      <UI.panel_title>Details</UI.panel_title>
+      <UI.panel_title>
+        <.icon name="hero-information-circle-micro" class="opacity-70 size-4" /> Details
+      </UI.panel_title>
       <div class={[
         "grid grid-cols-2 gap-x-4 gap-y-2 mt-0",
         "items-baseline",
@@ -82,9 +86,11 @@ defmodule WikWeb.PageLive.Components.Aside do
     <% relevancy_dimension = Dimensions.get!("page", "relevancy") %>
 
     <div class="mb-2 flex items-center justify-between gap-2">
-      <UI.panel_title class="mb-0">Topics</UI.panel_title>
+      <UI.panel_title class="mb-0">
+        <.icon name="hero-tag-micro" class="opacity-70 size-4" /> Topics
+      </UI.panel_title>
 
-      <UI.button_add_topic
+      <UI.button_add
         :if={@editing? and @can_manage_page? and @page_topic_options != []}
         data-testid="page-topic-add"
         data-tip="Add topic"
@@ -92,59 +98,37 @@ defmodule WikWeb.PageLive.Components.Aside do
       />
     </div>
 
-    <div class="space-y-2" data-testid="page-topic-list">
-      <div :if={@page_topic_summaries == []} class="text-sm opacity-50">
-        No topics yet
-      </div>
+    <DimensionsList.render
+      dimension={relevancy_dimension}
+      empty_text="No topics yet"
+      item_id={& &1.tag.id}
+      items={@page_topic_summaries}
+      level={& &1.average_relevancy}
+      list_testid="page-topic-list"
+      navigate={&~p"/#{@current_scope.tenant.slug}/topics/#{&1.tag.slug}"}
+      testid_prefix="page-topic"
+    >
+      <:title :let={summary}>
+        <div class="truncate text-sm">{summary.tag.name}</div>
+      </:title>
 
-      <div
-        :for={summary <- @page_topic_summaries}
-        class="rounded-box bg-base-200 px-3 py-2"
-        data-testid={"page-topic-#{summary.tag.id}"}
-      >
-        <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-          <.link
-            navigate={~p"/#{@current_scope.tenant.slug}/topics/#{summary.tag.slug}"}
-            class="truncate text-sm hover:underline"
-          >
-            {summary.tag.name}
-          </.link>
-
-          <div class="flex items-center gap-2">
-            <span
-              :if={summary.count > 1}
-              class="badge badge-sm bg-base-300"
-              data-testid={"page-topic-count-#{summary.tag.id}"}
-            >
-              {summary.count}
-            </span>
-
-            <button
-              :if={@editing? and summary.current_member_tagging}
-              type="button"
-              class={[
-                "btn btn-xs btn-circle btn-ghost text-error",
-                "opacity-50 hover:opacity-100 transition-opacity"
-              ]}
-              data-testid={"page-topic-remove-#{summary.tag.id}"}
-              phx-click="page_topic_remove"
-              phx-value-tag_id={summary.tag.id}
-            >
-              <span class="sr-only">Remove topic</span>
-              <.icon name="hero-x-mark" class="size-3" />
-            </button>
-          </div>
-        </div>
-
-        <LevelMeter.render
-          :if={summary.average_relevancy}
-          dimension={relevancy_dimension}
-          label={relevancy_dimension.label}
-          level={summary.average_relevancy}
-          testid={"page-topic-relevancy-#{summary.tag.id}"}
-        />
-      </div>
-    </div>
+      <:action :let={summary} :if={@editing?}>
+        <button
+          :if={@editing? and summary.current_member_tagging}
+          type="button"
+          class={[
+            "btn btn-xs btn-circle text-error btn-ghost",
+            "opacity-80 hover:opacity-100 transition-opacity"
+          ]}
+          data-testid={"page-topic-remove-#{summary.tag.id}"}
+          phx-click="page_topic_remove"
+          phx-value-tag_id={summary.tag.id}
+        >
+          <span class="sr-only">Remove topic</span>
+          <.icon name="hero-x-mark" class="size-3" />
+        </button>
+      </:action>
+    </DimensionsList.render>
 
     <UI.modal id="page-topic-modal" open?={@page_topic_form != nil}>
       <UI.modal_title>Add topic</UI.modal_title>

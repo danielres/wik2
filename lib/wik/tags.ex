@@ -12,6 +12,7 @@ defmodule Wik.Tags do
   alias Wik.Accounts.Membership
   alias Wik.Blocks
   alias Wik.Blocks.Block
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
@@ -319,6 +320,9 @@ defmodule Wik.Tags do
 
   defp taggable_ref!(%Page{id: id, space_id: space_id}),
     do: %{id: id, space_id: space_id, type: "page"}
+
+  defp taggable_ref!(%ExternalCalendarSubscription{id: id, space_id: space_id}),
+    do: %{id: id, space_id: space_id, type: "external_calendar_subscription"}
 
   defp taggable_ref!(taggable),
     do: raise(ArgumentError, "unsupported taggable: #{inspect(taggable)}")

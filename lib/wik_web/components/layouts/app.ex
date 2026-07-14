@@ -45,15 +45,19 @@ defmodule WikWeb.Layouts.App do
   def app_header(assigns) do
     ~H"""
     <header class={[
-      "navbar bg-base-300/40 py-2 sm:py-3 min-h-0",
+      "navbar bg-base-300/40 py-2 min-h-0 flex items-center",
       Layouts.container_class()
     ]}>
-      <div class="flex-1 flex items-center gap-0">
-        <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
+      <div class="flex-1 flex items-center">
+        <.link navigate={~p"/"} class="opacity-30 hover:opacity-100 transition" aria-label="Home">
           <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
         </.link>
 
-        <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mx-1" />
+        <.icon
+          :if={@scope.tenant}
+          name="hero-chevron-right-mini"
+          class="size-4 opacity-20 mr-2 ml-0.5"
+        />
 
         <div
           :if={@scope.tenant}

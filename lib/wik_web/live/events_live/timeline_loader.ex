@@ -69,7 +69,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     |> Query.filter(
       taggable_type == "external_calendar_subscription" and taggable_id in ^subscription_ids
     )
-    |> Query.load([:tag, :tagged_by_membership])
+    |> Query.load([:tag])
     |> Ash.read(scope: scope)
     |> case do
       {:ok, taggings} -> {:ok, Enum.group_by(taggings, & &1.taggable_id)}

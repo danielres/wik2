@@ -7,7 +7,7 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Tags
   alias Wik.Tags.Dimensions
-  alias Wik.Tags.Tagging
+  alias Wik.Tags.TopicSummaries
   alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.RangeInput
   alias WikWeb.Components.Time
@@ -435,49 +435,8 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
   end
 
   defp subscription_topic_summaries(taggings, current_membership) do
-    taggings
-    |> Enum.group_by(& &1.tag_id)
-    |> Enum.map(fn {_tag_id, taggings} ->
-      tag = taggings |> List.first() |> Map.get(:tag)
-      relevancy_levels = Enum.map(taggings, &dimension_level(&1, "relevancy"))
-      current_member_tagging = current_member_tagging(taggings, current_membership)
-
-      %{
-        average_relevancy: average_level(relevancy_levels),
-        count: length(taggings),
-        current_member_tagging: current_member_tagging,
-        tag: tag
-      }
-    end)
-    |> Enum.reject(&is_nil(&1.tag))
-    |> Enum.sort_by(fn summary ->
-      {
-        -summary.average_relevancy,
-        String.downcase(summary.tag.name || "")
-      }
-    end)
+    TopicSummaries.build(taggings, current_membership)
   end
-
-  defp current_member_tagging(_taggings, nil), do: nil
-
-  defp current_member_tagging(taggings, membership) do
-    Enum.find(taggings, &(&1.tagged_by_membership_id == membership.id))
-  end
-
-  defp average_level(levels) do
-    levels = Enum.reject(levels, &is_nil/1)
-
-    case levels do
-      [] -> nil
-      levels -> round(Enum.sum(levels) / length(levels))
-    end
-  end
-
-  defp dimension_level(%Tagging{dimensions: dimensions}, key) when is_map(dimensions) do
-    Map.get(dimensions, key)
-  end
-
-  defp dimension_level(_tagging, _key), do: nil
 
   defp open_subscription_topic_form(socket) do
     assign(socket, :subscription_topic_form, subscription_topic_form())

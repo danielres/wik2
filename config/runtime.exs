@@ -43,11 +43,15 @@ if config_env() == :prod do
       do: [:inet6],
       else: []
 
+  # Keep the Fly app warm while letting Neon sleep when idle:
+  # - 2 connections is enough for low traffic and reduces idle DB pressure.
+  # - 1 hour avoids DBConnection's default 1s idle pings keeping Neon awake.
   config :wik, Wik.Repo,
     url: database_url,
     ssl: true,
     socket_options: maybe_ipv6,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "2"),
+    idle_interval: String.to_integer(System.get_env("DB_IDLE_INTERVAL_MS") || "3600000")
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

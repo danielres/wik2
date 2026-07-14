@@ -18,7 +18,7 @@ defmodule WikWeb.Components.UI do
               :if={@aside != []}
               for={@id}
               class={[
-                "btn btn-xs btn-square ",
+                "btn btn-square ",
                 "opacity-80 hover:opacity-100",
                 "md:hidden"
               ]}
@@ -67,7 +67,7 @@ defmodule WikWeb.Components.UI do
       @class
     ]}>
       <.icon
-        name="hero-document-micro"
+        name="hero-book-open-micro"
         class="opacity-80"
         style={if assigns[:color], do: "color: color-mix(#{@color} 80%, var(--color-base-content))"}
       />
@@ -97,7 +97,7 @@ defmodule WikWeb.Components.UI do
       @class
     ]}>
       <.icon
-        name="hero-calendar-days-micro"
+        name="hero-calendar-micro"
         class="opacity-80"
         style={if assigns[:color], do: "color: color-mix(#{@color} 80%, var(--color-base-content))"}
       />
@@ -167,6 +167,7 @@ defmodule WikWeb.Components.UI do
     ~H"""
     <h3 class={[
       "mb-2 text-xs uppercase tracking-wider opacity-50",
+      "flex items-center gap-1",
       @class
     ]}>
       {render_slot(@inner_block)}
@@ -254,6 +255,7 @@ defmodule WikWeb.Components.UI do
     ~H"""
     <h1 class={[
       "text-2xl",
+      "flex items-center gap-2",
       @class
     ]}>
       {render_slot(@inner_block)}

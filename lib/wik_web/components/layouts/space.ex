@@ -57,87 +57,7 @@ defmodule WikWeb.Layouts.Space do
       "border-y border-base-content/20 shadow-lg"
     ]}>
       <.container>
-        <div class={[
-          "grid",
-          "grid-cols-[1fr_1fr_1fr_1fr_auto]",
-          "items-center",
-          "[&>a]:justify-center",
-          "[&>*]:min-h-10",
-          "[&>a+a]:border-r",
-          "sm:[&>a:first-child]:border-x",
-          "max-sm:[&>a:first-child]:border-r",
-          "[&>*]:py-2",
-          "[&>a]:text-center",
-          "[&>a]:border-base-content/15",
-          "[&>a]:text-xs",
-          "sm:[&>a]:text-sm",
-          "[&>a]:sm:flex",
-          "[&>a]:sm:gap-2",
-          "[&>a]:sm:items-center",
-          "[&>a>div]:opacity-50",
-          "[&>a.active>div]:opacity-70",
-          "[&>a:hover>div]:opacity-70",
-          "[&>a>.icon]:opacity-20",
-          "[&>a:hover>.icon]:opacity-100",
-          "[&>a.active>.icon]:opacity-100",
-          "max-sm:[&>a]:px-4",
-          @editing? and "[&>a]:opacity-0 [&>a]:pointer-events-none"
-        ]}>
-          <.link
-            patch={"/#{@scope.tenant.slug}/wiki"}
-            class={[@view == "wiki/home" and "active"]}
-          >
-            <.icon name="hero-book-open-micro" />
-            <div class={[
-              "small-caps"
-            ]}>
-              Wiki
-            </div>
-          </.link>
-
-          <.link
-            patch={"/#{@scope.tenant.slug}/topics"}
-            class={[@view == "tags" and "active"]}
-          >
-            <.icon name="hero-tag-micro" />
-            <div class={[
-              "small-caps"
-            ]}>
-              Topics
-            </div>
-          </.link>
-
-          <.link
-            patch={"/#{@scope.tenant.slug}/events"}
-            class={[@view == "events" and "active"]}
-          >
-            <.icon name="hero-calendar-micro" />
-            <div class={[
-              "small-caps"
-            ]}>
-              Events
-            </div>
-          </.link>
-
-          <.link
-            patch={"/#{@scope.tenant.slug}/members"}
-            class={[@view == "members" and "active"]}
-          >
-            <.icon name="hero-user-micro" />
-            <div class={[
-              "small-caps"
-            ]}>
-              Members
-            </div>
-          </.link>
-
-          <div class={[
-            "pl-2 sm:pl-4 min-w-12 flex justify-end gap-3",
-            @actions == [] && "opacity-0 pointer-events-none"
-          ]}>
-            {render_slot(@actions)}
-          </div>
-        </div>
+        <.space_menu {assigns} />
       </.container>
     </div>
 
@@ -155,7 +75,7 @@ defmodule WikWeb.Layouts.Space do
           "[&>*]:border-base-content/10",
           "[&>*]:rounded-box"
         ]}>
-          <section :if={@view == "wiki/home"}>
+          <section :if={@view == "wiki"}>
             <.wiki_section {assigns} />
           </section>
 
@@ -188,339 +108,92 @@ defmodule WikWeb.Layouts.Space do
     """
   end
 
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :context, :map, default: %{claimable_sources: []}
-  attr :tenant_context, :map, default: nil
-
-  attr :scope, :map, default: %{actor: nil, tenant: nil}
-
-  slot :inner_block, required: true
-
-  def app(assigns) do
+  def space_menu(assigns) do
     ~H"""
-    <div class="grid grid-rows-[auto_1fr_auto] min-h-screen">
-      <header class={["navbar bg-base-300/40 py-2 sm:py-3 min-h-0", container_class()]}>
-        <div class="flex-1 flex items-center gap-0">
-          <.link navigate={~p"/"} class="opacity-50 hover:opacity-100" aria-label="Home">
-            <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
-          </.link>
-
-          <.icon :if={@scope.tenant} name="hero-chevron-right-mini" class="size-4 opacity-20 mx-1" />
-
-          <div
-            :if={@scope.tenant}
-            class={[
-              "max-w-[calc(100svw-9rem)] overflow-hidden truncate",
-              "opacity-60 hover:opacity-100 transition text-sm"
-            ]}
-          >
-            <.link navigate={~p"/#{@scope.tenant.slug}"}>
-              {@scope.tenant |> to_string()}
-            </.link>
-          </div>
-        </div>
-
-        <div>
-          <button
-            class={[
-              "opacity-80 hover:opacity-100 transition cursor-pointer",
-              "relative"
-            ]}
-            popovertarget="popover-user-dropdown"
-            style="anchor-name:--anchor-user-dropdown"
-          >
-            <Components.User.avatar
-              membership={@tenant_context && @tenant_context[:current_membership]}
-              tenant={@scope.tenant}
-              size="sm"
-            />
-
-            <div
-              :if={@context.claimable_sources != []}
-              class={[
-                "status status-accent animate-ping",
-                "absolute top-0 left-0"
-              ]}
-            >
-            </div>
-          </button>
-
-          <div
-            class={[
-              "min-w-36",
-              "dropdown dropdown-end mt-1",
-              "bg-base-300 dark:shadow-lg",
-              "shadow",
-              "border border-base-content/15",
-              "rounded-box"
-            ]}
-            popover
-            id="popover-user-dropdown"
-            style="position-anchor:--anchor-user-dropdown"
-          >
-            <ul
-              :if={@context.claimable_sources != []}
-              class={[
-                "menu w-full",
-                "border-b-1 border-base-content/20"
-              ]}
-            >
-              <li>
-                <.link
-                  class="btn btn-sm btn-soft btn-accent border"
-                  navigate={~p"/auth/telegram"}
-                >
-                  <span class="font-bold">New sources</span>
-                  <.icon name="hero-chevron-right-micro" />
-                </.link>
-              </li>
-            </ul>
-
-            <section
-              :if={
-                @scope.tenant && @tenant_context &&
-                  ((@tenant_context[:current_membership] &&
-                      @tenant_context[:current_membership].username != nil) ||
-                     TenantContext.space_admin?(@scope, @tenant_context))
-              }
-              class="p-4 border-b border-base-content/20"
-            >
-              <h3 class="uppercase tracking-wider text-xs opacity-50">Space</h3>
-              <ul class={[
-                "menu w-full"
-              ]}>
-                <li :if={
-                  @tenant_context[:current_membership] &&
-                    @tenant_context[:current_membership].username != nil
-                }>
-                  <.link navigate={
-                    ~p"/#{@scope.tenant.slug}/wiki/members/#{@tenant_context[:current_membership].username}"
-                  }>
-                    <Components.User.avatar
-                      membership={@tenant_context && @tenant_context[:current_membership]}
-                      tenant={@scope.tenant}
-                      size="xs"
-                    /> Profile
-                  </.link>
-                </li>
-
-                <li :if={TenantContext.space_admin?(@scope, @tenant_context)}>
-                  <.link navigate={~p"/#{@scope.tenant.slug}/admin"}>
-                    <.icon name="hero-adjustments-horizontal-micro" class="" /> Admin
-                  </.link>
-                </li>
-              </ul>
-            </section>
-
-            <section class="p-4">
-              <h3 class="uppercase tracking-wider text-xs opacity-50">App</h3>
-
-              <ul class={[
-                "menu w-full"
-              ]}>
-                <li>
-                  <.link navigate={~p"/sign-out"} class="">
-                    <.icon name="hero-arrow-right-on-rectangle" /> Log out
-                  </.link>
-                </li>
-
-                <li>
-                  <.link navigate={~p"/me"} class="opacity-80 hover:opacity-100 transition">
-                    <.icon name="hero-user" /> Account
-                  </.link>
-                </li>
-              </ul>
-
-              <ul class={[]}>
-                <li>
-                  <div class="w-min mx-auto">
-                    <WikWeb.Layouts.theme_toggle />
-                  </div>
-                </li>
-              </ul>
-
-              <ul
-                :if={@scope.actor && @scope.actor.role == :superadmin}
-                class={[
-                  "menu w-full"
-                ]}
-              >
-                <li>
-                  <.link navigate={~p"/_"}>
-                    <span class="badge badge-error">Superadmin</span>
-                  </.link>
-                </li>
-              </ul>
-            </section>
-          </div>
-        </div>
-      </header>
-
-      <div class="mb-8">
-        {render_slot(@inner_block)}
-      </div>
-
-      <footer>
-        <div class="">
-          <div class="hidden">
-            <%= if @scope.actor do %>
-              Privacy and moderation requests can be submitted <.link
-                class="link link-hover font-medium"
-                navigate={~p"/me/tickets/new"}
-              >
-              in-app while logged in
-            </.link>.
-            <% else %>
-              Privacy and moderation requests are handled in-app for logged-in users. If you cannot
-              access your account, use the recovery path shared with your space operator.
-            <% end %>
-          </div>
-
-          <div class={[
-            "flex justify-center gap-6 text-xs mt-4 mb-1",
-            "[&_a]:flex [&_a]:items-center [&_a]:gap-1",
-            "[&_a]:opacity-30 hover:[&_a]:opacity-70 [&_a:hover]:opacity-100 [&_a]:transition",
-            "[&_.icon]:size-3"
-          ]}>
-            <.link :if={false} navigate={~p"/about"}>
-              <.icon name="hero-information-circle-micro" />
-              <span>about</span>
-            </.link>
-
-            <.link navigate={~p"/terms"}>
-              <.icon name="hero-document-text-micro" />
-              <span>terms</span>
-            </.link>
-
-            <.link navigate={~p"/privacy"}>
-              <.icon name="hero-lock-closed-micro" />
-              <span>privacy</span>
-            </.link>
-
-            <.link
-              href="https://github.com/danielres/wik2"
-              target="_blank"
-              rel="noopener"
-              class="space"
-            >
-              <.icon name="hero-code-bracket-micro" class="space-hover:hidden" />
-              <.icon
-                name="hero-arrow-top-right-on-square-micro"
-                class="hidden space-hover:inline-block"
-              />
-              <span>github</span>
-            </.link>
-          </div>
-        </div>
-      </footer>
-    </div>
-
-    <Components.Modal.render
-      :if={@tenant_context && @tenant_context[:membership_username_form] != nil}
-      open?={true}
-      testid="membership-username-dialog"
-    >
-      <Components.Membership.steps
-        form={@tenant_context[:membership_username_form]}
-        space={@scope.tenant}
+    <div class={[
+      "grid",
+      "grid-cols-[1fr_1fr_1fr_1fr_auto]",
+      "items-center",
+      "[&>a]:justify-center",
+      "[&>*]:min-h-10",
+      "[&>a+a]:border-r",
+      "sm:[&>a:first-child]:border-x",
+      "max-sm:[&>a:first-child]:border-r",
+      "[&>*]:py-2",
+      "[&>a]:text-center",
+      "[&>a]:border-base-content/15",
+      "[&>a]:text-xs",
+      "sm:[&>a]:text-sm",
+      "[&>a]:sm:flex",
+      "[&>a]:sm:gap-2",
+      "[&>a]:sm:items-center",
+      "[&>a>div]:opacity-50",
+      "[&>a.active>div]:opacity-70",
+      "[&>a:hover>div]:opacity-70",
+      "[&>a>.icon]:opacity-20",
+      "[&>a:hover>.icon]:opacity-100",
+      "[&>a.active>.icon]:opacity-100",
+      "max-sm:[&>a]:px-4",
+      @editing? and "[&>a]:opacity-0 [&>a]:pointer-events-none"
+    ]}>
+      <.space_menu_link
+        icon="hero-book-open-micro"
+        item="wiki/home"
+        label="Wiki"
+        scope={@scope}
+        view={@view}
       />
-    </Components.Modal.render>
 
-    <.flash_group flash={@flash} />
-    """
-  end
+      <.space_menu_link
+        icon="hero-tag-micro"
+        item="topics"
+        label="Topics"
+        scope={@scope}
+        view={@view}
+      />
 
-  @doc """
-  Shows the flash group with standard titles and content.
+      <.space_menu_link
+        icon="hero-calendar-micro"
+        item="events"
+        label="Events"
+        scope={@scope}
+        view={@view}
+      />
 
-  ## Examples
+      <.space_menu_link
+        icon="hero-user-micro"
+        item="members"
+        label="Members"
+        scope={@scope}
+        view={@view}
+      />
 
-      <.flash_group flash={@flash} />
-  """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :id, :string, default: "flash-group", doc: "the optional id of flash container"
-
-  def flash_group(assigns) do
-    ~H"""
-    <div id={@id} aria-live="polite">
-      <.flash kind={:info} flash={@flash} />
-      <.flash kind={:error} flash={@flash} />
-
-      <.flash
-        id="client-error"
-        kind={:error}
-        title={gettext("Connection lost")}
-        phx-disconnected={show(".phx-client-error #client-error") |> JS.remove_attribute("hidden")}
-        phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
-        hidden
-      >
-        {gettext("Reconnecting...")}
-        <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
-      </.flash>
-
-      <.flash
-        id="server-error"
-        kind={:error}
-        title={gettext("Starting server")}
-        phx-disconnected={show(".phx-server-error #server-error") |> JS.remove_attribute("hidden")}
-        phx-connected={hide("#server-error") |> JS.set_attribute({"hidden", ""})}
-        hidden
-      >
-        {gettext("Reconnecting...")}
-        <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
-      </.flash>
-    </div>
-    """
-  end
-
-  @doc """
-  Provides a system, light, and dark theme toggle.
-
-  The toggle only deals in semantic modes and leaves the concrete daisyUI
-  theme names to the root layout bootstrap.
-  """
-  @theme_modes [
-    %{label: "System", icon: "hero-computer-desktop-micro", mode: "system"},
-    %{label: "Light", icon: "hero-sun-micro", mode: "light"},
-    %{label: "Dark", icon: "hero-moon-micro", mode: "dark"}
-  ]
-
-  def theme_toggle(assigns) do
-    assigns = assign(assigns, :theme_modes, @theme_modes)
-
-    ~H"""
-    <div
-      id="theme-toggle"
-      class="card relative flex flex-row items-center rounded-full border-2 border-base-200 bg-base-200 p-1 gap-1"
-      role="group"
-      aria-label="Theme selector"
-    >
       <div class={[
-        "pointer-events-none absolute inset-y-1 left-1 w-[calc(33.333%-0.25rem)] rounded-full border border-base-200 bg-base-100 brightness-110 transition-[left]",
-        "[[data-theme-mode=light]_&]:left-[calc(33.333%+0.125rem)]",
-        "[[data-theme-mode=dark]_&]:left-[calc(66.666%+0.125rem)]"
-      ]} />
-
-      <button
-        :for={theme <- @theme_modes}
-        type="button"
-        class="group relative z-10 flex w-1/3 cursor-pointer justify-center rounded-full p-2"
-        data-theme-toggle
-        data-theme-mode={theme.mode}
-        title={theme.label}
-        aria-label={theme.label}
-      >
-        <.icon
-          name={theme.icon}
-          class="size-3.5 opacity-75 transition-opacity group-hover:opacity-100"
-        />
-      </button>
+        "pl-2 sm:pl-4 min-w-12 flex justify-end gap-3",
+        @actions == [] && "opacity-0 pointer-events-none"
+      ]}>
+        {render_slot(@actions)}
+      </div>
     </div>
     """
   end
 
-  def menu(assigns) do
+  attr :icon, :string, default: "hero-book-open-micro"
+  attr :view, :string, required: true
+  attr :item, :string, required: true
+  attr :label, :string, required: true
+  attr :scope, :map, required: true
+
+  def space_menu_link(assigns) do
     ~H"""
+    <.link
+      class={[@view == @item && "active"]}
+      navigate={@view != @item && "/#{@scope.tenant.slug}/#{@item}"}
+      patch={@view == @item && "/#{@scope.tenant.slug}/#{@item}"}
+    >
+      <.icon name={@icon} />
+      <div class="small-caps">{@label}</div>
+    </.link>
     """
   end
 

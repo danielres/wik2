@@ -267,7 +267,7 @@ defmodule WikWeb.TagLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.space presences={@presences} scope={@current_scope} view="tags">
+      <Layouts.space presences={@presences} scope={@current_scope} view="topics">
         <:actions :if={@editable?}>
           <%= if @editing? do %>
           <% else %>

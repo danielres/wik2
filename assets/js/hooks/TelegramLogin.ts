@@ -12,7 +12,7 @@ export const TelegramLogin = {
 
     const requestAccess = this.el.dataset.requestAccess || "write";
     const size = this.el.dataset.size || "large";
-    const returnTo = `${window.location.pathname}${window.location.search || ""}`;
+    const returnTo = this.el.dataset.returnTo || `${window.location.pathname}${window.location.search || ""}`;
     const authUrl = `/auth/telegram/callback?return_to=${encodeURIComponent(returnTo)}`;
 
     const script = document.createElement("script");

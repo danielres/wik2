@@ -48,13 +48,15 @@ defmodule WikWeb.AuthController.Dev do
 
   defp sign_in_user(conn, user) do
     with {:ok, token, _claims} <- Jwt.token_for_user(user) do
+      return_to = get_session(conn, :return_to) || ~p"/"
       user = Ash.Resource.set_metadata(user, %{token: token})
 
       {:ok,
        conn
+       |> delete_session(:return_to)
        |> AuthHelpers.store_in_session(user)
        |> assign(:current_user, user)
-       |> redirect(to: ~p"/")}
+       |> redirect(to: return_to)}
     end
   end
 

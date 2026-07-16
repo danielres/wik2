@@ -6,7 +6,7 @@ defmodule WikWeb.Auth.SignInLive do
   alias Wik.DevAuth
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     dev_sign_in_users =
       if @dev_routes? do
         case DevAuth.list_sign_in_users() do
@@ -21,7 +21,8 @@ defmodule WikWeb.Auth.SignInLive do
      socket
      |> assign(:dev_routes?, @dev_routes?)
      |> assign(:dev_sign_in_form, to_form(%{}, as: :dev_sign_in))
-     |> assign(:dev_sign_in_users, dev_sign_in_users)}
+     |> assign(:dev_sign_in_users, dev_sign_in_users)
+     |> assign(:return_to, return_to(session))}
   end
 
   slot :inner_block, required: true
@@ -58,8 +59,8 @@ defmodule WikWeb.Auth.SignInLive do
 
       <div class="flex w-full max-w-5xl flex-col items-center gap-12">
         <div class="space-y-2">
-          <.telegram_login_button />
-          <.google_login_button />
+          <.telegram_login_button return_to={@return_to} />
+          <.google_login_button return_to={@return_to} />
         </div>
 
         <.dev_sign_in :if={@dev_routes?} {assigns} />
@@ -68,12 +69,14 @@ defmodule WikWeb.Auth.SignInLive do
     """
   end
 
+  attr :return_to, :string, required: true
+
   def google_login_button(assigns) do
     ~H"""
     <.link
       id="google-sign-in"
       data-testid="google-sign-in"
-      href={~p"/auth/google"}
+      href={~p"/auth/google?return_to=#{@return_to}"}
       class={[
         "btn btn-primary gap-2",
         "w-52",
@@ -96,6 +99,7 @@ defmodule WikWeb.Auth.SignInLive do
 
   attr :class, :string, default: nil
   attr :request_access, :string, default: "write"
+  attr :return_to, :string, required: true
   attr :size, :string, default: "large", values: ~w(small medium large)
 
   def telegram_login_button(assigns) do
@@ -126,6 +130,7 @@ defmodule WikWeb.Auth.SignInLive do
         class={[@class, "opacity-0"]}
         data-bot-username={@bot_username}
         data-request-access={@request_access}
+        data-return-to={@return_to}
         data-size={@size}
         phx-hook="TelegramLogin"
         phx-update="ignore"
@@ -148,6 +153,14 @@ defmodule WikWeb.Auth.SignInLive do
     |> to_string()
     |> String.split("-")
     |> List.first()
+  end
+
+  defp return_to(session) do
+    case session do
+      %{"return_to" => return_to} when is_binary(return_to) -> return_to
+      %{return_to: return_to} when is_binary(return_to) -> return_to
+      _ -> ~p"/"
+    end
   end
 
   def dev_sign_in(assigns) do

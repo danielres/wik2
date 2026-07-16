@@ -10,7 +10,7 @@ defmodule WikWeb.AuthController.Google do
   require Logger
 
   def request(conn, params) do
-    return_to = params["return_to"] |> validate_return_to()
+    return_to = (params["return_to"] || get_session(conn, :return_to)) |> validate_return_to()
 
     case Google.authorize_url(callback_url()) do
       {:ok, %{url: url, session_params: session_params}} ->
@@ -42,6 +42,7 @@ defmodule WikWeb.AuthController.Google do
       user = Ash.Resource.set_metadata(user, %{token: token})
 
       conn
+      |> delete_session(:return_to)
       |> delete_session(:google_return_to)
       |> delete_session(:google_session_params)
       |> AuthHelpers.store_in_session(user)

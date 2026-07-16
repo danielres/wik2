@@ -19,6 +19,7 @@ defmodule WikWeb.AuthController.Telegram do
       user = Ash.Resource.set_metadata(user, %{token: token})
 
       conn
+      |> delete_session(:return_to)
       |> AuthHelpers.store_in_session(user)
       |> assign(:current_user, user)
       |> redirect(to: return_to)

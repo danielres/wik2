@@ -5,12 +5,13 @@ defmodule WikWeb.AuthController.Google do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Access
   alias Wik.Access.Google.Provider, as: Google
+  alias WikWeb.Auth.ReturnTo
   alias WikWeb.GoogleAvatarCache
 
   require Logger
 
   def request(conn, params) do
-    return_to = (params["return_to"] || get_session(conn, :return_to)) |> validate_return_to()
+    return_to = (params["return_to"] || get_session(conn, :return_to)) |> ReturnTo.validate()
 
     case Google.authorize_url(callback_url()) do
       {:ok, %{url: url, session_params: session_params}} ->
@@ -30,7 +31,7 @@ defmodule WikWeb.AuthController.Google do
 
   def callback(conn, params) do
     session_params = get_session(conn, :google_session_params) || %{}
-    return_to = get_session(conn, :google_return_to) |> validate_return_to()
+    return_to = get_session(conn, :google_return_to) |> ReturnTo.validate()
 
     with {:ok, %{user: google_user}} <- Google.callback(params, session_params, callback_url()),
          :ok <- require_verified_email(google_user),
@@ -82,24 +83,5 @@ defmodule WikWeb.AuthController.Google do
     else
       {:error, :google_email_unverified}
     end
-  end
-
-  defp validate_return_to(path) when is_binary(path) do
-    uri = URI.parse(path)
-
-    cond do
-      not String.starts_with?(path, "/") -> ~p"/"
-      String.starts_with?(path, "//") -> ~p"/"
-      unsafe_return_path?(path) -> ~p"/"
-      uri.host != nil -> ~p"/"
-      uri.scheme != nil -> ~p"/"
-      true -> path
-    end
-  end
-
-  defp validate_return_to(_path), do: ~p"/"
-
-  defp unsafe_return_path?(path) do
-    String.contains?(path, "\\") or Regex.match?(~r/[\x00-\x1F\x7F]/, path)
   end
 end

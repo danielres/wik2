@@ -45,6 +45,16 @@ defmodule WikWeb.Auth.SignInLiveTest do
     assert has_element?(view, ~s(#telegram-login[data-return-to="/me/tickets?tab=open"]))
   end
 
+  test "normalizes unsafe stored return_to before rendering sign in entrypoints", %{conn: conn} do
+    {:ok, view, _html} =
+      conn
+      |> init_test_session(%{return_to: "https://evil.example"})
+      |> live(~p"/sign-in")
+
+    assert has_element?(view, ~s(a#google-sign-in[href="/auth/google?return_to=%2F"]))
+    assert has_element?(view, ~s(#telegram-login[data-return-to="/"]))
+  end
+
   test "protected routes store return_to before redirecting to sign in", %{conn: conn} do
     conn = get(conn, ~p"/me/tickets")
 

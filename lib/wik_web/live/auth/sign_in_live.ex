@@ -4,6 +4,7 @@ defmodule WikWeb.Auth.SignInLive do
   @dev_routes? Application.compile_env(:wik, :dev_routes, false)
 
   alias Wik.DevAuth
+  alias WikWeb.Auth.ReturnTo
 
   @impl true
   def mount(_params, session, socket) do
@@ -76,7 +77,7 @@ defmodule WikWeb.Auth.SignInLive do
     <.link
       id="google-sign-in"
       data-testid="google-sign-in"
-      href={~p"/auth/google?return_to=#{@return_to}"}
+      href={~p"/auth/google?#{[return_to: @return_to]}"}
       class={[
         "btn btn-primary gap-2",
         "w-52",
@@ -156,11 +157,14 @@ defmodule WikWeb.Auth.SignInLive do
   end
 
   defp return_to(session) do
-    case session do
-      %{"return_to" => return_to} when is_binary(return_to) -> return_to
-      %{return_to: return_to} when is_binary(return_to) -> return_to
-      _ -> ~p"/"
-    end
+    session_return_to =
+      case session do
+        %{"return_to" => return_to} when is_binary(return_to) -> return_to
+        %{return_to: return_to} when is_binary(return_to) -> return_to
+        _ -> nil
+      end
+
+    ReturnTo.validate(session_return_to)
   end
 
   def dev_sign_in(assigns) do

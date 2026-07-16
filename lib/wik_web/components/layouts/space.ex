@@ -1,13 +1,10 @@
 defmodule WikWeb.Layouts.Space do
-  import Iconify
-
   use WikWeb, :html
 
   embed_templates "layouts/*"
 
   alias WikWeb.Components
   alias WikWeb.Components.UI
-  alias WikWeb.TenantContext
 
   attr :scope, :map,
     default: %{actor: nil, tenant: nil},

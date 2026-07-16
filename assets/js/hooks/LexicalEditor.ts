@@ -3,6 +3,7 @@ import {
   ClickAfterLastBlockExtension,
   configExtension,
   defineExtension,
+  TabIndentationExtension,
   type LexicalEditorWithDispose,
 } from "@lexical/extension";
 import { LinkNode } from "@lexical/link";
@@ -82,6 +83,7 @@ const markdownEditorBaseExtension = defineExtension({
     configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: $isYouTubeNode,
     }),
+    TabIndentationExtension,
   ],
   onError(error) {
     throw error;

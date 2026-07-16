@@ -23,6 +23,10 @@ defmodule WikWeb.Router do
     plug WikWeb.Plugs.SetErrorTrackerContext
   end
 
+  pipeline :store_return_to do
+    plug WikWeb.Plugs.StoreReturnTo
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
     plug :load_from_bearer
@@ -123,7 +127,7 @@ defmodule WikWeb.Router do
   end
 
   scope "/", WikWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :store_return_to]
 
     superadmin_error_tracker_dashboard("/errors")
 

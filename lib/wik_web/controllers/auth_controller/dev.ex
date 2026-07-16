@@ -6,6 +6,7 @@ defmodule WikWeb.AuthController.Dev do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.DevAuth
+  alias WikWeb.Auth.ReturnTo
 
   require Logger
 
@@ -48,7 +49,7 @@ defmodule WikWeb.AuthController.Dev do
 
   defp sign_in_user(conn, user) do
     with {:ok, token, _claims} <- Jwt.token_for_user(user) do
-      return_to = get_session(conn, :return_to) || ~p"/"
+      return_to = get_session(conn, :return_to) |> ReturnTo.validate()
       user = Ash.Resource.set_metadata(user, %{token: token})
 
       {:ok,

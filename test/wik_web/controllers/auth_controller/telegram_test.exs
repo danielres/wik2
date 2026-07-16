@@ -62,6 +62,21 @@ defmodule WikWeb.AuthController.TelegramTest do
     assert redirected_to(conn) == ~p"/"
   end
 
+  test "prevents redirect smuggling", %{conn: conn} do
+    backslash_conn =
+      get(conn, ~p"/auth/telegram/callback", valid_telegram_params(return_to: "/\\evil.example"))
+
+    control_conn =
+      get(
+        conn,
+        ~p"/auth/telegram/callback",
+        valid_telegram_params(return_to: "/me\nLocation: //evil.example")
+      )
+
+    assert redirected_to(backslash_conn) == ~p"/"
+    assert redirected_to(control_conn) == ~p"/"
+  end
+
   defp valid_telegram_params(opts) do
     return_to = Keyword.fetch!(opts, :return_to)
     bot_token = System.fetch_env!("TELEGRAM_BOT_TOKEN")

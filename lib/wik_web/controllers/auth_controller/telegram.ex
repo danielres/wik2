@@ -5,11 +5,12 @@ defmodule WikWeb.AuthController.Telegram do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Access
   alias Wik.Access.Telegram.Provider, as: Telegram
+  alias WikWeb.Auth.ReturnTo
 
   require Logger
 
   def callback(conn, params) do
-    return_to = params["return_to"] |> validate_return_to()
+    return_to = params["return_to"] |> ReturnTo.validate()
     params = Map.delete(params, "return_to")
 
     with {:ok, %{user: telegram_user}} <- Telegram.verify_login(params),
@@ -32,18 +33,4 @@ defmodule WikWeb.AuthController.Telegram do
         |> redirect(to: ~p"/sign-in")
     end
   end
-
-  defp validate_return_to(path) when is_binary(path) do
-    uri = URI.parse(path)
-
-    cond do
-      not String.starts_with?(path, "/") -> ~p"/"
-      String.starts_with?(path, "//") -> ~p"/"
-      uri.host != nil -> ~p"/"
-      uri.scheme != nil -> ~p"/"
-      true -> path
-    end
-  end
-
-  defp validate_return_to(_path), do: ~p"/"
 end

@@ -76,7 +76,7 @@ defmodule WikWeb.Auth.SignInLive do
     <.link
       id="google-sign-in"
       data-testid="google-sign-in"
-      href={~p"/auth/google?return_to=#{@return_to}"}
+      href={~p"/auth/google?#{[return_to: @return_to]}"}
       class={[
         "btn btn-primary gap-2",
         "w-52",

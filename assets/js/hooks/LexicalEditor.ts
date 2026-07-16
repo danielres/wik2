@@ -82,9 +82,12 @@ const markdownEditorBaseExtension = defineExtension({
   nodes: [LinkNode, YouTubeNode],
   theme: {
     list: {
+      checklist: "LEXICAL_CHECK_LIST",
       nested: {
         listitem: "LEXICAL_NESTED_LIST_ITEM",
       },
+      listitemChecked: "LEXICAL_CHECK_LIST_ITEM_CHECKED",
+      listitemUnchecked: "LEXICAL_CHECK_LIST_ITEM_UNCHECKED",
     },
   },
   dependencies: [

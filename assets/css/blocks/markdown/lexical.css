@@ -52,6 +52,45 @@
     @apply list-none;
   }
 
+  .LEXICAL_CHECK_LIST {
+    @apply list-none rounded border border-base-content/10 bg-base-content/3 py-4;
+  }
+
+  .LEXICAL_CHECK_LIST_ITEM_CHECKED,
+  .LEXICAL_CHECK_LIST_ITEM_UNCHECKED {
+    @apply relative list-none;
+    padding-left: 1.25rem;
+  }
+
+  .LEXICAL_CHECK_LIST_ITEM_CHECKED::before,
+  .LEXICAL_CHECK_LIST_ITEM_UNCHECKED::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.36em;
+    @apply size-3 rounded-sm border;
+  }
+
+  .LEXICAL_CHECK_LIST_ITEM_UNCHECKED::before {
+    @apply bg-base-content/20 border-base-content/30;
+  }
+
+  .LEXICAL_CHECK_LIST_ITEM_CHECKED::before {
+    @apply bg-success/50 border-success;
+  }
+
+  .LEXICAL_CHECK_LIST_ITEM_CHECKED::after {
+    content: "";
+    position: absolute;
+    left: 0.19rem;
+    top: 0.42em;
+    width: 0.29rem;
+    height: 0.48rem;
+    border-width: 0 0.14rem 0.16rem 0;
+    @apply border-success-content/50;
+    transform: rotate(45deg);
+  }
+
   blockquote {
     border-left: 3px solid color-mix(in oklab, currentcolor 25%, transparent);
     padding-left: 0.75rem;

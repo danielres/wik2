@@ -1,7 +1,4 @@
-import { createEmptyHistoryState, registerHistory } from "@lexical/history";
-import { registerCheckList, registerList } from "@lexical/list";
 import { registerMarkdownShortcuts } from "@lexical/markdown";
-import { registerRichText } from "@lexical/rich-text";
 import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
@@ -28,10 +25,6 @@ export function markdownEditorBehaviorExtension({
     name: "WikMarkdownEditorBehavior",
     register(editor: LexicalEditor) {
       return mergeRegister(
-        registerRichText(editor),
-        registerList(editor),
-        registerCheckList(editor),
-        registerHistory(editor, createEmptyHistoryState(), 300),
         registerMarkdownShortcuts(editor, markdownTransformers),
         registerYouTubeInsert(editor),
         registerYouTubeEditing(editor),

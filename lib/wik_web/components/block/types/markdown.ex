@@ -98,7 +98,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     wikilink_map = node_id_by_title_path |> Jason.encode!()
     wikilink_paths = node_id_by_title_path |> Map.keys() |> Jason.encode!()
     wikilink_member_map = assigns |> wikilink_member_map() |> Jason.encode!()
-    wikilink_member_usernames = assigns |> wikilink_member_usernames() |> Jason.encode!()
+    wikilink_member_usernames = wikilink_member_paths(assigns, nodes) |> Jason.encode!()
     wikilink_tag_map = assigns |> wikilink_tag_map() |> Jason.encode!()
     wikilink_tag_names = assigns |> wikilink_tag_names() |> Jason.encode!()
 
@@ -300,7 +300,8 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     Wikilinks.replace_visible(markdown, fn wikilink, path ->
       title_path = path |> String.trim()
       tag_name = title_path |> String.trim_leading("#") |> String.trim()
-      username = String.trim_leading(title_path, "@")
+      member_path = String.trim_leading(title_path, "@")
+      {username, member_suffix} = split_member_path(member_path)
 
       cond do
         title_path == "" ->
@@ -313,10 +314,10 @@ defmodule WikWeb.Components.Block.Types.Markdown do
         tag_name != title_path ->
           wikilink
 
-        username != title_path and Map.has_key?(member_username_to_membership_id_map, username) ->
-          "[#{title_path}](/#{space_slug}/wiki/members/#{username})"
+        member_path != title_path and Map.has_key?(member_username_to_membership_id_map, username) ->
+          "[#{title_path}](/#{space_slug}/wiki/members/#{username}#{member_suffix})"
 
-        username != title_path ->
+        member_path != title_path ->
           wikilink
 
         slug_path = Map.get(title_path_to_slug_path, title_path) ->
@@ -370,6 +371,14 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> Map.keys()
   end
 
+  defp wikilink_member_paths(assigns, nodes) do
+    usernames = wikilink_member_usernames(assigns)
+
+    (usernames ++ Wikilinks.member_profile_paths(nodes, usernames))
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
   defp wikilink_tag_map(%{scope: %{tenant: %{id: space_id}}}) when is_binary(space_id),
     do: Tags.tag_name_to_id_map(space_id)
 
@@ -396,4 +405,11 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     do: Tags.tag_name_to_slug_map(space_id)
 
   defp tag_name_to_slug_map(_scope), do: %{}
+
+  defp split_member_path(member_path) when is_binary(member_path) do
+    case String.split(member_path, "/", parts: 2) do
+      [username] -> {username, ""}
+      [username, suffix] -> {username, "/" <> suffix}
+    end
+  end
 end

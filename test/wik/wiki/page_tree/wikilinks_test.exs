@@ -31,11 +31,25 @@ defmodule Wik.Wiki.PageTree.WikilinksTest do
            ) == "[[member:membership-1]] and [[Soups]]"
   end
 
+  test "converts visible member subpage wikilinks to canonical membership subpage wikilinks" do
+    assert Wikilinks.usernames_to_memberships(
+             "[[@alice/test]] and [[Soups]]",
+             %{"alice" => "membership-1"}
+           ) == "[[member:membership-1/test]] and [[Soups]]"
+  end
+
   test "converts canonical membership wikilinks back to visible member wikilinks" do
     assert Wikilinks.memberships_to_usernames(
              "[[member:membership-1]] and [[node:1]]",
              %{"membership-1" => "alice"}
            ) == "[[@alice]] and [[node:1]]"
+  end
+
+  test "converts canonical membership subpage wikilinks back to visible member subpage wikilinks" do
+    assert Wikilinks.memberships_to_usernames(
+             "[[member:membership-1/test]] and [[node:1]]",
+             %{"membership-1" => "alice"}
+           ) == "[[@alice/test]] and [[node:1]]"
   end
 
   test "converts visible tag wikilinks to canonical tag wikilinks" do
@@ -56,6 +70,12 @@ defmodule Wik.Wiki.PageTree.WikilinksTest do
     assert Wikilinks.slug_path_from_title_path("Soups/Vegetable Soup") == "soups/vegetable-soup"
   end
 
+  test "lists member profile subpage paths for existing usernames" do
+    page_tree = profile_page_tree_fixture()
+
+    assert Wikilinks.member_profile_paths(page_tree.nodes, ["tom"]) == ["tom/recipes"]
+  end
+
   defp page_tree_fixture do
     %PageTree{
       nodes: [
@@ -72,6 +92,47 @@ defmodule Wik.Wiki.PageTree.WikilinksTest do
           parent_id: 1,
           slug: "vegetable-soup",
           title: "Vegetable Soup"
+        }
+      ]
+    }
+  end
+
+  defp profile_page_tree_fixture do
+    %PageTree{
+      nodes: [
+        %Node{
+          id: 1,
+          parent_id: nil,
+          slug: "members",
+          title: "Members"
+        },
+        %Node{
+          id: 2,
+          page_id: "22222222-2222-2222-2222-222222222222",
+          parent_id: 1,
+          slug: "tom",
+          title: "Tom"
+        },
+        %Node{
+          id: 3,
+          page_id: "33333333-3333-3333-3333-333333333333",
+          parent_id: 2,
+          slug: "recipes",
+          title: "Recipes"
+        },
+        %Node{
+          id: 4,
+          page_id: "44444444-4444-4444-4444-444444444444",
+          parent_id: 1,
+          slug: "sara",
+          title: "Sara"
+        },
+        %Node{
+          id: 5,
+          page_id: "55555555-5555-5555-5555-555555555555",
+          parent_id: 4,
+          slug: "notes",
+          title: "Notes"
         }
       ]
     }

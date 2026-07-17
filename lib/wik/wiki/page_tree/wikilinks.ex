@@ -45,17 +45,19 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
   def usernames_to_memberships(markdown, username_to_membership_id_map)
       when is_binary(markdown) and is_map(username_to_membership_id_map) do
     replace_visible(markdown, fn wikilink, path ->
-      username =
+      member_path =
         path
         |> String.trim()
         |> String.trim_leading("@")
 
-      if username == path do
+      {username, suffix} = split_member_path(member_path)
+
+      if member_path == path do
         wikilink
       else
         case Map.get(username_to_membership_id_map, username) do
           nil -> wikilink
-          membership_id -> "[[member:#{membership_id}]]"
+          membership_id -> "[[member:#{membership_id}#{suffix}]]"
         end
       end
     end)
@@ -64,10 +66,12 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
   @spec memberships_to_usernames(String.t(), %{String.t() => String.t()}) :: String.t()
   def memberships_to_usernames(markdown, membership_id_to_username_map)
       when is_binary(markdown) and is_map(membership_id_to_username_map) do
-    Regex.replace(@member_wikilink_regex, markdown, fn wikilink, membership_id ->
+    Regex.replace(@member_wikilink_regex, markdown, fn wikilink, member_path ->
+      {membership_id, suffix} = split_member_path(member_path)
+
       case Map.get(membership_id_to_username_map, membership_id) do
         nil -> wikilink
-        username -> "[[@#{username}]]"
+        username -> "[[@#{username}#{suffix}]]"
       end
     end)
   end
@@ -124,6 +128,29 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
     end)
   end
 
+  @spec member_profile_paths([Node.t()], [String.t()]) :: [String.t()]
+  def member_profile_paths(nodes, usernames) when is_list(nodes) and is_list(usernames) do
+    username_set = MapSet.new(usernames)
+
+    nodes
+    |> Enum.filter(&(not is_nil(&1.page_id)))
+    |> Enum.flat_map(fn node ->
+      case TreeQueries.get_node_path(nodes, node.id) |> String.split("/", parts: 3) do
+        ["members", username, suffix] ->
+          if MapSet.member?(username_set, username) and suffix != "" do
+            [username <> "/" <> suffix]
+          else
+            []
+          end
+
+        _other ->
+          []
+      end
+    end)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
   @spec tag_names_to_tag_id_map([Tag.t()]) :: %{String.t() => String.t()}
   def tag_names_to_tag_id_map(tags) when is_list(tags) do
     tags
@@ -176,5 +203,12 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
       {_name, [%Tag{} = tag]} -> [tag]
       _other -> []
     end)
+  end
+
+  defp split_member_path(member_path) when is_binary(member_path) do
+    case String.split(member_path, "/", parts: 2) do
+      [id_or_username] -> {id_or_username, ""}
+      [id_or_username, suffix] -> {id_or_username, "/" <> suffix}
+    end
   end
 end

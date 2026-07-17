@@ -120,6 +120,28 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     assert html =~ ">@alice<"
   end
 
+  test "render converts canonical member subpage wikilinks to member profile subpage links" do
+    space = generate(space())
+    user = generate(user())
+    membership = add_membership(space, user, "alice")
+    scope = %Scope{tenant: %{id: space.id, name: space.name, slug: space.slug}}
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[member:#{membership.id}/test]]"}},
+        page_tree: page_tree_fixture(space.id),
+        scope: scope
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(
+             ~s(a[href="/#{scope.tenant.slug}/wiki/members/alice/test"][data-phx-link="patch"][data-phx-link-state="push"])
+           )
+           |> Enum.any?()
+  end
+
   test "render converts canonical tag wikilinks to tag links" do
     owner = generate(user())
     space = generate(space(author: owner))
@@ -369,6 +391,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     assert html =~ "&quot;Soups&quot;:1"
     assert html =~ "&quot;Soups/Vegetable Soup&quot;:2"
     assert html =~ "&quot;alice&quot;"
+    assert html =~ "&quot;alice/test&quot;"
     assert html =~ "&quot;Dance&quot;"
   end
 
@@ -415,6 +438,26 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
           parent_id: 1,
           slug: "vegetable-soup",
           title: "Vegetable Soup"
+        },
+        %Node{
+          id: 3,
+          parent_id: nil,
+          slug: "members",
+          title: "Members"
+        },
+        %Node{
+          id: 4,
+          page_id: "44444444-4444-4444-4444-444444444444",
+          parent_id: 3,
+          slug: "alice",
+          title: "Alice"
+        },
+        %Node{
+          id: 5,
+          page_id: "55555555-5555-5555-5555-555555555555",
+          parent_id: 4,
+          slug: "test",
+          title: "Test"
         }
       ]
     }

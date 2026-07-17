@@ -91,7 +91,7 @@ defmodule WikWeb.PageLive.Components.Aside do
       </UI.panel_title>
 
       <UI.button_add
-        :if={@editing? and @can_manage_page? and @page_topic_options != []}
+        :if={@can_manage_page? and @page_topic_options != []}
         data-testid="page-topic-add"
         data-tip="Add topic"
         phx-click={JS.push("page_topic_add_start") |> UI.modal_open("page-topic-modal")}

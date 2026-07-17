@@ -299,6 +299,7 @@ defmodule WikWeb.TagLive do
               graph={@tag_graph}
               scope={@current_scope}
               tag={@tag}
+              show_stats?={false}
             />
           </section>
 

@@ -1,14 +1,19 @@
-import { createEmptyHistoryState, registerHistory } from "@lexical/history";
-import { registerCheckList, registerList } from "@lexical/list";
+import { $isListItemNode } from "@lexical/list";
 import { registerMarkdownShortcuts } from "@lexical/markdown";
-import { registerRichText } from "@lexical/rich-text";
 import {
+  $getSelection,
+  $isRangeSelection,
+  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   defineExtension,
+  INDENT_CONTENT_COMMAND,
+  KEY_TAB_COMMAND,
   mergeRegister,
+  OUTDENT_CONTENT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   type EditorState,
   type LexicalEditor,
+  type LexicalNode,
 } from "lexical";
 
 import { markdownTransformers } from "./markdown";
@@ -20,6 +25,42 @@ type MarkdownEditorBehaviorOptions = {
   onSelectionChange: () => void;
 };
 
+function nodeIsInListItem(node: LexicalNode): boolean {
+  let current: LexicalNode | null = node;
+
+  while (current) {
+    if ($isListItemNode(current)) return true;
+
+    current = current.getParent();
+  }
+
+  return false;
+}
+
+function selectionTouchesListItem(): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) return false;
+
+  return selection.getNodes().some(nodeIsInListItem);
+}
+
+function registerListTabIndent(editor: LexicalEditor): () => void {
+  return editor.registerCommand<KeyboardEvent>(
+    KEY_TAB_COMMAND,
+    (event) => {
+      if (!selectionTouchesListItem()) return false;
+
+      event.preventDefault();
+
+      return editor.dispatchCommand(
+        event.shiftKey ? OUTDENT_CONTENT_COMMAND : INDENT_CONTENT_COMMAND,
+        undefined,
+      );
+    },
+    COMMAND_PRIORITY_HIGH,
+  );
+}
+
 export function markdownEditorBehaviorExtension({
   onChange,
   onSelectionChange,
@@ -28,10 +69,7 @@ export function markdownEditorBehaviorExtension({
     name: "WikMarkdownEditorBehavior",
     register(editor: LexicalEditor) {
       return mergeRegister(
-        registerRichText(editor),
-        registerList(editor),
-        registerCheckList(editor),
-        registerHistory(editor, createEmptyHistoryState(), 300),
+        registerListTabIndent(editor),
         registerMarkdownShortcuts(editor, markdownTransformers),
         registerYouTubeInsert(editor),
         registerYouTubeEditing(editor),

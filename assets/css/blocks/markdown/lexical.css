@@ -48,6 +48,15 @@
     padding-left: 1.5rem;
   }
 
+  .LEXICAL_NESTED_LIST_ITEM {
+    @apply list-none pl-0;
+  }
+
+  .LEXICAL_NESTED_LIST_ITEM::before,
+  .LEXICAL_NESTED_LIST_ITEM::after {
+    content: none;
+  }
+
   blockquote {
     border-left: 3px solid color-mix(in oklab, currentcolor 25%, transparent);
     padding-left: 0.75rem;

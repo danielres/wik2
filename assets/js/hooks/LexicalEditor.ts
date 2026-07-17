@@ -3,15 +3,17 @@ import {
   ClickAfterLastBlockExtension,
   configExtension,
   defineExtension,
+  TabIndentationExtension,
   type LexicalEditorWithDispose,
 } from "@lexical/extension";
+import { HistoryExtension } from "@lexical/history";
 import { LinkNode } from "@lexical/link";
-import { ListItemNode, ListNode } from "@lexical/list";
+import { CheckListExtension, ListExtension } from "@lexical/list";
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from "@lexical/markdown";
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
+import { RichTextExtension } from "@lexical/rich-text";
 import {
   mergeRegister,
   type EditorState,
@@ -77,11 +79,28 @@ function dispatchTextareaInput(textarea: HTMLTextAreaElement, value: string): vo
 const markdownEditorBaseExtension = defineExtension({
   name: "WikMarkdownEditor",
   namespace: "WikMarkdownEditor",
-  nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, YouTubeNode],
+  nodes: [LinkNode, YouTubeNode],
+  theme: {
+    list: {
+      checklist: "LEXICAL_CHECK_LIST",
+      nested: {
+        listitem: "LEXICAL_NESTED_LIST_ITEM",
+      },
+      listitemChecked: "LEXICAL_CHECK_LIST_ITEM_CHECKED",
+      listitemUnchecked: "LEXICAL_CHECK_LIST_ITEM_UNCHECKED",
+    },
+  },
   dependencies: [
+    RichTextExtension,
+    configExtension(ListExtension, {
+      hasStrictIndent: true,
+    }),
+    CheckListExtension,
+    HistoryExtension,
     configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: $isYouTubeNode,
     }),
+    TabIndentationExtension,
   ],
   onError(error) {
     throw error;

@@ -43,8 +43,7 @@ defmodule WikWeb.Components.Block.Types.Backlinks do
         data-testid="backlinks-list"
       >
         <li :for={backlink <- @backlinks}>
-          <div class="flex gap-3 items-center">
-            <span class="opacity-50">·</span>
+          <div class="flex gap-3 items-center text-sm">
             <Page.breadcrumbs node={backlink} page_tree={@page_tree} scope={@scope} />
           </div>
         </li>

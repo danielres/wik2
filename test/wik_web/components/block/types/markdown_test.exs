@@ -391,6 +391,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     assert html =~ "&quot;Soups&quot;:1"
     assert html =~ "&quot;Soups/Vegetable Soup&quot;:2"
     assert html =~ "&quot;alice&quot;"
+    assert html =~ "&quot;alice/test&quot;"
     assert html =~ "&quot;Dance&quot;"
   end
 
@@ -437,6 +438,26 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
           parent_id: 1,
           slug: "vegetable-soup",
           title: "Vegetable Soup"
+        },
+        %Node{
+          id: 3,
+          parent_id: nil,
+          slug: "members",
+          title: "Members"
+        },
+        %Node{
+          id: 4,
+          page_id: "44444444-4444-4444-4444-444444444444",
+          parent_id: 3,
+          slug: "alice",
+          title: "Alice"
+        },
+        %Node{
+          id: 5,
+          page_id: "55555555-5555-5555-5555-555555555555",
+          parent_id: 4,
+          slug: "test",
+          title: "Test"
         }
       ]
     }

@@ -98,7 +98,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     wikilink_map = node_id_by_title_path |> Jason.encode!()
     wikilink_paths = node_id_by_title_path |> Map.keys() |> Jason.encode!()
     wikilink_member_map = assigns |> wikilink_member_map() |> Jason.encode!()
-    wikilink_member_usernames = assigns |> wikilink_member_usernames() |> Jason.encode!()
+    wikilink_member_usernames = wikilink_member_paths(assigns, nodes) |> Jason.encode!()
     wikilink_tag_map = assigns |> wikilink_tag_map() |> Jason.encode!()
     wikilink_tag_names = assigns |> wikilink_tag_names() |> Jason.encode!()
 
@@ -369,6 +369,14 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     assigns
     |> wikilink_member_map()
     |> Map.keys()
+  end
+
+  defp wikilink_member_paths(assigns, nodes) do
+    usernames = wikilink_member_usernames(assigns)
+
+    (usernames ++ Wikilinks.member_profile_paths(nodes, usernames))
+    |> Enum.uniq()
+    |> Enum.sort()
   end
 
   defp wikilink_tag_map(%{scope: %{tenant: %{id: space_id}}}) when is_binary(space_id),

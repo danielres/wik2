@@ -128,6 +128,29 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
     end)
   end
 
+  @spec member_profile_paths([Node.t()], [String.t()]) :: [String.t()]
+  def member_profile_paths(nodes, usernames) when is_list(nodes) and is_list(usernames) do
+    username_set = MapSet.new(usernames)
+
+    nodes
+    |> Enum.filter(&(not is_nil(&1.page_id)))
+    |> Enum.flat_map(fn node ->
+      case TreeQueries.get_node_path(nodes, node.id) |> String.split("/", parts: 3) do
+        ["members", username, suffix] ->
+          if MapSet.member?(username_set, username) and suffix != "" do
+            [username <> "/" <> suffix]
+          else
+            []
+          end
+
+        _other ->
+          []
+      end
+    end)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
   @spec tag_names_to_tag_id_map([Tag.t()]) :: %{String.t() => String.t()}
   def tag_names_to_tag_id_map(tags) when is_list(tags) do
     tags

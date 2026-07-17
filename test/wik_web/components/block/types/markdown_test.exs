@@ -120,6 +120,28 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     assert html =~ ">@alice<"
   end
 
+  test "render converts canonical member subpage wikilinks to member profile subpage links" do
+    space = generate(space())
+    user = generate(user())
+    membership = add_membership(space, user, "alice")
+    scope = %Scope{tenant: %{id: space.id, name: space.name, slug: space.slug}}
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[member:#{membership.id}/test]]"}},
+        page_tree: page_tree_fixture(space.id),
+        scope: scope
+      })
+
+    document = LazyHTML.from_fragment(html)
+
+    assert document
+           |> LazyHTML.query(
+             ~s(a[href="/#{scope.tenant.slug}/wiki/members/alice/test"][data-phx-link="patch"][data-phx-link-state="push"])
+           )
+           |> Enum.any?()
+  end
+
   test "render converts canonical tag wikilinks to tag links" do
     owner = generate(user())
     space = generate(space(author: owner))

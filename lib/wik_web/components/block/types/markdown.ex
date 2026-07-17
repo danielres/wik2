@@ -300,7 +300,8 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     Wikilinks.replace_visible(markdown, fn wikilink, path ->
       title_path = path |> String.trim()
       tag_name = title_path |> String.trim_leading("#") |> String.trim()
-      username = String.trim_leading(title_path, "@")
+      member_path = String.trim_leading(title_path, "@")
+      {username, member_suffix} = split_member_path(member_path)
 
       cond do
         title_path == "" ->
@@ -313,10 +314,10 @@ defmodule WikWeb.Components.Block.Types.Markdown do
         tag_name != title_path ->
           wikilink
 
-        username != title_path and Map.has_key?(member_username_to_membership_id_map, username) ->
-          "[#{title_path}](/#{space_slug}/wiki/members/#{username})"
+        member_path != title_path and Map.has_key?(member_username_to_membership_id_map, username) ->
+          "[#{title_path}](/#{space_slug}/wiki/members/#{username}#{member_suffix})"
 
-        username != title_path ->
+        member_path != title_path ->
           wikilink
 
         slug_path = Map.get(title_path_to_slug_path, title_path) ->
@@ -396,4 +397,11 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     do: Tags.tag_name_to_slug_map(space_id)
 
   defp tag_name_to_slug_map(_scope), do: %{}
+
+  defp split_member_path(member_path) when is_binary(member_path) do
+    case String.split(member_path, "/", parts: 2) do
+      [username] -> {username, ""}
+      [username, suffix] -> {username, "/" <> suffix}
+    end
+  end
 end

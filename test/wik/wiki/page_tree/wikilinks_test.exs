@@ -31,11 +31,25 @@ defmodule Wik.Wiki.PageTree.WikilinksTest do
            ) == "[[member:membership-1]] and [[Soups]]"
   end
 
+  test "converts visible member subpage wikilinks to canonical membership subpage wikilinks" do
+    assert Wikilinks.usernames_to_memberships(
+             "[[@alice/test]] and [[Soups]]",
+             %{"alice" => "membership-1"}
+           ) == "[[member:membership-1/test]] and [[Soups]]"
+  end
+
   test "converts canonical membership wikilinks back to visible member wikilinks" do
     assert Wikilinks.memberships_to_usernames(
              "[[member:membership-1]] and [[node:1]]",
              %{"membership-1" => "alice"}
            ) == "[[@alice]] and [[node:1]]"
+  end
+
+  test "converts canonical membership subpage wikilinks back to visible member subpage wikilinks" do
+    assert Wikilinks.memberships_to_usernames(
+             "[[member:membership-1/test]] and [[node:1]]",
+             %{"membership-1" => "alice"}
+           ) == "[[@alice/test]] and [[node:1]]"
   end
 
   test "converts visible tag wikilinks to canonical tag wikilinks" do

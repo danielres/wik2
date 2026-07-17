@@ -229,6 +229,7 @@ defmodule WikWeb.Components.Tag do
 
   attr :graph, :map, default: nil
   attr :scope, :map, required: true
+  attr :show_stats?, :boolean, default: true
   attr :tag, :map, required: true
 
   def descendants(assigns) do
@@ -253,6 +254,7 @@ defmodule WikWeb.Components.Tag do
         editing?={false}
         nodes={@nodes}
         selected_tag_id={@tag.id}
+        show_stats?={@show_stats?}
         space_slug={@space_slug}
       />
     </div>

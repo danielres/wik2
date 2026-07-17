@@ -8,9 +8,10 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
 
   attr :editing?, :boolean, default: false
-  attr :space_slug, :string, required: true
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
+  attr :show_stats?, :boolean, default: true
+  attr :space_slug, :string, required: true
 
   def render(assigns) do
     ~H"""
@@ -22,11 +23,12 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
       </div>
     <% else %>
       <.tag_nodes
+        depth={0}
         editing?={@editing?}
-        space_slug={@space_slug}
         nodes={@nodes}
         selected_tag_id={@selected_tag_id}
-        depth={0}
+        show_stats?={@show_stats?}
+        space_slug={@space_slug}
       />
     <% end %>
     """
@@ -34,9 +36,10 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   attr :depth, :integer, required: true
   attr :editing?, :boolean, default: false
-  attr :space_slug, :string, required: true
   attr :nodes, :list, required: true
   attr :selected_tag_id, :string, default: nil
+  attr :show_stats?, :boolean, default: true
+  attr :space_slug, :string, required: true
 
   defp tag_nodes(assigns) do
     ~H"""
@@ -45,9 +48,10 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         <.tag_node
           depth={@depth + 1}
           editing?={@editing?}
-          space_slug={@space_slug}
           node={node}
           selected_tag_id={@selected_tag_id}
+          space_slug={@space_slug}
+          show_stats?={@show_stats?}
         />
       </li>
     </ul>
@@ -56,9 +60,10 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
 
   attr :depth, :integer, required: true
   attr :editing?, :boolean, default: false
-  attr :space_slug, :string, required: true
   attr :node, :map, required: true
   attr :selected_tag_id, :string, default: nil
+  attr :show_stats?, :boolean, default: true
+  attr :space_slug, :string, required: true
 
   defp tag_node(assigns) do
     selected? = assigns.selected_tag_id == assigns.node.tag.id
@@ -150,46 +155,48 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
           </div>
         </.link>
 
-        <.button
-          :if={not @editing?}
-          class={[
-            "ml-auto",
-            @external_event_count == 0 && "opacity-10",
-            @external_event_count > 0 &&
-              "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-          ]}
-          data-testid={"tag-event-count-#{@node.dom_id}"}
-        >
-          <UI.icon_event_with_count count={@external_event_count} />
-        </.button>
+        <%= if @show_stats? do %>
+          <.button
+            :if={not @editing?}
+            class={[
+              "ml-auto",
+              @external_event_count == 0 && "opacity-10",
+              @external_event_count > 0 &&
+                "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+            ]}
+            data-testid={"tag-event-count-#{@node.dom_id}"}
+          >
+            <UI.icon_event_with_count count={@external_event_count} />
+          </.button>
 
-        <.button
-          :if={not @editing?}
-          class={[
-            "ml-auto",
-            @page_tagging_count == 0 && "opacity-10",
-            @page_tagging_count > 0 &&
-              "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-          ]}
-          data-testid={"tag-page-count-#{@node.dom_id}"}
-          phx-click={UI.modal_open("#{@node.dom_id}-pages-count-details-modal")}
-        >
-          <UI.icon_document_with_count count={@page_tagging_count} />
-        </.button>
+          <.button
+            :if={not @editing?}
+            class={[
+              "ml-auto",
+              @page_tagging_count == 0 && "opacity-10",
+              @page_tagging_count > 0 &&
+                "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+            ]}
+            data-testid={"tag-page-count-#{@node.dom_id}"}
+            phx-click={UI.modal_open("#{@node.dom_id}-pages-count-details-modal")}
+          >
+            <UI.icon_document_with_count count={@page_tagging_count} />
+          </.button>
 
-        <.button
-          :if={not @editing?}
-          class={[
-            "ml-auto",
-            @membership_tagging_count == 0 && "opacity-10",
-            @membership_tagging_count > 0 &&
-              "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-          ]}
-          data-testid={"tag-count-#{@node.dom_id}"}
-          phx-click={UI.modal_open("#{@node.dom_id}-members-count-details-modal")}
-        >
-          <UI.icon_user_with_count count={@membership_tagging_count} />
-        </.button>
+          <.button
+            :if={not @editing?}
+            class={[
+              "ml-auto",
+              @membership_tagging_count == 0 && "opacity-10",
+              @membership_tagging_count > 0 &&
+                "opacity-60 group-hover:opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+            ]}
+            data-testid={"tag-count-#{@node.dom_id}"}
+            phx-click={UI.modal_open("#{@node.dom_id}-members-count-details-modal")}
+          >
+            <UI.icon_user_with_count count={@membership_tagging_count} />
+          </.button>
+        <% end %>
 
         <UI.modal
           :if={not @editing? and @page_tagging_count > 0}
@@ -303,9 +310,10 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         :if={@node.children != []}
         depth={@depth}
         editing?={@editing?}
-        space_slug={@space_slug}
         nodes={@node.children}
         selected_tag_id={@selected_tag_id}
+        show_stats?={@show_stats?}
+        space_slug={@space_slug}
       />
     </div>
     """

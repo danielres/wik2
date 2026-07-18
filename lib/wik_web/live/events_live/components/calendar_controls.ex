@@ -57,7 +57,7 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
           >
             <div class="min-w-0">
               <div class="text-xs font-medium truncate flex items-center gap-1">
-                <.icon name="hero-calendar-days-micro" class="opacity-60" />
+                <.icon name="hero-calendar-micro" class="opacity-60" />
                 {SubscriptionState.display_name(@subscriptions, subscription)}
               </div>
               <div

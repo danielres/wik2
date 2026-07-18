@@ -61,7 +61,7 @@ defmodule WikWeb.EventsLive do
                 class="truncate text-xs opacity-60 flex items-center gap-1"
                 data-testid={"external-event-calendar-name-#{item.id}"}
               >
-                <.icon name="hero-calendar-days-micro" class="opacity-60" />
+                <.icon name="hero-calendar-micro" class="opacity-60" />
                 {item.calendar_name}
               </div>
             </:meta>

@@ -13,6 +13,7 @@ defmodule WikWeb.Components.Event.Timeline do
   attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
+  attr :mask_class, :string, default: "bg-base-100"
 
   slot :meta do
     attr :item, :map
@@ -43,7 +44,11 @@ defmodule WikWeb.Components.Event.Timeline do
         data-testid={"events-year-#{year_group.year}"}
       >
         <h2
-          class={["text-xl font-semibold", "sticky bg-base-100 z-[29] pt-4"]}
+          class={[
+            "text-xl font-semibold",
+            "sticky z-[29] pt-4",
+            @mask_class
+          ]}
           style="top: var(--_top)"
         >
           {year_group.year}
@@ -58,7 +63,8 @@ defmodule WikWeb.Components.Event.Timeline do
           <h3
             class={[
               "text-sm font-semibold uppercase tracking-wide text-base-content/80",
-              "sticky bg-base-100 z-[28]"
+              "sticky z-[28]",
+              @mask_class
             ]}
             style="top: calc(var(--_top) + 2.5rem)"
           >
@@ -74,8 +80,9 @@ defmodule WikWeb.Components.Event.Timeline do
             <h4
               class={[
                 "text-sm font-medium tracking-wide text-base-content/70",
-                "sticky bg-base-100 z-[27]",
-                "pb-2"
+                "sticky z-[27]",
+                "pb-2",
+                @mask_class
               ]}
               style="top: calc(var(--_top) + 2.5rem + 1rem)"
             >

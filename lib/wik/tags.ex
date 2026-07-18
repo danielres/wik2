@@ -13,6 +13,7 @@ defmodule Wik.Tags do
   alias Wik.Blocks
   alias Wik.Blocks.Block
   alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Events.ExternalEvent
   alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
@@ -285,6 +286,17 @@ defmodule Wik.Tags do
     |> Query.sort(interest_level: :desc)
   end
 
+  def list_tag_external_events(%Tag{} = tag, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    with {:ok, taggings} <- list_tag_external_calendar_subscription_taggings(tag, scope) do
+      taggings
+      |> Enum.map(& &1.taggable_id)
+      |> Enum.uniq()
+      |> list_upcoming_external_events(scope)
+    end
+  end
+
   def list_space_tags(scope) do
     Tag
     |> Query.sort(name: :asc)
@@ -359,6 +371,29 @@ defmodule Wik.Tags do
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
     |> Query.load([:tag, :tagged_by_membership])
     |> Query.sort(interest_level: :desc)
+  end
+
+  defp list_tag_external_calendar_subscription_taggings(%Tag{} = tag, scope) do
+    Tagging
+    |> Query.filter(tag_id == ^tag.id and taggable_type == "external_calendar_subscription")
+    |> Ash.read(scope: scope)
+  end
+
+  defp list_upcoming_external_events([], _scope), do: {:ok, []}
+
+  defp list_upcoming_external_events(subscription_ids, scope) do
+    today_start = Date.utc_today() |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+
+    ExternalEvent
+    |> Query.filter(
+      subscription_id in ^subscription_ids and
+        not is_nil(starts_at) and
+        not is_nil(tz) and
+        (starts_at >= ^today_start or ends_at >= ^today_start)
+    )
+    |> Query.load(:subscription)
+    |> Query.sort(starts_at: :asc, id: :asc)
+    |> Ash.read(scope: scope)
   end
 
   defp tags_with_names(space_id) do

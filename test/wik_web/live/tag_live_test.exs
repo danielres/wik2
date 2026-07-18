@@ -7,6 +7,9 @@ defmodule WikWeb.TagLiveTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
+  alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Events.ExternalEvent
+  alias Wik.Repo
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Wiki
@@ -261,6 +264,63 @@ defmodule WikWeb.TagLiveTest do
     assert_tag_page_pages_section_works(conn)
   end
 
+  test "tag page lists upcoming external events inherited from tagged calendars", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: scope)
+
+    {:ok, subscription} =
+      ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope
+      )
+
+    assert {:ok, subscription} =
+             ExternalCalendarSubscription.update_custom_name(
+               subscription,
+               %{custom_name: "Custom calendar"},
+               scope: scope
+             )
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               subscription,
+               owner_membership,
+               tag.id,
+               %{dimensions: %{"relevancy" => 7}},
+               scope: scope
+             )
+
+    upcoming_event = external_event_fixture(space, subscription, title: "Upcoming dance")
+    past_event = external_event_fixture(space, subscription, starts_at: ~U[2020-01-01 18:00:00Z])
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics/#{tag.slug}")
+
+    assert has_element?(view, testid("tag-events"))
+
+    assert has_element?(
+             view,
+             ~s(a[href="/#{space.slug}/events?ext=#{upcoming_event.id}"][data-testid="event-open-external:#{upcoming_event.id}"])
+           )
+
+    assert has_element?(
+             view,
+             testid("tag-external-event-calendar-name-external:#{upcoming_event.id}"),
+             "Custom calendar"
+           )
+
+    refute has_element?(
+             view,
+             testid("event-open-external:#{past_event.id}")
+           )
+  end
+
   defp assert_tag_page_pages_section_works(conn) do
     owner = generate(user())
     space = generate(space(author: owner))
@@ -387,6 +447,41 @@ defmodule WikWeb.TagLiveTest do
       :nomatch -> nil
     end
   end
+
+  defp external_event_fixture(space, subscription, attrs) do
+    default_starts_at =
+      Date.utc_today()
+      |> Date.add(7)
+      |> DateTime.new!(~T[18:00:00], "Etc/UTC")
+      |> with_usec_precision()
+
+    starts_at = attrs |> Keyword.get(:starts_at, default_starts_at) |> with_usec_precision()
+
+    ends_at =
+      attrs |> Keyword.get(:ends_at, DateTime.add(starts_at, 2, :hour)) |> with_usec_precision()
+
+    Repo.insert!(%ExternalEvent{
+      id: Ash.UUIDv7.generate(),
+      all_day: false,
+      calendar_name: "Community calendar",
+      description: "Imported from an external calendar",
+      ends_at: ends_at,
+      event_url: nil,
+      external_occurrence_key: "single-#{Ash.UUIDv7.generate()}",
+      external_recurrence_id: nil,
+      external_uid: "external-#{Ash.UUIDv7.generate()}",
+      last_seen_at: DateTime.utc_now(),
+      location: "Riverside Hall",
+      space_id: space.id,
+      starts_at: starts_at,
+      status: :published,
+      subscription_id: subscription.id,
+      title: Keyword.get(attrs, :title, "External event"),
+      tz: "Etc/UTC"
+    })
+  end
+
+  defp with_usec_precision(datetime), do: %{datetime | microsecond: {0, 6}}
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}
 end

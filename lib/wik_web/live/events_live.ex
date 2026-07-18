@@ -38,7 +38,7 @@ defmodule WikWeb.EventsLive do
       scope={@current_scope}
     >
       <Layouts.space presences={@presences} scope={@current_scope} view="events">
-        <div class="space-y-6" data-testid="events-page">
+        <div class="space-y-6 max-w-[80ch]" data-testid="events-page">
           <div class="bg-base-200/70 rounded px-4 py-4 -mt-4">
             <EventsLive.Components.CalendarControls.render
               timeline={@timeline}

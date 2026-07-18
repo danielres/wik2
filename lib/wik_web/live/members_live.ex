@@ -49,13 +49,16 @@ defmodule WikWeb.MembersLive do
             <UI.button_unlock phx-click="toggle_edit_mode" />
           <% end %>
         </:actions>
-        <Components.Block.Types.Members.render
-          event_membership_type_change_start="membership_type_change_start"
-          event_transfer_ownership_start="transfer_ownership_start"
-          scope={@current_scope}
-          block={%{id: @members_block_id}}
-          actions?={@editable? and @editing?}
-        />
+
+        <div class="max-w-[80ch]">
+          <Components.Block.Types.Members.render
+            event_membership_type_change_start="membership_type_change_start"
+            event_transfer_ownership_start="transfer_ownership_start"
+            scope={@current_scope}
+            block={%{id: @members_block_id}}
+            actions?={@editable? and @editing?}
+          />
+        </div>
       </Layouts.space>
     </Layouts.app>
 

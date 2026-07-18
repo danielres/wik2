@@ -242,9 +242,7 @@ defmodule WikWeb.Components.Tag do
       |> assign(:space_slug, assigns.scope.tenant.slug)
 
     ~H"""
-    <div class="space-y-2" data-testid="tag-descendants">
-      <UI.panel_title>Sub-topics</UI.panel_title>
-
+    <div data-testid="tag-descendants">
       <div :if={@nodes == []} class="text-sm opacity-50">
         No sub-topics.
       </div>

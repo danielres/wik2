@@ -294,37 +294,6 @@ defmodule WikWeb.TagLive do
         </:actions>
 
         <:aside :if={not @editing?}>
-          <section :if={@show_descendants?}>
-            <TagComponent.descendants
-              graph={@tag_graph}
-              scope={@current_scope}
-              tag={@tag}
-              show_stats?={false}
-            />
-          </section>
-
-          <section :if={@tag_page_taggings != []} data-testid="tag-pages">
-            <% relevancy_dimension = Dimensions.get!("page", "relevancy") %>
-
-            <UI.panel_title>
-              <div>Pages</div>
-            </UI.panel_title>
-
-            <DimensionsList.render
-              dimension={relevancy_dimension}
-              item_id={:id}
-              items={@tag_page_taggings}
-              level={:relevancy_level}
-              list_testid="tag-page-list"
-              navigate={&~p"/#{@current_scope.tenant.slug}/wiki/#{&1.path_segments}"}
-              testid_prefix="tag-page"
-            >
-              <:title :let={page}>
-                <div class="text-sm truncate">{page.title}</div>
-              </:title>
-            </DimensionsList.render>
-          </section>
-
           <section>
             <div class="flex justify-between items-baseline">
               <UI.panel_title>
@@ -454,14 +423,6 @@ defmodule WikWeb.TagLive do
             </div>
           </UI.page_head>
 
-          <MembershipTagging.list_for_tag
-            :if={@tagging_count > 0}
-            active_sort={@selected_member_tagging_sort}
-            query={@taggings_query}
-            scope={@current_scope}
-            tag={@tag}
-          />
-
           <section :if={@editing? and @tag_form != nil}>
             <TagComponent.form
               action_label="Update tag"
@@ -483,6 +444,49 @@ defmodule WikWeb.TagLive do
               scope={@current_scope}
               submit="primary_block_submit"
               text={@primary_block_version_text}
+            />
+          </section>
+
+          <section
+            :if={@tagging_count > 0}
+            class="mt-16"
+          >
+            <UI.panel_title>
+              <.icon name="hero-user-micro" />
+              <span>Members</span>
+            </UI.panel_title>
+
+            <MembershipTagging.list_for_tag
+              active_sort={@selected_member_tagging_sort}
+              query={@taggings_query}
+              scope={@current_scope}
+              tag={@tag}
+              class="-mt-4"
+            />
+          </section>
+
+          <section :if={@tag_page_taggings != []} data-testid="tag-pages" class="mt-12">
+            <UI.panel_title>
+              <.icon name="hero-book-open-micro" />
+              <span>Pages</span>
+            </UI.panel_title>
+
+            <div class="bg-base-200 p-4 rounded-box">
+              <.page_taggings {assigns} />
+            </div>
+          </section>
+
+          <section :if={@show_descendants?} class="mt-12">
+            <UI.panel_title>
+              <.icon name="hero-tag-micro" />
+              <span>Sub-topics</span>
+            </UI.panel_title>
+
+            <TagComponent.descendants
+              graph={@tag_graph}
+              scope={@current_scope}
+              tag={@tag}
+              show_stats?={true}
             />
           </section>
         </div>
@@ -507,6 +511,26 @@ defmodule WikWeb.TagLive do
         tenant={@current_scope.tenant}
       />
     </Modal.render>
+    """
+  end
+
+  def page_taggings(assigns) do
+    ~H"""
+    <% relevancy_dimension = Dimensions.get!("page", "relevancy") %>
+
+    <DimensionsList.render
+      dimension={relevancy_dimension}
+      item_id={:id}
+      items={@tag_page_taggings}
+      level={:relevancy_level}
+      list_testid="tag-page-list"
+      navigate={&~p"/#{@current_scope.tenant.slug}/wiki/#{&1.path_segments}"}
+      testid_prefix="tag-page"
+    >
+      <:title :let={page}>
+        <div class="text-sm truncate">{page.title}</div>
+      </:title>
+    </DimensionsList.render>
     """
   end
 

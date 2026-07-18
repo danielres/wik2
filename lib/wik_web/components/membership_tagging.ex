@@ -227,6 +227,7 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :query, :any, required: true
   attr :scope, :map, required: true
   attr :tag, :map, required: true
+  attr :class, :string, default: ""
 
   def list_for_tag(assigns) do
     assigns =
@@ -238,7 +239,10 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div
       :if={@query != nil}
-      class="overflow-hidden"
+      class={[
+        "overflow-hidden",
+        @class
+      ]}
       data-testid="tag-member-taggings-table"
     >
       <div

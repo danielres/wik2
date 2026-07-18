@@ -69,8 +69,8 @@
         </UI.page_head>
 
         <div class={[
-          "grid grid-cols-1 gap-4",
-          has_area?(@page, :aside) && "md:grid-cols-[minmax(0,1fr)_18rem]"
+          has_area?(@page, :aside) && "lg:grid lg:grid-cols-[3fr_2fr] gap-4",
+          "[&>*]:max-w-[80ch]"
         ]}>
           <PageLive.Components.Area.render
             area={:main}

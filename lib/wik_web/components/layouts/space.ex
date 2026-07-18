@@ -80,7 +80,7 @@ defmodule WikWeb.Layouts.Space do
         </div>
       </:aside>
 
-      <.container class="my-8 max-w-3xl z-0">
+      <.container class="my-8 z-0">
         {render_slot(@inner_block)}
       </.container>
     </UI.drawer>

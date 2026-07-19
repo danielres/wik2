@@ -13,7 +13,6 @@ defmodule Wik.Tags do
   alias Wik.Blocks
   alias Wik.Blocks.Block
   alias Wik.Events.ExternalCalendarSubscription
-  alias Wik.Events.ExternalEvent
   alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
@@ -382,17 +381,9 @@ defmodule Wik.Tags do
   defp list_upcoming_external_events([], _scope), do: {:ok, []}
 
   defp list_upcoming_external_events(subscription_ids, scope) do
-    yesterday_start = Date.utc_today() |> Date.add(-1) |> DateTime.new!(~T[00:00:00], "Etc/UTC")
-
-    ExternalEvent
-    |> Query.filter(
-      subscription_id in ^subscription_ids and
-        not is_nil(starts_at) and
-        not is_nil(tz) and
-        (starts_at >= ^yesterday_start or ends_at >= ^yesterday_start)
-    )
+    Wik.Events.upcoming_external_events_query()
+    |> Query.filter(subscription_id in ^subscription_ids)
     |> Query.load(:subscription)
-    |> Query.sort(starts_at: :asc, id: :asc)
     |> Ash.read(scope: scope)
   end
 

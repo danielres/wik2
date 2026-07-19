@@ -138,15 +138,10 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   end
 
   defp read_external_events(scope, future_windows) do
-    today_start = DateTime.new!(Date.utc_today(), ~T[00:00:00], "Etc/UTC")
     future_window_end = future_window_end(future_windows)
 
     query =
-      Events.external_events_query()
-      |> Events.scheduled_external_events_query()
-      |> Query.filter(
-        (starts_at >= ^today_start or ends_at >= ^today_start) and starts_at <= ^future_window_end
-      )
+      Events.upcoming_external_events_query(until: future_window_end)
 
     case Ash.read(query, scope: scope) do
       {:ok, events} -> {:ok, events}

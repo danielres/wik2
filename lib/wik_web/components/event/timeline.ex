@@ -5,6 +5,7 @@ defmodule WikWeb.Components.Event.Timeline do
   alias WikWeb.Components.Event
   alias WikWeb.Components.LevelMeter
   alias WikWeb.Components.User
+  alias WikWeb.Components.UI
 
   attr :current_scope, :map, required: true
   attr :grouped_items, :list, default: []
@@ -12,12 +13,9 @@ defmodule WikWeb.Components.Event.Timeline do
   attr :mask_class, :string, default: "bg-base-100"
   attr :more_external_future?, :boolean, default: false
   attr :show_external?, :boolean, default: false
+  attr :source_label_mode, :atom, default: :local
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
-
-  slot :meta do
-    attr :item, :map
-  end
 
   def grouped_list(assigns) do
     ~H"""
@@ -81,7 +79,7 @@ defmodule WikWeb.Components.Event.Timeline do
               {day_group.label}
             </h4>
 
-            <div class="grid gap-2 mb-8">
+            <div class="grid gap-4 mb-8">
               <article
                 :for={item <- day_group.items}
                 id={timeline_dom_id(item)}
@@ -112,8 +110,8 @@ defmodule WikWeb.Components.Event.Timeline do
                         current_scope={@current_scope}
                         grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
                         item={item}
+                        source_label_mode={@source_label_mode}
                         user_tz={@user_tz}
-                        meta={@meta}
                       />
                     </.link>
                   </div>
@@ -122,8 +120,9 @@ defmodule WikWeb.Components.Event.Timeline do
                     class={[
                       item.participations == [] &&
                         [
-                          "border-[1.5px] border-dashed border-base-content/15",
-                          "opacity-50 hover:opacity-80 transition"
+                          "border-l-[1.7px] border-dashed border-base-content/35 rounded",
+                          "bg-base-content/3",
+                          "opacity-50 hover:opacity-100 transition"
                         ],
                       item.participations != [] &&
                         [
@@ -152,7 +151,7 @@ defmodule WikWeb.Components.Event.Timeline do
                         current_scope={@current_scope}
                         grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
                         item={item}
-                        meta={@meta}
+                        source_label_mode={@source_label_mode}
                         user_tz={@user_tz}
                       />
                     </.link>
@@ -180,13 +179,17 @@ defmodule WikWeb.Components.Event.Timeline do
   attr :current_scope, :map, required: true
   attr :grouped_date, :any, default: nil
   attr :item, :map, required: true
-  attr :meta, :any, default: []
+  attr :source_label_mode, :atom, required: true
   attr :user_tz, :string, required: true
 
   defp timeline_item_body(assigns) do
     ~H"""
     <div class="min-w-0 space-y-1">
-      <.timeline_item_body_head item={@item} meta={@meta} />
+      <.timeline_item_body_head
+        current_scope={@current_scope}
+        item={@item}
+        source_label_mode={@source_label_mode}
+      />
 
       <div class="truncate text-sm opacity-80" data-testid={timeline_schedule_testid(@item)}>
         <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
@@ -218,14 +221,20 @@ defmodule WikWeb.Components.Event.Timeline do
     """
   end
 
+  attr :current_scope, :map, required: true
   attr :item, :map, required: true
-  attr :meta, :any, required: true
+  attr :source_label_mode, :atom, required: true
 
   defp timeline_item_body_head(assigns) do
     ~H"""
     <div class="flex flex-wrap items-center gap-2 justify-between">
       <div>
-        <div class="mb-1">{render_slot(@meta, @item)}</div>
+        <.timeline_item_source
+          current_scope={@current_scope}
+          item={@item}
+          source_label_mode={@source_label_mode}
+        />
+
         <h2 class={[
           "text-base font-medium leading-tight",
           "space-y-2",
@@ -236,6 +245,48 @@ defmodule WikWeb.Components.Event.Timeline do
       </div>
 
       <Event.event_status event={@item.event} />
+    </div>
+    """
+  end
+
+  attr :current_scope, :map, required: true
+  attr :item, :map, required: true
+  attr :source_label_mode, :atom, required: true
+
+  defp timeline_item_source(%{source_label_mode: :aggregate} = assigns) do
+    ~H"""
+    <div
+      :if={present?(@item.source_name)}
+      class="mb-1 truncate text-xs opacity-60 flex items-center gap-1"
+      data-testid={"home-event-source-#{@item.id}"}
+    >
+      {@item.source_name}
+    </div>
+    """
+  end
+
+  defp timeline_item_source(%{item: %{source_type: :external}} = assigns) do
+    ~H"""
+    <div
+      :if={present?(@item.calendar_name)}
+      class="mb-1 text-xs opacity-60 flex gap-1"
+      data-testid={"external-event-calendar-name-#{@item.id}"}
+    >
+      <.icon name="hero-calendar-micro" class="opacity-60" />
+      <span class="truncate">{@item.calendar_name}</span>
+    </div>
+    """
+  end
+
+  defp timeline_item_source(assigns) do
+    ~H"""
+    <div
+      :if={@item.source_type == :internal and present?(@current_scope.tenant.name)}
+      class="mb-1 text-xs opacity-60 flex gap-1"
+      data-testid={"event-source-#{@item.id}"}
+    >
+      <UI.icon_app class="opacity-80" />
+      {@current_scope.tenant.name}
     </div>
     """
   end

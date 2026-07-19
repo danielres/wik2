@@ -3,12 +3,15 @@ defmodule WikWeb.TagLiveTest do
 
   import Phoenix.LiveViewTest
   import Wik.TestGenerators
+  require Ash.Query
 
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
+  alias Wik.Events
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.ExternalEvent
+  alias Wik.Events.EventParticipation
   alias Wik.Repo
   alias Wik.Scope
   alias Wik.Tags
@@ -293,6 +296,18 @@ defmodule WikWeb.TagLiveTest do
     upcoming_event = external_event_fixture(space, subscription, title: "Upcoming dance")
     past_event = external_event_fixture(space, subscription, starts_at: ~U[2020-01-01 18:00:00Z])
 
+    assert {:ok, _participation} =
+             Events.record_external_interest(
+               upcoming_event,
+               %{interest: 8, extra_info: "going"},
+               scope: scope
+             )
+
+    participation =
+      EventParticipation
+      |> Ash.Query.filter(external_event_id == ^upcoming_event.id)
+      |> Ash.read_one!(scope: scope)
+
     {:ok, view, _html} =
       conn
       |> log_in(owner)
@@ -307,8 +322,13 @@ defmodule WikWeb.TagLiveTest do
 
     assert has_element?(
              view,
-             testid("tag-external-event-calendar-name-external:#{upcoming_event.id}"),
+             testid("external-event-calendar-name-external:#{upcoming_event.id}"),
              "Custom calendar"
+           )
+
+    assert has_element?(
+             view,
+             "#{testid("external-event-external:#{upcoming_event.id}")} #{testid("timeline-event-participation-#{participation.id}")}"
            )
 
     refute has_element?(

@@ -29,7 +29,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       )
 
     external_items =
-      normalize_external_events(
+      external_items(
         loaded_data.external_events,
         loaded_subscriptions,
         loaded_data.participations_by_external_event_id,
@@ -243,13 +243,13 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
     internal_item(publication, membership, participations, current_membership)
   end
 
-  defp normalize_external_events(
-         events,
-         loaded_subscriptions,
-         participations_by_external_event_id,
-         current_membership,
-         taggings_by_subscription_id
-       ) do
+  def external_items(
+        events,
+        loaded_subscriptions,
+        participations_by_external_event_id,
+        current_membership,
+        taggings_by_subscription_id
+      ) do
     subscription_by_id = Map.new(loaded_subscriptions.records, &{&1.id, &1})
 
     events

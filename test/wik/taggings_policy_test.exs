@@ -116,7 +116,7 @@ defmodule Wik.TaggingsPolicyTest do
           scope: owner_scope
         )
 
-      {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+      {:ok, tag} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
       assert {:ok, _tagging} =
                Tags.upsert_tagging(
@@ -156,8 +156,8 @@ defmodule Wik.TaggingsPolicyTest do
     grant_active_telegram_access(space, member)
     grant_active_telegram_access(space, other_member)
 
-    {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
-    {:ok, other_tag} = Tags.create_tag("music", "Music", nil, scope: scope(owner, space))
+    {:ok, tag} = Tags.create_tag("dance", "Dance", scope: scope(owner, space))
+    {:ok, other_tag} = Tags.create_tag("music", "Music", scope: scope(owner, space))
 
     {:ok, tagging} =
       Tags.upsert_tagging(

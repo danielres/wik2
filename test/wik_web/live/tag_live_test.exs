@@ -20,7 +20,7 @@ defmodule WikWeb.TagLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, tag} = Tags.create_tag("alpha", "Alpha", "Foundational rhythm", scope: scope)
+    {:ok, tag} = Tags.create_tag("alpha", "Alpha", scope: scope)
 
     {:ok, view, _html} =
       conn
@@ -36,18 +36,14 @@ defmodule WikWeb.TagLiveTest do
 
     assert has_element?(view, testid("tag-form-form"))
 
-    render_submit(
-      form(view, testid("tag-form-form"),
-        form: %{"name" => "Social dance", "description" => "Updated description"}
-      )
-    )
+    render_submit(form(view, testid("tag-form-form"), form: %{"name" => "Social dance"}))
 
     assert_patch(view, ~p"/#{space.slug}/topics/social-dance")
     assert has_element?(view, testid("tag-page"))
     refute has_element?(view, testid("tag-form-form"))
 
     assert {:ok, updated_tag} = Tags.get_tag_by_slug("social-dance", scope: scope)
-    assert updated_tag.description == "Updated description"
+    assert updated_tag.name == "Social dance"
   end
 
   test "tag page shows tagged members ordered by interest, then skill, then username", %{
@@ -88,7 +84,7 @@ defmodule WikWeb.TagLiveTest do
     second_scope = scope(second_user, space)
     third_scope = scope(third_user, space)
 
-    {:ok, tag} = Tags.create_tag("fusion", "Fusion", "Late-night socials", scope: owner_scope)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: owner_scope)
 
     {:ok, first_tagging} =
       Tags.upsert_tagging(
@@ -191,7 +187,7 @@ defmodule WikWeb.TagLiveTest do
     owner_scope = scope(owner, space)
     member_scope = scope(user, space)
 
-    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: owner_scope)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: owner_scope)
 
     {:ok, view, _html} =
       conn
@@ -235,7 +231,7 @@ defmodule WikWeb.TagLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, tag} = Tags.create_tag("history", "History", nil, scope: scope)
+    {:ok, tag} = Tags.create_tag("history", "History", scope: scope)
 
     assert {:ok, _block} =
              Tags.update_primary_block(tag, %{"text" => "First revision"}, scope: scope)
@@ -270,7 +266,7 @@ defmodule WikWeb.TagLiveTest do
     owner_membership = add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: scope)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: scope)
 
     {:ok, subscription} =
       ExternalCalendarSubscription.create(
@@ -327,7 +323,7 @@ defmodule WikWeb.TagLiveTest do
     owner_membership = add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: scope)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: scope)
     {:ok, _home_node, home_page} = Wiki.ensure_page_and_node_at_path("home", scope: scope)
     {:ok, _guide_node, guide_page} = Wiki.ensure_page_and_node_at_path("docs/guide", scope: scope)
 
@@ -380,10 +376,10 @@ defmodule WikWeb.TagLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, parent} = Tags.create_tag("dance", "Dance", nil, scope: scope)
-    {:ok, current} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
-    {:ok, child} = Tags.create_tag("tango", "Tango", nil, scope: scope)
-    {:ok, grandchild} = Tags.create_tag("argentine-tango", "Argentine tango", nil, scope: scope)
+    {:ok, parent} = Tags.create_tag("dance", "Dance", scope: scope)
+    {:ok, current} = Tags.create_tag("partner-dance", "Partner dance", scope: scope)
+    {:ok, child} = Tags.create_tag("tango", "Tango", scope: scope)
+    {:ok, grandchild} = Tags.create_tag("argentine-tango", "Argentine tango", scope: scope)
 
     assert {:ok, _edge} = Tags.link_tags(parent.id, current.id, scope: scope)
     assert {:ok, _edge} = Tags.link_tags(current.id, child.id, scope: scope)

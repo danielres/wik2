@@ -60,6 +60,13 @@ defmodule WikWeb.Components.Tag do
   attr :selected_tag, :map, required: true
 
   def detail(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :has_subtopics?,
+        GraphQueries.children_for(assigns.graph, assigns.selected_tag) != []
+      )
+
     ~H"""
     <div class="space-y-4" data-testid={"tag-detail-#{@selected_tag.id}"}>
       <div class={[
@@ -70,22 +77,9 @@ defmodule WikWeb.Components.Tag do
             {@selected_tag.name}
           </UI.page_title>
 
-          <div class="mb-4 text-xs font-mono opacity-50">
+          <div class="text-xs font-mono opacity-50">
             /{@selected_tag.slug}
           </div>
-
-          <%= if @selected_tag.description in [nil, ""] do %>
-            <span class="italic opacity-50 text-sm">
-              No description yet.
-            </span>
-          <% else %>
-            <div class={[
-              "max-h-30 overflow-y-auto rounded-box bg-base-100/70 p-3",
-              "text-sm text-base-content/60 leading-tight"
-            ]}>
-              <div class="whitespace-pre-wrap">{@selected_tag.description}</div>
-            </div>
-          <% end %>
         </div>
 
         <button
@@ -165,8 +159,10 @@ defmodule WikWeb.Components.Tag do
           tag={@selected_tag}
         />
       </div>
-
-      <.descendants graph={@graph} scope={@scope} tag={@selected_tag} />
+      <section :if={@has_subtopics?}>
+        <UI.panel_title>Sub-topics</UI.panel_title>
+        <.descendants graph={@graph} scope={@scope} tag={@selected_tag} />
+      </section>
     </div>
     """
   end
@@ -194,7 +190,7 @@ defmodule WikWeb.Components.Tag do
       items={@items}
       section_testid={@section_testid}
       space_slug={@space_slug}
-      title="Tag parents"
+      title="Parent topics"
     />
     """
   end
@@ -222,7 +218,7 @@ defmodule WikWeb.Components.Tag do
       items={@items}
       section_testid={@section_testid}
       space_slug={@space_slug}
-      title="Tag children"
+      title="Child topics"
     />
     """
   end
@@ -348,8 +344,6 @@ defmodule WikWeb.Components.Tag do
           <.error :for={{field, _message} <- @form_errors} :if={field == :slug and @auto_slug != ""}>
             This topic name is not available.
           </.error>
-
-          <.input field={@form[:description]} label="Description" type="textarea" />
 
           <div class="flex items-center justify-between gap-2">
             <button

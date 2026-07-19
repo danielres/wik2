@@ -148,7 +148,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     add_owner_membership(space, owner)
 
     {:ok, tag} =
-      Wik.Tags.create_tag("dance", "Dance", nil, scope: %Scope{actor: owner, tenant: space})
+      Wik.Tags.create_tag("dance", "Dance", scope: %Scope{actor: owner, tenant: space})
 
     scope = %Scope{tenant: %{id: space.id, name: space.name, slug: space.slug}}
 
@@ -358,7 +358,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
     membership = add_membership(space, user, "alice")
 
     {:ok, tag} =
-      Wik.Tags.create_tag("dance", "Dance", nil, scope: %Scope{actor: owner, tenant: space})
+      Wik.Tags.create_tag("dance", "Dance", scope: %Scope{actor: owner, tenant: space})
 
     wikilink_map = Jason.encode!(%{"Soups" => 1, "Soups/Vegetable Soup" => 2})
 

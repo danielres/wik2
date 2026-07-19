@@ -29,7 +29,7 @@ defmodule Wik.Tags do
 
   resources do
     resource Tag do
-      define :create_tag, action: :create, args: [:slug, :name, :description]
+      define :create_tag, action: :create, args: [:slug, :name]
       define :get_tag, action: :read, get_by: [:id]
     end
 
@@ -382,14 +382,14 @@ defmodule Wik.Tags do
   defp list_upcoming_external_events([], _scope), do: {:ok, []}
 
   defp list_upcoming_external_events(subscription_ids, scope) do
-    today_start = Date.utc_today() |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+    yesterday_start = Date.utc_today() |> Date.add(-1) |> DateTime.new!(~T[00:00:00], "Etc/UTC")
 
     ExternalEvent
     |> Query.filter(
       subscription_id in ^subscription_ids and
         not is_nil(starts_at) and
         not is_nil(tz) and
-        (starts_at >= ^today_start or ends_at >= ^today_start)
+        (starts_at >= ^yesterday_start or ends_at >= ^yesterday_start)
     )
     |> Query.load(:subscription)
     |> Query.sort(starts_at: :asc, id: :asc)

@@ -14,9 +14,7 @@ defmodule Wik.TagsTest do
       %{space: space, owner: owner} = owner_fixture()
 
       assert {:ok, tag} =
-               Tags.create_tag("partner-dance", "Partner dance", "Moves together",
-                 scope: scope(owner, space)
-               )
+               Tags.create_tag("partner-dance", "Partner dance", scope: scope(owner, space))
 
       assert tag.space_id == space.id
 
@@ -28,12 +26,10 @@ defmodule Wik.TagsTest do
       %{space: space, owner: owner} = owner_fixture()
 
       assert {:ok, _tag} =
-               Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope(owner, space))
+               Tags.create_tag("partner-dance", "Partner dance", scope: scope(owner, space))
 
       assert {:error, _error} =
-               Tags.create_tag("partner-dance", "Partner dance again", nil,
-                 scope: scope(owner, space)
-               )
+               Tags.create_tag("partner-dance", "Partner dance again", scope: scope(owner, space))
     end
 
     test "links tags within the same space and rejects duplicate, self, cross-space, and cycle edges" do
@@ -42,15 +38,15 @@ defmodule Wik.TagsTest do
       other_owner = generate(user())
       add_membership(other_space, other_owner, :owner)
 
-      {:ok, root} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
+      {:ok, root} = Tags.create_tag("dance", "Dance", scope: scope(owner, space))
 
       {:ok, child} =
-        Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope(owner, space))
+        Tags.create_tag("partner-dance", "Partner dance", scope: scope(owner, space))
 
-      {:ok, grandchild} = Tags.create_tag("tango", "Tango", nil, scope: scope(owner, space))
+      {:ok, grandchild} = Tags.create_tag("tango", "Tango", scope: scope(owner, space))
 
       {:ok, outsider_tag} =
-        Tags.create_tag("other", "Other", nil, scope: scope(other_owner, other_space))
+        Tags.create_tag("other", "Other", scope: scope(other_owner, other_space))
 
       assert {:ok, _edge} = Tags.link_tags(root.id, child.id, scope: scope(owner, space))
       assert {:ok, _edge} = Tags.link_tags(child.id, grandchild.id, scope: scope(owner, space))
@@ -68,9 +64,9 @@ defmodule Wik.TagsTest do
       %{space: space, owner: owner} = owner_fixture()
       scope = scope(owner, space)
 
-      {:ok, root} = Tags.create_tag("dance", "Dance", nil, scope: scope)
-      {:ok, child} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
-      {:ok, other_parent} = Tags.create_tag("social", "Social", nil, scope: scope)
+      {:ok, root} = Tags.create_tag("dance", "Dance", scope: scope)
+      {:ok, child} = Tags.create_tag("partner-dance", "Partner dance", scope: scope)
+      {:ok, other_parent} = Tags.create_tag("social", "Social", scope: scope)
 
       assert {:ok, _edge} = Tags.link_tags(root.id, child.id, scope: scope)
       assert {:ok, _edge} = Tags.link_tags(other_parent.id, child.id, scope: scope)

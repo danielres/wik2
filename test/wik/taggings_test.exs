@@ -17,7 +17,7 @@ defmodule Wik.TaggingsTest do
 
       scope = scope(user, space)
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
+      {:ok, dance} = Tags.create_tag("dance", "Dance", scope: scope(owner, space))
 
       assert {:ok, _tagging} =
                Tags.upsert_tagging(
@@ -41,7 +41,7 @@ defmodule Wik.TaggingsTest do
       owner_scope = scope(owner, space)
       member_scope = scope(user, space)
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+      {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
       assert {:ok, first_tagging} =
                Tags.upsert_tagging(
@@ -74,7 +74,7 @@ defmodule Wik.TaggingsTest do
       owner_scope = scope(owner, space)
       member_scope = scope(user, space)
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+      {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
       assert {:error, _error} =
                Tags.upsert_tagging(
@@ -109,7 +109,7 @@ defmodule Wik.TaggingsTest do
       owner_scope = scope(owner, space)
       member_scope = scope(user, space)
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+      {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
       assert {:error, _error} =
                Tags.upsert_tagging(
@@ -129,7 +129,7 @@ defmodule Wik.TaggingsTest do
       other_membership = add_membership(other_space, user, :member)
       grant_active_telegram_access(other_space, user)
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+      {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
       {:ok, _} =
         Tags.upsert_tagging(
@@ -173,7 +173,7 @@ defmodule Wik.TaggingsTest do
       assert {:ok, _tag} = Tags.destroy_tag(dance.id, scope: owner_scope)
       assert {:ok, []} = Tags.list_taggings(membership, scope: scope)
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+      {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
       assert {:ok, _} =
                Tags.upsert_tagging(
@@ -220,7 +220,7 @@ defmodule Wik.TaggingsTest do
           scope: owner_scope
         )
 
-      {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+      {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
       assert {:error, _error} =
                Tags.upsert_tagging(
@@ -272,7 +272,7 @@ defmodule Wik.TaggingsTest do
     member_scope = scope(user, space)
 
     {:ok, page} = Wik.Wiki.Page.create(scope: owner_scope)
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
     assert {:error, _error} =
              Tags.upsert_tagging(

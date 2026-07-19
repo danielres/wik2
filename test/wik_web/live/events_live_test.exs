@@ -1483,7 +1483,7 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
-    {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
+    {:ok, tag} = Tags.create_tag("dance", "Dance", scope: scope(owner, space))
 
     {:ok, view, _html} =
       conn
@@ -1536,8 +1536,8 @@ defmodule WikWeb.EventsLiveTest do
     space = generate(space(author: owner))
     owner_membership = add_membership(space, owner, :owner)
     owner_scope = scope(owner, space)
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
-    {:ok, music} = Tags.create_tag("music", "Music", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
+    {:ok, music} = Tags.create_tag("music", "Music", scope: owner_scope)
 
     {:ok, dance_subscription} =
       Wik.Events.ExternalCalendarSubscription.create(

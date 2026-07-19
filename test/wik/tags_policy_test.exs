@@ -67,10 +67,10 @@ defmodule Wik.TagsPolicyTest do
     grant_active_telegram_access(space, admin)
     grant_active_telegram_access(space, member)
 
-    {:ok, tag} = Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
+    {:ok, tag} = Tags.create_tag("dance", "Dance", scope: scope(owner, space))
 
     {:ok, child} =
-      Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope(owner, space))
+      Tags.create_tag("partner-dance", "Partner dance", scope: scope(owner, space))
 
     {:ok, edge} = Tags.link_tags(tag.id, child.id, scope: scope(owner, space))
 

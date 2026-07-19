@@ -11,9 +11,11 @@ config :ash_oban, pro?: false
 
 config :wik, Oban,
   engine: Oban.Engines.Basic,
-  notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10],
+  notifier: Oban.Notifiers.PG,
+  peer: Oban.Peers.Isolated,
+  queues: [default: 2],
   repo: Wik.Repo,
+  stage_interval: :timer.hours(4),
   plugins: [
     {Oban.Plugins.Cron,
      crontab: [

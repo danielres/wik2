@@ -33,7 +33,7 @@ defmodule WikWeb.Components.MembershipTagging do
       <div
         :if={@sort_controls?}
         class={[
-          "mb-1 flex items-center justify-end gap-2"
+          "mb-1 flex items-center justify-end gap-1"
         ]}
         data-testid="member-tagging-sort-controls"
       >
@@ -125,7 +125,7 @@ defmodule WikWeb.Components.MembershipTagging do
           <.link
             patch={tagging_path(@scope, @membership, tagging)}
             data-testid={"member-tagging-open-#{tagging.tag_id}"}
-            class="block px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+            class="block px-4 py-3 rounded bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
           >
             <div class="grid grid-cols-[1fr_auto] gap-2 items-start ">
               <div class="text-sm" data-testid={"member-tagging-row-#{tagging.tag_id}"}>
@@ -227,6 +227,7 @@ defmodule WikWeb.Components.MembershipTagging do
   attr :query, :any, required: true
   attr :scope, :map, required: true
   attr :tag, :map, required: true
+  attr :class, :string, default: ""
 
   def list_for_tag(assigns) do
     assigns =
@@ -238,11 +239,14 @@ defmodule WikWeb.Components.MembershipTagging do
     ~H"""
     <div
       :if={@query != nil}
-      class="overflow-hidden"
+      class={[
+        "overflow-hidden",
+        @class
+      ]}
       data-testid="tag-member-taggings-table"
     >
       <div
-        class="mb-1 flex items-center justify-end gap-2"
+        class="mb-1 flex items-center justify-end gap-1"
         data-testid="tag-member-tagging-sort-controls"
       >
         <%!-- <button --%>
@@ -331,7 +335,7 @@ defmodule WikWeb.Components.MembershipTagging do
           <.link
             navigate={member_tagging_path(@scope, tagging, @tag)}
             data-testid={"tag-member-tagging-open-#{tagging.id}"}
-            class="block px-4 py-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+            class="block px-4 py-3 rounded bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
           >
             <div class="grid grid-cols-[1fr_auto] gap-2 items-start">
               <div class="min-w-0 text-sm" data-testid={"tag-member-tagging-row-#{tagging.id}"}>

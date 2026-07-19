@@ -15,10 +15,10 @@ defmodule WikWeb.Components.TagTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, recipes} = Tags.create_tag("recipes", "Recipes", nil, scope: scope)
-    {:ok, soups} = Tags.create_tag("soups", "Soups", nil, scope: scope)
-    {:ok, healthy} = Tags.create_tag("healthy-ideas", "Healthy ideas", nil, scope: scope)
-    {:ok, stew} = Tags.create_tag("irish-stew", "Irish stew", nil, scope: scope)
+    {:ok, recipes} = Tags.create_tag("recipes", "Recipes", scope: scope)
+    {:ok, soups} = Tags.create_tag("soups", "Soups", scope: scope)
+    {:ok, healthy} = Tags.create_tag("healthy-ideas", "Healthy ideas", scope: scope)
+    {:ok, stew} = Tags.create_tag("irish-stew", "Irish stew", scope: scope)
 
     assert {:ok, _edge} = Tags.link_tags(recipes.id, soups.id, scope: scope)
     assert {:ok, _edge} = Tags.link_tags(soups.id, stew.id, scope: scope)
@@ -48,9 +48,9 @@ defmodule WikWeb.Components.TagTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, recipes} = Tags.create_tag("recipes", "Recipes", nil, scope: scope)
-    {:ok, soups} = Tags.create_tag("soups", "Soups", nil, scope: scope)
-    {:ok, stew} = Tags.create_tag("irish-stew", "Irish stew", nil, scope: scope)
+    {:ok, recipes} = Tags.create_tag("recipes", "Recipes", scope: scope)
+    {:ok, soups} = Tags.create_tag("soups", "Soups", scope: scope)
+    {:ok, stew} = Tags.create_tag("irish-stew", "Irish stew", scope: scope)
 
     assert {:ok, _edge} = Tags.link_tags(recipes.id, soups.id, scope: scope)
     assert {:ok, _edge} = Tags.link_tags(soups.id, stew.id, scope: scope)

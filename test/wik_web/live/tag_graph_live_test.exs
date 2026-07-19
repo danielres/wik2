@@ -22,8 +22,8 @@ defmodule WikWeb.TagGraphLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
-    {:ok, beta} = Tags.create_tag("beta", "Beta", nil, scope: scope)
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", scope: scope)
+    {:ok, beta} = Tags.create_tag("beta", "Beta", scope: scope)
 
     {:ok, view, _html} =
       conn
@@ -43,11 +43,7 @@ defmodule WikWeb.TagGraphLiveTest do
 
     assert has_element?(view, testid("tag-detail-dialog"))
 
-    render_submit(
-      form(view, testid("tag-form-form"),
-        form: %{"name" => "Partner dance", "description" => "Paired movement"}
-      )
-    )
+    render_submit(form(view, testid("tag-form-form"), form: %{"name" => "Partner dance"}))
 
     {:ok, child} = Tags.get_tag_by_slug("partner-dance", scope: scope)
     assert has_element?(view, testid("tag-branch-tag-path-#{child.id}"))
@@ -58,11 +54,7 @@ defmodule WikWeb.TagGraphLiveTest do
 
     render_click(element(view, testid("tag-detail-edit")))
 
-    render_submit(
-      form(view, testid("tag-form-form"),
-        form: %{"name" => "Social dance", "description" => "Updated"}
-      )
-    )
+    render_submit(form(view, testid("tag-form-form"), form: %{"name" => "Social dance"}))
 
     {:ok, child} = Tags.get_tag_by_slug("social-dance", scope: scope)
 
@@ -101,8 +93,8 @@ defmodule WikWeb.TagGraphLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, root} = Tags.create_tag("dance", "Dance", nil, scope: scope)
-    {:ok, child} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
+    {:ok, root} = Tags.create_tag("dance", "Dance", scope: scope)
+    {:ok, child} = Tags.create_tag("partner-dance", "Partner dance", scope: scope)
     assert {:ok, _edge} = Tags.link_tags(root.id, child.id, scope: scope)
 
     {:ok, view, _html} =
@@ -132,7 +124,7 @@ defmodule WikWeb.TagGraphLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", "Foundational rhythm", scope: scope)
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", scope: scope)
 
     {:ok, view, _html} =
       conn
@@ -157,8 +149,8 @@ defmodule WikWeb.TagGraphLiveTest do
     member_b_membership = add_membership(space, member_b, :member)
     scope = scope(owner, space)
 
-    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
-    {:ok, beta} = Tags.create_tag("beta", "Beta", nil, scope: scope)
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", scope: scope)
+    {:ok, beta} = Tags.create_tag("beta", "Beta", scope: scope)
 
     create_membership_tagging(member_a_membership, alpha, owner_membership, scope, %{
       "interest" => 4,
@@ -202,7 +194,7 @@ defmodule WikWeb.TagGraphLiveTest do
     owner_membership = add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", scope: scope)
 
     {:ok, subscription} =
       Ash.create(
@@ -236,7 +228,7 @@ defmodule WikWeb.TagGraphLiveTest do
     owner_membership = add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", scope: scope)
     {:ok, _home_node, home_page} = Wiki.ensure_page_and_node_at_path("home", scope: scope)
     {:ok, _guide_node, guide_page} = Wiki.ensure_page_and_node_at_path("docs/guide", scope: scope)
 

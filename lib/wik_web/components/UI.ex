@@ -166,7 +166,7 @@ defmodule WikWeb.Components.UI do
   def panel_title(assigns) do
     ~H"""
     <h3 class={[
-      "mb-2 text-xs uppercase tracking-wider opacity-50",
+      "mb-2 text-xs uppercase tracking-wider text-base-content/50",
       "flex items-center gap-1",
       @class
     ]}>

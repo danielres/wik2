@@ -19,7 +19,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     owner_scope = scope(owner, space)
     member_scope = scope(user, space)
 
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
     {:ok, view, _html} =
       conn
@@ -141,7 +141,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     owner_scope = scope(owner, space)
     member_scope = scope(user, space)
 
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
     assert {:ok, _} =
              Tags.upsert_tagging(
@@ -188,7 +188,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     owner_scope = scope(owner, space)
     superadmin_scope = scope(superadmin, space)
 
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
     {:ok, view, _html} =
       conn
@@ -293,9 +293,9 @@ defmodule WikWeb.MemberProfileLiveTest do
     owner_scope = scope(owner, space)
     member_scope = scope(user, space)
 
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
-    {:ok, acro} = Tags.create_tag("acro", "Acro", nil, scope: owner_scope)
-    {:ok, tango} = Tags.create_tag("tango", "Tango", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
+    {:ok, acro} = Tags.create_tag("acro", "Acro", scope: owner_scope)
+    {:ok, tango} = Tags.create_tag("tango", "Tango", scope: owner_scope)
 
     assert {:ok, _} =
              Tags.upsert_tagging(
@@ -381,7 +381,7 @@ defmodule WikWeb.MemberProfileLiveTest do
     owner_scope = scope(owner, space)
     member_scope = scope(user, space)
 
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
     assert {:ok, _} =
              Tags.upsert_tagging(

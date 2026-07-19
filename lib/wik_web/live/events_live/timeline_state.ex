@@ -19,6 +19,8 @@ defmodule WikWeb.EventsLive.TimelineState do
       external_items: [],
       load_more_path: nil,
       more_external_future?: false,
+      disabled_topic_ids: [],
+      topic_options: [],
       items: [],
       grouped_items: []
     }
@@ -50,6 +52,8 @@ defmodule WikWeb.EventsLive.TimelineState do
             external_items: [],
             load_more_path: nil,
             more_external_future?: false,
+            disabled_topic_ids: [],
+            topic_options: [],
             items: [],
             grouped_items: []
         })
@@ -66,6 +70,31 @@ defmodule WikWeb.EventsLive.TimelineState do
 
   def put_future_windows(socket, future_windows) do
     assign(socket, :timeline, %{socket.assigns.timeline | future_windows: future_windows})
+  end
+
+  def toggle_topic_filter(socket, topic_id) when is_binary(topic_id) do
+    timeline = socket.assigns.timeline
+    topic_ids = Enum.map(timeline.topic_options, & &1.tag.id)
+    enabled_topic_ids = topic_ids -- timeline.disabled_topic_ids
+
+    disabled_topic_ids =
+      cond do
+        Enum.sort(enabled_topic_ids) == Enum.sort(topic_ids) ->
+          topic_ids -- [topic_id]
+
+        enabled_topic_ids == [topic_id] ->
+          []
+
+        topic_id in timeline.disabled_topic_ids ->
+          Enum.reject(timeline.disabled_topic_ids, &(&1 == topic_id))
+
+        true ->
+          [topic_id | timeline.disabled_topic_ids]
+      end
+
+    socket
+    |> assign(:timeline, %{timeline | disabled_topic_ids: disabled_topic_ids})
+    |> put_timeline_items()
   end
 
   defp put_loaded_timeline(socket, loaded_data) do
@@ -91,7 +120,7 @@ defmodule WikWeb.EventsLive.TimelineState do
   defp put_timeline_items(socket) do
     timeline = socket.assigns.timeline
 
-    items =
+    unfiltered_items =
       TimelinePresenter.timeline_items(
         timeline.internal_items,
         timeline.external_items,
@@ -99,14 +128,53 @@ defmodule WikWeb.EventsLive.TimelineState do
       )
 
     current_scope = socket.assigns.current_scope
+    topic_options = topic_options(unfiltered_items)
+    disabled_topic_ids = valid_disabled_topic_ids(timeline.disabled_topic_ids, topic_options)
+    items = filter_items_by_topics(unfiltered_items, disabled_topic_ids)
     items = with_timeline_item_paths(items, current_scope, timeline)
 
     assign(socket, :timeline, %{
       timeline
       | items: items,
+        disabled_topic_ids: disabled_topic_ids,
+        topic_options: topic_options,
         load_more_path: load_more_path(current_scope, timeline),
         grouped_items: TimelinePresenter.grouped_timeline_items(items)
     })
+  end
+
+  defp topic_options(items) do
+    items
+    |> Enum.flat_map(&Map.get(&1, :topic_summaries, []))
+    |> Enum.reject(&(is_nil(&1.tag) or is_nil(&1.tag.id)))
+    |> Enum.group_by(& &1.tag.id)
+    |> Enum.map(fn {_tag_id, summaries} ->
+      summary = List.first(summaries)
+
+      %{
+        count: length(summaries),
+        tag: summary.tag
+      }
+    end)
+    |> Enum.sort_by(fn %{tag: tag} -> String.downcase(tag.name || "") end)
+  end
+
+  defp valid_disabled_topic_ids(disabled_topic_ids, topic_options) do
+    option_ids = MapSet.new(topic_options, & &1.tag.id)
+    Enum.filter(disabled_topic_ids, &MapSet.member?(option_ids, &1))
+  end
+
+  defp filter_items_by_topics(items, []), do: items
+
+  defp filter_items_by_topics(items, disabled_topic_ids) do
+    disabled_topic_ids = MapSet.new(disabled_topic_ids)
+
+    Enum.filter(items, fn item ->
+      item_topics = Map.get(item, :topic_summaries, [])
+
+      item_topics == [] or
+        Enum.any?(item_topics, &(not MapSet.member?(disabled_topic_ids, &1.tag.id)))
+    end)
   end
 
   defp with_timeline_item_paths(items, current_scope, timeline) do

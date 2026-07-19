@@ -28,7 +28,7 @@ defmodule Wik.Tags do
 
   resources do
     resource Tag do
-      define :create_tag, action: :create, args: [:slug, :name, :description]
+      define :create_tag, action: :create, args: [:slug, :name]
       define :get_tag, action: :read, get_by: [:id]
     end
 
@@ -285,6 +285,17 @@ defmodule Wik.Tags do
     |> Query.sort(interest_level: :desc)
   end
 
+  def list_tag_external_events(%Tag{} = tag, opts \\ []) do
+    scope = Keyword.fetch!(opts, :scope)
+
+    with {:ok, taggings} <- list_tag_external_calendar_subscription_taggings(tag, scope) do
+      taggings
+      |> Enum.map(& &1.taggable_id)
+      |> Enum.uniq()
+      |> list_upcoming_external_events(scope)
+    end
+  end
+
   def list_space_tags(scope) do
     Tag
     |> Query.sort(name: :asc)
@@ -359,6 +370,21 @@ defmodule Wik.Tags do
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
     |> Query.load([:tag, :tagged_by_membership])
     |> Query.sort(interest_level: :desc)
+  end
+
+  defp list_tag_external_calendar_subscription_taggings(%Tag{} = tag, scope) do
+    Tagging
+    |> Query.filter(tag_id == ^tag.id and taggable_type == "external_calendar_subscription")
+    |> Ash.read(scope: scope)
+  end
+
+  defp list_upcoming_external_events([], _scope), do: {:ok, []}
+
+  defp list_upcoming_external_events(subscription_ids, scope) do
+    Wik.Events.upcoming_external_events_query()
+    |> Query.filter(subscription_id in ^subscription_ids)
+    |> Query.load(:subscription)
+    |> Ash.read(scope: scope)
   end
 
   defp tags_with_names(space_id) do

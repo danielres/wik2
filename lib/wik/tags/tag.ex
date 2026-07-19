@@ -28,12 +28,12 @@ defmodule Wik.Tags.Tag do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:slug, :name, :description]
+      accept [:slug, :name]
       change SetSpaceFromCurrentTenant
     end
 
     update :update do
-      accept [:slug, :name, :description]
+      accept [:slug, :name]
       require_atomic? false
     end
 
@@ -95,11 +95,6 @@ defmodule Wik.Tags.Tag do
     attribute :name, :string do
       public? true
       allow_nil? false
-    end
-
-    attribute :description, :string do
-      public? true
-      allow_nil? true
     end
   end
 

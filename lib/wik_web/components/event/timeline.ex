@@ -9,6 +9,7 @@ defmodule WikWeb.Components.Event.Timeline do
   attr :current_scope, :map, required: true
   attr :grouped_items, :list, default: []
   attr :load_more_path, :string, default: nil
+  attr :mask_class, :string, default: "bg-base-100"
   attr :more_external_future?, :boolean, default: false
   attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
@@ -28,14 +29,6 @@ defmodule WikWeb.Components.Event.Timeline do
       ]}
       data-testid="events-timeline"
     >
-      <div
-        :if={@grouped_items == []}
-        class="rounded-box border border-dashed border-base-300 bg-base-200/70 p-6 text-sm opacity-70"
-        data-testid="events-empty"
-      >
-        No upcoming events yet.
-      </div>
-
       <section
         :for={year_group <- @grouped_items}
         class="space-y-0"
@@ -43,7 +36,11 @@ defmodule WikWeb.Components.Event.Timeline do
         data-testid={"events-year-#{year_group.year}"}
       >
         <h2
-          class={["text-xl font-semibold", "sticky bg-base-100 z-[29] pt-4"]}
+          class={[
+            "text-xl font-semibold",
+            "sticky z-[29] pt-4",
+            @mask_class
+          ]}
           style="top: var(--_top)"
         >
           {year_group.year}
@@ -58,7 +55,8 @@ defmodule WikWeb.Components.Event.Timeline do
           <h3
             class={[
               "text-sm font-semibold uppercase tracking-wide text-base-content/80",
-              "sticky bg-base-100 z-[28]"
+              "sticky z-[28]",
+              @mask_class
             ]}
             style="top: calc(var(--_top) + 2.5rem)"
           >
@@ -74,8 +72,9 @@ defmodule WikWeb.Components.Event.Timeline do
             <h4
               class={[
                 "text-sm font-medium tracking-wide text-base-content/70",
-                "sticky bg-base-100 z-[27]",
-                "pb-2"
+                "sticky z-[27]",
+                "pb-2",
+                @mask_class
               ]}
               style="top: calc(var(--_top) + 2.5rem + 1rem)"
             >
@@ -87,19 +86,23 @@ defmodule WikWeb.Components.Event.Timeline do
                 :for={item <- day_group.items}
                 id={timeline_dom_id(item)}
                 data-testid={timeline_testid(item)}
-                class={[]}
               >
                 <%= if item.source_type == :internal do %>
-                  <div class={[
-                    "rounded-box",
-                    "bg-base-content/6",
-                    "border-[1.5px] border-base-content/20"
-                  ]}>
+                  <div
+                    class={[
+                      "bg-base-content/3",
+                      item.participations != [] &&
+                        [
+                          "border-l border-[oklch(63%_0.13_358)] bg-base-content/3"
+                        ]
+                    ]}
+                    data-state={if(item.participations == [], do: "ghost", else: "promoted")}
+                  >
                     <.link
                       patch={item.open_path}
                       class={[
                         "block p-4",
-                        "hover:bg-base-content/14",
+                        "hover:bg-base-content/10",
                         "transition",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       ]}
@@ -109,25 +112,22 @@ defmodule WikWeb.Components.Event.Timeline do
                         current_scope={@current_scope}
                         grouped_date={Date.new!(year_group.year, month_group.month, day_group.day)}
                         item={item}
-                        meta={@meta}
                         user_tz={@user_tz}
+                        meta={@meta}
                       />
                     </.link>
                   </div>
                 <% else %>
                   <div
                     class={[
-                      "rounded-box",
-                      "w-full",
                       item.participations == [] &&
                         [
-                          "opacity-60 hover:opacity-100 transition-opacity",
-                          "border-[1.5px] border-dashed border-base-content/30"
+                          "border-[1.5px] border-dashed border-base-content/15",
+                          "opacity-50 hover:opacity-80 transition"
                         ],
                       item.participations != [] &&
                         [
-                          "bg-base-content/6",
-                          "border-[1.5px] border-base-content/20"
+                          "border-l border-[oklch(63%_0.13_358)] bg-base-content/3"
                         ]
                     ]}
                     data-state={if(item.participations == [], do: "ghost", else: "promoted")}
@@ -136,12 +136,12 @@ defmodule WikWeb.Components.Event.Timeline do
                       patch={item.open_path}
                       class={[
                         "cursor-pointer",
-                        "block p-4",
+                        "block px-4 py-2 pr-2",
                         "w-full",
                         "text-left",
                         item.participations != [] &&
                           [
-                            "hover:bg-base-content/14",
+                            "hover:bg-base-content/10",
                             "transition",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                           ]
@@ -186,45 +186,23 @@ defmodule WikWeb.Components.Event.Timeline do
   defp timeline_item_body(assigns) do
     ~H"""
     <div class="min-w-0 space-y-1">
-      <div class="flex flex-wrap items-center gap-2 justify-between">
-        <h2 class={[
-          "text-base font-medium leading-tight",
-          @item.event.status == :cancelled && "line-through decoration-base-content"
-        ]}>
-          {@item.event.title}
-        </h2>
-
-        <Event.event_status event={@item.event} />
-      </div>
+      <.timeline_item_body_head item={@item} meta={@meta} />
 
       <div class="truncate text-sm opacity-80" data-testid={timeline_schedule_testid(@item)}>
         <Event.schedule event={@item.event} grouped_date={@grouped_date} user_tz={@user_tz} />
       </div>
 
-      {render_slot(@meta, @item)}
-
-      <div :if={@item.participations != []} class="flex flex-wrap items-center gap-4">
-        <div
-          :for={participation <- @item.participations}
-          class="flex items-center gap-2"
-          data-testid={"timeline-event-participation-#{participation.id}"}
+      <div class="grid sm:grid-cols-[1fr_auto] gap-2 mt-2">
+        <section
+          class="space-y-1 flex flex-wrap gap-2"
+          data-testid={"timeline-event-topic-list-#{@item.id}"}
         >
-          <User.identity
-            avatar_size="xs"
-            class="text-xs opacity-70"
-            link?={false}
-            name?={false}
-            membership={participation.membership}
-          />
+          <.timeline_item_body_topics item={@item} />
+        </section>
 
-          <LevelMeter.render
-            dimension={interest_dimension()}
-            label="Interest"
-            level={participation.interest}
-            testid={"timeline-event-participation-interest-#{participation.id}"}
-            width_class="w-10"
-          />
-        </div>
+        <section :if={@item.participations != []} class="flex flex-wrap items-center gap-2">
+          <.timeline_item_body_participations item={@item} />
+        </section>
       </div>
 
       <div
@@ -236,6 +214,86 @@ defmodule WikWeb.Components.Event.Timeline do
           {" · "}Recurrence: {@item.external_recurrence_id}
         </span>
       </div>
+    </div>
+    """
+  end
+
+  attr :item, :map, required: true
+  attr :meta, :any, required: true
+
+  defp timeline_item_body_head(assigns) do
+    ~H"""
+    <div class="flex flex-wrap items-center gap-2 justify-between">
+      <div>
+        <div class="mb-1">{render_slot(@meta, @item)}</div>
+        <h2 class={[
+          "text-base font-medium leading-tight",
+          "space-y-2",
+          @item.event.status == :cancelled && "line-through decoration-base-content"
+        ]}>
+          <div>{@item.event.title}</div>
+        </h2>
+      </div>
+
+      <Event.event_status event={@item.event} />
+    </div>
+    """
+  end
+
+  attr :item, :map, required: true
+
+  defp timeline_item_body_topics(assigns) do
+    ~H"""
+    <div
+      :for={summary <- Map.get(@item, :topic_summaries, [])}
+      class={[
+        "flex gap-1 items-center",
+        "badge bg-base-300",
+        "text-xs font-bold",
+        "opacity-60",
+        "pr-3 pl-2"
+      ]}
+      data-testid={"timeline-event-topic-#{@item.id}-#{summary.tag.id}"}
+    >
+      <.icon name="hero-tag-micro" class="size-3 opacity-50" />
+      <div class="truncate text-xs">{summary.tag.name}</div>
+
+      <%!-- <LevelMeter.render --%>
+      <%!--   :if={summary.average_relevancy} --%>
+      <%!--   dimension={topic_relevancy_dimension()} --%>
+      <%!--   label={topic_relevancy_dimension().label} --%>
+      <%!--   level={summary.average_relevancy} --%>
+      <%!--   testid={"timeline-event-topic-#{@item.id}-relevancy-#{summary.tag.id}"} --%>
+      <%!--   width_class="w-8" --%>
+      <%!-- /> --%>
+    </div>
+    """
+  end
+
+  attr :item, :map, required: true
+
+  defp timeline_item_body_participations(assigns) do
+    ~H"""
+    <div
+      :for={participation <- @item.participations}
+      class="flex items-center gap-2 btn btn-xs rounded-full bg-base-300/30"
+      data-testid={"timeline-event-participation-#{participation.id}"}
+    >
+      <User.identity
+        avatar_size="xs"
+        class="text-xs opacity-70"
+        link?={false}
+        name?={false}
+        membership={participation.membership}
+      />
+
+      <LevelMeter.render
+        dimension={interest_dimension()}
+        label="Interest"
+        level={participation.interest}
+        testid={"timeline-event-participation-interest-#{participation.id}"}
+        width_class="w-10"
+      />
     </div>
     """
   end

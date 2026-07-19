@@ -7,6 +7,7 @@ defmodule WikWeb.TagLive do
   alias Utils.Log
   alias Wik.Accounts
   alias Wik.Blocks
+  alias Wik.Events.ExternalCalendar
   alias Wik.Tags
   alias Wik.Tags.Dimensions
   alias Wik.Tags.GraphQueries
@@ -19,6 +20,7 @@ defmodule WikWeb.TagLive do
   alias WikWeb.Components.Modal
   alias WikWeb.Components.Tag, as: TagComponent
   alias WikWeb.Components.UI
+  alias WikWeb.EventsLive.TimelinePresenter
 
   @member_tagging_sorts %{
     "target_membership.username" => :asc_nils_last,
@@ -49,6 +51,7 @@ defmodule WikWeb.TagLive do
      |> assign(selected_member_tagging_sort: "interest_level")
      |> assign(show_descendants?: true)
      |> assign(tag: nil)
+     |> assign(tag_event_grouped_items: [])
      |> assign(tag_page_taggings: [])
      |> assign(tag_form: nil)
      |> assign(tag_graph: nil)
@@ -77,6 +80,7 @@ defmodule WikWeb.TagLive do
           |> assign(:taggings_query, Tags.tag_taggings_query(tag))
           |> assign(:show_descendants?, GraphQueries.children_for(tag_graph, tag) != [])
           |> assign_current_member_tagging(tag)
+          |> assign_tag_events(tag)
           |> maybe_sync_tag_form()
 
         {:ok, nil} ->
@@ -294,37 +298,6 @@ defmodule WikWeb.TagLive do
         </:actions>
 
         <:aside :if={not @editing?}>
-          <section :if={@show_descendants?}>
-            <TagComponent.descendants
-              graph={@tag_graph}
-              scope={@current_scope}
-              tag={@tag}
-              show_stats?={false}
-            />
-          </section>
-
-          <section :if={@tag_page_taggings != []} data-testid="tag-pages">
-            <% relevancy_dimension = Dimensions.get!("page", "relevancy") %>
-
-            <UI.panel_title>
-              <div>Pages</div>
-            </UI.panel_title>
-
-            <DimensionsList.render
-              dimension={relevancy_dimension}
-              item_id={:id}
-              items={@tag_page_taggings}
-              level={:relevancy_level}
-              list_testid="tag-page-list"
-              navigate={&~p"/#{@current_scope.tenant.slug}/wiki/#{&1.path_segments}"}
-              testid_prefix="tag-page"
-            >
-              <:title :let={page}>
-                <div class="text-sm truncate">{page.title}</div>
-              </:title>
-            </DimensionsList.render>
-          </section>
-
           <section>
             <div class="flex justify-between items-baseline">
               <UI.panel_title>
@@ -439,28 +412,11 @@ defmodule WikWeb.TagLive do
               />
             </:prepend>
 
-            <div class="flex justify-between">
-              <UI.page_title>
-                <.icon name="hero-tag-micro" class="opacity-30 size-5" />
-                {@tag.name}
-              </UI.page_title>
-
-              <UI.button_add_to_user
-                :if={@tenant_context.current_membership && !@current_member_tagged?}
-                data-testid="member-tagging-add"
-                phx-click="tagging_create_start"
-                data-tip="Add to my profile"
-              />
-            </div>
+            <UI.page_title>
+              <.icon name="hero-tag-micro" class="opacity-30 size-5" />
+              {@tag.name}
+            </UI.page_title>
           </UI.page_head>
-
-          <MembershipTagging.list_for_tag
-            :if={@tagging_count > 0}
-            active_sort={@selected_member_tagging_sort}
-            query={@taggings_query}
-            scope={@current_scope}
-            tag={@tag}
-          />
 
           <section :if={@editing? and @tag_form != nil}>
             <TagComponent.form
@@ -485,6 +441,88 @@ defmodule WikWeb.TagLive do
               text={@primary_block_version_text}
             />
           </section>
+
+          <section class="mt-16">
+            <UI.panel_title>
+              <.icon name="hero-user-micro" />
+              <span>Members</span>
+
+              <div class="ml-auto">
+                <UI.button_add_to_user
+                  :if={@tenant_context.current_membership && !@current_member_tagged?}
+                  data-testid="member-tagging-add"
+                  phx-click="tagging_create_start"
+                  data-tip={"Add \"#{@tag.name}\" to my profile"}
+                />
+              </div>
+            </UI.panel_title>
+
+            <MembershipTagging.list_for_tag
+              :if={@tagging_count > 0}
+              active_sort={@selected_member_tagging_sort}
+              query={@taggings_query}
+              scope={@current_scope}
+              tag={@tag}
+            />
+          </section>
+
+          <section :if={@tag_page_taggings != []} data-testid="tag-pages" class="mt-12">
+            <UI.panel_title>
+              <.icon name="hero-book-open-micro" />
+              <span>Pages</span>
+            </UI.panel_title>
+
+            <div class="bg-base-200 p-4 rounded-box">
+              <.page_taggings {assigns} />
+            </div>
+          </section>
+
+          <section :if={@show_descendants?} class="mt-12">
+            <UI.panel_title>
+              <.icon name="hero-tag-micro" />
+              <span>Sub-topics</span>
+            </UI.panel_title>
+
+            <TagComponent.descendants
+              graph={@tag_graph}
+              scope={@current_scope}
+              tag={@tag}
+              show_stats?={true}
+            />
+          </section>
+
+          <section :if={@tag_event_grouped_items != []} data-testid="tag-events" class="mt-12">
+            <UI.panel_title>
+              <.icon name="hero-calendar-micro" />
+              <span>Events</span>
+            </UI.panel_title>
+
+            <div class={[
+              "max-h-[32rem] overflow-y-auto px-4 rounded-box bg-base-200",
+              "[--top:0rem]"
+            ]}>
+              <Components.Event.grouped_timeline
+                current_scope={@current_scope}
+                grouped_items={@tag_event_grouped_items}
+                show_external?={true}
+                user_tz={@active_tz}
+                mask_class="bg-base-200"
+              >
+                <:meta :let={item}>
+                  <div
+                    :if={item.calendar_name not in [nil, ""]}
+                    class="flex items-center gap-1"
+                    data-testid={"tag-external-event-calendar-name-#{item.id}"}
+                  >
+                    <.icon name="hero-calendar-micro" class="opacity-60" />
+                    <div class="text-xs opacity-60 truncate max-w-64">
+                      {item.calendar_name}
+                    </div>
+                  </div>
+                </:meta>
+              </Components.Event.grouped_timeline>
+            </div>
+          </section>
         </div>
       </Layouts.space>
     </Layouts.app>
@@ -507,6 +545,26 @@ defmodule WikWeb.TagLive do
         tenant={@current_scope.tenant}
       />
     </Modal.render>
+    """
+  end
+
+  def page_taggings(assigns) do
+    ~H"""
+    <% relevancy_dimension = Dimensions.get!("page", "relevancy") %>
+
+    <DimensionsList.render
+      dimension={relevancy_dimension}
+      item_id={:id}
+      items={@tag_page_taggings}
+      level={:relevancy_level}
+      list_testid="tag-page-list"
+      navigate={&~p"/#{@current_scope.tenant.slug}/wiki/#{&1.path_segments}"}
+      testid_prefix="tag-page"
+    >
+      <:title :let={page}>
+        <div class="text-sm truncate">{page.title}</div>
+      </:title>
+    </DimensionsList.render>
     """
   end
 
@@ -797,6 +855,58 @@ defmodule WikWeb.TagLive do
     |> assign(:tagging_count, tagging_count(tag_graph, tag))
     |> assign(:tag_page_taggings, tag_page_taggings(tag_graph, tag))
   end
+
+  defp assign_tag_events(socket, tag) do
+    scope = socket.assigns.current_scope
+
+    case Tags.list_tag_external_events(tag, scope: scope) do
+      {:ok, events} ->
+        assign(socket, :tag_event_grouped_items, tag_event_grouped_items(events, scope))
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "tag external events load failed")
+        assign(socket, :tag_event_grouped_items, [])
+    end
+  end
+
+  defp tag_event_grouped_items(events, scope) do
+    events
+    |> Enum.map(&tag_event_item(&1, scope))
+    |> TimelinePresenter.grouped_timeline_items()
+  end
+
+  defp tag_event_item(event, scope) do
+    id = "external:#{event.id}"
+
+    %{
+      id: id,
+      author: nil,
+      calendar_name: tag_event_calendar_name(event),
+      current_member_participation: nil,
+      event: event,
+      event_url: event.event_url,
+      external_recurrence_id: event.external_recurrence_id,
+      external_uid: event.external_uid,
+      open_path: ~p"/#{scope.tenant.slug}/events?#{%{ext: event.id}}",
+      participations: [],
+      publication: nil,
+      source_name: nil,
+      source_type: :external,
+      source_url: nil,
+      space_slug: nil,
+      subscription_id: event.subscription_id,
+      topic_summaries: []
+    }
+  end
+
+  defp tag_event_calendar_name(%{subscription: %Ash.NotLoaded{}} = event), do: event.calendar_name
+
+  defp tag_event_calendar_name(%{subscription: subscription} = event)
+       when not is_nil(subscription) do
+    ExternalCalendar.display_name(subscription, event.calendar_name)
+  end
+
+  defp tag_event_calendar_name(event), do: event.calendar_name
 
   defp tag_page_taggings(tag_graph, tag) do
     tag_graph

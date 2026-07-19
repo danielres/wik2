@@ -69,7 +69,7 @@
         </UI.page_head>
 
         <div class={[
-          has_area?(@page, :aside) && "lg:grid lg:grid-cols-[3fr_2fr] gap-4",
+          has_area?(@page, :aside) && "grid lg:grid-cols-[3fr_2fr] gap-4",
           "[&>*]:max-w-[80ch]"
         ]}>
           <PageLive.Components.Area.render
@@ -89,8 +89,13 @@
             :if={has_area?(@page, :aside)}
             area={:aside}
             class={[
-              "md:border-l sm:pl-2 lg:pl-4",
-              if(@editing?, do: "border-transparent", else: "border-base-content/10")
+              "max-lg:border-t",
+              "max-lg:border-base-content/30",
+              "max-lg:pt-8",
+              "max-lg:mt-8",
+              "lg:border-l",
+              "lg:pl-4",
+              if(@editing?, do: "border-transparent", else: "border-base-content/20")
             ]}
             editing?={@editing?}
             editing_block_id={@editing_block_id}

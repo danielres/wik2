@@ -13,11 +13,11 @@ defmodule Wik.Tags.GraphQueriesTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", nil, scope: scope)
-    {:ok, beta} = Tags.create_tag("beta", "Beta", nil, scope: scope)
-    {:ok, zed} = Tags.create_tag("zed", "Zed", nil, scope: scope)
-    {:ok, shared} = Tags.create_tag("shared", "Shared", nil, scope: scope)
-    {:ok, grandchild} = Tags.create_tag("grandchild", "Grandchild", nil, scope: scope)
+    {:ok, alpha} = Tags.create_tag("alpha", "Alpha", scope: scope)
+    {:ok, beta} = Tags.create_tag("beta", "Beta", scope: scope)
+    {:ok, zed} = Tags.create_tag("zed", "Zed", scope: scope)
+    {:ok, shared} = Tags.create_tag("shared", "Shared", scope: scope)
+    {:ok, grandchild} = Tags.create_tag("grandchild", "Grandchild", scope: scope)
 
     assert {:ok, _} = Tags.link_tags(alpha.id, zed.id, scope: scope)
     assert {:ok, _} = Tags.link_tags(alpha.id, shared.id, scope: scope)

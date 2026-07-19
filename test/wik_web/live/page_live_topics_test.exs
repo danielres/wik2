@@ -20,7 +20,7 @@ defmodule WikWeb.PageLiveTopicsTest do
     space = generate(space(author: owner))
     membership = add_membership(space, owner, :owner)
     owner_scope = scope(owner, space)
-    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", scope: owner_scope)
 
     {:ok, view, _html} =
       conn

@@ -112,6 +112,24 @@ defmodule Wik.Events do
     Query.filter(query, not is_nil(starts_at) and not is_nil(tz))
   end
 
+  def upcoming_external_events_query(opts \\ []) do
+    lower_bound =
+      Date.utc_today()
+      |> Date.add(-1)
+      |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+
+    query =
+      ExternalEvent
+      |> scheduled_external_events_query()
+      |> Query.filter(starts_at >= ^lower_bound or ends_at >= ^lower_bound)
+      |> Query.sort(starts_at: :asc, id: :asc)
+
+    case Keyword.get(opts, :until) do
+      nil -> query
+      upper_bound -> Query.filter(query, starts_at <= ^upper_bound)
+    end
+  end
+
   defp origin_publication(%Event{} = event, scope) do
     EventPublication
     |> Query.filter(event_id == ^event.id and target_space_id == ^scope.tenant.id)

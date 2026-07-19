@@ -7,6 +7,9 @@ defmodule WikWeb.TagLiveTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
+  alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Events.ExternalEvent
+  alias Wik.Repo
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Wiki
@@ -17,7 +20,7 @@ defmodule WikWeb.TagLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, tag} = Tags.create_tag("alpha", "Alpha", "Foundational rhythm", scope: scope)
+    {:ok, tag} = Tags.create_tag("alpha", "Alpha", scope: scope)
 
     {:ok, view, _html} =
       conn
@@ -33,18 +36,14 @@ defmodule WikWeb.TagLiveTest do
 
     assert has_element?(view, testid("tag-form-form"))
 
-    render_submit(
-      form(view, testid("tag-form-form"),
-        form: %{"name" => "Social dance", "description" => "Updated description"}
-      )
-    )
+    render_submit(form(view, testid("tag-form-form"), form: %{"name" => "Social dance"}))
 
     assert_patch(view, ~p"/#{space.slug}/topics/social-dance")
     assert has_element?(view, testid("tag-page"))
     refute has_element?(view, testid("tag-form-form"))
 
     assert {:ok, updated_tag} = Tags.get_tag_by_slug("social-dance", scope: scope)
-    assert updated_tag.description == "Updated description"
+    assert updated_tag.name == "Social dance"
   end
 
   test "tag page shows tagged members ordered by interest, then skill, then username", %{
@@ -85,7 +84,7 @@ defmodule WikWeb.TagLiveTest do
     second_scope = scope(second_user, space)
     third_scope = scope(third_user, space)
 
-    {:ok, tag} = Tags.create_tag("fusion", "Fusion", "Late-night socials", scope: owner_scope)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: owner_scope)
 
     {:ok, first_tagging} =
       Tags.upsert_tagging(
@@ -188,7 +187,7 @@ defmodule WikWeb.TagLiveTest do
     owner_scope = scope(owner, space)
     member_scope = scope(user, space)
 
-    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: owner_scope)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: owner_scope)
 
     {:ok, view, _html} =
       conn
@@ -232,7 +231,7 @@ defmodule WikWeb.TagLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, tag} = Tags.create_tag("history", "History", nil, scope: scope)
+    {:ok, tag} = Tags.create_tag("history", "History", scope: scope)
 
     assert {:ok, _block} =
              Tags.update_primary_block(tag, %{"text" => "First revision"}, scope: scope)
@@ -261,13 +260,70 @@ defmodule WikWeb.TagLiveTest do
     assert_tag_page_pages_section_works(conn)
   end
 
+  test "tag page lists upcoming external events inherited from tagged calendars", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: scope)
+
+    {:ok, subscription} =
+      ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope
+      )
+
+    assert {:ok, subscription} =
+             ExternalCalendarSubscription.update_custom_name(
+               subscription,
+               %{custom_name: "Custom calendar"},
+               scope: scope
+             )
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               subscription,
+               owner_membership,
+               tag.id,
+               %{dimensions: %{"relevancy" => 7}},
+               scope: scope
+             )
+
+    upcoming_event = external_event_fixture(space, subscription, title: "Upcoming dance")
+    past_event = external_event_fixture(space, subscription, starts_at: ~U[2020-01-01 18:00:00Z])
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics/#{tag.slug}")
+
+    assert has_element?(view, testid("tag-events"))
+
+    assert has_element?(
+             view,
+             ~s(a[href="/#{space.slug}/events?ext=#{upcoming_event.id}"][data-testid="event-open-external:#{upcoming_event.id}"])
+           )
+
+    assert has_element?(
+             view,
+             testid("tag-external-event-calendar-name-external:#{upcoming_event.id}"),
+             "Custom calendar"
+           )
+
+    refute has_element?(
+             view,
+             testid("event-open-external:#{past_event.id}")
+           )
+  end
+
   defp assert_tag_page_pages_section_works(conn) do
     owner = generate(user())
     space = generate(space(author: owner))
     owner_membership = add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, tag} = Tags.create_tag("fusion", "Fusion", nil, scope: scope)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: scope)
     {:ok, _home_node, home_page} = Wiki.ensure_page_and_node_at_path("home", scope: scope)
     {:ok, _guide_node, guide_page} = Wiki.ensure_page_and_node_at_path("docs/guide", scope: scope)
 
@@ -320,10 +376,10 @@ defmodule WikWeb.TagLiveTest do
     add_membership(space, owner, :owner)
     scope = scope(owner, space)
 
-    {:ok, parent} = Tags.create_tag("dance", "Dance", nil, scope: scope)
-    {:ok, current} = Tags.create_tag("partner-dance", "Partner dance", nil, scope: scope)
-    {:ok, child} = Tags.create_tag("tango", "Tango", nil, scope: scope)
-    {:ok, grandchild} = Tags.create_tag("argentine-tango", "Argentine tango", nil, scope: scope)
+    {:ok, parent} = Tags.create_tag("dance", "Dance", scope: scope)
+    {:ok, current} = Tags.create_tag("partner-dance", "Partner dance", scope: scope)
+    {:ok, child} = Tags.create_tag("tango", "Tango", scope: scope)
+    {:ok, grandchild} = Tags.create_tag("argentine-tango", "Argentine tango", scope: scope)
 
     assert {:ok, _edge} = Tags.link_tags(parent.id, current.id, scope: scope)
     assert {:ok, _edge} = Tags.link_tags(current.id, child.id, scope: scope)
@@ -387,6 +443,41 @@ defmodule WikWeb.TagLiveTest do
       :nomatch -> nil
     end
   end
+
+  defp external_event_fixture(space, subscription, attrs) do
+    default_starts_at =
+      Date.utc_today()
+      |> Date.add(7)
+      |> DateTime.new!(~T[18:00:00], "Etc/UTC")
+      |> with_usec_precision()
+
+    starts_at = attrs |> Keyword.get(:starts_at, default_starts_at) |> with_usec_precision()
+
+    ends_at =
+      attrs |> Keyword.get(:ends_at, DateTime.add(starts_at, 2, :hour)) |> with_usec_precision()
+
+    Repo.insert!(%ExternalEvent{
+      id: Ash.UUIDv7.generate(),
+      all_day: false,
+      calendar_name: "Community calendar",
+      description: "Imported from an external calendar",
+      ends_at: ends_at,
+      event_url: nil,
+      external_occurrence_key: "single-#{Ash.UUIDv7.generate()}",
+      external_recurrence_id: nil,
+      external_uid: "external-#{Ash.UUIDv7.generate()}",
+      last_seen_at: DateTime.utc_now(),
+      location: "Riverside Hall",
+      space_id: space.id,
+      starts_at: starts_at,
+      status: :published,
+      subscription_id: subscription.id,
+      title: Keyword.get(attrs, :title, "External event"),
+      tz: "Etc/UTC"
+    })
+  end
+
+  defp with_usec_precision(datetime), do: %{datetime | microsecond: {0, 6}}
 
   defp scope(actor, tenant), do: %Scope{actor: actor, tenant: tenant}
 end

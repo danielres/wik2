@@ -210,7 +210,7 @@ defmodule Wik.Blocks.Types.MarkdownTest do
       owner = generate(user())
       space = generate(space(author: owner))
       add_owner_membership(space, owner)
-      {:ok, tag} = Wik.Tags.create_tag("dance", "Dance", nil, scope: scope(owner, space))
+      {:ok, tag} = Wik.Tags.create_tag("dance", "Dance", scope: scope(owner, space))
       block = %Block{data: %{"text" => "[[tag:#{tag.id}]]"}, type: :markdown}
 
       assert %{

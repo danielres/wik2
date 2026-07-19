@@ -2,6 +2,7 @@ defmodule WikWeb.EventsLive do
   use WikWeb, :live_view
 
   alias Utils.Log
+  alias Wik.Events.Event
   alias Wik.Locations
   alias WikWeb.Components
   alias WikWeb.EventsLive
@@ -38,34 +39,65 @@ defmodule WikWeb.EventsLive do
       scope={@current_scope}
     >
       <Layouts.space presences={@presences} scope={@current_scope} view="events">
-        <div class="space-y-6 max-w-[80ch]" data-testid="events-page">
-          <div class="bg-base-200/70 rounded px-4 py-4 -mt-4">
-            <EventsLive.Components.CalendarControls.render
-              timeline={@timeline}
-              subscriptions={@subscriptions}
-              current_scope={@current_scope}
-            />
-          </div>
+        <div class="space-y-3 max-w-[80ch]" data-testid="events-page">
+          <div class="grid md:grid-cols-2 gap-2">
+            <section class={["bg-base-content/7 px-4 py-3 rounded space-y-1 shadow"]}>
+              <EventsLive.Components.CalendarControls.render
+                timeline={@timeline}
+                subscriptions={@subscriptions}
+                current_scope={@current_scope}
+              />
+            </section>
 
-          <Components.Event.grouped_timeline
-            current_scope={@current_scope}
-            grouped_items={@timeline.grouped_items}
-            load_more_path={@timeline.load_more_path}
-            more_external_future?={@timeline.more_external_future?}
-            show_external?={@timeline.show_external?}
-            user_tz={@active_tz}
-          >
-            <:meta :let={item}>
-              <div
-                :if={item.source_type == :external and item.calendar_name not in [nil, ""]}
-                class="truncate text-xs opacity-60 flex items-center gap-1"
-                data-testid={"external-event-calendar-name-#{item.id}"}
-              >
-                <.icon name="hero-calendar-days-micro" class="opacity-60" />
-                {item.calendar_name}
-              </div>
-            </:meta>
-          </Components.Event.grouped_timeline>
+            <section
+              :if={@timeline.topic_options |> length() > 1}
+              class={["bg-base-300/65 px-4 py-3 rounded space-y-1"]}
+              data-testid="events-topic-filters"
+            >
+              <h3 class={[
+                "text-sm small-caps tracking-wider font-bold",
+                "text-base-content/60",
+                "flex items-center gap-1 max-md:ml-3"
+              ]}>
+                <.icon name="hero-tag-micro" />
+                <span>Topics</span>
+              </h3>
+
+              <.topic_options timeline={@timeline} />
+            </section>
+          </div>
+          <div>
+            <div class="flex justify-end">
+              <.button_create_event current_scope={@current_scope} />
+            </div>
+
+            <Components.Event.grouped_timeline
+              current_scope={@current_scope}
+              grouped_items={@timeline.grouped_items}
+              load_more_path={@timeline.load_more_path}
+              more_external_future?={@timeline.more_external_future?}
+              show_external?={@timeline.show_external?}
+              user_tz={@active_tz}
+            >
+              <:meta :let={item}>
+                <div
+                  :if={item.source_type == :external and item.calendar_name not in [nil, ""]}
+                  class="text-xs opacity-60 flex gap-1"
+                  data-testid={"external-event-calendar-name-#{item.id}"}
+                >
+                  <.icon name="hero-calendar-micro" class="opacity-60" />
+                  {item.calendar_name}
+                </div>
+
+                <div
+                  :if={item.source_type == :internal}
+                  class="text-xs opacity-60 flex gap-1"
+                >
+                  {@current_scope.tenant.name}
+                </div>
+              </:meta>
+            </Components.Event.grouped_timeline>
+          </div>
         </div>
       </Layouts.space>
     </Layouts.app>
@@ -156,6 +188,66 @@ defmodule WikWeb.EventsLive do
     """
   end
 
+  attr :current_scope, :map, required: true
+
+  defp button_create_event(assigns) do
+    ~H"""
+    <label class={[
+      "label cursor-pointer justify-end"
+    ]}>
+      <span class="text-sm sr-only">Add event</span>
+
+      <button
+        :if={Ash.can?({Event, :create}, @current_scope)}
+        class={[
+          "btn btn-accent btn-circle btn-xs"
+        ]}
+        data-testid="events-create-button"
+        phx-click="event_create_start"
+        type="button"
+      >
+        <.icon name="hero-plus-micro" />
+      </button>
+    </label>
+    """
+  end
+
+  attr :timeline, :map, required: true
+
+  defp topic_options(assigns) do
+    ~H"""
+    <div class="flex flex-wrap gap-2">
+      <button
+        :for={option <- @timeline.topic_options}
+        type="button"
+        class={[
+          "btn btn-xs rounded-full",
+          option.tag.id in @timeline.disabled_topic_ids &&
+            "btn-ghost opacity-50 hover:opacity-60 transition",
+          option.tag.id not in @timeline.disabled_topic_ids && "bg-base-content/7"
+        ]}
+        aria-pressed={to_string(option.tag.id not in @timeline.disabled_topic_ids)}
+        data-testid={"events-topic-filter-#{option.tag.id}"}
+        phx-click="topic_filter_toggle"
+        phx-value-topic_id={option.tag.id}
+      >
+        <.icon
+          :if={option.tag.id not in @timeline.disabled_topic_ids}
+          name="hero-check-micro"
+          class="text-success"
+        />
+        <.icon
+          :if={option.tag.id in @timeline.disabled_topic_ids}
+          name="hero-check-micro"
+          class="opacity-30"
+        />
+        <span>{option.tag.name}</span>
+        <span :if={option.count > 1} class="badge badge-xs">{option.count}</span>
+      </button>
+    </div>
+    """
+  end
+
   # handle_params ==============================================================
 
   @impl true
@@ -210,6 +302,10 @@ defmodule WikWeb.EventsLive do
     query = Params.page_query(!timeline.show_external?, timeline.future_windows)
 
     {:noreply, push_patch(socket, to: TimelineState.events_path(current_scope, query))}
+  end
+
+  def handle_event("topic_filter_toggle", %{"topic_id" => topic_id}, socket) do
+    {:noreply, TimelineState.toggle_topic_filter(socket, topic_id)}
   end
 
   def handle_event("external_calendar_subscription_start", _params, socket) do

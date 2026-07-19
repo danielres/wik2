@@ -79,18 +79,9 @@ defmodule WikWeb.HomeLive do
               <Components.Event.grouped_timeline
                 current_scope={@current_scope}
                 grouped_items={@grouped_event_items}
+                source_label_mode={:aggregate}
                 user_tz={@active_tz}
-              >
-                <:meta :let={item}>
-                  <div
-                    :if={item.source_name not in [nil, ""]}
-                    class="truncate text-xs opacity-60 flex items-center gap-1"
-                    data-testid={"home-event-source-#{item.id}"}
-                  >
-                    {item.source_name}
-                  </div>
-                </:meta>
-              </Components.Event.grouped_timeline>
+              />
             </div>
           </section>
         </div>

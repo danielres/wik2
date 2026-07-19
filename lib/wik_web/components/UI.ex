@@ -3,6 +3,15 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  attr :class, :string, default: ""
+  attr :size_class, :string, default: "size-4"
+
+  def icon_app(assigns) do
+    ~H"""
+    <.iconify icon="fluent:circle-multiple-concentric-16-filled" class={[@class, @size_class]} />
+    """
+  end
+
   attr :id, :string, default: "drawer"
   slot :inner_block, required: true
   slot :aside, required: true

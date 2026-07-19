@@ -1,11 +1,10 @@
 defmodule WikWeb.Layouts.App do
   use WikWeb, :html
 
-  import Iconify
-
   alias WikWeb.Components
-  alias WikWeb.TenantContext
   alias WikWeb.Layouts
+  alias WikWeb.TenantContext
+  alias WikWeb.Components.UI
 
   embed_templates "layouts/*"
 
@@ -50,7 +49,7 @@ defmodule WikWeb.Layouts.App do
     ]}>
       <div class="flex-1 flex items-center">
         <.link navigate={~p"/"} class="opacity-30 hover:opacity-100 transition" aria-label="Home">
-          <.iconify icon="fluent:circle-multiple-concentric-16-filled" class="size-4" />
+          <UI.icon_app />
         </.link>
 
         <.icon

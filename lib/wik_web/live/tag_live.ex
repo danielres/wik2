@@ -7,7 +7,6 @@ defmodule WikWeb.TagLive do
   alias Utils.Log
   alias Wik.Accounts
   alias Wik.Blocks
-  alias Wik.Events.ExternalCalendar
   alias Wik.Tags
   alias Wik.Tags.Dimensions
   alias Wik.Tags.GraphQueries
@@ -20,6 +19,7 @@ defmodule WikWeb.TagLive do
   alias WikWeb.Components.Modal
   alias WikWeb.Components.Tag, as: TagComponent
   alias WikWeb.Components.UI
+  alias WikWeb.EventsLive.TimelineLoader
   alias WikWeb.EventsLive.TimelinePresenter
 
   @member_tagging_sorts %{
@@ -507,20 +507,7 @@ defmodule WikWeb.TagLive do
                 show_external?={true}
                 user_tz={@active_tz}
                 mask_class="bg-base-200"
-              >
-                <:meta :let={item}>
-                  <div
-                    :if={item.calendar_name not in [nil, ""]}
-                    class="flex items-center gap-1"
-                    data-testid={"tag-external-event-calendar-name-#{item.id}"}
-                  >
-                    <.icon name="hero-calendar-micro" class="opacity-60" />
-                    <div class="text-xs opacity-60 truncate max-w-64">
-                      {item.calendar_name}
-                    </div>
-                  </div>
-                </:meta>
-              </Components.Event.grouped_timeline>
+              />
             </div>
           </section>
         </div>
@@ -859,54 +846,21 @@ defmodule WikWeb.TagLive do
   defp assign_tag_events(socket, tag) do
     scope = socket.assigns.current_scope
 
-    case Tags.list_tag_external_events(tag, scope: scope) do
-      {:ok, events} ->
-        assign(socket, :tag_event_grouped_items, tag_event_grouped_items(events, scope))
-
+    with {:ok, events} <- Tags.list_tag_external_events(tag, scope: scope),
+         {:ok, items} <- TimelineLoader.load_external_items(events, scope) do
+      assign(socket, :tag_event_grouped_items, tag_event_grouped_items(items, scope))
+    else
       {:error, error} ->
         Log.scoped_error(scope, error, "tag external events load failed")
         assign(socket, :tag_event_grouped_items, [])
     end
   end
 
-  defp tag_event_grouped_items(events, scope) do
-    events
-    |> Enum.map(&tag_event_item(&1, scope))
+  defp tag_event_grouped_items(items, scope) do
+    items
+    |> Enum.map(&Map.put(&1, :open_path, ~p"/#{scope.tenant.slug}/events?#{%{ext: &1.event.id}}"))
     |> TimelinePresenter.grouped_timeline_items()
   end
-
-  defp tag_event_item(event, scope) do
-    id = "external:#{event.id}"
-
-    %{
-      id: id,
-      author: nil,
-      calendar_name: tag_event_calendar_name(event),
-      current_member_participation: nil,
-      event: event,
-      event_url: event.event_url,
-      external_recurrence_id: event.external_recurrence_id,
-      external_uid: event.external_uid,
-      open_path: ~p"/#{scope.tenant.slug}/events?#{%{ext: event.id}}",
-      participations: [],
-      publication: nil,
-      source_name: nil,
-      source_type: :external,
-      source_url: nil,
-      space_slug: nil,
-      subscription_id: event.subscription_id,
-      topic_summaries: []
-    }
-  end
-
-  defp tag_event_calendar_name(%{subscription: %Ash.NotLoaded{}} = event), do: event.calendar_name
-
-  defp tag_event_calendar_name(%{subscription: subscription} = event)
-       when not is_nil(subscription) do
-    ExternalCalendar.display_name(subscription, event.calendar_name)
-  end
-
-  defp tag_event_calendar_name(event), do: event.calendar_name
 
   defp tag_page_taggings(tag_graph, tag) do
     tag_graph

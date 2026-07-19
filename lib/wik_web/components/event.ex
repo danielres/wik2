@@ -500,12 +500,9 @@ defmodule WikWeb.Components.Event do
   attr :mask_class, :string, default: "bg-base-100"
   attr :more_external_future?, :boolean, default: false
   attr :show_external?, :boolean, default: false
+  attr :source_label_mode, :atom, default: :local
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
-
-  slot :meta do
-    attr :item, :map
-  end
 
   def grouped_timeline(assigns), do: Timeline.grouped_list(assigns)
 

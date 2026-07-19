@@ -5,8 +5,11 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   alias Utils.Tz
   alias Wik.Accounts
   alias Wik.Events
+  alias Wik.Events.ExternalCalendar
+  alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
   alias Wik.Tags.Tagging
+  alias WikWeb.EventsLive.TimelinePresenter
 
   @future_window_months 2
 
@@ -60,6 +63,29 @@ defmodule WikWeb.EventsLive.TimelineLoader do
     end
   end
 
+  def load_external_items([], _scope), do: {:ok, []}
+
+  def load_external_items(external_events, scope) when is_list(external_events) do
+    with {:ok, current_membership} <-
+           Accounts.get_membership(scope.tenant.id, scope.actor.id),
+         {:ok, subscriptions} <- load_external_event_subscriptions(external_events, scope),
+         {:ok, taggings_by_subscription_id} <-
+           load_taggings_by_subscription_id(subscriptions, scope),
+         {:ok, participations_by_external_event_id} <-
+           load_participations_by_external_event_id(external_events, scope) do
+      loaded_subscriptions = ExternalCalendar.load_subscriptions(subscriptions)
+
+      {:ok,
+       TimelinePresenter.external_items(
+         external_events,
+         loaded_subscriptions,
+         participations_by_external_event_id,
+         current_membership,
+         taggings_by_subscription_id
+       )}
+    end
+  end
+
   defp load_taggings_by_subscription_id([], _scope), do: {:ok, %{}}
 
   defp load_taggings_by_subscription_id(subscriptions, scope) do
@@ -75,6 +101,18 @@ defmodule WikWeb.EventsLive.TimelineLoader do
       {:ok, taggings} -> {:ok, Enum.group_by(taggings, & &1.taggable_id)}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp load_external_event_subscriptions(external_events, scope) do
+    subscription_ids =
+      external_events
+      |> Enum.map(& &1.subscription_id)
+      |> Enum.uniq()
+
+    ExternalCalendarSubscription
+    |> Query.filter(id in ^subscription_ids)
+    |> Query.load(:space)
+    |> Ash.read(scope: scope)
   end
 
   defp upcoming_publications(publications) do

@@ -41,7 +41,7 @@ defmodule WikWeb.EventsLive do
       <Layouts.space presences={@presences} scope={@current_scope} view="events">
         <div class="space-y-3 max-w-[80ch]" data-testid="events-page">
           <div class="grid md:grid-cols-2 gap-2">
-            <section class={["bg-base-content/7 px-4 py-3 rounded space-y-1 shadow"]}>
+            <section class={["bg-base-content/7 px-4 py-3 rounded space-y-1 dark:shadow"]}>
               <EventsLive.Components.CalendarControls.render
                 timeline={@timeline}
                 subscriptions={@subscriptions}
@@ -78,25 +78,7 @@ defmodule WikWeb.EventsLive do
               more_external_future?={@timeline.more_external_future?}
               show_external?={@timeline.show_external?}
               user_tz={@active_tz}
-            >
-              <:meta :let={item}>
-                <div
-                  :if={item.source_type == :external and item.calendar_name not in [nil, ""]}
-                  class="text-xs opacity-60 flex gap-1"
-                  data-testid={"external-event-calendar-name-#{item.id}"}
-                >
-                  <.icon name="hero-calendar-micro" class="opacity-60" />
-                  {item.calendar_name}
-                </div>
-
-                <div
-                  :if={item.source_type == :internal}
-                  class="text-xs opacity-60 flex gap-1"
-                >
-                  {@current_scope.tenant.name}
-                </div>
-              </:meta>
-            </Components.Event.grouped_timeline>
+            />
           </div>
         </div>
       </Layouts.space>

@@ -9,11 +9,11 @@ defmodule WikWeb.Components.Event.Timeline do
   attr :current_scope, :map, required: true
   attr :grouped_items, :list, default: []
   attr :load_more_path, :string, default: nil
+  attr :mask_class, :string, default: "bg-base-100"
   attr :more_external_future?, :boolean, default: false
   attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil
   attr :user_tz, :string, required: true
-  attr :mask_class, :string, default: "bg-base-100"
 
   slot :meta do
     attr :item, :map
@@ -93,7 +93,7 @@ defmodule WikWeb.Components.Event.Timeline do
                       "bg-base-content/3",
                       item.participations != [] &&
                         [
-                          "border-l-1 border-[oklch(63%_0.13_358)] bg-base-content/3"
+                          "border-l border-[oklch(63%_0.13_358)] bg-base-content/3"
                         ]
                     ]}
                     data-state={if(item.participations == [], do: "ghost", else: "promoted")}
@@ -127,7 +127,7 @@ defmodule WikWeb.Components.Event.Timeline do
                         ],
                       item.participations != [] &&
                         [
-                          "border-l-1 border-[oklch(63%_0.13_358)] bg-base-content/3"
+                          "border-l border-[oklch(63%_0.13_358)] bg-base-content/3"
                         ]
                     ]}
                     data-state={if(item.participations == [], do: "ghost", else: "promoted")}

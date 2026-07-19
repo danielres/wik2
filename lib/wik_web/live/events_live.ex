@@ -5,7 +5,6 @@ defmodule WikWeb.EventsLive do
   alias Wik.Events.Event
   alias Wik.Locations
   alias WikWeb.Components
-  alias WikWeb.Components.UI
   alias WikWeb.EventsLive
   alias WikWeb.EventsLive.Components.EventForm
   alias WikWeb.EventsLive.Components.InterestForm

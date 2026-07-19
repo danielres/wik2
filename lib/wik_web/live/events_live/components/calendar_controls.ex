@@ -1,7 +1,6 @@
 defmodule WikWeb.EventsLive.Components.CalendarControls do
   use WikWeb, :html
 
-  alias Wik.Events.Event
   alias Wik.Events.ExternalCalendarSubscription
   alias WikWeb.Components
   alias WikWeb.Components.UI
@@ -62,14 +61,6 @@ defmodule WikWeb.EventsLive.Components.CalendarControls do
         data-testid="events-external-toggle"
         phx-click="toggle_external"
       />
-
-      <%!-- <span class={[ --%>
-      <%!--   not @timeline.show_external? && "text-base-content/50", --%>
-      <%!--   @timeline.show_external? && "text-base-content/80", --%>
-      <%!--   "text-sm font-bold" --%>
-      <%!-- ]}> --%>
-      <%!--   External sources --%>
-      <%!-- </span> --%>
 
       <h3 class={[
         "text-sm small-caps tracking-wider font-bold",

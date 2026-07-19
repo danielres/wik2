@@ -497,6 +497,7 @@ defmodule WikWeb.Components.Event do
   attr :current_scope, :map, default: nil
   attr :grouped_items, :list, default: []
   attr :load_more_path, :string, default: nil
+  attr :mask_class, :string, default: "bg-base-100"
   attr :more_external_future?, :boolean, default: false
   attr :show_external?, :boolean, default: false
   attr :target, :any, default: nil

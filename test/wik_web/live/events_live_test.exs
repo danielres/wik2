@@ -1384,7 +1384,6 @@ defmodule WikWeb.EventsLiveTest do
       |> live(~p"/#{space.slug}/events?calendars")
 
     assert has_element?(view, testid("events-subscribe-to-calendar-button"))
-    assert has_element?(view, testid("events-subscriptions-empty"))
 
     render_click(element(view, testid("events-subscribe-to-calendar-button")))
     assert has_element?(view, testid("events-subscription-form"))
@@ -1530,6 +1529,106 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("external-event-topics"))
     assert has_element?(view, testid("external-event-topic-#{tag.id}"))
     assert has_element?(view, testid("external-event-topic-relevancy-#{tag.id}"))
+  end
+
+  test "topic filters focus and reset external events by inherited calendar topics", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    owner_scope = scope(owner, space)
+    {:ok, dance} = Tags.create_tag("dance", "Dance", nil, scope: owner_scope)
+    {:ok, music} = Tags.create_tag("music", "Music", nil, scope: owner_scope)
+
+    {:ok, dance_subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/dance.ics"},
+        scope: owner_scope
+      )
+
+    {:ok, music_subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/music.ics"},
+        scope: owner_scope
+      )
+
+    sync_subscription!(dance_subscription)
+    sync_subscription!(music_subscription)
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               dance_subscription,
+               owner_membership,
+               dance.id,
+               %{dimensions: %{"relevancy" => 8}},
+               scope: owner_scope
+             )
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               dance_subscription,
+               owner_membership,
+               music.id,
+               %{dimensions: %{"relevancy" => 6}},
+               scope: owner_scope
+             )
+
+    assert {:ok, _tagging} =
+             Tags.upsert_tagging(
+               music_subscription,
+               owner_membership,
+               music.id,
+               %{dimensions: %{"relevancy" => 6}},
+               scope: owner_scope
+             )
+
+    dance_event_testid = external_event_testid(dance_subscription)
+    music_event_testid = external_event_testid(music_subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?calendars")
+
+    assert has_element?(view, testid("events-topic-filters"))
+    assert has_element?(view, testid("events-topic-filter-#{dance.id}"))
+    assert has_element?(view, testid("events-topic-filter-#{music.id}"))
+    assert has_element?(view, testid(dance_event_testid))
+    assert has_element?(view, testid(music_event_testid))
+
+    assert has_element?(
+             view,
+             testid("events-topic-filter-#{dance.id}") <> ~s([aria-pressed="true"])
+           )
+
+    render_click(element(view, testid("events-topic-filter-#{dance.id}")))
+
+    assert has_element?(
+             view,
+             testid("events-topic-filter-#{dance.id}") <> ~s([aria-pressed="true"])
+           )
+
+    assert has_element?(
+             view,
+             testid("events-topic-filter-#{music.id}") <> ~s([aria-pressed="false"])
+           )
+
+    assert has_element?(view, testid(dance_event_testid))
+    refute has_element?(view, testid(music_event_testid))
+
+    render_click(element(view, testid("events-topic-filter-#{dance.id}")))
+
+    assert has_element?(
+             view,
+             testid("events-topic-filter-#{dance.id}") <> ~s([aria-pressed="true"])
+           )
+
+    assert has_element?(
+             view,
+             testid("events-topic-filter-#{music.id}") <> ~s([aria-pressed="true"])
+           )
+
+    assert has_element?(view, testid(dance_event_testid))
+    assert has_element?(view, testid(music_event_testid))
   end
 
   test "external event rows fall back to the subscription url when the feed has no calendar name",

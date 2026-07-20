@@ -252,6 +252,14 @@
   }
 }
 
+.autogrid {
+  @apply grid;
+  grid-template-rows: repeat(auto-fill, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(var(--autogrid-min, 12rem), 1fr));
+  /* justify-content: start; */
+  /* align-content: center; */
+}
+
 [iconify] {
   /* background-color: currentColor; */
   -webkit-mask-size: cover;

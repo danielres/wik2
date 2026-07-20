@@ -53,26 +53,4 @@ defmodule WikWeb.Components.Space do
     </div>
     """
   end
-
-  attr :spaces, :list, required: true
-
-  def list(assigns) do
-    ~H"""
-    <ul class="menu w-full">
-      <li>
-        <.link
-          :for={space <- @spaces}
-          class="justify-between"
-          navigate={~p"/#{space.slug}/wiki"}
-        >
-          {space.name}
-        </.link>
-
-        <span :if={@spaces == []} class="opacity-70">
-          You are not a member of any spaces yet.
-        </span>
-      </li>
-    </ul>
-    """
-  end
 end

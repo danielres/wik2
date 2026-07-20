@@ -22,58 +22,105 @@ defmodule WikWeb.HomeLive do
      |> assign_spaces_and_form()}
   end
 
+  slot :body, required: true
+  slot :title, required: false
+  slot :actions, required: false
+
+  def page_blocks(assigns) do
+    ~H"""
+    <section>
+      <div :if={@title != []} class="flex items-center justify-between mb-1">
+        <h2 class="text-lg">
+          {render_slot(@title)}
+        </h2>
+
+        <div :if={@actions != []}>
+          {render_slot(@actions)}
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div :for={body <- @body} class="card bg-base-200 h-min">
+          <div class="card-body p-2">
+            {render_slot(body)}
+          </div>
+        </div>
+      </div>
+    </section>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
       <Layouts.container>
-        <UI.page_head></UI.page_head>
-
-        <div class="grid sm:grid-cols-2 gap-8">
-          <UI.page_blocks>
-            <:title>Your spaces</:title>
-
-            <:actions>
+        <div class="grid sm:grid-cols-2 gap-8 my-4">
+          <section>
+            <UI.panel_title class="flex justify-between items-end">
+              <span>Your spaces</span>
               <UI.button_plus
                 :if={Ash.can?({Space, :create}, @current_scope)}
                 data-testid="create-space-start"
                 phx-click="create_space_start"
               />
-            </:actions>
+            </UI.panel_title>
 
-            <:body>
-              <Components.Space.list spaces={@spaces} />
-
-              <Components.Modal.render
-                :if={@create_space_modal_open?}
-                cancel="create_space_cancel"
-                cancel_testid="create-space-cancel"
-                open?={true}
-                testid="create-space-dialog"
+            <div class={[
+              "autogrid",
+              "gap-2",
+              "auto-rows-[minmax(0,1fr)]",
+              "[--autogrid-min:9rem]"
+            ]}>
+              <.link
+                :for={space <- @spaces}
+                class={[
+                  "bg-base-content/5",
+                  "opacity-80 hover:opacity-100 transition",
+                  "text-xs font-bold",
+                  "leading-none",
+                  "cursor-pointer",
+                  "",
+                  "p-4"
+                ]}
+                navigate={~p"/#{space.slug}/wiki"}
               >
-                <:title>Create space</:title>
-
-                <Components.Space.form
-                  :if={Ash.can?({Space, :create}, @current_scope)}
-                  class="flex-1"
-                  event_validate="validate"
-                  event_submit="submit"
-                  form={@form}
-                />
-              </Components.Modal.render>
-            </:body>
-          </UI.page_blocks>
-
-          <section>
-            <div class="flex items-center justify-between mb-1">
-              <h2 class="text-lg">
-                All your events
-              </h2>
-
-              <div>
-                <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
-              </div>
+                {space.name}
+              </.link>
             </div>
+
+            <span :if={@spaces == []} class="opacity-70">
+              You are not a member of any spaces yet.
+            </span>
+
+            <Components.Modal.render
+              :if={@create_space_modal_open?}
+              cancel="create_space_cancel"
+              cancel_testid="create-space-cancel"
+              open?={true}
+              testid="create-space-dialog"
+            >
+              <:title>Create space</:title>
+
+              <Components.Space.form
+                :if={Ash.can?({Space, :create}, @current_scope)}
+                class="flex-1"
+                event_validate="validate"
+                event_submit="submit"
+                form={@form}
+              />
+            </Components.Modal.render>
+          </section>
+
+          <section class={[
+            "lg:border-l",
+            "lg:pl-8",
+            "border-base-content/8"
+          ]}>
+            <UI.panel_title class="flex justify-between items-end">
+              <span>Events</span>
+              <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
+            </UI.panel_title>
 
             <div style="--top: 0rem">
               <Components.Event.grouped_timeline

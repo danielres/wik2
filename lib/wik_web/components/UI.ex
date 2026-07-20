@@ -175,7 +175,7 @@ defmodule WikWeb.Components.UI do
   def panel_title(assigns) do
     ~H"""
     <h3 class={[
-      "mb-2 text-xs uppercase tracking-wider text-base-content/50",
+      "mb-2 text-xs uppercase tracking-wider text-base-content/60",
       "flex items-center gap-1",
       @class
     ]}>
@@ -269,34 +269,6 @@ defmodule WikWeb.Components.UI do
     ]}>
       {render_slot(@inner_block)}
     </h1>
-    """
-  end
-
-  slot :body, required: true
-  slot :title, required: false
-  slot :actions, required: false
-
-  def page_blocks(assigns) do
-    ~H"""
-    <section>
-      <div :if={@title != []} class="flex items-center justify-between mb-1">
-        <h2 class="text-lg">
-          {render_slot(@title)}
-        </h2>
-
-        <div :if={@actions != []}>
-          {render_slot(@actions)}
-        </div>
-      </div>
-
-      <div class="space-y-2">
-        <div :for={body <- @body} class="card bg-base-200 h-min">
-          <div class="card-body p-2">
-            {render_slot(body)}
-          </div>
-        </div>
-      </div>
-    </section>
     """
   end
 

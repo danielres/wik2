@@ -148,7 +148,13 @@ defmodule WikWeb.MemberProfileLive do
           </section>
         </:aside>
 
-        <div :if={@membership} class="" data-testid="member-profile-page">
+        <div
+          :if={@membership}
+          class={[
+            "[&>section]:max-w-[80ch]"
+          ]}
+          data-testid="member-profile-page"
+        >
           <UI.page_head>
             <:prepend>
               <.link

@@ -6,6 +6,7 @@ defmodule WikWeb.LiveUserAuth do
 
   alias Wik.Accounts
   alias Wik.Accounts.Membership
+  alias Wik.Events.ExternalCalendar
   alias WikWeb.Context
   alias WikWeb.ErrorTrackerContext
   alias WikWeb.TenantContext
@@ -99,6 +100,10 @@ defmodule WikWeb.LiveUserAuth do
             |> assign_context()
             |> ErrorTrackerContext.set()
             |> attach_context_hook()
+
+          if Phoenix.LiveView.connected?(socket) and ExternalCalendar.stale_refresh_enabled?() do
+            ExternalCalendar.refresh_stale_space_subscriptions(current_scope)
+          end
 
           {:cont, socket}
 

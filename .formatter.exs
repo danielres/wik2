@@ -1,7 +1,5 @@
 [
   import_deps: [
-    :ash_oban,
-    :oban,
     :error_tracker,
     :cinder,
     :ash_postgres,

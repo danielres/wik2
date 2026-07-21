@@ -1,6 +1,5 @@
 import Config
 
-config :wik, Oban, testing: :manual
 config :error_tracker, enabled: false
 
 config :wik, token_signing_secret: "0RaegrszeoUZf8/Nmq0S/siUPZpCVgvn"

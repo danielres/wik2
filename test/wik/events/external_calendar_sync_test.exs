@@ -40,6 +40,84 @@ defmodule Wik.Events.ExternalCalendarSyncTest do
     assert log =~ "unscheduled-event"
   end
 
+  test "stale space refresh skips fresh subscriptions" do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, _subscription} =
+      ExternalCalendarSubscription.create(
+        %{
+          ics_url: "https://calendar.example.test/fresh.ics",
+          cached_at: DateTime.utc_now()
+        },
+        scope: scope
+      )
+
+    assert :ok =
+             Wik.Events.ExternalCalendar.StaleRefresh.refresh_space(scope,
+               http_get: fn _url, _opts -> flunk("fresh subscription was refreshed") end
+             )
+  end
+
+  test "stale space refresh fetches old subscriptions" do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+
+    {:ok, subscription} =
+      ExternalCalendarSubscription.create(
+        %{
+          ics_url: "https://calendar.example.test/stale.ics",
+          cached_at: DateTime.add(DateTime.utc_now(), -2, :hour)
+        },
+        scope: scope
+      )
+
+    assert :ok =
+             Wik.Events.ExternalCalendar.StaleRefresh.refresh_space(scope,
+               http_get: fn "https://calendar.example.test/stale.ics", _opts ->
+                 {:ok, %Req.Response{status: 200, body: scheduled_event_ics()}}
+               end
+             )
+
+    updated_subscription = Ash.get!(ExternalCalendarSubscription, subscription.id, scope: scope)
+    assert DateTime.compare(updated_subscription.cached_at, subscription.cached_at) == :gt
+
+    assert [%ExternalEvent{external_uid: "scheduled-event"}] = Repo.all(ExternalEvent)
+  end
+
+  test "stale space refresh uses etag and treats 304 as refreshed" do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+    cached_at = DateTime.add(DateTime.utc_now(), -2, :hour)
+
+    {:ok, subscription} =
+      ExternalCalendarSubscription.create(
+        %{
+          ics_url: "https://calendar.example.test/unchanged.ics",
+          cached_at: cached_at,
+          etag: ~s("abc")
+        },
+        scope: scope
+      )
+
+    assert :ok =
+             Wik.Events.ExternalCalendar.StaleRefresh.refresh_space(scope,
+               http_get: fn "https://calendar.example.test/unchanged.ics", opts ->
+                 assert opts == [headers: [{"if-none-match", ~s("abc")}]]
+                 {:ok, %Req.Response{status: 304}}
+               end
+             )
+
+    updated_subscription = Ash.get!(ExternalCalendarSubscription, subscription.id, scope: scope)
+    assert DateTime.compare(updated_subscription.cached_at, cached_at) == :gt
+  end
+
   defp add_membership(space, user, type) do
     Ash.create!(
       Membership,
@@ -60,6 +138,22 @@ defmodule Wik.Events.ExternalCalendarSyncTest do
     DTSTAMP:20260529T120000Z
     SUMMARY:Unscheduled event
     END:VEVENT
+    BEGIN:VEVENT
+    UID:scheduled-event
+    DTSTAMP:20260529T120000Z
+    DTSTART:#{future_date_compact()}T180000Z
+    DTEND:#{future_date_compact()}T200000Z
+    SUMMARY:Scheduled event
+    END:VEVENT
+    END:VCALENDAR
+    """
+  end
+
+  defp scheduled_event_ics do
+    """
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    PRODID:-//Wik//External Calendar Sync Test//EN
     BEGIN:VEVENT
     UID:scheduled-event
     DTSTAMP:20260529T120000Z

@@ -7,24 +7,24 @@ defmodule Wik.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      WikWeb.Telemetry,
-      Wik.Repo,
-      {Ecto.Migrator, repos: Application.fetch_env!(:wik, :ecto_repos), skip: skip_migrations?()},
-      {Oban,
-       AshOban.config(
-         Application.fetch_env!(:wik, :ash_domains),
-         Application.fetch_env!(:wik, Oban)
-       )},
-      # Start a worker by calling: Wik.Worker.start_link(arg)
-      # {Wik.Worker, arg},
-      # Start to serve requests, typically the last entry
-      {DNSCluster, query: Application.get_env(:wik, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Wik.PubSub},
-      WikWeb.Presence,
-      WikWeb.Endpoint,
-      {AshAuthentication.Supervisor, [otp_app: :wik]}
-    ]
+    children =
+      [
+        WikWeb.Telemetry,
+        Wik.Repo
+      ] ++
+        stale_calendar_refresh_children() ++
+        [
+          {Ecto.Migrator,
+           repos: Application.fetch_env!(:wik, :ecto_repos), skip: skip_migrations?()},
+          # Start a worker by calling: Wik.Worker.start_link(arg)
+          # {Wik.Worker, arg},
+          # Start to serve requests, typically the last entry
+          {DNSCluster, query: Application.get_env(:wik, :dns_cluster_query) || :ignore},
+          {Phoenix.PubSub, name: Wik.PubSub},
+          WikWeb.Presence,
+          WikWeb.Endpoint,
+          {AshAuthentication.Supervisor, [otp_app: :wik]}
+        ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -43,5 +43,17 @@ defmodule Wik.Application do
   defp skip_migrations?() do
     # By default, sqlite migrations are run when using a release
     System.get_env("RELEASE_NAME") == nil
+  end
+
+  defp stale_calendar_refresh_children do
+    if Wik.Events.ExternalCalendar.StaleRefresh.enabled?() do
+      [
+        {Task.Supervisor, name: Wik.Events.ExternalCalendar.StaleRefresh.TaskSupervisor},
+        {Wik.Events.ExternalCalendar.StaleRefresh,
+         task_supervisor: Wik.Events.ExternalCalendar.StaleRefresh.TaskSupervisor}
+      ]
+    else
+      []
+    end
   end
 end

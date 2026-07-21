@@ -1,7 +1,6 @@
 defmodule WikWeb.Router do
   use WikWeb, :router
 
-  import Oban.Web.Router
   use AshAuthentication.Phoenix.Router
 
   import AshAuthentication.Plug.Helpers
@@ -47,8 +46,6 @@ defmodule WikWeb.Router do
 
     scope "/" do
       pipe_through :browser
-
-      oban_dashboard("/oban")
     end
   end
 

@@ -7,22 +7,7 @@
 # General application configuration
 import Config
 
-config :ash_oban, pro?: false
-
-config :wik, Oban,
-  engine: Oban.Engines.Basic,
-  notifier: Oban.Notifiers.PG,
-  peer: Oban.Peers.Isolated,
-  queues: [default: 2],
-  repo: Wik.Repo,
-  stage_interval: :timer.hours(4),
-  plugins: [
-    {Oban.Plugins.Cron,
-     crontab: [
-       # every day at 09:00
-       {"0 9 * * *", Wik.Events.Workers.RefreshExternalCalendars}
-     ]}
-  ]
+config :wik, Wik.Events.ExternalCalendar.StaleRefresh, enabled?: config_env() != :test
 
 config :error_tracker, repo: Wik.Repo, otp_app: :wik, enabled: true
 config :cinder, default_theme: "daisy_ui"

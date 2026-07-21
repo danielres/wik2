@@ -43,9 +43,6 @@ defmodule Wik.MixProject do
     [
       {:mdex, "~> 0.13"},
       {:mdex_gfm, "~> 0.2.0"},
-      {:oban, "~> 2.0"},
-      {:oban_web, "~> 2.0"},
-      {:ash_oban, "~> 0.8"},
       {:memoize, "~> 1.4"},
       {:iconify_ex, "~> 0.7.2"},
       {:ical, "~> 2.0"},

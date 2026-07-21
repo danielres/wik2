@@ -29,23 +29,25 @@ defmodule WikWeb.Components.Block.Types.Backlinks do
         Backlinks block needs a page context.
       </div>
 
-      <div
-        :if={!@missing_context? and @backlinks == []}
-        class="text-sm opacity-60"
-        data-testid="backlinks-empty"
-      >
-        No backlinks yet
-      </div>
-
       <ul
-        :if={!@missing_context? and @backlinks != []}
-        class="space-y-0"
+        :if={!@missing_context?}
+        class={[
+          "space-y-1",
+          "text-sm"
+        ]}
         data-testid="backlinks-list"
       >
+        <li>
+          <.link
+            navigate={"/" <> @scope.tenant.slug <> "/" <> "tree"}
+            class="opacity-60 hover:opacity-100 transition-opacity"
+          >
+            All pages
+          </.link>
+        </li>
+
         <li :for={backlink <- @backlinks}>
-          <div class="flex gap-3 items-center text-sm">
-            <Page.breadcrumbs node={backlink} page_tree={@page_tree} scope={@scope} />
-          </div>
+          <Page.breadcrumbs node={backlink} page_tree={@page_tree} scope={@scope} />
         </li>
       </ul>
     </div>

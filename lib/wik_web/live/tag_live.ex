@@ -401,7 +401,14 @@ defmodule WikWeb.TagLive do
           <%!-- </section> --%>
         </:aside>
 
-        <div :if={@tag} class="space-y-6" data-testid="tag-page">
+        <div
+          :if={@tag}
+          class={[
+            "space-y-6",
+            "[&>section]:max-w-[80ch]"
+          ]}
+          data-testid="tag-page"
+        >
           <UI.page_head :if={!@editing?}>
             <:prepend>
               <TagComponent.breadcrumbs

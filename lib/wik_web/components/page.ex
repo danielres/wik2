@@ -23,7 +23,7 @@ defmodule WikWeb.Components.Page do
         <ul>
           <li :for={item <- @items}>
             <.link
-              class="opacity-70 hover:opacity-100 transition-opacity"
+              class="opacity-60 hover:opacity-100 transition-opacity"
               navigate={build_page_path(@scope, item.path)}
             >
               {item.title}

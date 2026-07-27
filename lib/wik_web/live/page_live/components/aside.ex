@@ -94,7 +94,7 @@ defmodule WikWeb.PageLive.Components.Aside do
         :if={@can_manage_page? and @page_topic_options != []}
         data-testid="page-topic-add"
         data-tip="Add topic"
-        phx-click={JS.push("page_topic_add_start") |> UI.modal_open("page-topic-modal")}
+        phx-click={JS.push("page_topic:add_start") |> UI.modal_open("page-topic-modal")}
       />
     </div>
 
@@ -121,7 +121,7 @@ defmodule WikWeb.PageLive.Components.Aside do
             "opacity-80 hover:opacity-100 transition-opacity"
           ]}
           data-testid={"page-topic-remove-#{summary.tag.id}"}
-          phx-click="page_topic_remove"
+          phx-click="page_topic:remove"
           phx-value-tag_id={summary.tag.id}
         >
           <span class="sr-only">Remove topic</span>
@@ -139,8 +139,8 @@ defmodule WikWeb.PageLive.Components.Aside do
         id="page-topic-form"
         class="mt-4 space-y-4"
         data-testid="page-topic-form"
-        phx-change="page_topic_validate"
-        phx-submit={JS.push("page_topic_submit") |> UI.modal_close("page-topic-modal")}
+        phx-change="page_topic:validate"
+        phx-submit={JS.push("page_topic:submit") |> UI.modal_close("page-topic-modal")}
       >
         <.input
           field={@page_topic_form[:tag_id]}
@@ -162,7 +162,7 @@ defmodule WikWeb.PageLive.Components.Aside do
             type="button"
             class="btn btn-ghost btn-sm"
             data-testid="page-topic-cancel"
-            phx-click={JS.push("page_topic_cancel") |> UI.modal_close("page-topic-modal")}
+            phx-click={JS.push("page_topic:add_cancel") |> UI.modal_close("page-topic-modal")}
           >
             Cancel
           </button>

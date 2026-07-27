@@ -94,43 +94,43 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
           ]}>
             <.button_special_block
               label={Markdown.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="markdown"
             />
 
             <.button_special_block
               label={YouTube.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="youtube"
             />
 
             <.button_special_block
               label={SoundCloud.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="soundcloud"
             />
 
             <.button_special_block
               label={GoogleCalendar.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="google_calendar"
             />
 
             <.button_special_block
               label={GoogleMaps.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="google_maps"
             />
 
             <.button_special_block
               label={Pages.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="pages"
             />
 
             <.button_special_block
               label={Backlinks.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="backlinks"
             />
           </div>
@@ -143,20 +143,20 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
           ]}>
             <.button_special_block
               label={Members.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="members"
             />
 
             <.button_special_block
               label="Linked copy"
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="linked_copy"
             />
 
             <.button_special_block
               :if={@child_pages_available?}
               label={ChildPages.label()}
-              phx-click="add_block"
+              phx-click="block:add"
               phx-value-type="child_pages"
             />
           </div>

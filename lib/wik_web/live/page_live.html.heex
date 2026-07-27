@@ -12,10 +12,10 @@
   >
     <:actions :if={@can_manage_page? and @editing_block_id == nil}>
       <%= if @editing? do %>
-        <WikWeb.Components.Block.AddBlockMenuButton.render event_open="add_block_modal_open" />
-        <UI.button_ok phx-click="toggle_edit_mode" />
+        <WikWeb.Components.Block.AddBlockMenuButton.render event_open="block:add_start" />
+        <UI.button_ok phx-click="edit_mode:toggle" />
       <% else %>
-        <UI.button_unlock phx-click="toggle_edit_mode" />
+        <UI.button_unlock phx-click="edit_mode:toggle" />
       <% end %>
     </:actions>
 
@@ -44,8 +44,8 @@
       <section>
         <Components.Block.AddBlockMenuButton.modal_special_blocks
           scope={@current_scope}
-          event_cancel="add_block_modal_cancel"
-          event_position_select="add_block_position_select"
+          event_cancel="block:add_cancel"
+          event_position_select="block:add_position_select"
           id="add-block-dialog"
           open?={@add_block_modal_open?}
           position={@add_block_position}
@@ -113,7 +113,7 @@
           :if={@linked_copy_form}
           for={@linked_copy_form}
           id="linked-copy-form"
-          phx-submit="linked_copy_submit"
+          phx-submit="linked_copy:submit"
           class="bg-base-200 rounded-box p-4 space-y-3"
         >
           <.input field={@linked_copy_form[:block_id]} label="Block ID" phx-mounted={JS.focus()} />
@@ -128,7 +128,7 @@
           <div class="flex justify-end gap-2">
             <.button
               class="btn btn-ghost btn-sm"
-              phx-click="linked_copy_cancel"
+              phx-click="linked_copy:cancel"
               type="button"
             >
               Cancel

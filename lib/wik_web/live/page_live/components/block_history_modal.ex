@@ -19,7 +19,7 @@ defmodule WikWeb.PageLive.Components.BlockHistoryModal do
 
     ~H"""
     <Components.Modal.render
-      cancel="hide_block_history"
+      cancel="block_history:hide"
       cancel_testid="block-history-cancel"
       open?={true}
       testid="block-history-dialog"

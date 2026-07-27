@@ -31,8 +31,8 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
     html =
       render_component(&AddBlockMenuButton.modal_special_blocks/1, %{
         id: "special-blocks",
-        event_cancel: "add_block_modal_cancel",
-        event_position_select: "add_block_position_select",
+        event_cancel: "block:add_cancel",
+        event_position_select: "block:add_position_select",
         open?: true,
         position: "bottom",
         scope: scope
@@ -59,7 +59,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
     assert html =~ ~s(phx-value-type="child_pages")
     assert html =~ "Top of page"
     assert html =~ "Bottom of page"
-    assert html =~ ~s(phx-click="add_block_position_select")
+    assert html =~ ~s(phx-click="block:add_position_select")
     assert html =~ ~s(phx-value-position="top")
     assert html =~ ~s(phx-value-position="bottom")
   end
@@ -84,8 +84,8 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
     html =
       render_component(&AddBlockMenuButton.modal_special_blocks/1, %{
         id: "special-blocks",
-        event_cancel: "add_block_modal_cancel",
-        event_position_select: "add_block_position_select",
+        event_cancel: "block:add_cancel",
+        event_position_select: "block:add_position_select",
         open?: true,
         position: "bottom",
         scope: scope

@@ -1,3 +1,5 @@
+<% has_aside? = PageLive.Components.Area.has_area?(@page, :aside) %>
+
 <Layouts.app
   context={@context}
   flash={@flash}
@@ -42,14 +44,6 @@
       </div>
     <% else %>
       <section>
-        <Components.Block.AddBlockMenuButton.modal_special_blocks
-          scope={@current_scope}
-          event_cancel="block:add_cancel"
-          event_position_select="block:add_position_select"
-          id="add-block-dialog"
-          open?={@add_block_modal_open?}
-          position={@add_block_position}
-        />
         <UI.page_head class="mx-2">
           <:prepend>
             <Components.Page.breadcrumbs
@@ -69,8 +63,8 @@
         </UI.page_head>
 
         <div class={[
-          has_area?(@page, :aside) && "grid lg:grid-cols-[3fr_2fr] gap-4",
-          "[&>*]:max-w-[80ch]"
+          "[&>*]:max-w-[80ch]",
+          has_aside? && "grid lg:grid-cols-[3fr_2fr] gap-4"
         ]}>
           <PageLive.Components.Area.render
             area={:main}
@@ -86,7 +80,7 @@
           />
 
           <PageLive.Components.Area.render
-            :if={has_area?(@page, :aside)}
+            :if={has_aside?}
             area={:aside}
             class={[
               "max-lg:border-t",
@@ -109,39 +103,13 @@
           />
         </div>
 
-        <.form
+        <PageLive.Components.LinkedCopy.form
           :if={@linked_copy_form}
-          for={@linked_copy_form}
-          id="linked-copy-form"
-          phx-submit="linked_copy:submit"
           class="bg-base-200 rounded-box p-4 space-y-3"
-        >
-          <.input field={@linked_copy_form[:block_id]} label="Block ID" phx-mounted={JS.focus()} />
-          <input
-            name={@linked_copy_form[:position].name}
-            type="hidden"
-            value={@linked_copy_form[:position].value}
-          />
-
-          <div :if={@linked_copy_error} class="text-error text-sm">{@linked_copy_error}</div>
-
-          <div class="flex justify-end gap-2">
-            <.button
-              class="btn btn-ghost btn-sm"
-              phx-click="linked_copy:cancel"
-              type="button"
-            >
-              Cancel
-            </.button>
-            <.button class="btn btn-primary btn-sm" type="submit">Link block</.button>
-          </div>
-        </.form>
-
-        <PageLive.Components.BlockInfoModal.render
-          :if={@block_info_placement}
-          author_membership={@block_info_author_membership}
-          placement={@block_info_placement}
-          scope={@current_scope}
+          id="linked-copy-form"
+          linked_copy_form={@linked_copy_form}
+          linked_copy_error={@linked_copy_error}
+          phx-submit="linked_copy:submit"
         />
 
         <.live_component
@@ -156,3 +124,21 @@
     <% end %>
   </Layouts.space>
 </Layouts.app>
+
+<%= if assigns[:not_found_path] == nil do %>
+  <PageLive.Components.BlockInfoModal.render
+    :if={@block_info_placement}
+    author_membership={@block_info_author_membership}
+    placement={@block_info_placement}
+    scope={@current_scope}
+  />
+
+  <Components.Block.AddBlockMenuButton.modal_special_blocks
+    scope={@current_scope}
+    event_cancel="block:add_cancel"
+    event_position_select="block:add_position_select"
+    id="add-block-dialog"
+    open?={@add_block_modal_open?}
+    position={@add_block_position}
+  />
+<% end %>

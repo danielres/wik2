@@ -9,7 +9,9 @@ defmodule WikWeb.PageLive do
   alias WikWeb.PageLive.BlockEdit
   alias WikWeb.PageLive.BlockHistory
   alias WikWeb.PageLive.BlockInfo
+  alias WikWeb.PageLive.EditMode
   alias WikWeb.PageLive.Locks
+  alias WikWeb.PageLive.PageAuthor
   alias WikWeb.PageLive.PageState
   alias WikWeb.PageLive.PageTopics
   alias WikWeb.Presence
@@ -67,7 +69,7 @@ defmodule WikWeb.PageLive do
       |> PageState.load_path(path, title_path: title_path)
       |> PageTopics.sync_subscription()
       |> PageTopics.assign_topics()
-      |> load_page_author_membership()
+      |> PageAuthor.assign_membership()
       |> Presence.track_in_liveview(url)
       |> Locks.assign_locks()
 
@@ -98,7 +100,7 @@ defmodule WikWeb.PageLive do
 
   @impl true
   def handle_event("edit_mode:toggle", _params, socket),
-    do: {:noreply, toggle_edit_mode(socket)}
+    do: {:noreply, EditMode.toggle(socket)}
 
   # page_topic -----------------------------------------------------------------
 
@@ -215,33 +217,4 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_event("block_history:hide", _params, socket),
     do: {:noreply, BlockHistory.hide(socket)}
-
-  # ============================================================================
-  # PRIVATE
-  # ============================================================================
-
-  defp has_area?(page, area), do: Enum.any?(page.block_placements, &(&1.area == area))
-
-  defp toggle_edit_mode(socket) do
-    socket = socket |> assign(editing?: !socket.assigns.editing?)
-
-    if socket.assigns.editing?,
-      do: socket,
-      else: socket |> BlockEdit.clear() |> PageTopics.close_form()
-  end
-
-  defp load_page_author_membership(
-         %{assigns: %{current_scope: scope, page: %{author: author}}} = socket
-       ) do
-    case Wik.Accounts.get_membership(scope.tenant, author) do
-      {:ok, membership} ->
-        assign(socket, :author_membership, membership)
-
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "load_page_author_membership failed")
-        assign(socket, :author_membership, nil)
-    end
-  end
-
-  defp load_page_author_membership(socket), do: assign(socket, :author_membership, nil)
 end

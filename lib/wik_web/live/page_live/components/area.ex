@@ -6,6 +6,8 @@ defmodule WikWeb.PageLive.Components.Area do
   def resolve_area(nil), do: :main
   def resolve_area(other), do: other
 
+  def has_area?(page, area), do: Enum.any?(page.block_placements, &(&1.area == area))
+
   attr :area, :atom, required: true
   attr :class, :any, default: ""
   attr :editing?, :boolean, required: true

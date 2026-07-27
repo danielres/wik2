@@ -10,7 +10,7 @@ defmodule WikWeb.PageLive.Components.BlockInfoModal do
   def render(assigns) do
     ~H"""
     <Components.Modal.render
-      cancel="hide_block_info"
+      cancel="block_info:hide"
       cancel_testid="block-info-cancel"
       open?={true}
       testid="block-info-dialog"

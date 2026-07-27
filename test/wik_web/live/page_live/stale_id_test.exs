@@ -51,7 +51,7 @@ defmodule WikWeb.PageLive.StaleIdTest do
 
     assert {:noreply, result_socket} =
              PageLive.handle_event(
-               "show_block_info",
+               "block_info:show",
                %{"placement_id" => "stale-placement"},
                socket
              )

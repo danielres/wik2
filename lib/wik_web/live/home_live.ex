@@ -50,6 +50,35 @@ defmodule WikWeb.HomeLive do
     """
   end
 
+  attr :spaces, :list, required: true
+
+  defp spaces_grid(assigns) do
+    ~H"""
+    <div class={[
+      "autogrid",
+      "gap-2",
+      "auto-rows-[minmax(0,1fr)]",
+      "[--autogrid-min:9rem]"
+    ]}>
+      <.link
+        :for={space <- @spaces}
+        class={[
+          "bg-base-content/5",
+          "opacity-80 hover:opacity-100 transition",
+          "text-xs font-bold",
+          "leading-none",
+          "cursor-pointer",
+          "",
+          "p-4"
+        ]}
+        navigate={~p"/#{space.slug}/wiki"}
+      >
+        {space.name}
+      </.link>
+    </div>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -66,28 +95,7 @@ defmodule WikWeb.HomeLive do
               />
             </UI.panel_title>
 
-            <div class={[
-              "autogrid",
-              "gap-2",
-              "auto-rows-[minmax(0,1fr)]",
-              "[--autogrid-min:9rem]"
-            ]}>
-              <.link
-                :for={space <- @spaces}
-                class={[
-                  "bg-base-content/5",
-                  "opacity-80 hover:opacity-100 transition",
-                  "text-xs font-bold",
-                  "leading-none",
-                  "cursor-pointer",
-                  "",
-                  "p-4"
-                ]}
-                navigate={~p"/#{space.slug}/wiki"}
-              >
-                {space.name}
-              </.link>
-            </div>
+            <.spaces_grid spaces={@spaces} />
 
             <span :if={@spaces == []} class="opacity-70">
               You are not a member of any spaces yet.
@@ -118,9 +126,20 @@ defmodule WikWeb.HomeLive do
             "border-base-content/8"
           ]}>
             <UI.panel_title class="flex justify-between items-end">
-              <span>Events</span>
+              <span>Participation </span>
               <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
             </UI.panel_title>
+            <div
+              :if={@grouped_event_items == []}
+              class={[
+                "text-sm opacity-50",
+                "flex justify-between items-center",
+                "bg bg-base-200 p-4 rounded"
+              ]}
+            >
+              <div>No upcoming events</div>
+              <.icon name="hero-information-circle" />
+            </div>
 
             <div style="--top: 0rem">
               <Components.Event.grouped_timeline

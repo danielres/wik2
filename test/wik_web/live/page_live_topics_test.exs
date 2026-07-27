@@ -32,7 +32,7 @@ defmodule WikWeb.PageLiveTopicsTest do
     assert has_element?(view, testid("page-topics"))
     assert has_element?(view, testid("page-topic-list"))
 
-    render_click(element(view, ~s(button[phx-click="toggle_edit_mode"])))
+    render_click(element(view, ~s(button[phx-click="edit_mode:toggle"])))
     assert has_element?(view, testid("page-topic-add"))
 
     render_click(element(view, testid("page-topic-add")))
@@ -44,7 +44,7 @@ defmodule WikWeb.PageLiveTopicsTest do
 
     assert modal_html =~ ~s(id="page-topic-form")
 
-    render_hook(view, "page_topic_submit", %{
+    render_hook(view, "page_topic:submit", %{
       "page_topic" => %{
         "tag_id" => dance.id,
         "relevancy_level" => "7"

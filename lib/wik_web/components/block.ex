@@ -93,7 +93,7 @@ defmodule WikWeb.Components.Block do
           "rounded ring-accent/20 transition",
           "space"
         ]}
-        phx-click={@editing? and "edit_block_start"}
+        phx-click={@editing? and "block:edit_start"}
         phx-value-block_id={@placement.block.id}
       >
         <h2
@@ -147,7 +147,7 @@ defmodule WikWeb.Components.Block do
       <Phoenix.Component.form
         for={@form}
         id={"edit-block-form-#{@block.id}"}
-        phx-submit="edit_block_submit"
+        phx-submit="block:edit_submit"
         phx-value-block_id={@block.id}
         class={[
           "rounded-lg shadow-md space-y-4 ring-1 ring-opacity-5 ring-accent",
@@ -184,7 +184,7 @@ defmodule WikWeb.Components.Block do
         ]}>
           <.button
             class="btn bg-base-300/40 hover:bg-error/50 backdrop-blur btn-sm"
-            phx-click="edit_block_cancel"
+            phx-click="block:edit_cancel"
             phx-value-block_id={@block.id}
             type="button"
           >

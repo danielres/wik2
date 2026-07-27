@@ -11,7 +11,7 @@ defmodule WikWeb.Components.Block.ActionButtons do
     <div class="flex justify-between">
       <.action_button
         icon="hero-trash"
-        phx-click="destroy_block"
+        phx-click="block:destroy"
         phx-value-placement_id={@placement.id}
         variant="danger"
       />
@@ -20,25 +20,25 @@ defmodule WikWeb.Components.Block.ActionButtons do
         <.action_button
           :if={Types.supports_history?(@placement.block.type)}
           icon="hero-clock-mini"
-          phx-click="show_block_history"
+          phx-click="block_history:show"
           phx-value-placement_id={@placement.id}
           title="Show history"
         />
         <.action_button
           data-testid={"block-#{@placement.id}-info"}
           icon="hero-information-circle-micro"
-          phx-click="show_block_info"
+          phx-click="block_info:show"
           phx-value-placement_id={@placement.id}
         />
         <.action_button
           icon="hero-chevron-up-mini"
-          phx-click="move_block_up"
+          phx-click="block:move_up"
           phx-value-placement_id={@placement.id}
         />
 
         <.action_button
           icon="hero-chevron-down-mini"
-          phx-click="move_block_down"
+          phx-click="block:move_down"
           phx-value-placement_id={@placement.id}
         />
 
@@ -48,7 +48,7 @@ defmodule WikWeb.Components.Block.ActionButtons do
               do: "hero-chevron-left-mini",
               else: "hero-chevron-right-mini"
           }
-          phx-click="toggle_block_aside"
+          phx-click="block:toggle_aside"
           phx-value-placement_id={@placement.id}
           title={if @placement.area == :aside, do: "Move to main column", else: "Move to aside"}
         />

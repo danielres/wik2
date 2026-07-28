@@ -10,17 +10,19 @@ defmodule WikWeb.Layouts.Space do
     default: %{actor: nil, tenant: nil},
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
-  attr :presences, :list, default: []
-  attr :view, :string, default: nil, doc: "the current view for active menu state"
   attr :editing?, :boolean, default: false
-  slot :inner_block, required: true
+  attr :presences, :list, default: []
+  attr :show_presences?, :boolean, default: false
+  attr :view, :string, default: nil, doc: "the current view for active menu state"
   slot :actions, required: false
   slot :aside, required: false
+  slot :inner_block, required: true
 
   def space(assigns) do
     ~H"""
+    <%!-- TODO: fix presences rendering --%>
     <div
-      :if={@presences |> length() > 1}
+      :if={@show_presences? && @presences |> length() > 1}
       class={[
         "py-0",
         "-mt-2",

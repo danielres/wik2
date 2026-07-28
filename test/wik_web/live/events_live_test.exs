@@ -276,7 +276,7 @@ defmodule WikWeb.EventsLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
-    first_event_date = Date.utc_today() |> Date.add(10)
+    first_event_date = Date.utc_today() |> Date.add(75)
     second_event_date = Date.utc_today() |> Date.add(220)
 
     {:ok, first_event} =

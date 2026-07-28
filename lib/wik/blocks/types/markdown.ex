@@ -12,6 +12,12 @@ defmodule Wik.Blocks.Types.Markdown do
   def supports_title?, do: false
   def default_data, do: %{"text" => ""}
 
+  def source_text_hash(text) when is_binary(text) do
+    :sha256
+    |> :crypto.hash(text)
+    |> Base.encode16(case: :lower)
+  end
+
   def create_initial_version(block, opts) do
     block
     |> block_to_canonical_text()

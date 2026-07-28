@@ -3,6 +3,7 @@ defmodule Wik.Wiki.Backlinks do
   alias Wik.Blocks.BlockPlacement
   alias Wik.Wiki.PageTree
   alias Wik.Wiki.PageTree.TreeQueries
+  alias Wik.Wiki.PageTree.Wikilinks
 
   require Ash.Query
 
@@ -30,9 +31,10 @@ defmodule Wik.Wiki.Backlinks do
       |> Map.new(&{&1.page_id, &1})
 
     target_marker = "[[node:#{target_node_id}]]"
+    target_title_path = TreeQueries.get_node_title_path(nodes, target_node_id)
 
     placements
-    |> Enum.filter(&markdown_backlink?(&1, target_marker))
+    |> Enum.filter(&markdown_backlink?(&1, target_marker, target_title_path))
     |> Enum.reject(&(&1.attachable_id == target_page_id))
     |> Enum.map(&Map.get(nodes_by_page_id, &1.attachable_id))
     |> Enum.reject(&is_nil/1)
@@ -48,10 +50,15 @@ defmodule Wik.Wiki.Backlinks do
     end)
   end
 
-  defp markdown_backlink?(%{block: %{type: :markdown, data: %{"text" => text}}}, target_marker)
+  defp markdown_backlink?(
+         %{block: %{type: :markdown, data: %{"text" => text}}},
+         target_marker,
+         target_title_path
+       )
        when is_binary(text) do
-    String.contains?(text, target_marker)
+    String.contains?(text, target_marker) or
+      Wikilinks.contains_title_path?(text, target_title_path)
   end
 
-  defp markdown_backlink?(_placement, _target_marker), do: false
+  defp markdown_backlink?(_placement, _target_marker, _target_title_path), do: false
 end

@@ -11,6 +11,7 @@ defmodule WikWeb.PageLive do
   alias WikWeb.PageLive.BlockInfo
   alias WikWeb.PageLive.EditMode
   alias WikWeb.PageLive.Locks
+  alias WikWeb.PageLive.MissingWikilinks
   alias WikWeb.PageLive.PageAuthor
   alias WikWeb.PageLive.PageState
   alias WikWeb.PageLive.PageTopics
@@ -72,6 +73,7 @@ defmodule WikWeb.PageLive do
       |> PageAuthor.assign_membership()
       |> Presence.track_in_liveview(url)
       |> Locks.assign_locks()
+      |> MissingWikilinks.canonicalize_source(params)
 
     {:noreply, socket}
   end

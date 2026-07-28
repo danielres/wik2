@@ -112,6 +112,42 @@ defmodule Wik.Wiki.BacklinksTest do
     assert {:ok, []} = Backlinks.list_pages_linking_to_node(scope, target_node, page_tree)
   end
 
+  test "lists visible title-path markdown wikilinks as fallback backlinks" do
+    actor = generate(user())
+    space = generate(space())
+    add_membership(space, actor, :owner)
+    scope = scope(actor, space)
+
+    {:ok, target_page} = Page.create(scope: scope)
+    {:ok, source_page} = Page.create(scope: scope)
+
+    page_tree =
+      generate(
+        page_tree(
+          space: space,
+          nodes: [
+            %{id: 1, page_id: target_page.id, parent_id: nil, slug: "target", title: "Target"},
+            %{id: 2, page_id: source_page.id, parent_id: nil, slug: "source", title: "Source"}
+          ]
+        )
+      )
+
+    assert {:ok, _block} =
+             Blocks.create_user_owned_block_on_page(
+               source_page,
+               %{type: :markdown, data: %{"text" => "[[Target]]"}},
+               scope: scope
+             )
+
+    target_node = Enum.find(page_tree.nodes, &(&1.id == 1))
+
+    assert {:ok, backlinks} = Backlinks.list_pages_linking_to_node(scope, target_node, page_tree)
+
+    assert backlinks == [
+             %{node_id: 2, page_id: source_page.id, path: "source", title: "Source"}
+           ]
+  end
+
   defp add_membership(space, user, type) do
     Ash.create!(
       Membership,

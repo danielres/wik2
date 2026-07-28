@@ -10,12 +10,12 @@ defmodule WikWeb.PageLive.MissingWikilinks do
          false <- source_locked?(socket, source.block_id),
          %{} = scope <- socket.assigns.current_scope,
          %{id: node_id} <- socket.assigns.node,
-         true <- target_matches_source?(socket, source),
+         {:ok, target_title_path} <- target_title_path(socket, source),
          {:ok, %{type: :markdown, data: %{"text" => text}} = block} <-
            Block.get_by_id(source.block_id, scope: scope),
          true <- MarkdownBlock.source_text_hash(text) == source.text_hash,
          updated_text when updated_text != text <-
-           Wikilinks.replace_title_path_with_node(text, source.title_path, node_id),
+           Wikilinks.replace_title_path_with_node(text, target_title_path, node_id),
          {:ok, _block} <- Blocks.update_block(block, %{"text" => updated_text}, scope: scope) do
       socket
     else
@@ -60,16 +60,22 @@ defmodule WikWeb.PageLive.MissingWikilinks do
     |> Map.has_key?(block_id)
   end
 
-  defp target_matches_source?(%{assigns: %{node: %{id: node_id}, page_tree: %{nodes: nodes}}}, %{
+  defp target_title_path(%{assigns: %{node: %{id: node_id}, page_tree: %{nodes: nodes}}}, %{
          title_path: title_path
        }) do
-    nodes
-    |> TreeQueries.get_node_title_path(node_id)
-    |> String.trim()
-    |> Kernel.==(String.trim(title_path))
+    target_title_path =
+      nodes
+      |> TreeQueries.get_node_title_path(node_id)
+      |> String.trim()
+
+    if target_title_path == String.trim(title_path) do
+      {:ok, target_title_path}
+    else
+      {:error, :target_mismatch}
+    end
   end
 
-  defp target_matches_source?(_socket, _source), do: false
+  defp target_title_path(_socket, _source), do: {:error, :target_mismatch}
 
   defp log_error(%{assigns: %{current_scope: scope}}, error),
     do: Utils.Log.scoped_error(scope, error, "missing wikilink canonicalization failed")

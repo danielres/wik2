@@ -384,7 +384,7 @@ defmodule WikWeb.Components.UI do
   def button_ok(assigns) do
     ~H"""
     <button
-      class="btn btn-xs btn-circle btn-accent btn-soft"
+      class="btn btn-xs btn-circle btn-accent"
       {@rest}
     >
       <.icon name="hero-lock-open-micro" class="size-3.5" />
@@ -398,8 +398,8 @@ defmodule WikWeb.Components.UI do
     ~H"""
     <button
       class={[
-        "btn btn-xs btn-circle btn-accent btn-ghost",
-        "text-accent hover:text-base-content",
+        "btn btn-xs btn-circle btn-accent",
+        "hover:text-base-content",
         "opacity-60 hover:opacity-100"
       ]}
       {@rest}

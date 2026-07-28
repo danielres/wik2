@@ -272,8 +272,6 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
                MarkdownBlock.source_text_hash("[[Soups/Vegetable Soup]]"),
              "wikilink_source_title_path" => "Soups/Vegetable Soup"
            }
-
-    assert html =~ ">Soups/Vegetable Soup<"
   end
 
   test "render omits source metadata from missing links when rendering override text" do

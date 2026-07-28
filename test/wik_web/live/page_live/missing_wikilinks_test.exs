@@ -57,6 +57,25 @@ defmodule WikWeb.PageLive.MissingWikilinksTest do
     assert block.data["text"] == "[[Changed]]"
   end
 
+  test "skips canonicalization when the opened node does not match the source title path" do
+    %{scope: scope, source_block: source_block} =
+      source_and_target_fixture("[[New Page]]")
+
+    assert {:ok, unrelated_node, _unrelated_page} =
+             Wiki.ensure_page_and_node_at_path(
+               "unrelated-page",
+               scope: scope,
+               load: [:author],
+               title_path: "Unrelated Page"
+             )
+
+    socket(scope, unrelated_node)
+    |> MissingWikilinks.canonicalize_source(source_params(source_block, "New Page"))
+
+    assert {:ok, block} = Block.get_by_id(source_block.id, scope: scope)
+    assert block.data["text"] == "[[New Page]]"
+  end
+
   defp source_and_target_fixture(source_text) do
     actor = generate(user())
     space = generate(space(author: actor))
@@ -97,7 +116,8 @@ defmodule WikWeb.PageLive.MissingWikilinksTest do
       assigns: %{
         current_scope: scope,
         locks: locks,
-        node: node
+        node: node,
+        page_tree: Wiki.load_page_tree(scope)
       }
     }
   end

@@ -2,6 +2,7 @@ defmodule WikWeb.PageLive.MissingWikilinks do
   alias Wik.Blocks
   alias Wik.Blocks.Block
   alias Wik.Blocks.Types.Markdown, as: MarkdownBlock
+  alias Wik.Wiki.PageTree.TreeQueries
   alias Wik.Wiki.PageTree.Wikilinks
 
   def canonicalize_source(socket, params) when is_map(params) do
@@ -9,6 +10,7 @@ defmodule WikWeb.PageLive.MissingWikilinks do
          false <- source_locked?(socket, source.block_id),
          %{} = scope <- socket.assigns.current_scope,
          %{id: node_id} <- socket.assigns.node,
+         true <- target_matches_source?(socket, source),
          {:ok, %{type: :markdown, data: %{"text" => text}} = block} <-
            Block.get_by_id(source.block_id, scope: scope),
          true <- MarkdownBlock.source_text_hash(text) == source.text_hash,
@@ -57,6 +59,17 @@ defmodule WikWeb.PageLive.MissingWikilinks do
     |> Map.get(:locks, %{})
     |> Map.has_key?(block_id)
   end
+
+  defp target_matches_source?(%{assigns: %{node: %{id: node_id}, page_tree: %{nodes: nodes}}}, %{
+         title_path: title_path
+       }) do
+    nodes
+    |> TreeQueries.get_node_title_path(node_id)
+    |> String.trim()
+    |> Kernel.==(String.trim(title_path))
+  end
+
+  defp target_matches_source?(_socket, _source), do: false
 
   defp log_error(%{assigns: %{current_scope: scope}}, error),
     do: Utils.Log.scoped_error(scope, error, "missing wikilink canonicalization failed")

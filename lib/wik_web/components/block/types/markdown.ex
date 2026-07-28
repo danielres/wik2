@@ -3,6 +3,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
 
   alias Wik.Accounts
   alias Wik.Tags
+  alias Wik.Blocks.Types.Markdown, as: MarkdownBlock
   alias Wik.Wiki.PageTree.Wikilinks
   alias WikWeb.Components.UI
 
@@ -69,7 +70,8 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     md = assigns.text || Map.get(assigns.block.data, "text", "")
     scope = assigns.scope
     page_tree = assigns.page_tree
-    html = md |> markdown_to_html(scope, page_tree)
+    source_context = missing_wikilink_source_context(assigns.block, assigns.text)
+    html = md |> markdown_to_html(scope, page_tree, source_context)
     assigns = assigns |> assign(html: html)
 
     ~H"""
@@ -158,10 +160,12 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     """
   end
 
-  defp markdown_to_html(markdown, scope, page_tree)
-  defp markdown_to_html("", _scope, _page_tree), do: "<p>Empty Markdown block</p>"
+  defp markdown_to_html(markdown, scope, page_tree, source_context)
 
-  defp markdown_to_html(markdown, scope, page_tree) do
+  defp markdown_to_html("", _scope, _page_tree, _source_context),
+    do: "<p>Empty Markdown block</p>"
+
+  defp markdown_to_html(markdown, scope, page_tree, source_context) do
     member_id_to_username_map = scope |> membership_id_to_username_map()
     tag_id_to_name_map = scope |> tag_id_to_name_map()
     tag_name_to_slug_map = scope |> tag_name_to_slug_map()
@@ -171,7 +175,13 @@ defmodule WikWeb.Components.Block.Types.Markdown do
     |> Wikilinks.memberships_to_usernames(member_id_to_username_map)
     |> Wikilinks.tags_to_tag_names(tag_id_to_name_map)
     |> mask_unresolved_canonical_tag_wikilinks()
-    |> render_visible_wikilinks(scope, page_tree, member_id_to_username_map, tag_name_to_slug_map)
+    |> render_visible_wikilinks(
+      scope,
+      page_tree,
+      member_id_to_username_map,
+      tag_name_to_slug_map,
+      source_context
+    )
     |> strip_raw_iframes()
     |> render_markdown()
     |> render_youtube_embed_images()
@@ -287,7 +297,8 @@ defmodule WikWeb.Components.Block.Types.Markdown do
          %{tenant: %{slug: space_slug}},
          %{nodes: nodes},
          member_id_to_username_map,
-         tag_name_to_slug_map
+         tag_name_to_slug_map,
+         source_context
        )
        when is_binary(space_slug) do
     title_path_to_slug_path = Wikilinks.title_paths_to_slug_path_map(nodes)
@@ -324,7 +335,7 @@ defmodule WikWeb.Components.Block.Types.Markdown do
           "[#{title_path}](/#{space_slug}/wiki/#{slug_path})"
 
         slug_path = Wikilinks.slug_path_from_title_path(title_path) ->
-          query = URI.encode_query(%{"title_path" => title_path})
+          query = missing_page_query(title_path, source_context)
           "[#{title_path}](/#{space_slug}/wiki/#{slug_path}?#{query})"
 
         true ->
@@ -338,7 +349,8 @@ defmodule WikWeb.Components.Block.Types.Markdown do
          _scope,
          _page_tree,
          _member_id_to_username_map,
-         _tag_name_to_slug_map
+         _tag_name_to_slug_map,
+         _source_context
        ),
        do: markdown
 
@@ -359,6 +371,32 @@ defmodule WikWeb.Components.Block.Types.Markdown do
       ~s(<a #{attrs} data-wikilink-status="missing">)
     end)
   end
+
+  defp missing_page_query(title_path, nil),
+    do: URI.encode_query(%{"title_path" => title_path})
+
+  defp missing_page_query(title_path, %{
+         block_id: block_id,
+         text_hash: text_hash
+       }) do
+    %{
+      "title_path" => title_path,
+      "wikilink_source_block_id" => block_id,
+      "wikilink_source_text_hash" => text_hash,
+      "wikilink_source_title_path" => title_path
+    }
+    |> URI.encode_query()
+  end
+
+  defp missing_wikilink_source_context(%{id: block_id, data: %{"text" => text}}, nil)
+       when is_binary(block_id) and is_binary(text) do
+    %{
+      block_id: block_id,
+      text_hash: MarkdownBlock.source_text_hash(text)
+    }
+  end
+
+  defp missing_wikilink_source_context(_block, _override_text), do: nil
 
   defp wikilink_member_map(%{scope: %{tenant: %{id: space_id}}}) when is_binary(space_id),
     do: Accounts.username_to_membership_id_map(space_id)

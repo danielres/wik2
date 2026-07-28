@@ -7,6 +7,7 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
   alias Wik.Scope
   alias Wik.Accounts.Membership
+  alias Wik.Blocks.Types.Markdown, as: MarkdownBlock
   alias WikWeb.Components.Block.Types.Markdown
   alias Wik.Wiki.PageTree
   alias Wik.Wiki.PageTree.Node
@@ -256,13 +257,44 @@ defmodule WikWeb.Components.Block.Types.MarkdownTest do
 
     document = LazyHTML.from_fragment(html)
 
-    assert document
-           |> LazyHTML.query(
-             ~s(a[href="/#{scope.tenant.slug}/wiki/soups/vegetable-soup?title_path=Soups%2FVegetable+Soup"][data-wikilink-status="missing"])
-           )
-           |> Enum.any?()
+    href =
+      document
+      |> LazyHTML.query(~s(a[data-wikilink-status="missing"]))
+      |> LazyHTML.attribute("href")
+      |> List.first()
 
-    assert html =~ ">Soups/Vegetable Soup<"
+    assert URI.parse(href).path == "/#{scope.tenant.slug}/wiki/soups/vegetable-soup"
+
+    assert URI.decode_query(URI.parse(href).query) == %{
+             "title_path" => "Soups/Vegetable Soup",
+             "wikilink_source_block_id" => "block-1",
+             "wikilink_source_text_hash" =>
+               MarkdownBlock.source_text_hash("[[Soups/Vegetable Soup]]"),
+             "wikilink_source_title_path" => "Soups/Vegetable Soup"
+           }
+  end
+
+  test "render omits source metadata from missing links when rendering override text" do
+    scope = %Scope{tenant: %{name: "Cool Stuff", slug: "cool-stuff"}}
+
+    html =
+      render_component(&Markdown.render/1, %{
+        block: %{id: "block-1", data: %{"text" => "[[Stored]]"}},
+        page_tree: %PageTree{nodes: []},
+        scope: scope,
+        text: "[[Soups/Vegetable Soup]]"
+      })
+
+    href =
+      html
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query(~s(a[data-wikilink-status="missing"]))
+      |> LazyHTML.attribute("href")
+      |> List.first()
+
+    assert URI.decode_query(URI.parse(href).query) == %{
+             "title_path" => "Soups/Vegetable Soup"
+           }
   end
 
   test "render leaves unresolved visible tag wikilinks as text" do

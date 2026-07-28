@@ -16,6 +16,35 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
     Regex.replace(@visible_wikilink_regex, markdown, replacement)
   end
 
+  @spec replace_title_path_with_node(String.t(), String.t(), integer()) :: String.t()
+  def replace_title_path_with_node(markdown, title_path, node_id)
+      when is_binary(markdown) and is_binary(title_path) and is_integer(node_id) do
+    target_title_path = String.trim(title_path)
+
+    replace_visible(markdown, fn wikilink, path ->
+      path = String.trim(path)
+
+      if page_title_path?(path) and path == target_title_path do
+        "[[node:#{node_id}]]"
+      else
+        wikilink
+      end
+    end)
+  end
+
+  @spec contains_title_path?(String.t(), String.t()) :: boolean()
+  def contains_title_path?(markdown, title_path)
+      when is_binary(markdown) and is_binary(title_path) do
+    target_title_path = String.trim(title_path)
+
+    @visible_wikilink_regex
+    |> Regex.scan(markdown, capture: :all_but_first)
+    |> Enum.any?(fn [path] ->
+      path = String.trim(path)
+      page_title_path?(path) and path == target_title_path
+    end)
+  end
+
   @spec title_paths_to_nodes(String.t(), %{String.t() => integer()}) :: String.t()
   def title_paths_to_nodes(markdown, title_path_to_node_id_map)
       when is_binary(markdown) and is_map(title_path_to_node_id_map) do
@@ -204,6 +233,14 @@ defmodule Wik.Wiki.PageTree.Wikilinks do
       _other -> []
     end)
   end
+
+  defp page_title_path?(""), do: false
+  defp page_title_path?("@" <> _path), do: false
+  defp page_title_path?("#" <> _path), do: false
+  defp page_title_path?("member:" <> _path), do: false
+  defp page_title_path?("node:" <> _path), do: false
+  defp page_title_path?("tag:" <> _path), do: false
+  defp page_title_path?(_path), do: true
 
   defp split_member_path(member_path) when is_binary(member_path) do
     case String.split(member_path, "/", parts: 2) do

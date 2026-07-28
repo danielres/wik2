@@ -24,6 +24,26 @@ defmodule Wik.Wiki.PageTree.WikilinksTest do
            ) == "[[Soups]] and [[Soups/Vegetable Soup]]"
   end
 
+  test "replaces exact visible title-path wikilinks with a canonical node wikilink" do
+    assert Wikilinks.replace_title_path_with_node(
+             "[[Soups]] [[ Soups ]] [[Soups/Vegetable Soup]]",
+             "Soups",
+             1
+           ) == "[[node:1]] [[node:1]] [[Soups/Vegetable Soup]]"
+  end
+
+  test "does not replace non-page wikilinks when replacing a title path" do
+    markdown = "[[@Soups]] [[#Soups]] [[member:Soups]] [[node:1]] [[tag:Soups]]"
+
+    assert Wikilinks.replace_title_path_with_node(markdown, "Soups", 1) == markdown
+  end
+
+  test "detects exact visible title-path wikilinks" do
+    assert Wikilinks.contains_title_path?("[[Soups]] and [[Other]]", "Soups")
+    refute Wikilinks.contains_title_path?("[[Soups/Vegetable Soup]]", "Soups")
+    refute Wikilinks.contains_title_path?("[[#Soups]] and [[node:1]]", "Soups")
+  end
+
   test "converts visible member wikilinks to canonical membership wikilinks" do
     assert Wikilinks.usernames_to_memberships(
              "[[@alice]] and [[Soups]]",

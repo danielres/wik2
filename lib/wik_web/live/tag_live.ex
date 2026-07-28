@@ -875,7 +875,11 @@ defmodule WikWeb.TagLive do
     |> Map.get(tag.id, tag)
     |> Map.get(:page_taggings, [])
     |> Kernel.||([])
+    |> Enum.sort_by(&page_tagging_relevancy/1, :desc)
   end
+
+  defp page_tagging_relevancy(%{relevancy_level: level}) when is_integer(level), do: level
+  defp page_tagging_relevancy(_page), do: 0
 
   defp primary_block_version_label(nil, _count), do: "None"
 

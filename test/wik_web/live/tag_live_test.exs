@@ -385,6 +385,11 @@ defmodule WikWeb.TagLiveTest do
 
     assert has_element?(view, testid("tag-page-relevancy-#{home_page.id}"))
     assert has_element?(view, testid("tag-page-relevancy-#{guide_page.id}"))
+
+    html = render(view)
+
+    assert index_of_testid(html, "tag-page-#{home_page.id}") <
+             index_of_testid(html, "tag-page-#{guide_page.id}")
   end
 
   test "tag page uses breadcrumbs for parents and relationship components for children and descendants",

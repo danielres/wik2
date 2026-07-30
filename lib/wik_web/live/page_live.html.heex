@@ -60,6 +60,32 @@
             <.icon name="hero-book-open-micro" class="opacity-30 size-5" />
             {@node.title}
           </UI.page_title>
+
+          <section data-testid="page-topics" class="mt-6 border-base-content/10 py-4">
+            <div class="flex items-baseline gap-4 mb-1">
+              <UI.panel_title class="">
+                <.icon name="hero-tag-micro" class="opacity-70 size-4" />
+                <span>Topics</span>
+              </UI.panel_title>
+
+              <UI.button_adjust
+                :if={@editing? and @can_manage_page? and @page_topic_options != []}
+                data-testid="page-topic-add"
+                data-tip="Add topic"
+                phx-click={JS.push("page_topic:add_start") |> UI.modal_open("page-topic-modal")}
+              />
+            </div>
+
+            <PageLive.Components.PageTopics.render
+              can_manage_page?={@can_manage_page?}
+              current_scope={@current_scope}
+              editing?={@editing?}
+              page_topic_form={@page_topic_form}
+              page_topic_options={@page_topic_options}
+              page_topic_summaries={@page_topic_summaries}
+              layout="inline"
+            />
+          </section>
         </UI.page_head>
 
         <div class={[

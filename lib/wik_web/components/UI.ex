@@ -320,6 +320,19 @@ defmodule WikWeb.Components.UI do
 
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
+  def button_adjust(assigns) do
+    ~H"""
+    <button
+      class="btn btn-xs btn-circle btn-accent btn-soft"
+      {@rest}
+    >
+      <.icon name="hero-cog-6-tooth-micro" class="size-3.5" />
+    </button>
+    """
+  end
+
+  attr :rest, :global, include: ~w(phx-click phx-target data-testid)
+
   def button_add(assigns) do
     ~H"""
     <button

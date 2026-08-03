@@ -14,7 +14,6 @@
   >
     <:actions :if={@can_manage_page? and @editing_block_id == nil}>
       <%= if @editing? do %>
-        <WikWeb.Components.Block.AddBlockMenuButton.render event_open="block:add_start" />
         <UI.button_ok phx-click="edit_mode:toggle" />
       <% else %>
         <UI.button_unlock phx-click="edit_mode:toggle" />
@@ -60,22 +59,22 @@
             <.icon name="hero-book-open-micro" class="opacity-30 size-5" />
             {@node.title}
           </UI.page_title>
+        </UI.page_head>
 
-          <section data-testid="page-topics" class="mt-6 border-base-content/10 py-4">
-            <div class="flex items-baseline gap-4 mb-1">
-              <UI.panel_title class="">
+        <div
+          :if={@editing? or @page_topic_summaries != []}
+          class="stacked mb-12"
+        >
+          <section
+            data-testid="page-topics"
+            class="p-2"
+          >
+            <div>
+              <UI.panel_title>
                 <.icon name="hero-tag-micro" class="opacity-70 size-4" />
                 <span>Topics</span>
               </UI.panel_title>
-
-              <UI.button_adjust
-                :if={@editing? and @can_manage_page? and @page_topic_options != []}
-                data-testid="page-topic-add"
-                data-tip="Add topic"
-                phx-click={JS.push("page_topic:add_start") |> UI.modal_open("page-topic-modal")}
-              />
             </div>
-
             <PageLive.Components.PageTopics.render
               can_manage_page?={@can_manage_page?}
               current_scope={@current_scope}
@@ -86,12 +85,28 @@
               layout="inline"
             />
           </section>
-        </UI.page_head>
+
+          <button
+            :if={@editing?}
+            data-testid="page-topic-add"
+            data-tip="Add topic"
+            phx-click={JS.push("page_topic:add_start") |> UI.modal_open("page-topic-modal")}
+            class="border rounded border-accent/30 hover:border-accent/100 cursor-pointer"
+          >
+          </button>
+        </div>
 
         <div class={[
           "[&>*]:max-w-[80ch]",
           has_aside? && "grid lg:grid-cols-[3fr_2fr] gap-4"
         ]}>
+          <Components.Block.AddBlockMenuButton.render
+            :if={@editing?}
+            event_open="block:add_start"
+            position="top"
+            class="mb-12"
+          />
+
           <PageLive.Components.Area.render
             area={:main}
             editing?={@editing?}
@@ -103,6 +118,12 @@
             page_tree={@page_tree}
             path={@path}
             scope={@current_scope}
+          />
+
+          <Components.Block.AddBlockMenuButton.render
+            :if={@editing?}
+            event_open="block:add_start"
+            position="bottom"
           />
 
           <PageLive.Components.Area.render
@@ -162,9 +183,7 @@
   <Components.Block.AddBlockMenuButton.modal_special_blocks
     scope={@current_scope}
     event_cancel="block:add_cancel"
-    event_position_select="block:add_position_select"
     id="add-block-dialog"
     open?={@add_block_modal_open?}
-    position={@add_block_position}
   />
 <% end %>

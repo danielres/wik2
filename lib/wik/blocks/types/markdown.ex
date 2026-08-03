@@ -6,7 +6,7 @@ defmodule Wik.Blocks.Types.Markdown do
   alias Wik.Tags
   alias Wik.Wiki.PageTree.Wikilinks
 
-  def label, do: "Markdown"
+  def label, do: "Rich text"
   def type, do: :markdown
   def supports_history?, do: true
   def supports_title?, do: false

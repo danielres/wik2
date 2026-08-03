@@ -1,7 +1,7 @@
 defmodule Wik.Blocks.Types.Pages do
   @behaviour Wik.Blocks.Types.Behaviour
 
-  def label, do: "Pages"
+  def label, do: "Pages tree"
   def type, do: :pages
   def supports_history?, do: false
   def supports_title?, do: true

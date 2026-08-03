@@ -2,9 +2,6 @@ defmodule WikWeb.PageLive.Components.PageTopics do
   use WikWeb, :html
 
   alias Wik.Tags.Dimensions
-  alias WikWeb.Components
-  alias WikWeb.Components
-  alias WikWeb.Components.Block.Types.Markdown
   alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.RangeInput
   alias WikWeb.Components.UI
@@ -35,23 +32,6 @@ defmodule WikWeb.PageLive.Components.PageTopics do
       <:title :let={summary}>
         <div class="truncate text-sm">{summary.tag.name}</div>
       </:title>
-
-      <:action :let={summary} :if={@editing?}>
-        <button
-          :if={@editing? and summary.current_member_tagging}
-          type="button"
-          class={[
-            "btn btn-xs btn-circle text-error btn-ghost",
-            "opacity-80 hover:opacity-100 transition-opacity"
-          ]}
-          data-testid={"page-topic-remove-#{summary.tag.id}"}
-          phx-click="page_topic:remove"
-          phx-value-tag_id={summary.tag.id}
-        >
-          <span class="sr-only">Remove topic</span>
-          <.icon name="hero-x-mark" class="size-3" />
-        </button>
-      </:action>
     </DimensionsList.render>
 
     <UI.modal id="page-topic-modal" open?={@page_topic_form != nil}>

@@ -9,6 +9,20 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
   alias Wik.Wiki.Page
   alias WikWeb.Components.Block.AddBlockMenuButton
 
+  test "render sends the selected add position with the open event" do
+    html =
+      render_component(&AddBlockMenuButton.render/1, %{
+        event_open: "block:add_start",
+        position: "top",
+        class: "mb-12"
+      })
+
+    assert html =~ ~s(phx-click="block:add_start")
+    assert html =~ ~s(phx-value-position="top")
+    assert html =~ "Add block"
+    assert html =~ "mb-12"
+  end
+
   test "shows the child pages option when child pages are available" do
     actor = generate(user())
     space = generate(space())
@@ -32,9 +46,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
       render_component(&AddBlockMenuButton.modal_special_blocks/1, %{
         id: "special-blocks",
         event_cancel: "block:add_cancel",
-        event_position_select: "block:add_position_select",
         open?: true,
-        position: "bottom",
         scope: scope
       })
 
@@ -57,11 +69,9 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
     assert html =~ ~s(phx-value-type="pages")
     assert html =~ "Child pages"
     assert html =~ ~s(phx-value-type="child_pages")
-    assert html =~ "Top of page"
-    assert html =~ "Bottom of page"
-    assert html =~ ~s(phx-click="block:add_position_select")
-    assert html =~ ~s(phx-value-position="top")
-    assert html =~ ~s(phx-value-position="bottom")
+    refute html =~ "Top of page"
+    refute html =~ "Bottom of page"
+    refute html =~ ~s(phx-click="block:add_position_select")
   end
 
   test "hides the child pages option when no source pages are available" do
@@ -85,9 +95,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
       render_component(&AddBlockMenuButton.modal_special_blocks/1, %{
         id: "special-blocks",
         event_cancel: "block:add_cancel",
-        event_position_select: "block:add_position_select",
         open?: true,
-        position: "bottom",
         scope: scope
       })
 
@@ -108,8 +116,8 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
     assert html =~ ~s(phx-value-type="markdown")
     assert html =~ "Pages"
     assert html =~ ~s(phx-value-type="pages")
-    assert html =~ "Top of page"
-    assert html =~ "Bottom of page"
+    refute html =~ "Top of page"
+    refute html =~ "Bottom of page"
     refute html =~ "Child pages"
   end
 

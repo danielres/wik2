@@ -11,6 +11,7 @@ defmodule WikWeb.Components.DimensionsList do
   attr :list_testid, :string, required: true
   attr :navigate, :any, required: true
   attr :testid_prefix, :string, required: true
+  attr :layout, :string, default: "panel"
 
   slot :title, required: true do
     attr :item, :map
@@ -20,9 +21,17 @@ defmodule WikWeb.Components.DimensionsList do
     attr :item, :map
   end
 
+  slot :append, required: false
+
   def render(assigns) do
     ~H"""
-    <div class="space-y-1" data-testid={@list_testid}>
+    <div
+      class={[
+        @layout == "panel" && "space-y-1",
+        @layout == "inline" && "flex flex-wrap gap-x-2 gap-y-2"
+      ]}
+      data-testid={@list_testid}
+    >
       <div :if={@items == []} class="text-sm opacity-50">
         {@empty_text}
       </div>
@@ -33,11 +42,13 @@ defmodule WikWeb.Components.DimensionsList do
         dimension={@dimension}
         item={item}
         item_id={@item_id}
+        layout={@layout}
         level={@level}
         navigate={@navigate}
         testid_prefix={@testid_prefix}
         title={@title}
       />
+      {render_slot(@append)}
     </div>
     """
   end
@@ -46,6 +57,7 @@ defmodule WikWeb.Components.DimensionsList do
   attr :dimension, :map, required: true
   attr :item, :any, required: true
   attr :item_id, :any, required: true
+  attr :layout, :string, required: true
   attr :level, :any, required: true
   attr :navigate, :any, required: true
   attr :testid_prefix, :string, required: true
@@ -61,20 +73,23 @@ defmodule WikWeb.Components.DimensionsList do
 
     ~H"""
     <div class={[
-      @action != [] && "grid grid-cols-[1fr_auto] gap-2 items-center"
+      @action != [] && "grid grid-cols-[1fr_auto] gap-2 items-center",
+      @layout == "inline" && "bg-base-200 badge"
     ]}>
       <.link
         navigate={@path}
         class={[
-          "grid grid-cols-[4fr_1fr]",
-          "opacity-60 hover:opacity-100 transition-opacity"
+          "opacity-60 hover:opacity-100 transition-opacity",
+          "grid",
+          @layout == "panel" && "grid-cols-[4fr_1fr]",
+          @layout == "inline" && "grid-cols-[4fr_auto]"
         ]}
         data-testid={"#{@testid_prefix}-#{@resolved_item_id}"}
       >
         <div class="grid grid-cols-[1fr_auto] items-center gap-2">
           {render_slot(@title, @item)}
 
-          <div class="flex items-center gap-2">
+          <div :if={@layout == "panel"} class="flex items-center gap-2">
             <span
               :if={@count && @count > 1}
               class="badge badge-sm bg-base-300"
@@ -91,7 +106,7 @@ defmodule WikWeb.Components.DimensionsList do
           label={@dimension.label}
           level={@resolved_level}
           testid={"#{@testid_prefix}-relevancy-#{@resolved_item_id}"}
-          width_class=""
+          width_class={@layout == "inline" && "w-8"}
         />
       </.link>
 

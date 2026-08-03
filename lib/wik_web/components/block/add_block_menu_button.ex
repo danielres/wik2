@@ -1,8 +1,8 @@
 defmodule WikWeb.Components.Block.AddBlockMenuButton do
   use WikWeb, :html
 
-  alias Wik.Blocks.Types.ChildPages
   alias Wik.Blocks.Types.Backlinks
+  alias Wik.Blocks.Types.ChildPages
   alias Wik.Blocks.Types.GoogleCalendar
   alias Wik.Blocks.Types.GoogleMaps
   alias Wik.Blocks.Types.Markdown
@@ -15,20 +15,26 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
 
+  attr :class, :string, default: ""
   attr :event_open, :string, required: true
+  attr :position, :string, required: true, values: ~w(top bottom)
 
   def render(assigns) do
     ~H"""
-    <UI.button_add phx-click={@event_open} />
+    <button
+      class={["btn btn-xs btn-accent btn-soft", @class]}
+      phx-click={@event_open}
+      phx-value-position={@position}
+    >
+      <.icon name="hero-plus-micro" /> Add block
+    </button>
     """
   end
 
   attr :child_pages_available?, :boolean, default: false
   attr :event_cancel, :string, required: true
-  attr :event_position_select, :string, required: true
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
-  attr :position, :string, required: true
   attr :scope, :map, required: true
 
   def modal_special_blocks(assigns) do
@@ -46,57 +52,24 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
       open?={@open?}
       testid={@id}
     >
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="">
-          <h3 class="font-bold mb-4">Add block to</h3>
+      <div class="grid gap-1">
+        <div class={[
+          "[&_button]:justify-start",
+          "rounded",
+          "space-y-6"
+        ]}>
+          <section>
+            <UI.panel_title>Regular content</UI.panel_title>
 
-          <div class={[
-            "space-y-2"
-          ]}>
-            <label class={[
-              "flex items-center gap-3 cursor-pointer label text-sm"
-            ]}>
-              <input
-                checked={@position == "top"}
-                class="radio radio-xs border-4 checked:border"
-                name="add-block-position"
-                phx-click={@event_position_select}
-                phx-value-position="top"
-                type="radio"
-                value="top"
-              />
-              <span>Top of page</span>
-            </label>
-
-            <label class={[
-              "flex items-center gap-3 cursor-pointer label text-sm"
-            ]}>
-              <input
-                checked={@position == "bottom"}
-                class="radio radio-xs border-4 checked:border"
-                name="add-block-position"
-                phx-click={@event_position_select}
-                phx-value-position="bottom"
-                type="radio"
-                value="bottom"
-              />
-              <span>Bottom of page</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
-          <div class={[
-            "grid",
-            "[&_button]:justify-start",
-            "rounded",
-            "space-y-1"
-          ]}>
             <.button_special_block
               label={Markdown.label()}
               phx-click="block:add"
               phx-value-type="markdown"
             />
+          </section>
+
+          <section>
+            <UI.panel_title>Embeds</UI.panel_title>
 
             <.button_special_block
               label={YouTube.label()}
@@ -121,6 +94,10 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
               phx-click="block:add"
               phx-value-type="google_maps"
             />
+          </section>
+
+          <section>
+            <UI.panel_title>Special blocks</UI.panel_title>
 
             <.button_special_block
               label={Pages.label()}
@@ -133,14 +110,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
               phx-click="block:add"
               phx-value-type="backlinks"
             />
-          </div>
 
-          <div class={[
-            "grid",
-            "[&_button]:justify-start",
-            "rounded",
-            "space-y-1"
-          ]}>
             <.button_special_block
               label={Members.label()}
               phx-click="block:add"
@@ -159,7 +129,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
               phx-click="block:add"
               phx-value-type="child_pages"
             />
-          </div>
+          </section>
         </div>
       </div>
     </Modal.render>

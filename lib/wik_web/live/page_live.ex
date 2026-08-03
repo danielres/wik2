@@ -154,20 +154,13 @@ defmodule WikWeb.PageLive do
     do: {:noreply, socket |> BlockActions.add(type_param)}
 
   @impl true
-  def handle_event("block:add_start", _params, socket),
-    do: {:noreply, socket |> assign(add_block_modal_open?: true)}
+  def handle_event("block:add_start", %{"position" => position}, socket)
+      when position in ["top", "bottom"],
+      do: {:noreply, socket |> assign(add_block_modal_open?: true, add_block_position: position)}
 
   @impl true
   def handle_event("block:add_cancel", _params, socket),
     do: {:noreply, socket |> assign(add_block_modal_open?: false)}
-
-  @impl true
-  def handle_event("block:add_position_select", %{"position" => "top"}, socket),
-    do: {:noreply, socket |> assign(add_block_position: "top")}
-
-  @impl true
-  def handle_event("block:add_position_select", %{"position" => "bottom"}, socket),
-    do: {:noreply, socket |> assign(add_block_position: "bottom")}
 
   @impl true
   def handle_event("block:move_down", %{"placement_id" => placement_id}, socket),

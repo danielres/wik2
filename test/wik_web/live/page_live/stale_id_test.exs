@@ -60,6 +60,16 @@ defmodule WikWeb.PageLive.StaleIdTest do
     assert result_socket.assigns.block_info_placement == nil
   end
 
+  test "add block start stores the required placement position" do
+    socket = socket_fixture(add_block_modal_open?: false, add_block_position: "bottom")
+
+    assert {:noreply, socket} =
+             PageLive.handle_event("block:add_start", %{"position" => "top"}, socket)
+
+    assert socket.assigns.add_block_modal_open? == true
+    assert socket.assigns.add_block_position == "top"
+  end
+
   defp socket_fixture(extra_assigns) do
     base_assigns = %{
       block_info_placement: nil,

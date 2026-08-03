@@ -34,48 +34,12 @@ defmodule WikWeb.PageLive.Components.PageTopics do
       </:title>
     </DimensionsList.render>
 
-    <UI.modal id="page-topic-modal" open?={@page_topic_form != nil}>
-      <UI.modal_title>Add topic</UI.modal_title>
-
-      <.form
-        :if={@page_topic_form}
-        for={@page_topic_form}
-        id="page-topic-form"
-        class="mt-4 space-y-4"
-        data-testid="page-topic-form"
-        phx-change="page_topic:validate"
-        phx-submit={JS.push("page_topic:submit") |> UI.modal_close("page-topic-modal")}
-      >
-        <.input
-          field={@page_topic_form[:tag_id]}
-          label="Topic"
-          options={Enum.map(@page_topic_options, &{&1.name, &1.id})}
-          prompt="Select a topic"
-          type="select"
-        />
-
-        <RangeInput.render
-          field={@page_topic_form[:relevancy_level]}
-          dimension={relevancy_dimension}
-          label={relevancy_dimension.label}
-          max_level={relevancy_dimension.max}
-        />
-
-        <div class="flex justify-end gap-x-2">
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm"
-            data-testid="page-topic-cancel"
-            phx-click={JS.push("page_topic:add_cancel") |> UI.modal_close("page-topic-modal")}
-          >
-            Cancel
-          </button>
-          <.button class="btn btn-accent btn-soft btn-sm" data-testid="page-topic-submit">
-            Save
-          </.button>
-        </div>
-      </.form>
-    </UI.modal>
+    <.topic_form_modal
+      id_prefix="page-topic-inline"
+      page_topic_form={@page_topic_form}
+      page_topic_options={@page_topic_options}
+      relevancy_dimension={relevancy_dimension}
+    />
     """
   end
 
@@ -92,7 +56,7 @@ defmodule WikWeb.PageLive.Components.PageTopics do
         :if={@can_manage_page? and @page_topic_options != []}
         data-testid="page-topic-add"
         data-tip="Add topic"
-        phx-click={JS.push("page_topic:add_start") |> UI.modal_open("page-topic-modal")}
+        phx-click={JS.push("page_topic:add_start") |> UI.modal_open("page-topic-panel-modal")}
       />
     </div>
 
@@ -128,17 +92,41 @@ defmodule WikWeb.PageLive.Components.PageTopics do
       </:action>
     </DimensionsList.render>
 
-    <UI.modal id="page-topic-modal" open?={@page_topic_form != nil}>
+    <.topic_form_modal
+      id_prefix="page-topic-panel"
+      page_topic_form={@page_topic_form}
+      page_topic_options={@page_topic_options}
+      relevancy_dimension={relevancy_dimension}
+    />
+    """
+  end
+
+  attr :id_prefix, :string, required: true
+  attr :page_topic_form, :any, required: true
+  attr :page_topic_options, :list, required: true
+  attr :relevancy_dimension, :map, required: true
+
+  defp topic_form_modal(assigns) do
+    assigns =
+      assign(assigns,
+        cancel_button_id: "#{assigns.id_prefix}-cancel",
+        form_id: "#{assigns.id_prefix}-form",
+        modal_id: "#{assigns.id_prefix}-modal",
+        submit_button_id: "#{assigns.id_prefix}-submit"
+      )
+
+    ~H"""
+    <UI.modal id={@modal_id} open?={@page_topic_form != nil}>
       <UI.modal_title>Add topic</UI.modal_title>
 
       <.form
         :if={@page_topic_form}
         for={@page_topic_form}
-        id="page-topic-form"
+        id={@form_id}
         class="mt-4 space-y-4"
         data-testid="page-topic-form"
         phx-change="page_topic:validate"
-        phx-submit={JS.push("page_topic:submit") |> UI.modal_close("page-topic-modal")}
+        phx-submit={JS.push("page_topic:submit") |> UI.modal_close(@modal_id)}
       >
         <.input
           field={@page_topic_form[:tag_id]}
@@ -150,21 +138,26 @@ defmodule WikWeb.PageLive.Components.PageTopics do
 
         <RangeInput.render
           field={@page_topic_form[:relevancy_level]}
-          dimension={relevancy_dimension}
-          label={relevancy_dimension.label}
-          max_level={relevancy_dimension.max}
+          dimension={@relevancy_dimension}
+          label={@relevancy_dimension.label}
+          max_level={@relevancy_dimension.max}
         />
 
         <div class="flex justify-end gap-2">
           <button
-            type="button"
+            id={@cancel_button_id}
             class="btn btn-ghost btn-sm"
             data-testid="page-topic-cancel"
-            phx-click={JS.push("page_topic:add_cancel") |> UI.modal_close("page-topic-modal")}
+            phx-click={JS.push("page_topic:add_cancel") |> UI.modal_close(@modal_id)}
+            type="button"
           >
             Cancel
           </button>
-          <.button class="btn btn-accent btn-soft btn-sm" data-testid="page-topic-submit">
+          <.button
+            class="btn btn-accent btn-soft btn-sm"
+            data-testid="page-topic-submit"
+            id={@submit_button_id}
+          >
             Save
           </.button>
         </div>

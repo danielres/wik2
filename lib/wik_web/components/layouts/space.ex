@@ -116,8 +116,6 @@ defmodule WikWeb.Layouts.Space do
       "[&>a]:justify-center",
       "[&>*]:min-h-10",
       "[&>a]:border-l",
-      "Xsm:[&>a:last-child]:border-x",
-      "Xmax-sm:[&>a:last-child]:border-l",
       "[&>*]:py-2",
       "[&>a]:text-center",
       "[&>a]:border-base-content/15",

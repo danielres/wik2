@@ -329,6 +329,7 @@ defmodule WikWeb.Components.UI do
         @class
       ]}
       {@rest}
+      type="button"
     >
       <.icon name="hero-cog-6-tooth-micro" class="size-3.5" />
     </button>

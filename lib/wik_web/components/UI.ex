@@ -3,8 +3,8 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
-  attr :class, :string, default: ""
-  attr :size_class, :string, default: "size-4"
+  attr :class, :string, default: "ml-0.5"
+  attr :size_class, :string, default: "size-5"
 
   def icon_app(assigns) do
     ~H"""
@@ -318,12 +318,16 @@ defmodule WikWeb.Components.UI do
     """
   end
 
+  attr :class, :string, default: ""
   attr :rest, :global, include: ~w(phx-click phx-target data-testid)
 
   def button_adjust(assigns) do
     ~H"""
     <button
-      class="btn btn-xs btn-circle btn-accent btn-soft"
+      class={[
+        "btn btn-xs btn-circle btn-accent btn-soft",
+        @class
+      ]}
       {@rest}
     >
       <.icon name="hero-cog-6-tooth-micro" class="size-3.5" />

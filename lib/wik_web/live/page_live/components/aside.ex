@@ -1,10 +1,7 @@
 defmodule WikWeb.PageLive.Components.Aside do
   use WikWeb, :html
 
-  alias Wik.Tags.Dimensions
   alias WikWeb.Components
-  alias WikWeb.Components.DimensionsList
-  alias WikWeb.Components.RangeInput
   alias WikWeb.Components.UI
 
   attr :author_membership, :map, default: nil

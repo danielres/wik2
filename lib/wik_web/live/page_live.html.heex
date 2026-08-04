@@ -105,36 +105,38 @@
           "[&>*]:max-w-[80ch]",
           has_aside_blocks? && "grid lg:grid-cols-[3fr_2fr] gap-4"
         ]}>
-          <div
-            :if={@editing?}
-            class="flex justify-center"
-          >
+          <div>
+            <div
+              :if={@editing?}
+              class="flex justify-center"
+            >
+              <Components.Block.AddBlockMenuButton.render
+                event_open="block:add_start"
+                position="top"
+                class="mb-12 w-full"
+              />
+            </div>
+
+            <PageLive.Components.Area.render
+              area={:main}
+              editing?={@editing?}
+              editing_block_id={@editing_block_id}
+              form_edit_block={@form_edit_block}
+              locks={@locks}
+              node={@node}
+              page={@page}
+              page_tree={@page_tree}
+              path={@path}
+              scope={@current_scope}
+            />
+
             <Components.Block.AddBlockMenuButton.render
+              :if={@editing? and main_has_blocks?}
               event_open="block:add_start"
-              position="top"
-              class="mb-12 w-full"
+              position="bottom"
+              class="mt-8 w-full"
             />
           </div>
-
-          <PageLive.Components.Area.render
-            area={:main}
-            editing?={@editing?}
-            editing_block_id={@editing_block_id}
-            form_edit_block={@form_edit_block}
-            locks={@locks}
-            node={@node}
-            page={@page}
-            page_tree={@page_tree}
-            path={@path}
-            scope={@current_scope}
-          />
-
-          <Components.Block.AddBlockMenuButton.render
-            :if={@editing? and main_has_blocks?}
-            event_open="block:add_start"
-            position="bottom"
-            class="mt-8 w-full"
-          />
 
           <PageLive.Components.Area.render
             :if={has_aside_blocks?}

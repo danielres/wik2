@@ -60,11 +60,11 @@ defmodule WikWeb.TagGraphLive do
           <% end %>
         </:actions>
 
-        <div class="space-y-4" data-testid="tag-graph-page">
+        <div class="space-y-4 pt-8" data-testid="tag-graph-page">
           <section class="space-y-4 relative max-w-[80ch]">
             <div :if={@editable? and @editing?} class="absolute right-0 -top-9">
               <ActionButtons.button
-                data-tip="add root tag"
+                data-tip="add root topic"
                 icon="hero-plus-mini"
                 data-testid="tag-add-root"
                 phx-click="create_root_start"
@@ -78,47 +78,47 @@ defmodule WikWeb.TagGraphLive do
             />
           </section>
         </div>
-
-        <Modal.render
-          cancel="tag_modal_cancel"
-          cancel_testid="tag-detail-cancel"
-          open?={@tag_modal.mode != nil}
-          testid="tag-detail-dialog"
-        >
-          <TagComponents.detail
-            :if={@tag_modal.mode == :details and @selected_tag != nil}
-            editing?={@editing?}
-            eligible_children={@eligible_children}
-            eligible_parents={@eligible_parents}
-            graph={@graph}
-            scope={@current_scope}
-            selected_tag={@selected_tag}
-          />
-          <TagComponents.delete_confirm
-            :if={@tag_modal.mode == :confirm_delete and @selected_tag != nil}
-            tag={@selected_tag}
-          />
-          <TagComponents.form
-            :if={@tag_modal.mode in [:create_root, :create_child, :edit] and @tag_modal.form != nil}
-            action_label={tag_form_action_label(@tag_modal.mode)}
-            cancel_testid="tag-form-cancel"
-            event_submit="tag_submit"
-            event_validate="tag_validate"
-            event_cancel="tag_modal_cancel"
-            form={@tag_modal.form}
-            tag_id={@selected_tag && @selected_tag.id}
-          />
-          <.link_form
-            :if={@tag_modal.mode in [:link_child, :link_parent] and @selected_tag}
-            error={@tag_modal.error}
-            form={@tag_modal.link_form}
-            mode={@tag_modal.mode}
-            options={link_options(@tag_modal.mode, @eligible_children, @eligible_parents)}
-            tag={@selected_tag}
-          />
-        </Modal.render>
       </Layouts.space>
     </Layouts.app>
+
+    <Modal.render
+      cancel="tag_modal_cancel"
+      cancel_testid="tag-detail-cancel"
+      open?={@tag_modal.mode != nil}
+      testid="tag-detail-dialog"
+    >
+      <TagComponents.detail
+        :if={@tag_modal.mode == :details and @selected_tag != nil}
+        editing?={@editing?}
+        eligible_children={@eligible_children}
+        eligible_parents={@eligible_parents}
+        graph={@graph}
+        scope={@current_scope}
+        selected_tag={@selected_tag}
+      />
+      <TagComponents.delete_confirm
+        :if={@tag_modal.mode == :confirm_delete and @selected_tag != nil}
+        tag={@selected_tag}
+      />
+      <TagComponents.form
+        :if={@tag_modal.mode in [:create_root, :create_child, :edit] and @tag_modal.form != nil}
+        action_label={tag_form_action_label(@tag_modal.mode)}
+        cancel_testid="tag-form-cancel"
+        event_submit="tag_submit"
+        event_validate="tag_validate"
+        event_cancel="tag_modal_cancel"
+        form={@tag_modal.form}
+        tag_id={@selected_tag && @selected_tag.id}
+      />
+      <.link_form
+        :if={@tag_modal.mode in [:link_child, :link_parent] and @selected_tag}
+        error={@tag_modal.error}
+        form={@tag_modal.link_form}
+        mode={@tag_modal.mode}
+        options={link_options(@tag_modal.mode, @eligible_children, @eligible_parents)}
+        tag={@selected_tag}
+      />
+    </Modal.render>
     """
   end
 
@@ -142,7 +142,7 @@ defmodule WikWeb.TagGraphLive do
           <WikWeb.Components.Combobox.field
             field={@form[:target_tag_id]}
             id="tag-link-target-tag"
-            label="Tag"
+            label="Topic"
             options_json={link_options_json(@options)}
             placeholder="Search topics"
             testid="tag-link-target-tag"
@@ -151,7 +151,7 @@ defmodule WikWeb.TagGraphLive do
           <.error :if={@error != nil}>{@error}</.error>
 
           <.button class="btn btn-primary" data-testid="tag-link-submit" type="submit">
-            Link tag
+            Link topic
           </.button>
         </div>
       </.form>
@@ -247,7 +247,7 @@ defmodule WikWeb.TagGraphLive do
 
         if match?({:error, _error}, link_result) do
           {:error, error} = link_result
-          Log.scoped_error(scope, error, "tag link after create failed")
+          Log.scoped_error(scope, error, "topic link after create failed")
         end
 
         {:noreply, handle_saved_tag(socket, tag)}
@@ -273,7 +273,7 @@ defmodule WikWeb.TagGraphLive do
           |> refresh_graph(nil_if_selected(socket.assigns.selected_tag_id, tag_id))
 
         {:error, error} ->
-          Log.scoped_error(scope, error, "tag destroy failed")
+          Log.scoped_error(scope, error, "topic destroy failed")
           socket
       end
 
@@ -293,7 +293,7 @@ defmodule WikWeb.TagGraphLive do
           refresh_graph(socket, socket.assigns.selected_tag_id)
 
         {:error, error} ->
-          Log.scoped_error(scope, error, "tag unlink failed")
+          Log.scoped_error(scope, error, "topic unlink failed")
           socket
       end
 
@@ -315,10 +315,10 @@ defmodule WikWeb.TagGraphLive do
     socket =
       case {current_tag, socket.assigns.tag_modal.mode, target_tag_id} do
         {nil, _mode, _target_tag_id} ->
-          update(socket, :tag_modal, &%{&1 | error: "The selected tag is no longer available."})
+          update(socket, :tag_modal, &%{&1 | error: "The selected topic is no longer available."})
 
         {_tag, _mode, ""} ->
-          update(socket, :tag_modal, &%{&1 | error: "Please select a tag."})
+          update(socket, :tag_modal, &%{&1 | error: "Please select a topic."})
 
         {%Tag{} = current_tag, :link_child, target_tag_id} ->
           submit_link(socket, current_tag.id, target_tag_id, current_tag.id, scope)
@@ -412,7 +412,7 @@ defmodule WikWeb.TagGraphLive do
         |> refresh_graph(selected_tag_id)
 
       {:error, error} ->
-        Log.scoped_error(scope, error, "tag link failed")
+        Log.scoped_error(scope, error, "topic link failed")
         update(socket, :tag_modal, &%{&1 | error: "Could not link those topics."})
     end
   end
@@ -444,8 +444,8 @@ defmodule WikWeb.TagGraphLive do
 
   defp tag_params(params), do: params
 
-  defp tag_form_action_label(:edit), do: "Update tag"
-  defp tag_form_action_label(_mode), do: "Create tag"
+  defp tag_form_action_label(:edit), do: "Update topic"
+  defp tag_form_action_label(_mode), do: "Create topic"
 
   defp nil_if_selected(selected_tag_id, selected_tag_id), do: nil
   defp nil_if_selected(selected_tag_id, _deleted_tag_id), do: selected_tag_id

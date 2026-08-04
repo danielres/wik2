@@ -62,6 +62,11 @@ defmodule WikWeb.TagGraphLiveTest do
     assert has_element?(view, testid("tag-detail-#{alpha.id}"))
 
     render_click(element(view, testid("tag-link-child-start")))
+    assert has_element?(view, testid("tag-link-target-tag"), "Topic")
+    assert has_element?(view, testid("tag-link-submit"), "Link topic")
+
+    render_submit(form(view, testid("tag-link-form-form"), link: %{"target_tag_id" => ""}))
+    assert has_element?(view, testid("tag-link-form"), "Please select a topic.")
 
     render_submit(form(view, testid("tag-link-form-form"), link: %{"target_tag_id" => child.id}))
 

@@ -7,12 +7,68 @@ defmodule WikWeb.PageLiveTopicsTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
+  alias Wik.Blocks
   alias Wik.Scope
   alias Wik.Tags
   alias Wik.Wiki
 
   test "page manager can add and remove a topic from the page aside", %{conn: conn} do
     assert_page_topic_management_works(conn)
+  end
+
+  test "empty main area shows one add block button in edit mode", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/wiki/home")
+
+    render_async(view)
+
+    render_click(element(view, ~s(button[phx-click="edit_mode:toggle"])))
+
+    add_block_buttons =
+      view
+      |> render()
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query(~s(button[phx-click="block:add_start"]))
+
+    assert Enum.count(add_block_buttons) == 1
+  end
+
+  test "main area with blocks shows top and bottom add block buttons in edit mode", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    owner_scope = scope(owner, space)
+    {:ok, _node, page} = Wiki.ensure_page_and_node_at_path("home", scope: owner_scope)
+
+    assert {:ok, _block} =
+             Blocks.create_user_owned_block_on_page(
+               page,
+               %{data: %{"text" => "Hello"}, type: :text},
+               scope: owner_scope
+             )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/wiki/home")
+
+    render_async(view)
+
+    render_click(element(view, ~s(button[phx-click="edit_mode:toggle"])))
+
+    add_block_buttons =
+      view
+      |> render()
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query(~s(button[phx-click="block:add_start"]))
+
+    assert Enum.count(add_block_buttons) == 2
   end
 
   defp assert_page_topic_management_works(conn) do

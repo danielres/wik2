@@ -8,11 +8,11 @@ defmodule WikWeb.Layouts.App do
 
   embed_templates "layouts/*"
 
-  attr :flash, :map, required: true, doc: "the map of flash messages"
   attr :context, :map, default: %{claimable_sources: []}
-  attr :tenant_context, :map, default: nil
-
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr :home?, :boolean, default: false
   attr :scope, :map, default: %{actor: nil, tenant: nil}
+  attr :tenant_context, :map, default: nil
 
   slot :inner_block, required: true
 
@@ -44,18 +44,24 @@ defmodule WikWeb.Layouts.App do
   def app_header(assigns) do
     ~H"""
     <header class={[
-      "navbar bg-base-300/40 py-2 min-h-0 flex items-center",
-      Layouts.container_class()
+      "navbar py-2 min-h-0 flex items-center",
+      Layouts.container_class(),
+      !@home? && "bg-base-300/40 "
     ]}>
-      <div class="flex-1 flex items-center">
-        <.link navigate={~p"/"} class="opacity-30 hover:opacity-100 transition" aria-label="Home">
-          <UI.icon_app />
+      <div class="flex-1 flex items-end">
+        <.link
+          :if={!@home?}
+          navigate={~p"/"}
+          class="opacity-30 hover:opacity-100 transition"
+          aria-label="Home"
+        >
+          <.icon name="hero-home-mini" class="size-5 ml-0.5" />
         </.link>
 
         <.icon
           :if={@scope.tenant}
           name="hero-chevron-right-mini"
-          class="size-4 opacity-20 mr-2 ml-0.5"
+          class="size-4 opacity-20 mx-2 self-center mt-1"
         />
 
         <div
@@ -73,6 +79,7 @@ defmodule WikWeb.Layouts.App do
 
       <div>
         <button
+          aria-label="Open user menu"
           class={[
             "opacity-80 hover:opacity-100 transition cursor-pointer",
             "relative"
@@ -80,11 +87,20 @@ defmodule WikWeb.Layouts.App do
           popovertarget="popover-user-dropdown"
           style="anchor-name:--anchor-user-dropdown"
         >
-          <Components.User.avatar
-            membership={@tenant_context && @tenant_context[:current_membership]}
-            tenant={@scope.tenant}
-            size="sm"
-          />
+          <%= if @home? do %>
+            <div class={[
+              "bg-base-300 aspect-square rounded-full size-6",
+              "flex items-center justify-center"
+            ]}>
+              <.icon name="hero-user-mini" />
+            </div>
+          <% else %>
+            <Components.User.avatar
+              membership={@tenant_context && @tenant_context[:current_membership]}
+              tenant={@scope.tenant}
+              size="sm"
+            />
+          <% end %>
 
           <div
             :if={@context.claimable_sources != []}

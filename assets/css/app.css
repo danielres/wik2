@@ -191,6 +191,13 @@
   --color-error-content: oklch(98% 0.12 10);
 }
 
+
+[data-color-mode="dark"] {
+  --color-base-100: oklch(28.857% 0.023 264.149);
+  --color-base-200: oklch(25.036% 0.019 264.182);
+  --color-base-300: oklch(23% 0.018 262.177);
+}
+
 [data-color-mode="light"] {
   --c: 0.01;
   --h: 260;

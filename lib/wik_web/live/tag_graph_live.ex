@@ -78,47 +78,47 @@ defmodule WikWeb.TagGraphLive do
             />
           </section>
         </div>
-
-        <Modal.render
-          cancel="tag_modal_cancel"
-          cancel_testid="tag-detail-cancel"
-          open?={@tag_modal.mode != nil}
-          testid="tag-detail-dialog"
-        >
-          <TagComponents.detail
-            :if={@tag_modal.mode == :details and @selected_tag != nil}
-            editing?={@editing?}
-            eligible_children={@eligible_children}
-            eligible_parents={@eligible_parents}
-            graph={@graph}
-            scope={@current_scope}
-            selected_tag={@selected_tag}
-          />
-          <TagComponents.delete_confirm
-            :if={@tag_modal.mode == :confirm_delete and @selected_tag != nil}
-            tag={@selected_tag}
-          />
-          <TagComponents.form
-            :if={@tag_modal.mode in [:create_root, :create_child, :edit] and @tag_modal.form != nil}
-            action_label={tag_form_action_label(@tag_modal.mode)}
-            cancel_testid="tag-form-cancel"
-            event_submit="tag_submit"
-            event_validate="tag_validate"
-            event_cancel="tag_modal_cancel"
-            form={@tag_modal.form}
-            tag_id={@selected_tag && @selected_tag.id}
-          />
-          <.link_form
-            :if={@tag_modal.mode in [:link_child, :link_parent] and @selected_tag}
-            error={@tag_modal.error}
-            form={@tag_modal.link_form}
-            mode={@tag_modal.mode}
-            options={link_options(@tag_modal.mode, @eligible_children, @eligible_parents)}
-            tag={@selected_tag}
-          />
-        </Modal.render>
       </Layouts.space>
     </Layouts.app>
+
+    <Modal.render
+      cancel="tag_modal_cancel"
+      cancel_testid="tag-detail-cancel"
+      open?={@tag_modal.mode != nil}
+      testid="tag-detail-dialog"
+    >
+      <TagComponents.detail
+        :if={@tag_modal.mode == :details and @selected_tag != nil}
+        editing?={@editing?}
+        eligible_children={@eligible_children}
+        eligible_parents={@eligible_parents}
+        graph={@graph}
+        scope={@current_scope}
+        selected_tag={@selected_tag}
+      />
+      <TagComponents.delete_confirm
+        :if={@tag_modal.mode == :confirm_delete and @selected_tag != nil}
+        tag={@selected_tag}
+      />
+      <TagComponents.form
+        :if={@tag_modal.mode in [:create_root, :create_child, :edit] and @tag_modal.form != nil}
+        action_label={tag_form_action_label(@tag_modal.mode)}
+        cancel_testid="tag-form-cancel"
+        event_submit="tag_submit"
+        event_validate="tag_validate"
+        event_cancel="tag_modal_cancel"
+        form={@tag_modal.form}
+        tag_id={@selected_tag && @selected_tag.id}
+      />
+      <.link_form
+        :if={@tag_modal.mode in [:link_child, :link_parent] and @selected_tag}
+        error={@tag_modal.error}
+        form={@tag_modal.link_form}
+        mode={@tag_modal.mode}
+        options={link_options(@tag_modal.mode, @eligible_children, @eligible_parents)}
+        tag={@selected_tag}
+      />
+    </Modal.render>
     """
   end
 

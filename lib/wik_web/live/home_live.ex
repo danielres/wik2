@@ -82,7 +82,7 @@ defmodule WikWeb.HomeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app context={@context} flash={@flash} scope={@current_scope}>
+    <Layouts.app context={@context} flash={@flash} scope={@current_scope} home?={true}>
       <Layouts.container>
         <div class="grid sm:grid-cols-2 gap-8 my-4">
           <section>

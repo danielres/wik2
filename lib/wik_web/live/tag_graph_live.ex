@@ -142,7 +142,7 @@ defmodule WikWeb.TagGraphLive do
           <WikWeb.Components.Combobox.field
             field={@form[:target_tag_id]}
             id="tag-link-target-tag"
-            label="Tag"
+            label="Topic"
             options_json={link_options_json(@options)}
             placeholder="Search topics"
             testid="tag-link-target-tag"
@@ -151,7 +151,7 @@ defmodule WikWeb.TagGraphLive do
           <.error :if={@error != nil}>{@error}</.error>
 
           <.button class="btn btn-primary" data-testid="tag-link-submit" type="submit">
-            Link tag
+            Link topic
           </.button>
         </div>
       </.form>
@@ -273,7 +273,7 @@ defmodule WikWeb.TagGraphLive do
           |> refresh_graph(nil_if_selected(socket.assigns.selected_tag_id, tag_id))
 
         {:error, error} ->
-          Log.scoped_error(scope, error, "tag destroy failed")
+          Log.scoped_error(scope, error, "topic destroy failed")
           socket
       end
 
@@ -293,7 +293,7 @@ defmodule WikWeb.TagGraphLive do
           refresh_graph(socket, socket.assigns.selected_tag_id)
 
         {:error, error} ->
-          Log.scoped_error(scope, error, "tag unlink failed")
+          Log.scoped_error(scope, error, "topic unlink failed")
           socket
       end
 
@@ -315,10 +315,10 @@ defmodule WikWeb.TagGraphLive do
     socket =
       case {current_tag, socket.assigns.tag_modal.mode, target_tag_id} do
         {nil, _mode, _target_tag_id} ->
-          update(socket, :tag_modal, &%{&1 | error: "The selected tag is no longer available."})
+          update(socket, :tag_modal, &%{&1 | error: "The selected topic is no longer available."})
 
         {_tag, _mode, ""} ->
-          update(socket, :tag_modal, &%{&1 | error: "Please select a tag."})
+          update(socket, :tag_modal, &%{&1 | error: "Please select a topic."})
 
         {%Tag{} = current_tag, :link_child, target_tag_id} ->
           submit_link(socket, current_tag.id, target_tag_id, current_tag.id, scope)
@@ -412,7 +412,7 @@ defmodule WikWeb.TagGraphLive do
         |> refresh_graph(selected_tag_id)
 
       {:error, error} ->
-        Log.scoped_error(scope, error, "tag link failed")
+        Log.scoped_error(scope, error, "topic link failed")
         update(socket, :tag_modal, &%{&1 | error: "Could not link those topics."})
     end
   end

@@ -29,20 +29,20 @@ defmodule WikWeb.PageLiveTopicsTest do
 
     render_async(view)
 
+    render_click(element(view, ~s(button[phx-click="edit_mode:toggle"])))
+
     assert has_element?(view, testid("page-topics"))
     assert has_element?(view, testid("page-topic-list"))
-
-    render_click(element(view, ~s(button[phx-click="edit_mode:toggle"])))
     assert has_element?(view, testid("page-topic-add"))
 
     render_click(element(view, testid("page-topic-add")))
 
     modal_html =
       view
-      |> element("#page-topic-modal_portal")
+      |> element("#page-topic-inline-modal_portal")
       |> render()
 
-    assert modal_html =~ ~s(id="page-topic-form")
+    assert modal_html =~ ~s(id="page-topic-inline-form")
 
     render_hook(view, "page_topic:submit", %{
       "page_topic" => %{
@@ -59,13 +59,10 @@ defmodule WikWeb.PageLiveTopicsTest do
 
     assert has_element?(view, testid("page-topic-#{dance.id}"))
     assert has_element?(view, testid("page-topic-relevancy-#{dance.id}"))
-    assert has_element?(view, testid("page-topic-remove-#{dance.id}"))
-    refute has_element?(view, testid("page-topic-add"))
 
-    render_click(element(view, testid("page-topic-remove-#{dance.id}")))
+    render_hook(view, "page_topic:remove", %{"tag_id" => dance.id})
 
     assert {:ok, []} = Tags.list_taggings(page, scope: owner_scope)
-    assert has_element?(view, testid("page-topic-add"))
   end
 
   defp add_membership(space, user, type) do

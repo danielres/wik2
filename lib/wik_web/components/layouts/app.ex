@@ -47,15 +47,15 @@ defmodule WikWeb.Layouts.App do
       "navbar bg-base-300/40 py-2 min-h-0 flex items-center",
       Layouts.container_class()
     ]}>
-      <div class="flex-1 flex items-center">
+      <div class="flex-1 flex items-end">
         <.link navigate={~p"/"} class="opacity-30 hover:opacity-100 transition" aria-label="Home">
-          <UI.icon_app />
+          <.icon name="hero-home-mini" class="size-5 ml-0.5" />
         </.link>
 
         <.icon
           :if={@scope.tenant}
           name="hero-chevron-right-mini"
-          class="size-4 opacity-20 mr-2 ml-0.5"
+          class="size-4 opacity-20 mx-2 self-center mt-1"
         />
 
         <div

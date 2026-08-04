@@ -1,4 +1,5 @@
-<% has_aside? = PageLive.Components.Area.has_area?(@page, :aside) %>
+<% has_aside_blocks? = PageLive.Components.Area.area_has_blocks?(@page, :aside) %>
+<% main_has_blocks? = PageLive.Components.Area.area_has_blocks?(@page, :main) %>
 
 <Layouts.app
   context={@context}
@@ -102,14 +103,18 @@
 
         <div class={[
           "[&>*]:max-w-[80ch]",
-          has_aside? && "grid lg:grid-cols-[3fr_2fr] gap-4"
+          has_aside_blocks? && "grid lg:grid-cols-[3fr_2fr] gap-4"
         ]}>
-          <Components.Block.AddBlockMenuButton.render
+          <div
             :if={@editing?}
-            event_open="block:add_start"
-            position="top"
-            class="mb-12"
-          />
+            class="flex justify-center"
+          >
+            <Components.Block.AddBlockMenuButton.render
+              event_open="block:add_start"
+              position="top"
+              class="mb-12 w-full"
+            />
+          </div>
 
           <PageLive.Components.Area.render
             area={:main}
@@ -125,13 +130,14 @@
           />
 
           <Components.Block.AddBlockMenuButton.render
-            :if={@editing?}
+            :if={@editing? and main_has_blocks?}
             event_open="block:add_start"
             position="bottom"
+            class="mt-8 w-full"
           />
 
           <PageLive.Components.Area.render
-            :if={has_aside?}
+            :if={has_aside_blocks?}
             area={:aside}
             class={[
               "max-lg:border-t",

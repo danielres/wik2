@@ -79,6 +79,7 @@ defmodule WikWeb.Layouts.App do
 
       <div>
         <button
+          aria-label="Open user menu"
           class={[
             "opacity-80 hover:opacity-100 transition cursor-pointer",
             "relative"

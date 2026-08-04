@@ -64,7 +64,7 @@ defmodule WikWeb.TagGraphLive do
           <section class="space-y-4 relative max-w-[80ch]">
             <div :if={@editable? and @editing?} class="absolute right-0 -top-9">
               <ActionButtons.button
-                data-tip="add root tag"
+                data-tip="add root topic"
                 icon="hero-plus-mini"
                 data-testid="tag-add-root"
                 phx-click="create_root_start"
@@ -247,7 +247,7 @@ defmodule WikWeb.TagGraphLive do
 
         if match?({:error, _error}, link_result) do
           {:error, error} = link_result
-          Log.scoped_error(scope, error, "tag link after create failed")
+          Log.scoped_error(scope, error, "topic link after create failed")
         end
 
         {:noreply, handle_saved_tag(socket, tag)}
@@ -444,8 +444,8 @@ defmodule WikWeb.TagGraphLive do
 
   defp tag_params(params), do: params
 
-  defp tag_form_action_label(:edit), do: "Update tag"
-  defp tag_form_action_label(_mode), do: "Create tag"
+  defp tag_form_action_label(:edit), do: "Update topic"
+  defp tag_form_action_label(_mode), do: "Create topic"
 
   defp nil_if_selected(selected_tag_id, selected_tag_id), do: nil
   defp nil_if_selected(selected_tag_id, _deleted_tag_id), do: selected_tag_id

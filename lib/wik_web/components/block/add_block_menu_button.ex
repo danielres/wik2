@@ -22,7 +22,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
   def render(assigns) do
     ~H"""
     <button
-      class={["btn btn-xs btn-accent btn-soft", @class]}
+      class={["btn btn-sm btn-accent btn-soft", @class]}
       phx-click={@event_open}
       phx-value-position={@position}
     >

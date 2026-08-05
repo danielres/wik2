@@ -4,18 +4,28 @@ defmodule WikWeb.Components.UI do
   use WikWeb, :html
 
   attr :editing?, :boolean, required: true
-  attr :rest, :global, include: ~w(phx-click data-testid aria-label)
+  attr :in_place?, :boolean, default: false
+  attr :title, :string, default: "Edit"
+  attr :rest, :global
 
+  # aria-label={"Edit topic #{@selected_tag.name}"}
+  # data-testid="tag-detail-edit"
+  # phx-click="tag_edit_open"
+  # phx-value-tag_id={@selected_tag.id}
+  # title={"Edit topic #{@selected_tag.name}"}
   def editable_zone(assigns) do
     ~H"""
-    <div class={["stacked"]}>
-      {render_slot(@inner_block)}
+    <div class={["stacked", !@in_place? && "p-2"]}>
+      <div>
+        {render_slot(@inner_block)}
+      </div>
 
       <button
         :if={@editing?}
         {@rest}
         type="button"
-        aria-label="Edit space"
+        title={@title}
+        aria-label={@title}
         class={[
           "border",
           "relative",

@@ -49,7 +49,8 @@ defmodule WikWeb.SpaceLive do
         <div class="space-y-8">
           <UI.editable_zone
             editing?={@editing?}
-            aria-label="Edit space"
+            in_place?
+            title="Edit space"
             phx-click="update_space_start"
           >
             <div class="space-y-8">

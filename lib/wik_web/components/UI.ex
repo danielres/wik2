@@ -29,7 +29,7 @@ defmodule WikWeb.Components.UI do
         aria-label={@title}
         class={[
           "border",
-          "Xrelative",
+          "relative",
           "cursor-pointer",
           "rounded",
           @in_place? && "p-4",

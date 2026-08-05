@@ -81,9 +81,11 @@ defmodule WikWeb.SpaceAdminLive do
         <div class="space-y-8">
           <section>
             <h2 class="text-xl">Space</h2>
-            <div class={[
-              "stacked"
-            ]}>
+
+            <UI.editable_zone
+              editing?={@editing?}
+              phx-click="update_space_start"
+            >
               <div class="bg-base-200 p-2 rounded-box">
                 <table class="table table-sm">
                   <tr>
@@ -106,36 +108,7 @@ defmodule WikWeb.SpaceAdminLive do
                   </tr>
                 </table>
               </div>
-
-              <button
-                :if={@editing?}
-                phx-click="update_space_start"
-                class={[
-                  "border",
-                  "relative",
-                  "cursor-pointer",
-                  "rounded",
-                  "border-accent/70 hover:border-accent transition-colors",
-                  "bg-accent/5 hover:bg-accent/10"
-                ]}
-              >
-              </button>
-            </div>
-
-            <Modal.render
-              cancel="update_space_cancel"
-              cancel_testid="update-space-cancel"
-              open?={@form != nil}
-              testid="update-space-dialog"
-            >
-              <Components.Space.form
-                :if={Ash.can?({@space, :update}, @current_scope)}
-                action_type="update"
-                event_submit="space_submit"
-                event_validate="space_validate"
-                form={@form}
-              />
-            </Modal.render>
+            </UI.editable_zone>
           </section>
 
           <section>
@@ -283,6 +256,21 @@ defmodule WikWeb.SpaceAdminLive do
         </div>
       </Layouts.space>
     </Layouts.app>
+
+    <Modal.render
+      cancel="update_space_cancel"
+      cancel_testid="update-space-cancel"
+      open?={@form != nil}
+      testid="update-space-dialog"
+    >
+      <Components.Space.form
+        :if={Ash.can?({@space, :update}, @current_scope)}
+        action_type="update"
+        event_submit="space_submit"
+        event_validate="space_validate"
+        form={@form}
+      />
+    </Modal.render>
     """
   end
 

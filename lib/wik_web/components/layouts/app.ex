@@ -4,7 +4,6 @@ defmodule WikWeb.Layouts.App do
   alias WikWeb.Components
   alias WikWeb.Layouts
   alias WikWeb.TenantContext
-  alias WikWeb.Components.UI
 
   embed_templates "layouts/*"
 
@@ -55,7 +54,7 @@ defmodule WikWeb.Layouts.App do
           class="opacity-30 hover:opacity-100 transition"
           aria-label="Home"
         >
-          <.icon name="hero-home-mini" class="size-5 ml-0.5" />
+          <.icon name="hero-home-mini" />
         </.link>
 
         <.icon

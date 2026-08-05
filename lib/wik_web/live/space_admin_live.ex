@@ -84,6 +84,7 @@ defmodule WikWeb.SpaceAdminLive do
 
             <UI.editable_zone
               editing?={@editing?}
+              title="Edit space"
               phx-click="update_space_start"
             >
               <div class="bg-base-200 p-2 rounded-box">

@@ -62,9 +62,14 @@
           </UI.page_title>
         </UI.page_head>
 
-        <div
+        <UI.editable_zone
           :if={@editing? or @page_topic_summaries != []}
-          class="stacked mb-12"
+          class="mb-12"
+          editing?={@editing?}
+          data-testid="page-topic-add"
+          data-tip="Add topic"
+          phx-click={JS.push("page_topic:add_start") |> UI.modal_open("page-topic-inline-modal")}
+          title="Add topic"
         >
           <section
             data-testid="page-topics"
@@ -86,20 +91,7 @@
               layout="inline"
             />
           </section>
-
-          <button
-            :if={@editing?}
-            type="button"
-            data-testid="page-topic-add"
-            data-tip="Add topic"
-            phx-click={
-              JS.push("page_topic:add_start") |> UI.modal_open("page-topic-inline-modal")
-            }
-            class="border rounded border-accent/30 hover:border-accent/100 cursor-pointer"
-          >
-            <span class="sr-only">Add topic</span>
-          </button>
-        </div>
+        </UI.editable_zone>
 
         <div class={[
           "[&>*]:max-w-[80ch]",

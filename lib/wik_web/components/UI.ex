@@ -3,6 +3,7 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  attr :class, :string, default: ""
   attr :editing?, :boolean, required: true
   attr :in_place?, :boolean, default: false
   attr :title, :string, default: "Edit"
@@ -16,7 +17,7 @@ defmodule WikWeb.Components.UI do
   # title={"Edit topic #{@selected_tag.name}"}
   def editable_zone(assigns) do
     ~H"""
-    <div class="stacked">
+    <div class={["stacked", @class]}>
       <div>
         {render_slot(@inner_block)}
       </div>
@@ -36,7 +37,7 @@ defmodule WikWeb.Components.UI do
           @in_place? && "w-[calc(100%+1rem)] -ml-[.5rem]",
           @in_place? && "h-[calc(100%+1rem)] -mt-[.5rem]",
           "border-accent/80 hover:border-accent transition-colors",
-          "bg-accent/10 hover:bg-accent/15"
+          "bg-accent/7 hover:bg-accent/12"
         ]}
       >
       </button>

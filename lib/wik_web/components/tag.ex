@@ -69,9 +69,13 @@ defmodule WikWeb.Components.Tag do
 
     ~H"""
     <div class="space-y-4" data-testid={"tag-detail-#{@selected_tag.id}"}>
-      <div class={[
-        "stacked"
-      ]}>
+      <UI.editable_zone
+        editing?={@editing?}
+        data-testid="tag-detail-edit"
+        phx-click="tag_edit_open"
+        phx-value-tag_id={@selected_tag.id}
+        title={"Edit topic \"#{@selected_tag.name}\""}
+      >
         <div class="p-2">
           <UI.page_title class="text-lg font-[300]">
             {@selected_tag.name}
@@ -81,25 +85,7 @@ defmodule WikWeb.Components.Tag do
             /{@selected_tag.slug}
           </div>
         </div>
-
-        <button
-          class={[
-            "border",
-            "cursor-pointer",
-            "rounded",
-            "border-accent/50 hover:border-accent transition-colors",
-            "bg-accent/2 hover:bg-accent/10"
-          ]}
-          aria-label={"Edit topic #{@selected_tag.name}"}
-          data-testid="tag-detail-edit"
-          phx-click="tag_edit_open"
-          phx-value-tag_id={@selected_tag.id}
-          title={"Edit topic #{@selected_tag.name}"}
-          type="button"
-        >
-          <span class="sr-only">Edit topic</span>
-        </button>
-      </div>
+      </UI.editable_zone>
 
       <div :if={@editing?} class="flex flex-wrap gap-2 [&>*]:flex-grow">
         <button

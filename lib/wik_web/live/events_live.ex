@@ -66,8 +66,9 @@ defmodule WikWeb.EventsLive do
               <.topic_options timeline={@timeline} />
             </section>
           </div>
+
           <div>
-            <div class="flex justify-end">
+            <div :if={!@timeline.show_external?} class="flex justify-end">
               <.button_create_event current_scope={@current_scope} />
             </div>
 
@@ -177,18 +178,17 @@ defmodule WikWeb.EventsLive do
     <label class={[
       "label cursor-pointer justify-end"
     ]}>
-      <span class="text-sm sr-only">Add event</span>
-
       <button
         :if={Ash.can?({Event, :create}, @current_scope)}
         class={[
-          "btn btn-accent btn-circle btn-xs"
+          "btn btn-accent btn-soft btn-xs"
         ]}
         data-testid="events-create-button"
         phx-click="event_create_start"
         type="button"
       >
         <.icon name="hero-plus-micro" />
+        <span class="text-sm">Add event</span>
       </button>
     </label>
     """

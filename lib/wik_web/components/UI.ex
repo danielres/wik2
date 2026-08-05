@@ -3,6 +3,48 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  attr :class, :string, default: ""
+  attr :editing?, :boolean, required: true
+  attr :in_place?, :boolean, default: false
+  attr :title, :string, default: "Edit"
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  # aria-label={"Edit topic #{@selected_tag.name}"}
+  # data-testid="tag-detail-edit"
+  # phx-click="tag_edit_open"
+  # phx-value-tag_id={@selected_tag.id}
+  # title={"Edit topic #{@selected_tag.name}"}
+  def editable_zone(assigns) do
+    ~H"""
+    <div class={["stacked", @class]}>
+      <div>
+        {render_slot(@inner_block)}
+      </div>
+
+      <button
+        :if={@editing?}
+        {@rest}
+        type="button"
+        title={@title}
+        aria-label={@title}
+        class={[
+          "border",
+          "relative",
+          "cursor-pointer",
+          "rounded",
+          @in_place? && "p-4",
+          @in_place? && "w-[calc(100%+1rem)] -ml-[.5rem]",
+          @in_place? && "h-[calc(100%+1rem)] -mt-[.5rem]",
+          "border-accent/80 hover:border-accent transition-colors",
+          "bg-accent/7 hover:bg-accent/12"
+        ]}
+      >
+      </button>
+    </div>
+    """
+  end
+
   attr :class, :string, default: "ml-0.5"
   attr :size_class, :string, default: "size-5"
 

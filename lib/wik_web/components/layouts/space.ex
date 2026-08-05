@@ -111,11 +111,12 @@ defmodule WikWeb.Layouts.Space do
     ~H"""
     <div class={[
       "grid",
-      "grid-cols-[auto_1fr_1fr_1fr_1fr]",
+      "grid-cols-[1fr_1fr_1fr_1fr_auto]",
       "items-center",
       "[&>a]:justify-center",
       "[&>*]:min-h-10",
-      "[&>a]:border-l",
+      "[&>a]:border-r",
+      "[&>a:first-child]:border-l",
       "[&>*]:py-2",
       "[&>a]:text-center",
       "[&>a]:border-base-content/15",
@@ -133,13 +134,6 @@ defmodule WikWeb.Layouts.Space do
       "max-sm:[&>a]:px-4",
       @editing? and "[&>a]:opacity-0 [&>a]:pointer-events-none"
     ]}>
-      <div class={[
-        "pr-2 min-w-12 flex justify-start gap-3",
-        @actions == [] && "opacity-0 pointer-events-none"
-      ]}>
-        {render_slot(@actions)}
-      </div>
-
       <.space_menu_link
         icon="hero-book-open-micro"
         item="wiki/home"
@@ -171,6 +165,13 @@ defmodule WikWeb.Layouts.Space do
         scope={@scope}
         view={@view}
       />
+
+      <div class={[
+        "min-w-10 flex justify-end gap-3",
+        @actions == [] && "opacity-0 pointer-events-none"
+      ]}>
+        {render_slot(@actions)}
+      </div>
     </div>
     """
   end

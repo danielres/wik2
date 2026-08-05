@@ -3,6 +3,36 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  attr :editing?, :boolean, required: true
+  attr :rest, :global, include: ~w(phx-click data-testid aria-label)
+
+  def editable_zone(assigns) do
+    ~H"""
+    <div class={["stacked"]}>
+      {render_slot(@inner_block)}
+
+      <button
+        :if={@editing?}
+        {@rest}
+        type="button"
+        aria-label="Edit space"
+        class={[
+          "border",
+          "relative",
+          "cursor-pointer",
+          "rounded",
+          "p-4",
+          "w-[calc(100%+1rem)] -ml-[.5rem]",
+          "h-[calc(100%+1rem)] -mt-[.5rem]",
+          "border-accent/70 hover:border-accent transition-colors",
+          "bg-accent/5 hover:bg-accent/10"
+        ]}
+      >
+      </button>
+    </div>
+    """
+  end
+
   attr :class, :string, default: "ml-0.5"
   attr :size_class, :string, default: "size-5"
 

@@ -47,46 +47,24 @@ defmodule WikWeb.SpaceLive do
         </:actions>
 
         <div class="space-y-8">
-          <div class={[
-            "stacked"
-          ]}>
+          <UI.editable_zone
+            editing?={@editing?}
+            aria-label="Edit space"
+            phx-click="update_space_start"
+          >
             <div class="space-y-8">
               <UI.page_head>
                 <UI.page_title>{@current_scope.tenant |> to_string()}</UI.page_title>
               </UI.page_head>
 
               <div>
-                <UI.panel_title>
-                  Description
-                </UI.panel_title>
-
+                <UI.panel_title>Description</UI.panel_title>
                 <div class="text-sm bg-base-200 p-4 rounded">{@space.description}</div>
               </div>
             </div>
+          </UI.editable_zone>
 
-            <button
-              :if={@editing?}
-              phx-click="update_space_start"
-              type="button"
-              aria-label="Edit space"
-              class={[
-                "border",
-                "relative",
-                "cursor-pointer",
-                "rounded",
-                "p-4",
-                "w-[calc(100%+1rem)] -ml-[.5rem]",
-                "h-[calc(100%+1rem)] -mt-[.5rem]",
-                "border-accent/70 hover:border-accent transition-colors",
-                "bg-accent/5 hover:bg-accent/10"
-              ]}
-            >
-            </button>
-          </div>
-
-          <UI.panel_title>
-            Info
-          </UI.panel_title>
+          <UI.panel_title>Info</UI.panel_title>
 
           <div class="text-sm bg-base-200 p-4 rounded">
             <UI.icon_user_with_count count={@space.memberships |> length()} />

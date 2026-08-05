@@ -68,7 +68,7 @@ defmodule WikWeb.EventsLive do
           </div>
 
           <div>
-            <div class="flex justify-end">
+            <div :if={!@timeline.show_external?} class="flex justify-end">
               <.button_create_event current_scope={@current_scope} />
             </div>
 

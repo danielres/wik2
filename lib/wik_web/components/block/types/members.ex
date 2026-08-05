@@ -3,6 +3,7 @@ defmodule WikWeb.Components.Block.Types.Members do
 
   alias Wik.Accounts.Membership
   alias WikWeb.Components
+  alias WikWeb.Components.UI
 
   require Ash.Query
 
@@ -32,44 +33,30 @@ defmodule WikWeb.Components.Block.Types.Members do
       scope={@scope}
       show_filters={false}
       theme={WikWeb.Cinder.Themes.Dense}
-      class={[
-        "@sm/block:[&_th]:px-4 @sm/block:[&_th]:py-2",
-        "@sm/block:[&_td]:px-4 @sm/block:[&_td]:py-2"
-      ]}
-      }
     >
       <:item :let={membership}>
-        <div class={[
-          "bg-base-300/30 rounded-lg p-2 stacked",
-          !@actions? and "hover:bg-base-300/50",
-          (@actions? and membership.type == :owner and
-             Ash.can?({membership, :transfer_ownership}, @scope)) &&
-            "border border-accent/50 hover:border-accent",
-          (@actions? and membership.type != :owner and
-             Ash.can?({membership, :update_membership_type}, @scope)) &&
-            "border border-accent/50 hover:border-accent"
-        ]}>
-          <.member_row membership={membership} actions?={@actions?} />
+        <% edit_action =
+          member_edit_action(
+            membership,
+            @actions?,
+            @scope,
+            @event_membership_type_change_start,
+            @event_transfer_ownership_start
+          ) %>
 
-          <button
-            :if={
-              @actions? and membership.type != :owner and
-                Ash.can?({membership, :update_membership_type}, @scope)
-            }
-            phx-click={@event_membership_type_change_start}
-            phx-value-membership_id={membership.id}
-            class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
-          >
-          </button>
-
-          <button
-            :if={@actions? and Ash.can?({membership, :transfer_ownership}, @scope)}
-            phx-click={@event_transfer_ownership_start}
-            phx-value-membership_id={membership.id}
-            class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
-          >
-          </button>
-        </div>
+        <UI.editable_zone
+          editing?={edit_action != nil}
+          phx-click={edit_action && edit_action.event}
+          phx-value-membership_id={membership.id}
+          title={if(edit_action, do: edit_action.title, else: "Edit membership")}
+        >
+          <div class={[
+            "bg-base-300/30 rounded-lg p-2",
+            !@actions? and "hover:bg-base-300/50"
+          ]}>
+            <.member_row membership={membership} actions?={@actions?} />
+          </div>
+        </UI.editable_zone>
       </:item>
 
       <:col :if={false} field="user.email" label="Username" sort></:col>
@@ -147,6 +134,26 @@ defmodule WikWeb.Components.Block.Types.Members do
     </div>
     """
   end
+
+  defp member_edit_action(_membership, false, _scope, _membership_type_event, _transfer_event),
+    do: nil
+
+  defp member_edit_action(membership, true, scope, membership_type_event, transfer_event) do
+    cond do
+      actionable_event?(transfer_event) and membership.type == :owner and
+          Ash.can?({membership, :transfer_ownership}, scope) ->
+        %{event: transfer_event, title: "Transfer ownership"}
+
+      actionable_event?(membership_type_event) and membership.type != :owner and
+          Ash.can?({membership, :update_membership_type}, scope) ->
+        %{event: membership_type_event, title: "Change membership type"}
+
+      true ->
+        nil
+    end
+  end
+
+  defp actionable_event?(event), do: is_binary(event) and event != ""
 
   defp members_query(nil), do: nil
   defp members_query(%{tenant: nil}), do: nil

@@ -7,6 +7,7 @@ defmodule WikWeb.Components.UI do
   attr :in_place?, :boolean, default: false
   attr :title, :string, default: "Edit"
   attr :rest, :global
+  slot :inner_block, required: true
 
   # aria-label={"Edit topic #{@selected_tag.name}"}
   # data-testid="tag-detail-edit"
@@ -15,7 +16,7 @@ defmodule WikWeb.Components.UI do
   # title={"Edit topic #{@selected_tag.name}"}
   def editable_zone(assigns) do
     ~H"""
-    <div class={["stacked", !@in_place? && "p-2"]}>
+    <div class="stacked">
       <div>
         {render_slot(@inner_block)}
       </div>
@@ -28,12 +29,12 @@ defmodule WikWeb.Components.UI do
         aria-label={@title}
         class={[
           "border",
-          "relative",
+          "Xrelative",
           "cursor-pointer",
           "rounded",
-          "p-4",
-          "w-[calc(100%+1rem)] -ml-[.5rem]",
-          "h-[calc(100%+1rem)] -mt-[.5rem]",
+          @in_place? && "p-4",
+          @in_place? && "w-[calc(100%+1rem)] -ml-[.5rem]",
+          @in_place? && "h-[calc(100%+1rem)] -mt-[.5rem]",
           "border-accent/70 hover:border-accent transition-colors",
           "bg-accent/5 hover:bg-accent/10"
         ]}

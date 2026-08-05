@@ -76,12 +76,14 @@ defmodule WikWeb.Components.Tag do
         phx-value-tag_id={@selected_tag.id}
         title={"Edit topic \"#{@selected_tag.name}\""}
       >
-        <UI.page_title class="text-lg font-[300]">
-          {@selected_tag.name}
-        </UI.page_title>
+        <div class="p-2">
+          <UI.page_title class="text-lg font-[300]">
+            {@selected_tag.name}
+          </UI.page_title>
 
-        <div class="text-xs font-mono opacity-50">
-          /{@selected_tag.slug}
+          <div class="text-xs font-mono opacity-50">
+            /{@selected_tag.slug}
+          </div>
         </div>
       </UI.editable_zone>
 

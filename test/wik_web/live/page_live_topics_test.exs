@@ -16,7 +16,7 @@ defmodule WikWeb.PageLiveTopicsTest do
     assert_page_topic_management_works(conn)
   end
 
-  test "topic modal expands voters and previews editing the current member contribution", %{
+  test "topic modal expands voters and manages the current member contribution", %{
     conn: conn
   } do
     owner = generate(user())
@@ -69,7 +69,7 @@ defmodule WikWeb.PageLiveTopicsTest do
 
     assert modal_has_element?(
              view,
-             "#page-topic-inline-modal-topic-toggle-#{dance.id}[type=\"radio\"][name=\"page-topic-inline-modal-topic-accordion\"]"
+             "#page-topic-inline-modal-topic-toggle-#{dance.id}[type=\"checkbox\"]"
            )
 
     assert modal_has_element?(view, testid("page-topic-modal-details-#{dance.id}"))
@@ -86,18 +86,43 @@ defmodule WikWeb.PageLiveTopicsTest do
     render_hook(view, "page_topic:edit_start", %{"tagging_id" => owner_tagging.id})
 
     assert modal_has_element?(view, testid("page-topic-edit-preview"))
-    assert modal_has_element?(view, "#page-topic-inline-edit-relevancy[disabled]")
-    assert modal_has_element?(view, "#page-topic-inline-edit-remove[disabled]")
-    assert modal_has_element?(view, "#page-topic-inline-edit-save[disabled]")
+    assert modal_has_element?(view, "#page-topic-inline-edit-relevancy")
+    refute modal_has_element?(view, "#page-topic-inline-edit-relevancy[disabled]")
+
+    assert modal_has_element?(
+             view,
+             "#page-topic-inline-edit-remove[phx-click=\"page_topic:edit_remove\"]"
+           )
+
+    assert modal_has_element?(view, "#page-topic-inline-edit-save[type=\"submit\"]")
 
     assert modal_has_element?(
              view,
              "#page-topic-inline-edit-back[phx-click=\"page_topic:edit_cancel\"]"
            )
 
-    render_hook(view, "page_topic:edit_cancel", %{})
+    render_hook(view, "page_topic:edit_validate", %{
+      "page_topic_edit" => %{"relevancy_level" => "9"}
+    })
+
+    assert modal_has_element?(view, "#page-topic-inline-edit-relevancy[value=\"9\"]")
+
+    render_hook(view, "page_topic:edit_submit", %{
+      "page_topic_edit" => %{"relevancy_level" => "9"}
+    })
 
     assert modal_has_element?(view, testid("page-topic-modal-index"))
+
+    assert {:ok, updated_taggings} = Tags.list_taggings(page, scope: owner_scope)
+    updated_owner_tagging = Enum.find(updated_taggings, &(&1.id == owner_tagging.id))
+    assert updated_owner_tagging.dimensions == %{"relevancy" => 9}
+
+    render_hook(view, "page_topic:edit_start", %{"tagging_id" => owner_tagging.id})
+    render_hook(view, "page_topic:edit_remove", %{})
+
+    assert modal_has_element?(view, testid("page-topic-modal-index"))
+    assert {:ok, [remaining_tagging]} = Tags.list_taggings(page, scope: owner_scope)
+    assert remaining_tagging.id == member_tagging.id
   end
 
   test "empty main area shows one add block button in edit mode", %{conn: conn} do

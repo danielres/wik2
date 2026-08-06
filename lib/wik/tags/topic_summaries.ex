@@ -18,7 +18,8 @@ defmodule Wik.Tags.TopicSummaries do
         average_relevancy: integer() | nil,
         count: non_neg_integer(),
         current_member_tagging: Tagging.t() | nil,
-        tag: Tag.t()
+        tag: Tag.t(),
+        taggings: [Tagging.t()]
       }
 
   When `current_membership` is `nil` (the default), `current_member_tagging`
@@ -35,7 +36,8 @@ defmodule Wik.Tags.TopicSummaries do
         average_relevancy: average_level(relevancy_levels),
         count: length(taggings),
         current_member_tagging: current_member_tagging(taggings, current_membership),
-        tag: tag
+        tag: tag,
+        taggings: sort_taggings(taggings, current_membership)
       }
     end)
     |> Enum.reject(&is_nil(&1.tag))
@@ -68,5 +70,14 @@ defmodule Wik.Tags.TopicSummaries do
 
   defp current_member_tagging(taggings, membership) do
     Enum.find(taggings, &(&1.tagged_by_membership_id == membership.id))
+  end
+
+  defp sort_taggings(taggings, nil), do: taggings
+
+  defp sort_taggings(taggings, membership) do
+    Enum.sort_by(taggings, fn tagging ->
+      {tagging.tagged_by_membership_id != membership.id,
+       -(dimension_level(tagging, "relevancy") || 0)}
+    end)
   end
 end

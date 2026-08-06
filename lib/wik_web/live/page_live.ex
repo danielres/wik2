@@ -70,6 +70,7 @@ defmodule WikWeb.PageLive do
       |> PageState.load_path(path, title_path: title_path)
       |> PageTopics.sync_subscription()
       |> PageTopics.assign_topics()
+      # |> PageTopics.open_form()
       |> PageAuthor.assign_membership()
       |> Presence.track_in_liveview(url)
       |> Locks.assign_locks()
@@ -113,6 +114,14 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_event("page_topic:add_cancel", _params, socket),
     do: {:noreply, PageTopics.close_form(socket)}
+
+  @impl true
+  def handle_event("page_topic:edit_cancel", _params, socket),
+    do: {:noreply, PageTopics.edit_cancel(socket)}
+
+  @impl true
+  def handle_event("page_topic:edit_start", %{"tagging_id" => tagging_id}, socket),
+    do: {:noreply, PageTopics.edit_start(socket, tagging_id)}
 
   @impl true
   def handle_event("page_topic:validate", %{"page_topic" => params}, socket),

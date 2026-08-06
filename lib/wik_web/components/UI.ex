@@ -36,7 +36,7 @@ defmodule WikWeb.Components.UI do
           @in_place? && "p-4",
           @in_place? && "w-[calc(100%+1rem)] -ml-[.5rem]",
           @in_place? && "h-[calc(100%+1rem)] -mt-[.5rem]",
-          "border-accent/80 hover:border-accent transition-colors",
+          "border-accent/50 hover:border-accent transition-colors",
           "bg-accent/7 hover:bg-accent/12"
         ]}
       >

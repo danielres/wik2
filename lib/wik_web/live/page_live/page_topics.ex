@@ -11,6 +11,7 @@ defmodule WikWeb.PageLive.PageTopics do
 
   def assign_defaults(socket) do
     assign(socket,
+      page_topic_edit_tagging_id: nil,
       page_topic_form: nil,
       page_topic_options: [],
       page_topic_summaries: [],
@@ -52,11 +53,34 @@ defmodule WikWeb.PageLive.PageTopics do
   end
 
   def close_form(socket) do
-    assign(socket, :page_topic_form, nil)
+    assign(socket,
+      page_topic_edit_tagging_id: nil,
+      page_topic_form: nil
+    )
   end
 
   def open_form(socket) do
-    assign(socket, :page_topic_form, form())
+    assign(socket,
+      page_topic_edit_tagging_id: nil,
+      page_topic_form: form()
+    )
+  end
+
+  def edit_cancel(socket) do
+    assign(socket, :page_topic_edit_tagging_id, nil)
+  end
+
+  def edit_start(socket, tagging_id) do
+    current_tagging =
+      Enum.find(socket.assigns.page_topic_summaries, fn summary ->
+        summary.current_member_tagging && summary.current_member_tagging.id == tagging_id
+      end)
+
+    if current_tagging do
+      assign(socket, :page_topic_edit_tagging_id, tagging_id)
+    else
+      socket
+    end
   end
 
   def remove(socket, tag_id) do

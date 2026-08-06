@@ -120,8 +120,20 @@ defmodule WikWeb.PageLive do
     do: {:noreply, PageTopics.edit_cancel(socket)}
 
   @impl true
+  def handle_event("page_topic:edit_remove", _params, socket),
+    do: {:noreply, PageTopics.edit_remove(socket)}
+
+  @impl true
   def handle_event("page_topic:edit_start", %{"tagging_id" => tagging_id}, socket),
     do: {:noreply, PageTopics.edit_start(socket, tagging_id)}
+
+  @impl true
+  def handle_event("page_topic:edit_submit", %{"page_topic_edit" => params}, socket),
+    do: {:noreply, PageTopics.edit_submit(socket, params)}
+
+  @impl true
+  def handle_event("page_topic:edit_validate", %{"page_topic_edit" => params}, socket),
+    do: {:noreply, PageTopics.edit_validate(socket, params)}
 
   @impl true
   def handle_event("page_topic:validate", %{"page_topic" => params}, socket),

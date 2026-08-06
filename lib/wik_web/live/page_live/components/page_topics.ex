@@ -12,6 +12,7 @@ defmodule WikWeb.PageLive.Components.PageTopics do
   attr :can_manage_page?, :boolean, required: true
   attr :current_scope, :map, required: true
   attr :editing?, :boolean, required: true
+  attr :page_topic_edit_form, :any, default: nil
   attr :page_topic_edit_tagging_id, :string, default: nil
   attr :page_topic_form, :any, default: nil
   attr :page_topic_options, :list, required: true
@@ -62,6 +63,7 @@ defmodule WikWeb.PageLive.Components.PageTopics do
       <.topic_edit_preview
         :if={@topic_edit_context}
         context={@topic_edit_context}
+        form={@page_topic_edit_form}
         id_prefix="page-topic-inline"
         relevancy_dimension={relevancy_dimension}
       />
@@ -142,6 +144,7 @@ defmodule WikWeb.PageLive.Components.PageTopics do
       <.topic_edit_preview
         :if={@topic_edit_context}
         context={@topic_edit_context}
+        form={@page_topic_edit_form}
         id_prefix="page-topic-panel"
         relevancy_dimension={relevancy_dimension}
       />
@@ -376,12 +379,20 @@ defmodule WikWeb.PageLive.Components.PageTopics do
   end
 
   attr :context, :map, required: true
+  attr :form, :any, required: true
   attr :id_prefix, :string, required: true
   attr :relevancy_dimension, :map, required: true
 
   defp topic_edit_preview(assigns) do
     ~H"""
-    <div class="space-y-6" data-testid="page-topic-edit-preview">
+    <.form
+      for={@form}
+      id={"#{@id_prefix}-edit-form"}
+      class="space-y-6"
+      data-testid="page-topic-edit-preview"
+      phx-change="page_topic:edit_validate"
+      phx-submit="page_topic:edit_submit"
+    >
       <div class="flex items-center gap-3 pr-6">
         <button
           id={"#{@id_prefix}-edit-back"}
@@ -405,16 +416,16 @@ defmodule WikWeb.PageLive.Components.PageTopics do
 
         <div class="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3">
           <span class="font-mono text-sm">
-            {TopicSummaries.dimension_level(@context.tagging, "relevancy") || 0}/{@relevancy_dimension.max}
+            {@form[:relevancy_level].value}/{@relevancy_dimension.max}
           </span>
           <input
             id={"#{@id_prefix}-edit-relevancy"}
+            name={@form[:relevancy_level].name}
             type="range"
-            min="0"
+            min="1"
             max={@relevancy_dimension.max}
-            value={TopicSummaries.dimension_level(@context.tagging, "relevancy") || 0}
+            value={@form[:relevancy_level].value}
             class="range range-xs w-full"
-            disabled
             style={"color: #{@relevancy_dimension.color};"}
           />
         </div>
@@ -426,23 +437,22 @@ defmodule WikWeb.PageLive.Components.PageTopics do
           type="button"
           class="btn btn-ghost btn-sm btn-square text-error"
           aria-label="Remove topic contribution"
-          disabled
+          phx-click="page_topic:edit_remove"
           title="Remove topic contribution"
         >
           <.icon name="hero-trash-micro" class="size-4" />
         </button>
         <button
           id={"#{@id_prefix}-edit-save"}
-          type="button"
+          type="submit"
           class="btn btn-accent btn-soft btn-sm btn-square"
           aria-label="Update topic contribution"
-          disabled
           title="Update topic contribution"
         >
           <.icon name="hero-check-micro" class="size-4" />
         </button>
       </div>
-    </div>
+    </.form>
     """
   end
 

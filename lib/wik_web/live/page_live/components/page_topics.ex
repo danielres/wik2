@@ -220,9 +220,9 @@ defmodule WikWeb.PageLive.Components.PageTopics do
               data-testid={"page-topic-modal-topic-#{summary.tag.id}"}
             >
               <input
+                aria-label={"Toggle voter details for #{summary.tag.name}"}
                 id={"#{@modal_id}-topic-toggle-#{summary.tag.id}"}
-                type="radio"
-                name={"#{@modal_id}-topic-accordion"}
+                type="checkbox"
               />
 
               <div class={[

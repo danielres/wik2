@@ -425,15 +425,13 @@ defmodule WikWeb.PageLive.Components.PageTopics do
           <span class="font-mono text-sm">
             {@form[:relevancy_level].value}/{@relevancy_dimension.max}
           </span>
-          <input
+          <RangeInput.render
+            dimension={@relevancy_dimension}
+            field={@form[:relevancy_level]}
             id={"#{@id_prefix}-edit-relevancy"}
-            name={@form[:relevancy_level].name}
-            type="range"
-            min="1"
-            max={@relevancy_dimension.max}
-            value={@form[:relevancy_level].value}
-            class="range range-xs w-full"
-            style={"color: #{@relevancy_dimension.color};"}
+            label={@relevancy_dimension.label}
+            max_level={@relevancy_dimension.max}
+            min_level={1}
           />
         </div>
       </div>

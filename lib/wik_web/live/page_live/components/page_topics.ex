@@ -46,7 +46,7 @@ defmodule WikWeb.PageLive.Components.PageTopics do
       </:title>
     </DimensionsList.render>
 
-    <UI.modal id="page-topic-inline-modal" open?={@page_topic_form != nil}>
+    <UI.modal id="page-topic-inline-modal" open?={@page_topic_form != nil} full_h?>
       <.topic_modal_index
         :if={is_nil(@topic_edit_context)}
         cancel_button_id="page-topic-inline-cancel"
@@ -164,8 +164,15 @@ defmodule WikWeb.PageLive.Components.PageTopics do
 
   defp topic_modal_index(assigns) do
     ~H"""
-    <div class="space-y-12" data-testid="page-topic-modal-index">
-      <section>
+    <div
+      class={[
+        "grid h-full min-h-0 overflow-hidden",
+        "grid-rows-[minmax(8rem,1fr)_auto]",
+        "gap-8 sm:gap-12"
+      ]}
+      data-testid="page-topic-modal-index"
+    >
+      <section class="overflow-y-auto min-h-0">
         <UI.panel_title>Page topics</UI.panel_title>
         <div
           id={"#{@modal_id}-topics"}

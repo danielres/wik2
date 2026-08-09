@@ -141,9 +141,8 @@ defmodule WikWeb.PageLive.PageTopics do
   end
 
   def remove(socket, tag_id) do
-    case remove_tagging(socket, tag_id) do
-      {_result, socket} -> socket
-    end
+    remove_tagging(socket, tag_id)
+    |> elem(1)
   end
 
   def refresh_if_watched(socket, topic) do

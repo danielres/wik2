@@ -67,6 +67,13 @@ defmodule Wik.Accounts.Membership do
       accept [:primary_block_id]
       require_atomic? false
     end
+
+    update :mark_seen do
+      accept []
+      public? false
+      require_atomic? false
+      change set_attribute(:last_seen_at, &DateTime.utc_now/0)
+    end
   end
 
   policies do
@@ -111,6 +118,7 @@ defmodule Wik.Accounts.Membership do
     publish :set_username, ["user", :user_id]
     publish :update_membership_type, ["space", :space_id]
     publish :update_membership_type, ["user", :user_id]
+    publish :mark_seen, ["space", :space_id]
   end
 
   validations do
@@ -135,6 +143,10 @@ defmodule Wik.Accounts.Membership do
     end
 
     attribute :username, Wik.Types.Slug do
+      public? true
+    end
+
+    attribute :last_seen_at, :utc_datetime_usec do
       public? true
     end
   end

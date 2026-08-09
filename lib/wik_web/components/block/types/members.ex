@@ -117,6 +117,7 @@ defmodule WikWeb.Components.Block.Types.Members do
           <span>{@membership.type |> Atom.to_string() |> String.capitalize()}</span>
         </span>
       </div>
+
       <div>
         <span
           class={[
@@ -128,7 +129,21 @@ defmodule WikWeb.Components.Block.Types.Members do
           ]}
           data-tip={"Member since #{Utils.Time.precise(@membership.inserted_at)}"}
         >
-          {Utils.Time.relative(@membership.inserted_at)}
+          Member since: {Utils.Time.relative(@membership.inserted_at)}
+        </span>
+
+        <span
+          class={[
+            "badge badge-sm px-2 bg-base-200",
+            "whitespace-nowrap",
+            "tooltip tooltip-left tooltip-delayed",
+            "cursor-default",
+            "text-base-content/40"
+          ]}
+          data-testid={"member-row-last-seen-#{@membership.id}"}
+          data-tip={last_seen_tooltip(@membership.last_seen_at)}
+        >
+          Last seen: {last_seen_text(@membership.last_seen_at)}
         </span>
       </div>
     </div>
@@ -154,6 +169,21 @@ defmodule WikWeb.Components.Block.Types.Members do
   end
 
   defp actionable_event?(event), do: is_binary(event) and event != ""
+
+  defp last_seen_text(nil), do: "never"
+  defp last_seen_text(last_seen_at), do: relative_time_ago(last_seen_at)
+
+  defp last_seen_tooltip(nil), do: "This member has not connected to this space yet"
+
+  defp last_seen_tooltip(last_seen_at),
+    do: "Last seen #{Utils.Time.precise(last_seen_at)}"
+
+  defp relative_time_ago(datetime) do
+    case Utils.Time.relative(datetime) do
+      "just now" -> "just now"
+      relative -> "#{relative} ago"
+    end
+  end
 
   defp members_query(nil), do: nil
   defp members_query(%{tenant: nil}), do: nil

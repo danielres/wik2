@@ -8,6 +8,39 @@ defmodule WikWeb.MembersLiveTest do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
 
+  test "shows when each member last connected to the space", %{conn: conn} do
+    owner = generate(user())
+    seen_member = generate(user())
+    never_seen_member = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    seen_membership = add_membership(space, seen_member, :member)
+    never_seen_membership = add_membership(space, never_seen_member, :member)
+
+    Ash.update!(seen_membership, %{},
+      action: :mark_seen,
+      authorize?: false,
+      domain: Wik.Accounts
+    )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/members")
+
+    assert has_element?(
+             view,
+             testid("member-row-last-seen-#{seen_membership.id}"),
+             "Last seen just now"
+           )
+
+    assert has_element?(
+             view,
+             testid("member-row-last-seen-#{never_seen_membership.id}"),
+             "Last seen never"
+           )
+  end
+
   test "updating a membership type refreshes the members list", %{conn: conn} do
     owner = generate(user())
     member = generate(user())

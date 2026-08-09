@@ -132,7 +132,7 @@ defmodule WikWeb.Components.Block.Types.Members do
             "cursor-default",
             "text-base-content/40"
           ]}
-          data-tip={"Member since #{Utils.Time.precise(@membership.inserted_at)}"}
+          data-tip={member_since_tooltip(@membership.inserted_at, @user_tz)}
         >
           Member since: {Utils.Time.relative(@membership.inserted_at)}
         </span>
@@ -174,6 +174,15 @@ defmodule WikWeb.Components.Block.Types.Members do
   end
 
   defp actionable_event?(event), do: is_binary(event) and event != ""
+
+  defp member_since_tooltip(inserted_at, user_tz) do
+    precise_inserted_at =
+      inserted_at
+      |> Utils.Tz.to_local!(user_tz)
+      |> Utils.Time.precise()
+
+    "Member since #{precise_inserted_at}"
+  end
 
   defp last_seen_text(nil), do: "never"
   defp last_seen_text(last_seen_at), do: relative_time_ago(last_seen_at)

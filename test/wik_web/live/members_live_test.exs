@@ -29,6 +29,11 @@ defmodule WikWeb.MembersLiveTest do
       |> Utils.Tz.to_local!("Europe/Warsaw")
       |> Utils.Time.precise()
 
+    expected_member_since =
+      seen_membership.inserted_at
+      |> Utils.Tz.to_local!("Europe/Warsaw")
+      |> Utils.Time.precise()
+
     {:ok, view, _html} =
       conn
       |> log_in(owner)
@@ -44,6 +49,11 @@ defmodule WikWeb.MembersLiveTest do
     assert has_element?(
              view,
              ~s(#{testid("member-row-last-seen-#{seen_membership.id}")}[data-tip="Last seen #{expected_last_seen}"])
+           )
+
+    assert has_element?(
+             view,
+             ~s(span[data-tip="Member since #{expected_member_since}"])
            )
 
     assert has_element?(

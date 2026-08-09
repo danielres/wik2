@@ -36,13 +36,19 @@ defmodule WikWeb.Components.Membership.AccessTest do
         variant: :profile
       })
 
-    assert html =~ ~s(data-testid="access-grant-grant-1")
-    assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
-    assert html =~ ~s(data-testid="access-grant-last-seen-grant-1")
-    assert html =~ ~s(data-testid="access-grant-status-grant-1")
-    assert html =~ "issuer"
-    assert html =~ "2026-08-09 19:50"
-    assert html =~ "active"
+    document = LazyHTML.from_fragment(html)
+    grant = LazyHTML.query(document, ~s([data-testid="access-grant-grant-1"]))
+    issuer = LazyHTML.query(document, ~s([data-testid="access-grant-issuer-grant-1"]))
+
+    last_seen =
+      LazyHTML.query(document, ~s([data-testid="access-grant-last-seen-grant-1"]))
+
+    status = LazyHTML.query(document, ~s([data-testid="access-grant-status-grant-1"]))
+
+    assert Enum.any?(grant)
+    assert LazyHTML.text(issuer) =~ "issuer"
+    assert LazyHTML.text(last_seen) =~ "2026-08-09 19:50"
+    assert LazyHTML.text(status) =~ "active"
   end
 
   test "grant_card renders google access with grant issuer" do
@@ -75,8 +81,13 @@ defmodule WikWeb.Components.Membership.AccessTest do
         variant: :profile
       })
 
-    assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
-    assert html =~ ~s(data-testid="access-grant-last-seen-grant-1")
-    assert html =~ "Never"
+    document = LazyHTML.from_fragment(html)
+    issuer = LazyHTML.query(document, ~s([data-testid="access-grant-issuer-grant-1"]))
+
+    last_seen =
+      LazyHTML.query(document, ~s([data-testid="access-grant-last-seen-grant-1"]))
+
+    assert Enum.any?(issuer)
+    assert LazyHTML.text(last_seen) =~ "Never"
   end
 end

@@ -368,7 +368,7 @@ defmodule Wik.Tags do
   defp taggings_query_for(taggable_type, taggable_id) do
     Tagging
     |> Query.filter(taggable_type == ^taggable_type and taggable_id == ^taggable_id)
-    |> Query.load([:tag, :tagged_by_membership])
+    |> Query.load([:tag, tagged_by_membership: [:avatar_url, :user]])
     |> Query.sort(interest_level: :desc)
   end
 

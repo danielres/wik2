@@ -76,7 +76,7 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
            |> Enum.any?()
   end
 
-  test "render shows empty state when there are no backlinks" do
+  test "render links to all pages when there are no backlinks" do
     actor = generate(user())
     space = generate(space())
     add_membership(space, actor, :owner)
@@ -103,7 +103,9 @@ defmodule WikWeb.Components.Block.Types.BacklinksTest do
 
     document = LazyHTML.from_fragment(html)
 
-    assert document |> LazyHTML.query(~s([data-testid="backlinks-empty"])) |> Enum.any?()
+    assert document
+           |> LazyHTML.query(~s([data-testid="backlinks-list"] a[href="/#{space.slug}/tree"]))
+           |> Enum.any?()
   end
 
   test "render shows placeholder when page context is missing" do

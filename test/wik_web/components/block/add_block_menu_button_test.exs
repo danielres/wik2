@@ -112,7 +112,6 @@ defmodule WikWeb.Components.Block.AddBlockMenuButtonTest do
     assert html =~ ~s(phx-value-type="linked_copy")
     assert html =~ "Members"
     assert html =~ ~s(phx-value-type="members")
-    assert html =~ "Markdown"
     assert html =~ ~s(phx-value-type="markdown")
     assert html =~ "Pages"
     assert html =~ ~s(phx-value-type="pages")

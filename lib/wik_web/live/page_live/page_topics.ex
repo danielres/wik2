@@ -11,6 +11,8 @@ defmodule WikWeb.PageLive.PageTopics do
 
   def assign_defaults(socket) do
     assign(socket,
+      page_topic_edit_form: nil,
+      page_topic_edit_tagging_id: nil,
       page_topic_form: nil,
       page_topic_options: [],
       page_topic_summaries: [],
@@ -52,31 +54,95 @@ defmodule WikWeb.PageLive.PageTopics do
   end
 
   def close_form(socket) do
-    assign(socket, :page_topic_form, nil)
+    assign(socket,
+      page_topic_edit_form: nil,
+      page_topic_edit_tagging_id: nil,
+      page_topic_form: nil
+    )
   end
 
   def open_form(socket) do
-    assign(socket, :page_topic_form, form())
+    assign(socket,
+      page_topic_edit_form: nil,
+      page_topic_edit_tagging_id: nil,
+      page_topic_form: form()
+    )
+  end
+
+  def edit_cancel(socket) do
+    assign(socket,
+      page_topic_edit_form: nil,
+      page_topic_edit_tagging_id: nil
+    )
+  end
+
+  def edit_start(socket, tagging_id) do
+    case current_edit_tagging(socket, tagging_id) do
+      %Tagging{} = tagging ->
+        assign(socket,
+          page_topic_edit_form: edit_form(tagging),
+          page_topic_edit_tagging_id: tagging.id
+        )
+
+      nil ->
+        socket
+    end
+  end
+
+  def edit_validate(socket, params) do
+    case current_edit_tagging(socket) do
+      %Tagging{} -> assign(socket, :page_topic_edit_form, edit_form(params))
+      nil -> socket
+    end
+  end
+
+  def edit_submit(socket, params) do
+    scope = socket.assigns.current_scope
+
+    with {:ok, relevancy_level} <- parse_edit_params(params),
+         %Tagging{} = tagging <- current_edit_tagging(socket),
+         %{} = membership <- current_membership(socket),
+         %{} = page <- socket.assigns.page,
+         {:ok, _tagging} <-
+           Tags.upsert_tagging(
+             page,
+             membership,
+             tagging.tag_id,
+             %{dimensions: %{"relevancy" => relevancy_level}},
+             scope: scope
+           ) do
+      socket
+      |> edit_cancel()
+      |> assign_topics()
+    else
+      :error ->
+        assign_edit_form_error(socket, params, "Enter a valid relevancy level.")
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "page topic edit failed")
+        assign_edit_form_error(socket, params, "Couldn't update that topic.")
+
+      _other ->
+        assign_edit_form_error(socket, params, "Couldn't update that topic.")
+    end
+  end
+
+  def edit_remove(socket) do
+    case current_edit_tagging(socket) do
+      %Tagging{} = tagging ->
+        case remove_tagging(socket, tagging.tag_id) do
+          {:ok, socket} -> edit_cancel(socket)
+          {:error, socket} -> socket
+        end
+
+      nil ->
+        socket
+    end
   end
 
   def remove(socket, tag_id) do
-    scope = socket.assigns.current_scope
-
-    with %{} = membership <- current_membership(socket),
-         %{} = page <- socket.assigns.page,
-         {:ok, _tagging} <- Tags.remove_tagging(page, membership, tag_id, scope: scope) do
-      assign_topics(socket)
-    else
-      {:error, :not_found} ->
-        assign_topics(socket)
-
-      {:error, error} ->
-        Utils.Log.scoped_error(scope, error, "page topic remove failed")
-        socket
-
-      _other ->
-        socket
-    end
+    remove_tagging(socket, tag_id)
+    |> elem(1)
   end
 
   def refresh_if_watched(socket, topic) do
@@ -149,14 +215,64 @@ defmodule WikWeb.PageLive.PageTopics do
     |> put_flash(:error, message)
   end
 
+  defp assign_edit_form_error(socket, params, message) do
+    socket
+    |> assign(:page_topic_edit_form, edit_form(params))
+    |> put_flash(:error, message)
+  end
+
+  defp current_edit_tagging(socket, tagging_id \\ nil) do
+    tagging_id = tagging_id || socket.assigns.page_topic_edit_tagging_id
+
+    Enum.find_value(socket.assigns.page_topic_summaries, fn summary ->
+      case summary.current_member_tagging do
+        %Tagging{id: ^tagging_id} = tagging -> tagging
+        _other -> nil
+      end
+    end)
+  end
+
   defp current_membership(socket) do
     socket.assigns.tenant_context && socket.assigns.tenant_context.current_membership
+  end
+
+  defp remove_tagging(socket, tag_id) do
+    scope = socket.assigns.current_scope
+
+    with %{} = membership <- current_membership(socket),
+         %{} = page <- socket.assigns.page,
+         {:ok, _tagging} <- Tags.remove_tagging(page, membership, tag_id, scope: scope) do
+      {:ok, assign_topics(socket)}
+    else
+      {:error, :not_found} ->
+        {:ok, assign_topics(socket)}
+
+      {:error, error} ->
+        Utils.Log.scoped_error(scope, error, "page topic remove failed")
+        {:error, socket}
+
+      _other ->
+        {:error, socket}
+    end
   end
 
   defp form(params \\ %{}) do
     params
     |> normalize_form()
     |> to_form(as: :page_topic)
+  end
+
+  defp edit_form(%Tagging{} = tagging) do
+    edit_form(%{
+      "relevancy_level" => TopicSummaries.dimension_level(tagging, "relevancy") || 5
+    })
+  end
+
+  defp edit_form(params) do
+    params
+    |> Map.take(["relevancy_level"])
+    |> Map.put_new("relevancy_level", "5")
+    |> to_form(as: :page_topic_edit)
   end
 
   defp normalize_form(params) do
@@ -188,6 +304,10 @@ defmodule WikWeb.PageLive.PageTopics do
     else
       _ -> {:error, "Select a topic and enter a valid relevancy level."}
     end
+  end
+
+  defp parse_edit_params(params) do
+    parse_level(params, "relevancy_level")
   end
 
   defp parse_level(params, key) do

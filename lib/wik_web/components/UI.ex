@@ -36,7 +36,7 @@ defmodule WikWeb.Components.UI do
           @in_place? && "p-4",
           @in_place? && "w-[calc(100%+1rem)] -ml-[.5rem]",
           @in_place? && "h-[calc(100%+1rem)] -mt-[.5rem]",
-          "border-accent/80 hover:border-accent transition-colors",
+          "border-accent/50 hover:border-accent transition-colors",
           "bg-accent/7 hover:bg-accent/12"
         ]}
       >
@@ -504,6 +504,7 @@ defmodule WikWeb.Components.UI do
 
   attr :id, :string, required: true
   attr :full?, :boolean, default: false
+  attr :full_h?, :boolean, default: false
   attr :open?, :boolean, default: false
   slot :inner_block, required: true
 
@@ -514,7 +515,8 @@ defmodule WikWeb.Components.UI do
         <div
           class={[
             "modal-box",
-            @full? && "w-[100svw] max-w-none h-[calc(100svh-1rem)] px-1 pt-7.5 pb-0.5"
+            @full? && "w-[100svw] max-w-none h-[calc(100svh-1rem)] px-1 pt-7.5 pb-0.5",
+            @full_h? && "h-[calc(100svh-1rem)] pt-7.5 pb-4"
           ]}
           phx-click-away={modal_close(@id)}
         >

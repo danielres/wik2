@@ -63,8 +63,14 @@
       }
     }
   }
+  .collapse-arrow {
+    @layer daisyui.l1.l2 {
+      & > .collapse-title::after {
+        @apply opacity-50;
+      }
+    }
+  }
 }
-
 @layer components {
   .prose {
     @apply text-base-content/75;

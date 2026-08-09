@@ -23,7 +23,7 @@ defmodule WikWeb.Endpoint do
   plug Plug.Static,
     at: "/",
     from: :wik,
-    gzip: not code_reloading?,
+    gzip: Application.compile_env(:wik, :serve_gzip_assets, true) and not code_reloading?,
     only: WikWeb.static_paths(),
     raise_on_missing_only: code_reloading?
 

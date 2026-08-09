@@ -16,6 +16,7 @@ import {
 import { RichTextExtension } from "@lexical/rich-text";
 import {
   mergeRegister,
+  registerEventListener,
   type EditorState,
   type NodeKey,
 } from "lexical";
@@ -158,16 +159,27 @@ export const LexicalEditor = {
     editor.setRootElement(this.root);
     this.editor = editor;
 
-    this.toolbar = toolbarFor(editor, requiredDatasetValue(this.el, "toolbarTemplateId"));
-    this.floatingToolbar = floatingToolbarFor(
-      editor,
-      requiredDatasetValue(this.el, "floatingToolbarTemplateId"),
-    );
     this.linkEditor = createLinkEditor({
       editor,
       root: this.root,
       templateId: requiredDatasetValue(this.el, "linkEditorTemplateId"),
     });
+    const toolbarOptions = {
+      onEditLink: () => {
+        this.linkEditor?.openForSelection();
+        updateFloating();
+      },
+    };
+    this.toolbar = toolbarFor(
+      editor,
+      requiredDatasetValue(this.el, "toolbarTemplateId"),
+      toolbarOptions,
+    );
+    this.floatingToolbar = floatingToolbarFor(
+      editor,
+      requiredDatasetValue(this.el, "floatingToolbarTemplateId"),
+      toolbarOptions,
+    );
     this.youtubeDialog = youtubeDialogFor(
       requiredDatasetValue(this.el, "youtubeDialogTemplateId"),
       (videoId) => {
@@ -216,19 +228,23 @@ export const LexicalEditor = {
         updateToolbarState(editor, this.toolbar);
       }
 
-      if (this.root && this.floatingToolbar) {
-        updateFloatingToolbar(editor, this.root, this.floatingToolbar);
-      }
       this.linkEditor?.update();
+
+      if (this.root && this.floatingToolbar) {
+        updateFloatingToolbar(
+          editor,
+          this.root,
+          this.floatingToolbar,
+          this.linkEditor?.isOpen() ?? false,
+        );
+      }
       this.wikilinkCompletions?.update();
     };
 
-    window.addEventListener("resize", updateFloating);
-    window.addEventListener("scroll", updateFloating, true);
-
     this.unregister = mergeRegister(
-      () => window.removeEventListener("resize", updateFloating),
-      () => window.removeEventListener("scroll", updateFloating, true),
+      registerEventListener(document, "selectionchange", updateFloating),
+      registerEventListener(window, "resize", updateFloating),
+      registerEventListener(window, "scroll", updateFloating, true),
       () => this.blockControls?.unregister(),
       () => this.linkEditor?.unregister(),
       () => this.wikilinkCompletions?.unregister(),

@@ -3,6 +3,8 @@ import Config
 config :error_tracker, enabled: false
 
 config :wik, token_signing_secret: "0RaegrszeoUZf8/Nmq0S/siUPZpCVgvn"
+config :wik, editor_test_routes: true
+config :wik, serve_gzip_assets: false
 config :bcrypt_elixir, log_rounds: 1
 config :ash, policies: [show_policy_breakdowns?: true], disable_async?: true
 config :wik, Utils.Log, error_logging_enabled?: false

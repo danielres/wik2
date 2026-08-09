@@ -1,4 +1,4 @@
-import { $toggleLink } from "@lexical/link";
+import { $isLinkNode, $toggleLink } from "@lexical/link";
 import {
   $isListNode,
   INSERT_CHECK_LIST_COMMAND,
@@ -18,6 +18,8 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
+  getDOMSelection,
+  getDOMSelectionRange,
   type ElementNode,
   type LexicalEditor,
   type LexicalNode,
@@ -39,6 +41,10 @@ type ToolbarCommand =
   | "quote"
   | "unlink";
 
+type ToolbarOptions = {
+  onEditLink: () => void;
+};
+
 function setBlockType(editor: LexicalEditor, createNode: () => ElementNode): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -48,7 +54,11 @@ function setBlockType(editor: LexicalEditor, createNode: () => ElementNode): voi
   });
 }
 
-function runToolbarCommand(editor: LexicalEditor, command: ToolbarCommand): void {
+function runToolbarCommand(
+  editor: LexicalEditor,
+  command: ToolbarCommand,
+  options: ToolbarOptions,
+): void {
   switch (command) {
     case "paragraph":
       setBlockType(editor, () => $createParagraphNode());
@@ -79,11 +89,9 @@ function runToolbarCommand(editor: LexicalEditor, command: ToolbarCommand): void
     case "check":
       editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
       break;
-    case "link": {
-      const url = window.prompt("Link URL");
-      if (url) editor.update(() => $toggleLink(url));
+    case "link":
+      options.onEditLink();
       break;
-    }
     case "unlink":
       editor.update(() => $toggleLink(null));
       break;
@@ -124,13 +132,20 @@ function toolbarCommandFor(element: Element): ToolbarCommand | undefined {
   return undefined;
 }
 
-function bindToolbarCommands(toolbar: HTMLElement, editor: LexicalEditor): void {
+function bindToolbarCommands(
+  toolbar: HTMLElement,
+  editor: LexicalEditor,
+  options: ToolbarOptions,
+): void {
   toolbar.querySelectorAll("[data-command]").forEach((element) => {
     const command = toolbarCommandFor(element);
     if (!command) return;
 
     element.addEventListener("mousedown", (event) => event.preventDefault());
-    element.addEventListener("click", () => runToolbarCommand(editor, command));
+    element.addEventListener("click", (event) => {
+      event.stopPropagation();
+      runToolbarCommand(editor, command, options);
+    });
   });
 }
 
@@ -154,19 +169,47 @@ function selectedBlockCommand(): ToolbarCommand | undefined {
   return blockCommandForNode(anchorNode.getTopLevelElementOrThrow());
 }
 
-function setActiveToolbarCommand(toolbar: HTMLElement, activeCommand: ToolbarCommand | undefined): void {
+function selectionHasLink(): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) return false;
+
+  return selection.getNodes().some((node) => $isLinkNode(node) || $isLinkNode(node.getParent()));
+}
+
+function setToolbarState(toolbar: HTMLElement): void {
+  const selection = $getSelection();
+  const rangeSelection = $isRangeSelection(selection) ? selection : undefined;
+  const activeBlockCommand = selectedBlockCommand();
+  const hasLink = selectionHasLink();
+
   toolbar.querySelectorAll("[data-command]").forEach((element) => {
-    if (!(element instanceof HTMLElement)) return;
+    if (!(element instanceof HTMLButtonElement)) return;
 
     const command = toolbarCommandFor(element);
-    const active = !!command && command === activeCommand;
+    const active =
+      !!command &&
+      (command === activeBlockCommand ||
+        (command === "bold" && !!rangeSelection?.hasFormat("bold")) ||
+        (command === "italic" && !!rangeSelection?.hasFormat("italic")) ||
+        (command === "code" && !!rangeSelection?.hasFormat("code")) ||
+        (command === "link" && hasLink));
+
+    if (command === "link") {
+      element.disabled = !rangeSelection || rangeSelection.isCollapsed();
+    } else if (command === "unlink") {
+      element.disabled = !hasLink;
+    }
 
     element.classList.toggle("active", active);
     element.setAttribute("aria-pressed", active ? "true" : "false");
   });
 }
 
-export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {
+export function toolbarFor(
+  editor: LexicalEditor,
+  templateId: string,
+  options: ToolbarOptions,
+): HTMLDivElement {
   const element = templateFor(templateId).content.firstElementChild?.cloneNode(true);
 
   if (!(element instanceof HTMLDivElement)) {
@@ -174,18 +217,20 @@ export function toolbarFor(editor: LexicalEditor, templateId: string): HTMLDivEl
   }
 
   const toolbar = element;
-  bindToolbarCommands(toolbar, editor);
+  bindToolbarCommands(toolbar, editor, options);
 
   return toolbar;
 }
 
 export function updateToolbarState(editor: LexicalEditor, toolbar: HTMLElement): void {
-  editor.getEditorState().read(() => {
-    setActiveToolbarCommand(toolbar, selectedBlockCommand());
-  });
+  editor.read("latest", () => setToolbarState(toolbar));
 }
 
-export function floatingToolbarFor(editor: LexicalEditor, templateId: string): HTMLDivElement {
+export function floatingToolbarFor(
+  editor: LexicalEditor,
+  templateId: string,
+  options: ToolbarOptions,
+): HTMLDivElement {
   const element = templateFor(templateId).content.firstElementChild?.cloneNode(true);
 
   if (!(element instanceof HTMLDivElement)) {
@@ -193,41 +238,48 @@ export function floatingToolbarFor(editor: LexicalEditor, templateId: string): H
   }
 
   const toolbar = element;
-  bindToolbarCommands(toolbar, editor);
+  bindToolbarCommands(toolbar, editor, options);
   return toolbar;
-}
-
-function selectedRangeRect(root: HTMLElement): DOMRect | undefined {
-  const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return undefined;
-
-  const anchorNode = selection.anchorNode;
-  const focusNode = selection.focusNode;
-  if (!anchorNode || !focusNode || !root.contains(anchorNode) || !root.contains(focusNode)) {
-    return undefined;
-  }
-
-  const range = selection.getRangeAt(0);
-  const rect = range.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) return undefined;
-
-  return rect;
 }
 
 export function updateFloatingToolbar(
   editor: LexicalEditor,
   root: HTMLElement,
   toolbar: HTMLElement,
+  hiddenByOwnedUi: boolean,
 ): void {
-  editor.getEditorState().read(() => {
+  editor.read("latest", () => {
     const selection = $getSelection();
-    if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+    const nativeSelection = getDOMSelection(root.ownerDocument.defaultView);
+
+    if (
+      hiddenByOwnedUi ||
+      editor.isComposing() ||
+      !$isRangeSelection(selection) ||
+      selection.isCollapsed() ||
+      !nativeSelection ||
+      nativeSelection.rangeCount === 0 ||
+      nativeSelection.isCollapsed
+    ) {
       toolbar.hidden = true;
       return;
     }
 
-    const rect = selectedRangeRect(root);
-    if (!rect) {
+    const anchorNode = nativeSelection.anchorNode;
+    const focusNode = nativeSelection.focusNode;
+    if (!anchorNode || !focusNode || !root.contains(anchorNode) || !root.contains(focusNode)) {
+      toolbar.hidden = true;
+      return;
+    }
+
+    const nativeRange = getDOMSelectionRange(nativeSelection, root);
+    if (!nativeRange) {
+      toolbar.hidden = true;
+      return;
+    }
+
+    const rect = nativeRange.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
       toolbar.hidden = true;
       return;
     }

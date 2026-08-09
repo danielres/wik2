@@ -103,7 +103,7 @@ function topLevelBlockKeyForElement(
 
   let key: NodeKey | undefined;
 
-  editor.getEditorState().read(() => {
+  editor.read("latest", () => {
     key = $getRoot().getChildAtIndex(index)?.getKey();
   });
 

@@ -36,6 +36,14 @@ defmodule WikWeb.Router do
     plug :accepts, ["json"]
   end
 
+  if Application.compile_env(:wik, :editor_test_routes, false) do
+    scope "/__test__", WikWeb do
+      pipe_through :browser
+
+      live "/lexical-editor", LexicalEditorTestLive
+    end
+  end
+
   if Application.compile_env(:wik, :dev_routes) do
     import AshAdmin.Router
 

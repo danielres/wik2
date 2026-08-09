@@ -57,6 +57,7 @@ defmodule WikWeb.MembersLive do
             scope={@current_scope}
             block={%{id: @members_block_id}}
             actions?={@editable? and @editing?}
+            user_tz={@active_tz}
           />
         </div>
       </Layouts.space>

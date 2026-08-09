@@ -7,6 +7,7 @@ defmodule WikWeb.Components.Membership.Access do
   attr :current_user, :map, default: nil
   attr :grant, :map, required: true
   attr :last_seen_at, :any, default: nil
+  attr :user_tz, :string, default: "Etc/UTC"
   attr :variant, :atom, default: :me
 
   def grant_card(assigns) do
@@ -31,6 +32,7 @@ defmodule WikWeb.Components.Membership.Access do
             issuer_membership={@issuer_membership}
             last_seen_at={@last_seen_at}
             source_type_label={@source_type_label}
+            user_tz={@user_tz}
           />
         <% end %>
       </div>
@@ -100,6 +102,7 @@ defmodule WikWeb.Components.Membership.Access do
   attr :issuer_membership, :map, default: nil
   attr :last_seen_at, :any, default: nil
   attr :source_type_label, :string, required: true
+  attr :user_tz, :string, default: "Etc/UTC"
 
   defp grant_card_profile(assigns) do
     ~H"""
@@ -151,7 +154,11 @@ defmodule WikWeb.Components.Membership.Access do
 
         <dt>Last seen</dt>
         <dd data-testid={"access-grant-last-seen-#{@grant.id}"}>
-          <Time.relative_and_precise :if={@last_seen_at} datetime={@last_seen_at} />
+          <Time.relative_and_precise
+            :if={@last_seen_at}
+            datetime={@last_seen_at}
+            user_tz={@user_tz}
+          />
           <span :if={is_nil(@last_seen_at)} class="opacity-60">Never</span>
         </dd>
 

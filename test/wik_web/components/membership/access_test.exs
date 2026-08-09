@@ -7,6 +7,7 @@ defmodule WikWeb.Components.Membership.AccessTest do
 
   test "grant_card renders profile access details with issuer fallback and telegram type label" do
     now = DateTime.utc_now()
+    last_seen_at = ~U[2026-08-09 17:50:00Z]
 
     html =
       render_component(&Access.grant_card/1, %{
@@ -30,7 +31,8 @@ defmodule WikWeb.Components.Membership.AccessTest do
             title: "Hobbies"
           }
         },
-        last_seen_at: now,
+        last_seen_at: last_seen_at,
+        user_tz: "Europe/Warsaw",
         variant: :profile
       })
 
@@ -39,7 +41,7 @@ defmodule WikWeb.Components.Membership.AccessTest do
     assert html =~ ~s(data-testid="access-grant-last-seen-grant-1")
     assert html =~ ~s(data-testid="access-grant-status-grant-1")
     assert html =~ "issuer"
-    assert html =~ "just now"
+    assert html =~ "2026-08-09 19:50"
     assert html =~ "active"
   end
 

@@ -17,21 +17,33 @@ defmodule WikWeb.MembersLiveTest do
     seen_membership = add_membership(space, seen_member, :member)
     never_seen_membership = add_membership(space, never_seen_member, :member)
 
-    Ash.update!(seen_membership, %{},
-      action: :mark_seen,
-      authorize?: false,
-      domain: Wik.Accounts
-    )
+    seen_membership =
+      Ash.update!(seen_membership, %{},
+        action: :mark_seen,
+        authorize?: false,
+        domain: Wik.Accounts
+      )
+
+    expected_last_seen =
+      seen_membership.last_seen_at
+      |> Utils.Tz.to_local!("Europe/Warsaw")
+      |> Utils.Time.precise()
 
     {:ok, view, _html} =
       conn
       |> log_in(owner)
+      |> put_connect_params(%{"tz" => "Europe/Warsaw"})
       |> live(~p"/#{space.slug}/members")
 
     assert has_element?(
              view,
              testid("member-row-last-seen-#{seen_membership.id}"),
              "Last seen: just now"
+           )
+
+    assert has_element?(
+             view,
+             ~s(#{testid("member-row-last-seen-#{seen_membership.id}")}[data-tip="Last seen #{expected_last_seen}"])
            )
 
     assert has_element?(

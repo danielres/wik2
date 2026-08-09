@@ -9,8 +9,11 @@ import {
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  getDOMSelection,
+  getDOMSelectionRange,
   KEY_ESCAPE_COMMAND,
   mergeRegister,
+  registerEventListener,
   SELECTION_CHANGE_COMMAND,
   type LexicalEditor,
   type LexicalNode,
@@ -35,6 +38,8 @@ type LinkEditorOptions = {
 export type LinkEditor = {
   element: HTMLFormElement;
   hide: () => void;
+  isOpen: () => boolean;
+  openForSelection: () => void;
   unregister: () => void;
   update: () => void;
 };
@@ -117,6 +122,17 @@ function activeLinkFromClick(editor: LexicalEditor, root: HTMLElement, target: E
   if (!(target instanceof Node) || !root.contains(target)) return undefined;
 
   return activeLinkFromNode(editor, nearestLinkNode($getNearestNodeFromDOMNode(target)));
+}
+
+function selectionRect(root: HTMLElement): DOMRect | undefined {
+  const domSelection = getDOMSelection(root.ownerDocument.defaultView);
+  if (!domSelection || domSelection.isCollapsed) return undefined;
+
+  const range = getDOMSelectionRange(domSelection, root);
+  if (!range) return undefined;
+
+  const rect = range.getBoundingClientRect();
+  return rect.width === 0 && rect.height === 0 ? undefined : rect;
 }
 
 function unwrapLink(link: LinkNode): void {
@@ -215,8 +231,41 @@ export function createLinkEditor({
     });
   };
 
+  const showEditMode = () => {
+    view.hidden = true;
+    editMode.hidden = false;
+    requestAnimationFrame(() => urlInput.focus());
+  };
+
+  const openForSelection = () => {
+    editor.read("latest", () => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection) || selection.isCollapsed()) return;
+
+      const rect = selectionRect(root);
+      if (!rect) return;
+
+      const active = activeLinkFromNode(editor, linkFromSelection());
+      if (active) {
+        show(active, selection.clone());
+      } else {
+        activeKey = undefined;
+        lastSelection = selection.clone();
+        urlInput.value = "";
+        positionFloating({
+          anchorRect: rect,
+          floating: element,
+          offset: 8,
+          preferredPlacement: "bottom",
+        });
+      }
+
+      showEditMode();
+    });
+  };
+
   const updateFromSelection = () => {
-    if (element.contains(document.activeElement)) return;
+    if (element.contains(document.activeElement) || (!element.hidden && !editMode.hidden)) return;
 
     const active = activeLinkFromNode(editor, linkFromSelection());
 
@@ -228,16 +277,18 @@ export function createLinkEditor({
   };
 
   const update = () => {
-    editor.getEditorState().read(updateFromSelection);
+    editor.read("latest", updateFromSelection);
   };
 
-  editButton.addEventListener("click", () => {
-    view.hidden = true;
-    editMode.hidden = false;
-    requestAnimationFrame(() => urlInput.focus());
-  });
+  editButton.addEventListener("click", showEditMode);
 
   cancelButton.addEventListener("click", () => {
+    if (!activeKey) {
+      hide();
+      root.focus();
+      return;
+    }
+
     view.hidden = false;
     editMode.hidden = true;
     root.focus();
@@ -248,7 +299,7 @@ export function createLinkEditor({
 
     const key = activeKey;
     const url = urlInput.value.trim();
-    if (!key) return;
+    if (!key && !lastSelection) return;
 
     const safeUrl = safeLinkUrl(url);
     if (url !== "" && !safeUrl) {
@@ -265,6 +316,7 @@ export function createLinkEditor({
         $setSelection(lastSelection.clone());
         $toggleLink(linkUrl);
       } else {
+        if (!key) return;
         const node = $getNodeByKey(key);
         if (!$isLinkNode(node)) return;
 
@@ -300,22 +352,20 @@ export function createLinkEditor({
     hide();
   });
 
-  const unregisterDocumentClick = () => {
-    const handleClick = (event: MouseEvent) => {
+  const unregisterDocumentClick = () =>
+    registerEventListener(document, "click", (event) => {
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (root.contains(target) || element.contains(target)) return;
 
       hide();
-    };
-
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  };
+    });
 
   return {
     element,
     hide,
+    isOpen: () => !element.hidden,
+    openForSelection,
     unregister: mergeRegister(
       unregisterDocumentClick(),
       editor.registerUpdateListener(({ editorState }) => {

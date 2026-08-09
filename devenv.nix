@@ -20,6 +20,7 @@
       # secretspec
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
+      chromium
       inotify-tools
       libnotify
     ]
@@ -65,7 +66,13 @@
   process.manager.implementation = "overmind";
 
   # enable iex history
-  env.ERL_AFLAGS = "-kernel shell_history enabled";
+  env =
+    {
+      ERL_AFLAGS = "-kernel shell_history enabled";
+    }
+    // lib.optionalAttrs pkgs.stdenv.isLinux {
+      PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = lib.getExe pkgs.chromium;
+    };
   #
   # env.REDIS_URL = config.secretspec.secrets.REDIS_URL;
 }

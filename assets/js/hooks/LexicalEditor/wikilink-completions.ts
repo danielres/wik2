@@ -4,6 +4,8 @@ import {
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
+  getDOMSelection,
+  getDOMSelectionRange,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -122,8 +124,8 @@ function currentMatch(items: readonly WikilinkCompletionItem[]): WikilinkComplet
 }
 
 function currentSelectionRect(root: HTMLElement): DOMRect {
-  const selection = window.getSelection();
-  const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : undefined;
+  const selection = getDOMSelection(root.ownerDocument.defaultView);
+  const range = selection ? getDOMSelectionRange(selection, root) : null;
   const rect = range?.getBoundingClientRect();
 
   if (rect && (rect.width > 0 || rect.height > 0)) return rect;
@@ -246,7 +248,7 @@ export function createWikilinkCompletions({
   };
 
   const update = () => {
-    editor.getEditorState().read(() => {
+    editor.read("latest", () => {
       const match = currentMatch(items);
       if (!match) {
         close();

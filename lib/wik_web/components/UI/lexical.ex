@@ -72,9 +72,6 @@ defmodule WikWeb.Components.UI.Lexical do
         <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Add link" data-command="link">
           <.icon name="hero-link" />
         </button>
-        <button type="button" class="LEXICAL_TOOLBAR_BUTTON" title="Remove link" data-command="unlink">
-          <.icon name="hero-link-slash" />
-        </button>
       </div>
     </template>
     """

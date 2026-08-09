@@ -45,7 +45,7 @@ function selectionTouchesListItem(): boolean {
 }
 
 function registerListTabIndent(editor: LexicalEditor): () => void {
-  return editor.registerCommand<KeyboardEvent>(
+  return editor.registerCommand(
     KEY_TAB_COMMAND,
     (event) => {
       if (!selectionTouchesListItem()) return false;

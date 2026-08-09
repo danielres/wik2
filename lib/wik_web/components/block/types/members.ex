@@ -12,6 +12,7 @@ defmodule WikWeb.Components.Block.Types.Members do
   attr :event_transfer_ownership_start, :string, default: nil
   attr :actions?, :boolean, default: false
   attr :scope, :map, default: nil
+  attr :user_tz, :string, default: "Etc/UTC"
 
   def render(assigns) do
     assigns =
@@ -54,7 +55,7 @@ defmodule WikWeb.Components.Block.Types.Members do
             "bg-base-300/30 rounded-lg p-2",
             !@actions? and "hover:bg-base-300/50"
           ]}>
-            <.member_row membership={membership} actions?={@actions?} />
+            <.member_row actions?={@actions?} membership={membership} user_tz={@user_tz} />
           </div>
         </UI.editable_zone>
       </:item>
@@ -80,6 +81,7 @@ defmodule WikWeb.Components.Block.Types.Members do
   attr :membership, :map, required: true
 
   attr :actions?, :boolean, required: true
+  attr :user_tz, :string, required: true
 
   defp member_row(assigns) do
     assigns =
@@ -91,14 +93,17 @@ defmodule WikWeb.Components.Block.Types.Members do
       navigate={@profile_path}
       class="flex justify-between"
     >
-      <.member_row_content membership={@membership} />
+      <.member_row_content membership={@membership} user_tz={@user_tz} />
     </.link>
 
     <div :if={@actions? or @profile_path in [nil, ""]} class="flex justify-between">
-      <.member_row_content membership={@membership} />
+      <.member_row_content membership={@membership} user_tz={@user_tz} />
     </div>
     """
   end
+
+  attr :membership, :map, required: true
+  attr :user_tz, :string, required: true
 
   defp member_row_content(assigns) do
     ~H"""
@@ -117,6 +122,7 @@ defmodule WikWeb.Components.Block.Types.Members do
           <span>{@membership.type |> Atom.to_string() |> String.capitalize()}</span>
         </span>
       </div>
+
       <div>
         <span
           class={[
@@ -126,9 +132,23 @@ defmodule WikWeb.Components.Block.Types.Members do
             "cursor-default",
             "text-base-content/40"
           ]}
-          data-tip={"Member since #{Utils.Time.precise(@membership.inserted_at)}"}
+          data-tip={member_since_tooltip(@membership.inserted_at, @user_tz)}
         >
-          {Utils.Time.relative(@membership.inserted_at)}
+          Member since: {Utils.Time.relative(@membership.inserted_at)}
+        </span>
+
+        <span
+          class={[
+            "badge badge-sm px-2 bg-base-200",
+            "whitespace-nowrap",
+            "tooltip tooltip-left tooltip-delayed",
+            "cursor-default",
+            "text-base-content/40"
+          ]}
+          data-testid={"member-row-last-seen-#{@membership.id}"}
+          data-tip={last_seen_tooltip(@membership.last_seen_at, @user_tz)}
+        >
+          Last seen: {last_seen_text(@membership.last_seen_at)}
         </span>
       </div>
     </div>
@@ -154,6 +174,36 @@ defmodule WikWeb.Components.Block.Types.Members do
   end
 
   defp actionable_event?(event), do: is_binary(event) and event != ""
+
+  defp member_since_tooltip(inserted_at, user_tz) do
+    precise_inserted_at =
+      inserted_at
+      |> Utils.Tz.to_local!(user_tz)
+      |> Utils.Time.precise()
+
+    "Member since #{precise_inserted_at}"
+  end
+
+  defp last_seen_text(nil), do: "never"
+  defp last_seen_text(last_seen_at), do: relative_time_ago(last_seen_at)
+
+  defp last_seen_tooltip(nil, _user_tz), do: "This member has not connected to this space yet"
+
+  defp last_seen_tooltip(last_seen_at, user_tz) do
+    precise_last_seen =
+      last_seen_at
+      |> Utils.Tz.to_local!(user_tz)
+      |> Utils.Time.precise()
+
+    "Last seen #{precise_last_seen}"
+  end
+
+  defp relative_time_ago(datetime) do
+    case Utils.Time.relative(datetime) do
+      "just now" -> "just now"
+      relative -> "#{relative} ago"
+    end
+  end
 
   defp members_query(nil), do: nil
   defp members_query(%{tenant: nil}), do: nil

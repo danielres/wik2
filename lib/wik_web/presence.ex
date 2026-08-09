@@ -12,6 +12,8 @@ defmodule WikWeb.Presence do
   alias Wik.Accounts
   alias Wik.Accounts.User
 
+  require Logger
+
   @impl true
   def init(_opts) do
     {:ok, %{}}
@@ -115,6 +117,7 @@ defmodule WikWeb.Presence do
 
     case track(self(), topic, user.id, meta) do
       {:ok, _meta} = ok ->
+        mark_membership_seen(space_id, user.id)
         ok
 
       {:error, {:already_tracked, _pid, _user_id, _meta}} ->
@@ -236,6 +239,16 @@ defmodule WikWeb.Presence do
       tab_id: Keyword.get(opts, :tab_id),
       path: path
     }
+  end
+
+  defp mark_membership_seen(space_id, user_id) do
+    case Accounts.mark_membership_seen(space_id, user_id) do
+      :ok ->
+        :ok
+
+      {:error, error} ->
+        Logger.warning("Could not update membership last seen: #{inspect(error)}")
+    end
   end
 
   defp build_space_topic(space_id), do: "space:#{space_id}:users"

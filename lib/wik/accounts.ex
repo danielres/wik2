@@ -100,6 +100,34 @@ defmodule Wik.Accounts do
 
   def get_membership(_space_id, _user_id), do: {:ok, nil}
 
+  def mark_membership_seen(space_id, user_id)
+      when is_binary(space_id) and is_binary(user_id) do
+    membership_result =
+      Membership
+      |> Ash.Query.filter(space_id == ^space_id and user_id == ^user_id)
+      |> Ash.read_one(authorize?: false, domain: __MODULE__)
+
+    case membership_result do
+      {:ok, nil} ->
+        :ok
+
+      {:ok, membership} ->
+        case Ash.update(membership, %{},
+               action: :mark_seen,
+               authorize?: false,
+               domain: __MODULE__
+             ) do
+          {:ok, _membership} -> :ok
+          {:error, error} -> {:error, error}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def mark_membership_seen(_space_id, _user_id), do: :ok
+
   def get_membership_by_username(%Space{id: space_id}, username),
     do: get_membership_by_username(space_id, username)
 

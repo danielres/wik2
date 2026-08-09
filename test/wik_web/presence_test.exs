@@ -7,6 +7,22 @@ defmodule WikWeb.PresenceTest do
   alias Wik.Access.Grant
   alias Wik.Access.Source
 
+  test "tracking a new presence records when the member connected to the space" do
+    user = generate(user(email: "seen@example.com"))
+    space = generate(space())
+    membership = add_membership(space, user, :member)
+
+    assert membership.last_seen_at == nil
+
+    assert {:ok, _meta} =
+             WikWeb.Presence.track_user_presence(user, "/#{space.slug}/wiki/home", space.id)
+
+    membership = Ash.get!(Wik.Accounts.Membership, membership.id, authorize?: false)
+
+    assert %DateTime{} = membership.last_seen_at
+    assert DateTime.diff(DateTime.utc_now(), membership.last_seen_at, :second) < 5
+  end
+
   test "fetch enriches presence entries with user data" do
     zoe = generate(user(email: "zoe@example.com"))
     anna = generate(user(email: "anna@example.com"))

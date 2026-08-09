@@ -10,6 +10,7 @@ defmodule WikWeb.Components.Time do
   attr :datetime, :any, required: true
   attr :direction, :string, default: "bottom"
   attr :tooltip_variant_class, :string, default: ""
+  attr :user_tz, :string, default: "Etc/UTC"
 
   def relative_and_precise(assigns) do
     direction_class =
@@ -21,7 +22,13 @@ defmodule WikWeb.Components.Time do
         _ -> "tooltip-bottom"
       end
 
-    assigns = assigns |> assign(direction_class: direction_class)
+    precise_datetime =
+      assigns.datetime
+      |> Utils.Tz.to_local!(assigns.user_tz)
+      |> Utils.Time.precise()
+
+    assigns =
+      assign(assigns, direction_class: direction_class, precise_datetime: precise_datetime)
 
     ~H"""
     <span>
@@ -43,7 +50,7 @@ defmodule WikWeb.Components.Time do
         <span :if={@ago?}>ago</span>
 
         <div class="tooltip-content text-xs">
-          {Utils.Time.precise(@datetime)}
+          {@precise_datetime}
         </div>
       </span>
     </span>

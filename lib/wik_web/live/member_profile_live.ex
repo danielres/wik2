@@ -142,6 +142,8 @@ defmodule WikWeb.MemberProfileLive do
               <Components.Membership.Access.grant_card
                 :for={grant <- @access_grants}
                 grant={grant}
+                last_seen_at={@membership.last_seen_at}
+                user_tz={@active_tz}
                 variant={:profile}
               />
             </div>

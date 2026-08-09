@@ -231,6 +231,7 @@ export const LexicalEditor = {
       this.linkEditor?.update();
 
       if (this.root && this.floatingToolbar) {
+        updateToolbarState(editor, this.floatingToolbar);
         updateFloatingToolbar(
           editor,
           this.root,

@@ -30,13 +30,16 @@ defmodule WikWeb.Components.Membership.AccessTest do
             title: "Hobbies"
           }
         },
+        last_seen_at: now,
         variant: :profile
       })
 
     assert html =~ ~s(data-testid="access-grant-grant-1")
     assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
+    assert html =~ ~s(data-testid="access-grant-last-seen-grant-1")
     assert html =~ ~s(data-testid="access-grant-status-grant-1")
     assert html =~ "issuer"
+    assert html =~ "just now"
     assert html =~ "active"
   end
 
@@ -71,5 +74,7 @@ defmodule WikWeb.Components.Membership.AccessTest do
       })
 
     assert html =~ ~s(data-testid="access-grant-issuer-grant-1")
+    assert html =~ ~s(data-testid="access-grant-last-seen-grant-1")
+    assert html =~ "Never"
   end
 end

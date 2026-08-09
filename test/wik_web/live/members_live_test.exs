@@ -31,13 +31,13 @@ defmodule WikWeb.MembersLiveTest do
     assert has_element?(
              view,
              testid("member-row-last-seen-#{seen_membership.id}"),
-             "Last seen just now"
+             "Last seen: just now"
            )
 
     assert has_element?(
              view,
              testid("member-row-last-seen-#{never_seen_membership.id}"),
-             "Last seen never"
+             "Last seen: never"
            )
   end
 

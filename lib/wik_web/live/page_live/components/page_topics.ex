@@ -243,7 +243,7 @@ defmodule WikWeb.PageLive.Components.PageTopics do
                 <span class="truncate">{summary.tag.name}</span>
 
                 <span data-testid={"page-topic-modal-voters-#{summary.tag.id}"}>
-                  <UI.icon_user_with_count count={summary.taggings |> length()} />
+                  <UI.icon_user_with_count count={summary.count} />
                 </span>
 
                 <LevelMeter.render

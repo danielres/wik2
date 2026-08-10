@@ -3,6 +3,10 @@ defmodule WikWeb.SpaceLive do
   use WikWeb.Presence.Handlers
 
   alias AshPhoenix.Form
+  alias Wik.Events.EventPublication
+  alias Wik.Events.ExternalEvent
+  alias Wik.Tags.Tag
+  alias Wik.Wiki.Page
   alias WikWeb.Components
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
@@ -14,10 +18,12 @@ defmodule WikWeb.SpaceLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     space = socket.assigns.current_scope.tenant |> load_space(scope)
+    resource_counts = load_resource_counts(scope, space)
 
     socket =
       socket
       |> assign(form: nil)
+      |> assign(resource_counts: resource_counts)
       |> assign(space: space)
       |> assign(editing?: false)
 
@@ -56,6 +62,29 @@ defmodule WikWeb.SpaceLive do
             <div class="space-y-8">
               <UI.page_head>
                 <UI.page_title>{@current_scope.tenant |> to_string()}</UI.page_title>
+                <div class={[
+                  "flex gap-4",
+                  "mt-2",
+                  "[&>a]:opacity-70",
+                  "[&>a]:hover:opacity-100",
+                  "[&>a]:transition"
+                ]}>
+                  <.link navigate={"/#{@space.slug}/wiki"}>
+                    <UI.icon_document_with_count count={@resource_counts.documents} />
+                  </.link>
+
+                  <.link navigate={"/#{@space.slug}/topics"}>
+                    <UI.icon_topic_with_count count={@resource_counts.topics} />
+                  </.link>
+
+                  <.link navigate={"/#{@space.slug}/events"}>
+                    <UI.icon_event_with_count count={@resource_counts.events} />
+                  </.link>
+
+                  <.link navigate={"/#{@space.slug}/members"}>
+                    <UI.icon_user_with_count count={@resource_counts.members} />
+                  </.link>
+                </div>
               </UI.page_head>
 
               <div>
@@ -64,12 +93,6 @@ defmodule WikWeb.SpaceLive do
               </div>
             </div>
           </UI.editable_zone>
-
-          <UI.panel_title>Info</UI.panel_title>
-
-          <div class="text-sm bg-base-200 p-4 rounded">
-            <UI.icon_user_with_count count={@space.memberships |> length()} />
-          </div>
         </div>
       </Layouts.space>
     </Layouts.app>
@@ -142,6 +165,16 @@ defmodule WikWeb.SpaceLive do
 
   defp load_space(space, scope) do
     Ash.load!(space, [memberships: [:user]], scope: scope)
+  end
+
+  defp load_resource_counts(scope, space) do
+    %{
+      documents: Ash.count!(Page, scope: scope),
+      events:
+        Ash.count!(EventPublication, scope: scope) + Ash.count!(ExternalEvent, scope: scope),
+      members: length(space.memberships),
+      topics: Ash.count!(Tag, scope: scope)
+    }
   end
 
   defp space_params(%{"name" => name} = params) do

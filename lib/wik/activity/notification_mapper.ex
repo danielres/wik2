@@ -382,10 +382,22 @@ defmodule Wik.Activity.NotificationMapper do
             []
 
           [primary | _rest] ->
-            target_ids = targets |> Enum.map(& &1.id) |> Enum.sort() |> Enum.join(":")
-
             collapse_key =
-              if length(targets) == 1, do: "page:#{primary.id}", else: "pages:#{target_ids}"
+              case targets do
+                [_single] ->
+                  "page:#{primary.id}"
+
+                multiple ->
+                  target_hash =
+                    multiple
+                    |> Enum.map(& &1.id)
+                    |> Enum.sort()
+                    |> Enum.join(":")
+                    |> then(&:crypto.hash(:sha256, &1))
+                    |> Base.encode16(case: :lower)
+
+                  "pages:#{target_hash}"
+              end
 
             [
               entry(notification, space_id, %{

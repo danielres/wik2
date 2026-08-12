@@ -15,6 +15,35 @@ defmodule WikWeb.HomeLiveTest do
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
 
+  test "sorts spaces without activity alphabetically", %{conn: conn} do
+    user = generate(user())
+    alpha_space = generate(space(author: user, name: "alpha"))
+    interesting_space = generate(space(author: user, name: "💡 Damn interesting"))
+    zulu_space = generate(space(author: user, name: "Zulu"))
+
+    add_membership(alpha_space, user, :owner)
+    add_membership(interesting_space, user, :owner)
+    add_membership(zulu_space, user, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/")
+
+    space_paths =
+      view
+      |> render()
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query("a[data-testid^='home-space-link-']")
+      |> LazyHTML.attribute("href")
+
+    assert space_paths == [
+             ~p"/#{alpha_space.slug}",
+             ~p"/#{interesting_space.slug}",
+             ~p"/#{zulu_space.slug}"
+           ]
+  end
+
   test "create space modal closes on successful submit", %{conn: conn} do
     user = generate(user())
     existing_space = generate(space(author: user))
@@ -93,6 +122,15 @@ defmodule WikWeb.HomeLiveTest do
       conn
       |> log_in(member)
       |> live(~p"/")
+
+    space_paths =
+      view
+      |> render()
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query("a[data-testid^='home-space-link-']")
+      |> LazyHTML.attribute("href")
+
+    assert space_paths == [~p"/#{first_space.slug}", ~p"/#{second_space.slug}"]
 
     assert has_element?(view, "[data-testid='events-timeline']")
     assert has_element?(view, "[data-testid='events-year-#{future_date(30).year}']")

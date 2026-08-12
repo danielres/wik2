@@ -63,6 +63,7 @@ defmodule WikWeb.HomeLive do
     ]}>
       <.link
         :for={space <- @spaces}
+        data-testid={"home-space-link-#{space.id}"}
         class={[
           "bg-base-content/5",
           "hover:bg-base-content/10",
@@ -82,7 +83,7 @@ defmodule WikWeb.HomeLive do
 
         <div
           data-testid={"home-space-last-update-#{space.id}"}
-          class="flex gap-1 justify-end"
+          class="flex gap-1 justify-end items-center"
         >
           <%= if space.last_activity_at do %>
             <.icon name="hero-arrow-path-micro" class="size-3 opacity-60" />
@@ -248,14 +249,38 @@ defmodule WikWeb.HomeLive do
   defp list_spaces(nil), do: []
 
   defp list_spaces(scope) do
-    with {:ok, spaces} <- Accounts.list_spaces(scope: scope, load: [:last_activity_at]) do
-      spaces
+    with {:ok, spaces} <-
+           Accounts.list_spaces(
+             scope: scope,
+             load: [:last_activity_at]
+           ) do
+      Enum.sort_by(spaces, &space_activity_sort_key/1)
     else
       err ->
         Log.scoped_error(scope, err, "list_spaces failed")
         []
     end
   end
+
+  defp space_activity_sort_key(space) do
+    {
+      is_nil(space.last_activity_at),
+      -datetime_sort_value(space.last_activity_at),
+      space_name_sort_key(space.name),
+      space.name
+    }
+  end
+
+  defp space_name_sort_key(name) do
+    name
+    |> String.graphemes()
+    |> Enum.drop_while(&(not String.match?(&1, ~r/[\p{L}\p{N}]/u)))
+    |> Enum.join()
+    |> String.downcase()
+  end
+
+  defp datetime_sort_value(nil), do: -1
+  defp datetime_sort_value(datetime), do: DateTime.to_unix(datetime, :microsecond)
 
   defp list_aggregate_event_items(nil), do: []
 

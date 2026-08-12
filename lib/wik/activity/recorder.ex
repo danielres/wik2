@@ -35,7 +35,7 @@ defmodule Wik.Activity.Recorder do
              Entry
              |> Ash.Query.filter(
                collapse_key == ^collapse_key and space_id == ^space_id and
-                 occurred_at >= ^cutoff
+                 occurred_at >= ^cutoff and occurred_at <= ^occurred_at
              )
              |> Ash.Query.sort(occurred_at: :desc)
              |> Ash.Query.limit(1)

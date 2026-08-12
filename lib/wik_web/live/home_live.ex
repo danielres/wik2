@@ -71,7 +71,7 @@ defmodule WikWeb.HomeLive do
           "",
           "p-4"
         ]}
-        navigate={~p"/#{space.slug}/wiki"}
+        navigate={~p"/#{space.slug}"}
       >
         {space.name}
       </.link>

@@ -28,7 +28,10 @@ defmodule WikWeb.Components.Time do
       |> Utils.Time.precise()
 
     assigns =
-      assign(assigns, direction_class: direction_class, precise_datetime: precise_datetime)
+      assigns
+      |> assign(direction_class: direction_class)
+      |> assign(precise_datetime: precise_datetime)
+      |> assign(relative_value: Utils.Time.relative(assigns.datetime))
 
     ~H"""
     <span>
@@ -46,8 +49,8 @@ defmodule WikWeb.Components.Time do
         ]}
         style="--tt-off: calc(100% + 0.1rem);"
       >
-        {Utils.Time.relative(@datetime)}
-        <span :if={@ago? && Utils.Time.relative(@datetime) != "just now"}>ago</span>
+        {@relative_value}
+        <span :if={@ago? && @relative_value != "just now"}>ago</span>
 
         <div class="tooltip-content text-xs">
           {@precise_datetime}

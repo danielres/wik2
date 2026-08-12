@@ -69,7 +69,7 @@ defmodule WikWeb.SpaceUpdatesLive do
             >
               <.link
                 :for={category <- [:all | Activity.categories()]}
-                patch={category_path(@space, @params, category)}
+                aria-current={if(@activity_category == category, do: "page")}
                 class={[
                   "flex items-center gap-1",
                   "relative top-1",
@@ -80,7 +80,9 @@ defmodule WikWeb.SpaceUpdatesLive do
                   "rounded-t-box rounded-b-none ",
                   @activity_category != category && "opacity-30 hover:opacity-70 btn-ghost"
                 ]}
+                data-testid={"activity-category-#{category}"}
                 id={"activity-category-#{category}"}
+                patch={category_path(@space, @params, category)}
               >
                 <div class="opacity-60 inline-flex">
                   <.icon :if={category == :all} name="hero-eye-micro" />

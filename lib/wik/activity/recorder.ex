@@ -22,20 +22,21 @@ defmodule Wik.Activity.Recorder do
     end
   end
 
-  defp record_collapsible(%{collapse_key: collapse_key, space_id: space_id} = attrs, occurred_at)
+  defp record_collapsible(%{collapse_key: collapse_key, space_id: space_id} = attrs, recorded_at)
        when is_binary(collapse_key) do
     lock_id = :erlang.phash2("#{space_id}:#{collapse_key}", 2_147_483_647)
 
     case Repo.transaction(fn ->
            Ecto.Adapters.SQL.query!(Repo, "SELECT pg_advisory_xact_lock($1)", [lock_id])
 
-           cutoff = DateTime.add(occurred_at, -@collapse_window_seconds, :second)
+           cutoff = DateTime.add(recorded_at, -@collapse_window_seconds, :second)
 
            existing_entry =
              Entry
              |> Ash.Query.filter(
                collapse_key == ^collapse_key and space_id == ^space_id and
-                 occurred_at >= ^cutoff and occurred_at <= ^occurred_at
+                 occurred_at >= type(^cutoff, :utc_datetime_usec) and
+                 occurred_at <= type(^recorded_at, :utc_datetime_usec)
              )
              |> Ash.Query.sort(occurred_at: :desc)
              |> Ash.Query.limit(1)

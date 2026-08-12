@@ -99,15 +99,15 @@ defmodule WikWeb.SpaceLiveTest do
     render_async(view)
 
     assert has_element?(view, "#space-activity-table")
-    assert has_element?(view, "#activity-category-all.btn-primary")
+    assert has_element?(view, testid("activity-category-all") <> ~s([aria-current="page"]))
     assert has_element?(view, testid("activity-entry-#{wiki_entry.id}"))
     assert has_element?(view, testid("activity-entry-#{event_entry.id}"))
 
-    view |> element("#activity-category-events") |> render_click()
+    view |> element(testid("activity-category-events")) |> render_click()
 
     assert_patch(view, ~p"/#{space.slug}/updates?category=events")
     render_async(view)
-    assert has_element?(view, "#activity-category-events.btn-primary")
+    assert has_element?(view, testid("activity-category-events") <> ~s([aria-current="page"]))
     assert has_element?(view, testid("activity-entry-#{event_entry.id}"))
     refute has_element?(view, testid("activity-entry-#{wiki_entry.id}"))
   end
@@ -122,7 +122,7 @@ defmodule WikWeb.SpaceLiveTest do
       |> log_in(owner)
       |> live("/#{space.slug}/updates?category=unknown")
 
-    assert has_element?(view, "#activity-category-all.btn-primary")
+    assert has_element?(view, testid("activity-category-all") <> ~s([aria-current="page"]))
   end
 
   test "refreshes the overview when activity is published", %{conn: conn} do

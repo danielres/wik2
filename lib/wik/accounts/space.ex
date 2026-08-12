@@ -2,6 +2,7 @@ defmodule Wik.Accounts.Space do
   alias Wik.Access.Source
   alias Wik.Accounts.Space.Changes
   alias Wik.Accounts.Space.Checks
+  alias Wik.Activity.Entry
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
   alias Wik.Accounts.User
@@ -110,6 +111,14 @@ defmodule Wik.Accounts.Space do
       through Membership
       source_attribute_on_join_resource :space_id
       destination_attribute_on_join_resource :user_id
+    end
+  end
+
+  aggregates do
+    max :last_activity_at, Entry, :occurred_at do
+      filter expr(space_id == parent(id))
+      multitenancy :bypass
+      public? true
     end
   end
 

@@ -51,6 +51,7 @@ defmodule WikWeb.HomeLive do
   end
 
   attr :spaces, :list, required: true
+  attr :user_tz, :string, required: true
 
   defp spaces_grid(assigns) do
     ~H"""
@@ -64,16 +65,38 @@ defmodule WikWeb.HomeLive do
         :for={space <- @spaces}
         class={[
           "bg-base-content/5",
-          "opacity-80 hover:opacity-100 transition",
+          "hover:bg-base-content/10",
+          "opacity-80",
+          "hover:opacity-100",
+          "transition",
           "text-xs font-bold",
-          "leading-none",
+          "leading-tight",
           "cursor-pointer",
-          "",
-          "p-4"
+          "p-4 pb-2",
+          "grid grid-rows-[1fr_auto]",
+          "space-y-4"
         ]}
         navigate={~p"/#{space.slug}"}
       >
-        {space.name}
+        <h3>{space.name}</h3>
+
+        <div
+          data-testid={"home-space-last-update-#{space.id}"}
+          class="flex gap-1 justify-end"
+        >
+          <%= if space.last_activity_at do %>
+            <.icon name="hero-arrow-path-micro" class="size-3 opacity-60" />
+
+            <Components.Time.relative_and_precise
+              :if={space.last_activity_at}
+              datetime={space.last_activity_at}
+              user_tz={@user_tz}
+              ago?
+            />
+          <% else %>
+            <span class="sr-only">No updates yet</span>
+          <% end %>
+        </div>
       </.link>
     </div>
     """
@@ -95,7 +118,7 @@ defmodule WikWeb.HomeLive do
               />
             </UI.panel_title>
 
-            <.spaces_grid spaces={@spaces} />
+            <.spaces_grid spaces={@spaces} user_tz={@active_tz} />
 
             <span :if={@spaces == []} class="opacity-70">
               You are not a member of any spaces yet.
@@ -225,7 +248,7 @@ defmodule WikWeb.HomeLive do
   defp list_spaces(nil), do: []
 
   defp list_spaces(scope) do
-    with {:ok, spaces} <- Accounts.list_spaces(scope: scope) do
+    with {:ok, spaces} <- Accounts.list_spaces(scope: scope, load: [:last_activity_at]) do
       spaces
     else
       err ->

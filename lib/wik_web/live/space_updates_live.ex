@@ -64,7 +64,7 @@ defmodule WikWeb.SpaceUpdatesLive do
           <section>
             <nav
               aria-label="Filter updates by category"
-              class="flex flex-wrap gap-1 ml-3"
+              class="flex flex-wrap gap-1 sm:ml-3"
               id="activity-category-filter"
             >
               <.link
@@ -74,7 +74,7 @@ defmodule WikWeb.SpaceUpdatesLive do
                   "flex items-center gap-1",
                   "relative top-1",
                   "bg-base-200",
-                  "px-4 py-2",
+                  "px-3 sm:px-4 py-2",
                   "font-bold text-sm",
                   "transition",
                   "rounded-t-box rounded-b-none ",

@@ -73,15 +73,14 @@ defmodule WikWeb.SpaceUpdatesLive do
                 :for={category <- [:all | Activity.categories()]}
                 patch={category_path(@space, @params, category)}
                 class={[
+                  "flex items-center gap-1",
                   "relative top-1",
                   "bg-base-200",
                   "px-4 py-2",
                   "font-bold text-sm",
                   "transition",
                   "rounded-t-box rounded-b-none ",
-                  @activity_category != category && "opacity-30 hover:opacity-70 btn-ghost",
-                  @activity_category == category && "texti-base-content/70",
-                  "flex items-center gap-1"
+                  @activity_category != category && "opacity-30 hover:opacity-70 btn-ghost"
                 ]}
                 id={"activity-category-#{category}"}
               >

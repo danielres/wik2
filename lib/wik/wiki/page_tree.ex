@@ -9,7 +9,7 @@ defmodule Wik.Wiki.PageTree do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshPhoenix],
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub, Wik.Activity.Notifier]
 
   @type t :: %__MODULE__{
           id: String.t() | nil,

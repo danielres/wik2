@@ -5,7 +5,7 @@ defmodule Wik.Accounts.Membership do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAdmin.Resource],
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub, Wik.Activity.Notifier]
 
   alias Wik.Accounts.Space
   alias Wik.Accounts.Membership.Checks

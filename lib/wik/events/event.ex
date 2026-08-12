@@ -13,7 +13,7 @@ defmodule Wik.Events.Event do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshPhoenix],
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub, Wik.Activity.Notifier]
 
   postgres do
     table "events"

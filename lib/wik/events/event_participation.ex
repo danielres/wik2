@@ -12,7 +12,7 @@ defmodule Wik.Events.EventParticipation do
     domain: Wik.Events,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub, Wik.Activity.Notifier]
 
   postgres do
     table "event_participations"

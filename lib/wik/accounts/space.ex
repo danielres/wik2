@@ -12,7 +12,8 @@ defmodule Wik.Accounts.Space do
     domain: Wik.Accounts,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource],
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Wik.Activity.Notifier]
 
   defimpl Ash.ToTenant do
     def to_tenant(%{id: id}, _resource), do: id

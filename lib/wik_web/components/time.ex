@@ -47,7 +47,7 @@ defmodule WikWeb.Components.Time do
         style="--tt-off: calc(100% + 0.1rem);"
       >
         {Utils.Time.relative(@datetime)}
-        <span :if={@ago?}>ago</span>
+        <span :if={@ago? && Utils.Time.relative(@datetime) != "just now"}>ago</span>
 
         <div class="tooltip-content text-xs">
           {@precise_datetime}

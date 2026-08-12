@@ -3,7 +3,6 @@ defmodule WikWeb.SpaceUpdatesLive do
   use Cinder.UrlSync
 
   alias Wik.Activity
-  alias Wik.Activity.Entry
   alias WikWeb.Components.Activity, as: ActivityComponent
   alias WikWeb.Components.UI
 
@@ -38,12 +37,11 @@ defmodule WikWeb.SpaceUpdatesLive do
   end
 
   @impl true
-  def handle_info(%{topic: topic}, socket) do
-    if topic == Entry.space_pub_sub_topic(socket.assigns.space.id) do
-      {:noreply, Cinder.Refresh.refresh_table(socket, "space-activity-table-collection")}
-    else
-      {:noreply, socket}
-    end
+  def handle_info(
+        %{topic: "activity_entry:space:" <> space_id},
+        %{assigns: %{space: %{id: space_id}}} = socket
+      ) do
+    {:noreply, Cinder.Refresh.refresh_table(socket, "space-activity-table-collection")}
   end
 
   @impl true

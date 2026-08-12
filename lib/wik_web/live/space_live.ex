@@ -4,7 +4,6 @@ defmodule WikWeb.SpaceLive do
 
   alias AshPhoenix.Form
   alias Wik.Activity
-  alias Wik.Activity.Entry, as: ActivityEntry
   alias Wik.Events.EventPublication
   alias Wik.Events.ExternalEvent
   alias Wik.Tags.Tag
@@ -186,12 +185,11 @@ defmodule WikWeb.SpaceLive do
   end
 
   @impl true
-  def handle_info(%{topic: topic}, socket) do
-    if topic == ActivityEntry.space_pub_sub_topic(socket.assigns.space.id) do
-      {:noreply, Cinder.Refresh.refresh_table(socket, "space-activity-preview-collection")}
-    else
-      {:noreply, socket}
-    end
+  def handle_info(
+        %{topic: "activity_entry:space:" <> space_id},
+        %{assigns: %{space: %{id: space_id}}} = socket
+      ) do
+    {:noreply, Cinder.Refresh.refresh_table(socket, "space-activity-preview-collection")}
   end
 
   @impl true

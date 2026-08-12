@@ -3,7 +3,13 @@ defmodule WikWeb.SpaceLive do
   use WikWeb.Presence.Handlers
 
   alias AshPhoenix.Form
+  alias Wik.Activity
+  alias Wik.Events.EventPublication
+  alias Wik.Events.ExternalEvent
+  alias Wik.Tags.Tag
+  alias Wik.Wiki.Page
   alias WikWeb.Components
+  alias WikWeb.Components.Activity, as: ActivityComponent
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
 
@@ -14,12 +20,17 @@ defmodule WikWeb.SpaceLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     space = socket.assigns.current_scope.tenant |> load_space(scope)
+    resource_counts = load_resource_counts(scope, space)
 
     socket =
       socket
+      |> assign(activity_query: Activity.entries_query())
       |> assign(form: nil)
+      |> assign(resource_counts: resource_counts)
       |> assign(space: space)
       |> assign(editing?: false)
+
+    if connected?(socket), do: Activity.subscribe(space.id)
 
     {:ok, socket}
   end
@@ -46,30 +57,107 @@ defmodule WikWeb.SpaceLive do
           <% end %>
         </:actions>
 
-        <div class="space-y-8">
-          <UI.editable_zone
-            editing?={@editing?}
-            in_place?
-            title="Edit space"
-            phx-click="update_space_start"
-          >
-            <div class="space-y-8">
-              <UI.page_head>
-                <UI.page_title>{@current_scope.tenant |> to_string()}</UI.page_title>
-              </UI.page_head>
-
+        <div class={[
+          "grid sm:grid-cols-2 gap-8 max-w-[120ch]"
+        ]}>
+          <div class="flex-grow">
+            <UI.editable_zone
+              editing?={@editing?}
+              in_place?
+              title="Edit space"
+              phx-click="update_space_start"
+            >
               <div>
-                <UI.panel_title>Description</UI.panel_title>
-                <div class="text-sm bg-base-200 p-4 rounded">{@space.description}</div>
+                <UI.page_head>
+                  <UI.page_title>{@current_scope.tenant |> to_string()}</UI.page_title>
+                  <div class={[
+                    "flex gap-1",
+                    "mt-2",
+                    "[&>a]:opacity-70",
+                    "[&>a]:hover:opacity-100",
+                    "[&>a]:transition",
+                    "[&>a]:bg-base-200",
+                    "[&>a]:p-4",
+                    "[&>a]:rounded",
+                    "[&>a]:flex",
+                    "[&>a]:justify-center",
+                    "[&>a]:relative",
+                    "[&>a>*]:-left-1"
+                  ]}>
+                    <.link navigate={"/#{@space.slug}/wiki"}>
+                      <UI.icon_document_with_count count={@resource_counts.documents} />
+                    </.link>
+
+                    <.link navigate={"/#{@space.slug}/topics"}>
+                      <UI.icon_topic_with_count count={@resource_counts.topics} />
+                    </.link>
+
+                    <.link navigate={"/#{@space.slug}/events"}>
+                      <UI.icon_event_with_count count={@resource_counts.events} />
+                    </.link>
+
+                    <.link navigate={"/#{@space.slug}/members"}>
+                      <UI.icon_user_with_count count={@resource_counts.members} />
+                    </.link>
+                  </div>
+                </UI.page_head>
+
+                <div>
+                  <UI.panel_title>Description</UI.panel_title>
+                  <div class="text-sm bg-base-200/30 p-4 rounded">{@space.description}</div>
+                </div>
               </div>
-            </div>
-          </UI.editable_zone>
-
-          <UI.panel_title>Info</UI.panel_title>
-
-          <div class="text-sm bg-base-200 p-4 rounded">
-            <UI.icon_user_with_count count={@space.memberships |> length()} />
+            </UI.editable_zone>
           </div>
+
+          <section
+            id="space-activity-section"
+            class={[
+              "sm:border-l",
+              "sm:border-base-content/10",
+              "sm:pl-8"
+            ]}
+          >
+            <UI.panel_title class="justify-between">
+              <span class="flex gap-2">
+                <.icon name="hero-arrow-path-micro" class="opacity-50" /> Updates
+              </span>
+              <.link
+                navigate={~p"/#{@space.slug}/updates"}
+                class="normal-case tracking-normal hover:text-base-content transition-colors"
+                id="space-activity-view-all"
+              >
+                View all <.icon name="hero-arrow-right-micro" class="size-3" />
+              </.link>
+            </UI.panel_title>
+
+            <div id="space-activity-preview">
+              <Cinder.collection
+                empty_message="No updates yet."
+                id="space-activity-preview-collection"
+                layout={:list}
+                page_size={8}
+                query={@activity_query}
+                query_opts={[
+                  load: [
+                    :event_starts_at,
+                    actor_membership: [:avatar_url, :space, user: [:external_identities]]
+                  ]
+                ]}
+                scope={@current_scope}
+                show_filters={false}
+                show_pagination={false}
+                show_sort={false}
+                theme={WikWeb.Cinder.Themes.Dense}
+              >
+                <:item :let={entry}>
+                  <ActivityComponent.row entry={entry} user_tz={@active_tz} />
+                </:item>
+
+                <:col :if={false} field="occurred_at" label="When" sort></:col>
+              </Cinder.collection>
+            </div>
+          </section>
         </div>
       </Layouts.space>
     </Layouts.app>
@@ -94,6 +182,14 @@ defmodule WikWeb.SpaceLive do
   @impl true
   def handle_params(_params, url, socket) do
     {:noreply, WikWeb.Presence.track_in_liveview(socket, url)}
+  end
+
+  @impl true
+  def handle_info(
+        %{topic: "activity_entry:space:" <> space_id},
+        %{assigns: %{space: %{id: space_id}}} = socket
+      ) do
+    {:noreply, Cinder.Refresh.refresh_table(socket, "space-activity-preview-collection")}
   end
 
   @impl true
@@ -142,6 +238,16 @@ defmodule WikWeb.SpaceLive do
 
   defp load_space(space, scope) do
     Ash.load!(space, [memberships: [:user]], scope: scope)
+  end
+
+  defp load_resource_counts(scope, space) do
+    %{
+      documents: Ash.count!(Page, scope: scope),
+      events:
+        Ash.count!(EventPublication, scope: scope) + Ash.count!(ExternalEvent, scope: scope),
+      members: length(space.memberships),
+      topics: Ash.count!(Tag, scope: scope)
+    }
   end
 
   defp space_params(%{"name" => name} = params) do

@@ -68,6 +68,7 @@ config :wik,
   ash_domains: [
     Wik.Access,
     Wik.Accounts,
+    Wik.Activity,
     Wik.Blocks,
     Wik.Blog,
     Wik.Events,

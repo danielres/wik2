@@ -60,6 +60,10 @@ defmodule Wik.Activity.Entry do
 
     read :aggregate do
       multitenancy :bypass
+
+      pagination do
+        offset? true
+      end
     end
 
     create :record do

@@ -81,6 +81,26 @@ defmodule WikWeb.HomeLiveTest do
     assert has_element?(view, testid("activity-entry-#{entry.id}"))
   end
 
+  test "limits aggregate activity to eight entries", %{conn: conn} do
+    user = generate(user())
+    space = generate(space(author: user))
+    membership = add_membership(space, user, :owner)
+
+    for _index <- 1..9 do
+      assert {:ok, _entry} =
+               Recorder.record(activity_attrs(space, membership, :wiki, :page_updated))
+    end
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/")
+
+    render_async(view)
+
+    assert activity_entry_count(view) == 8
+  end
+
   test "sorts spaces without activity alphabetically", %{conn: conn} do
     user = generate(user())
     alpha_space = generate(space(author: user, name: "alpha"))
@@ -309,6 +329,14 @@ defmodule WikWeb.HomeLiveTest do
       subject_path: nil,
       subject_type: if(category == :events, do: :event, else: :page)
     }
+  end
+
+  defp activity_entry_count(view) do
+    view
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("#home-activity-preview [data-testid^='activity-entry-']")
+    |> Enum.count()
   end
 
   defp event_attrs(overrides) do

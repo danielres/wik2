@@ -185,35 +185,43 @@ defmodule WikWeb.Components.Activity do
     ~H"""
     <div
       class={[
-        "flex items-start gap-3 rounded p-3",
+        "rounded p-3",
         "bg-base-200/70"
       ]}
       data-testid={"activity-entry-#{@entry.id}"}
     >
-      <.actor entry={@entry} />
+      <div class="flex gap-3 items-baseline">
+        <.actor entry={@entry} />
 
-      <div class="min-w-0 flex-1">
+        <.summary entry={@entry} />
+      </div>
+
+      <.note entry={@entry} />
+
+      <div class={["flex gap-3 items-center", "mt-2"]}>
         <.link
           :if={@show_space?}
-          class="mb-1 inline-flex text-xs font-bold text-base-content/50 hover:text-base-content"
+          class={[
+            "block text-right",
+            "text-sm",
+            "opacity-50 hover:opacity-100 transition"
+          ]}
           data-testid={"activity-space-#{@entry.space_id}"}
           navigate={"/#{@entry.space.slug}"}
         >
           {@entry.space.name}
         </.link>
-        <.summary entry={@entry} />
-        <.note entry={@entry} />
-      </div>
 
-      <div class="flex shrink-0 items-center gap-2 text-xs">
-        <span :if={@entry.occurrence_count > 1} class="badge badge-ghost badge-xs">
-          ×{@entry.occurrence_count}
-        </span>
-        <Components.Time.relative_and_precise
-          ago?
-          datetime={@entry.occurred_at}
-          user_tz={@user_tz}
-        />
+        <div class="flex shrink-0 items-center gap-2 text-xs ml-auto">
+          <%!-- <span :if={@entry.occurrence_count > 1} class="badge badge-ghost badge-xs"> --%>
+          <%!--   ×{@entry.occurrence_count} --%>
+          <%!-- </span> --%>
+          <Components.Time.relative_and_precise
+            ago?
+            datetime={@entry.occurred_at}
+            user_tz={@user_tz}
+          />
+        </div>
       </div>
     </div>
     """
@@ -228,6 +236,7 @@ defmodule WikWeb.Components.Activity do
       avatar_size="xs"
       class="max-w-36 text-xs"
       link?
+      name?={false}
       membership={@entry.actor_membership}
     />
 

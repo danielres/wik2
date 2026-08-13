@@ -82,7 +82,7 @@ defmodule WikWeb.HomeLive do
           "cursor-pointer",
           "p-4 pb-2",
           "grid grid-rows-[1fr_auto]",
-          "space-y-4"
+          "space-y-2"
         ]}
         navigate={~p"/#{space.slug}"}
       >
@@ -182,7 +182,7 @@ defmodule WikWeb.HomeLive do
             </div>
           </section>
 
-          <sections>
+          <section class="max-lg:col-span-full">
             <ActivityComponent.preview
               id="home-activity"
               query={@activity_query}
@@ -190,7 +190,7 @@ defmodule WikWeb.HomeLive do
               show_space?
               user_tz={@active_tz}
             />
-          </sections>
+          </section>
         </div>
       </Layouts.container>
     </Layouts.app>

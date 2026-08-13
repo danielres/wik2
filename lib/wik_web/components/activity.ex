@@ -134,7 +134,7 @@ defmodule WikWeb.Components.Activity do
     <section id={"#{@id}-section"} class={@class}>
       <Components.UI.panel_title class="justify-between">
         <span class="flex gap-2">
-          <.icon name="hero-arrow-path-micro" class="opacity-50" /> Updates
+          <.icon name="hero-arrow-path-micro" class="opacity-50" /> Activity
         </span>
         <.link
           :if={@view_all_path}

@@ -57,7 +57,7 @@ defmodule WikWeb.SpaceUpdatesLive do
         <div class="max-w-[80ch]">
           <UI.page_head>
             <UI.page_title>
-              <.icon name="hero-arrow-path-micro" class="opacity-50" /> Updates
+              <.icon name="hero-arrow-path-micro" class="opacity-50" /> Activity
             </UI.page_title>
           </UI.page_head>
 

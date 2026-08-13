@@ -120,7 +120,7 @@ defmodule WikWeb.SpaceLive do
             query={@activity_query}
             scope={@current_scope}
             user_tz={@active_tz}
-            view_all_path={~p"/#{@space.slug}/updates"}
+            view_all_path={~p"/#{@space.slug}/activity"}
           />
         </div>
       </Layouts.space>

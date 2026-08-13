@@ -11,7 +11,7 @@ defmodule WikWeb.Components.Block.Types.Embed do
     <.input
       field={@form[:url]}
       id={"edit-block-url-#{@block.id}"}
-      label="Embed URL or iframe code"
+      label="YouTube URL or embed code"
       phx-mounted={JS.focus()}
       type="textarea"
     />

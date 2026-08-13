@@ -101,7 +101,7 @@ defmodule Wik.Blocks.Types.YouTubeTest do
              }
     end
 
-    test "rejects a regular youtube url" do
+    test "accepts a regular youtube watch url" do
       actor = generate(user())
       scope = scope(actor)
 
@@ -111,12 +111,44 @@ defmodule Wik.Blocks.Types.YouTubeTest do
           scope: scope
         )
 
-      assert {:error, _error} =
+      assert {:ok, updated_block} =
                Blocks.update_block(
                  block,
-                 %{"title" => "", "url" => "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+                 %{"title" => "", "url" => "https://www.youtube.com/watch?v=BvlGs25tCxI"},
                  scope: scope
                )
+
+      assert updated_block.data == %{
+               "title" => "",
+               "url" => "https://www.youtube-nocookie.com/embed/BvlGs25tCxI"
+             }
+    end
+
+    test "accepts youtube share and shorts urls" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} = Blocks.create_user_owned_block(%{type: :youtube}, scope: scope)
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(
+                 block,
+                 %{"title" => "", "url" => "https://youtu.be/BvlGs25tCxI?t=30"},
+                 scope: scope
+               )
+
+      assert updated_block.data["url"] ==
+               "https://www.youtube-nocookie.com/embed/BvlGs25tCxI"
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(
+                 updated_block,
+                 %{"title" => "", "url" => "https://www.youtube.com/shorts/BvlGs25tCxI"},
+                 scope: scope
+               )
+
+      assert updated_block.data["url"] ==
+               "https://www.youtube-nocookie.com/embed/BvlGs25tCxI"
     end
 
     test "rejects another embed provider instead of switching type" do

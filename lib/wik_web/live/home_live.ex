@@ -130,7 +130,9 @@ defmodule WikWeb.HomeLive do
                 />
               </UI.panel_title>
 
-              <.spaces_grid spaces={@spaces} user_tz={@active_tz} />
+              <div class="max-h-96 overflow-y-auto overflow-x-hidden">
+                <.spaces_grid spaces={@spaces} user_tz={@active_tz} />
+              </div>
 
               <span :if={@spaces == []} class="opacity-70">
                 You are not a member of any spaces yet.

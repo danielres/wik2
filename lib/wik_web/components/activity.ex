@@ -12,7 +12,7 @@ defmodule WikWeb.Components.Activity do
 
     ~H"""
     <nav
-      aria-label="Filter updates by category"
+      aria-label="Filter activity by category"
       class="flex flex-wrap gap-1 sm:ml-3"
       id="activity-category-filter"
     >
@@ -49,7 +49,7 @@ defmodule WikWeb.Components.Activity do
     """
   end
 
-  attr :empty_message, :string, default: "No updates in this category yet."
+  attr :empty_message, :string, default: "No activity in this category yet."
   attr :id, :string, required: true
   attr :page_size, :any, required: true
   attr :query, :any, required: true
@@ -89,7 +89,7 @@ defmodule WikWeb.Components.Activity do
         theme={WikWeb.Cinder.Themes.Dense}
         url_state={@url_state}
       >
-        <:col :let={entry} field="actor_label" label="">
+        <:col :let={entry} field="actor_label" label="" class="w-0 align-baseline pt-[0.90rem]">
           <.actor entry={entry} />
         </:col>
 
@@ -120,7 +120,7 @@ defmodule WikWeb.Components.Activity do
   end
 
   attr :class, :any, default: []
-  attr :empty_message, :string, default: "No updates yet."
+  attr :empty_message, :string, default: "No activity yet."
   attr :id, :string, required: true
   attr :page_size, :integer, default: 25
   attr :query, :any, required: true
@@ -230,6 +230,7 @@ defmodule WikWeb.Components.Activity do
   end
 
   attr :entry, :map, required: true
+  attr :name?, :boolean, default: false
 
   def actor(assigns) do
     ~H"""
@@ -238,7 +239,7 @@ defmodule WikWeb.Components.Activity do
       avatar_size="xs"
       class="max-w-36 text-xs"
       link?
-      name?={false}
+      name?={@name?}
       membership={@entry.actor_membership}
     />
 
@@ -249,7 +250,9 @@ defmodule WikWeb.Components.Activity do
       <span class="grid size-4 place-items-center rounded-full bg-base-300">
         <.icon name="hero-user-micro" class="size-3" />
       </span>
-      {@entry.actor_label || "Someone"}
+      <%= if @name? do %>
+        {@entry.actor_label || "Someone"}
+      <% end %>
     </span>
     """
   end
@@ -257,24 +260,46 @@ defmodule WikWeb.Components.Activity do
   attr :entry, :map, required: true
 
   def summary(assigns) do
+    targets = summary_targets(assigns.entry)
+
     assigns =
       assigns
-      |> assign(:prefix, summary_prefix(assigns.entry))
+      |> assign(:prefix, summary_prefix(assigns.entry, length(targets)))
       |> assign(:suffix_highlight, summary_suffix_highlight(assigns.entry))
       |> assign(:suffix, summary_suffix(assigns.entry))
+      |> assign(:targets, Enum.with_index(targets))
+      |> assign(:target_count, length(targets))
       |> assign(:timing, event_timing(assigns.entry))
 
     ~H"""
     <p class="text-sm leading-snug">
       <span class="opacity-90">{@prefix}</span>
-      <.link
-        :if={@entry.subject_path}
-        navigate={@entry.subject_path}
-        class="font-bold hover:underline text-primary"
-      >
-        {@entry.subject_label}
-      </.link>
-      <span :if={!@entry.subject_path} class="font-bold">{@entry.subject_label}</span>
+      <%= if @targets == [] do %>
+        <.link
+          :if={@entry.subject_path}
+          navigate={@entry.subject_path}
+          class="font-bold hover:underline text-primary"
+        >
+          {@entry.subject_label}
+        </.link>
+        <span :if={!@entry.subject_path} class="font-bold">{@entry.subject_label}</span>
+      <% else %>
+        <span :for={{target, index} <- @targets}>
+          {target_separator(index, @target_count)}<.link
+            :if={target.path}
+            class="font-bold hover:underline text-primary"
+            data-testid={"activity-target-#{target.id}"}
+            navigate={target.path}
+          >{target.label}</.link>
+          <span
+            :if={!target.path}
+            class="font-bold"
+            data-testid={"activity-target-#{target.id}"}
+          >
+            {target.label}
+          </span>
+        </span>
+      <% end %>
       <span class="opacity-90">{@suffix}</span>
       <span :if={@suffix_highlight} class="font-bold">
         {@suffix_highlight}
@@ -332,6 +357,14 @@ defmodule WikWeb.Components.Activity do
   defp summary_prefix(%{kind: :topic_deleted}), do: "deleted topic "
   defp summary_prefix(%{kind: :topic_updated}), do: "updated topic "
 
+  defp summary_prefix(%{kind: :page_created}, count) when count > 1, do: "created pages "
+  defp summary_prefix(%{kind: :page_deleted}, count) when count > 1, do: "deleted pages "
+  defp summary_prefix(%{kind: :page_updated}, count) when count > 1, do: "updated pages "
+  defp summary_prefix(%{kind: :topic_created}, count) when count > 1, do: "created topics "
+  defp summary_prefix(%{kind: :topic_deleted}, count) when count > 1, do: "deleted topics "
+  defp summary_prefix(%{kind: :topic_updated}, count) when count > 1, do: "updated topics "
+  defp summary_prefix(entry, _target_count), do: summary_prefix(entry)
+
   defp summary_suffix(%{kind: :member_role_changed} = entry) do
     case metadata_value(entry, :role) do
       nil -> ""
@@ -344,16 +377,6 @@ defmodule WikWeb.Components.Activity do
     case metadata_value(entry, :tag_label) do
       nil -> ""
       label -> " · #{label}"
-    end
-  end
-
-  defp summary_suffix(%{kind: :page_updated} = entry) do
-    case metadata_value(entry, :targets) do
-      targets when is_list(targets) and length(targets) > 1 ->
-        " and #{length(targets) - 1} other #{if(length(targets) == 2, do: "page", else: "pages")}"
-
-      _targets ->
-        ""
     end
   end
 
@@ -386,6 +409,36 @@ defmodule WikWeb.Components.Activity do
     count = div(seconds + unit_seconds - 1, unit_seconds)
     "in #{count} #{unit}#{if(count == 1, do: "", else: "s")}"
   end
+
+  defp summary_targets(%{kind: kind} = entry)
+       when kind in [
+              :page_created,
+              :page_deleted,
+              :page_updated,
+              :topic_created,
+              :topic_deleted,
+              :topic_updated
+            ] do
+    case metadata_value(entry, :targets) do
+      targets when is_list(targets) -> Enum.map(targets, &normalize_target/1)
+      _targets -> []
+    end
+  end
+
+  defp summary_targets(_entry), do: []
+
+  defp normalize_target(target) do
+    %{
+      id: Map.get(target, :id) || Map.get(target, "id"),
+      label: Map.get(target, :label) || Map.get(target, "label"),
+      path: Map.get(target, :path) || Map.get(target, "path")
+    }
+  end
+
+  defp target_separator(0, _count), do: ""
+  defp target_separator(index, 2) when index == 1, do: " and "
+  defp target_separator(index, count) when index == count - 1, do: ", and "
+  defp target_separator(_index, _count), do: ", "
 
   defp metadata_value(%{metadata: metadata}, key) do
     Map.get(metadata, key) || Map.get(metadata, Atom.to_string(key))

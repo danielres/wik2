@@ -69,7 +69,7 @@ defmodule WikWeb.SpaceUpdatesLive do
 
             <ActivityComponent.collection
               id="space-activity-table-collection"
-              page_size={[default: 10, options: [10, 25, 50, 100]]}
+              page_size={[default: 25, options: [10, 25, 50, 100]]}
               query={@activity_query}
               scope={@current_scope}
               search={[placeholder: "Search updates"]}
@@ -98,7 +98,7 @@ defmodule WikWeb.SpaceUpdatesLive do
         Map.put(params, "category", Atom.to_string(category))
       end
 
-    path = ~p"/#{space.slug}/updates"
+    path = ~p"/#{space.slug}/activity"
 
     if params == %{}, do: path, else: path <> "?" <> URI.encode_query(params)
   end

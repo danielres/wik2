@@ -35,6 +35,60 @@ defmodule Wik.Activity.NotificationMapperTest do
     assert updated.actor_label == to_string(owner)
   end
 
+  test "collapses consecutive topic changes into ordered target lists" do
+    %{scope: scope, space: space} = space_fixture()
+
+    assert {:ok, first} = Tags.create_tag("first", "First", scope: scope)
+    assert {:ok, second} = Tags.create_tag("second", "Second", scope: scope)
+    assert {:ok, third} = Tags.create_tag("third", "Third", scope: scope)
+
+    assert {:ok, first} =
+             Tags.update_tag(first, %{name: "First updated"}, action: :update, scope: scope)
+
+    assert {:ok, second} =
+             Tags.update_tag(second, %{name: "Second updated"}, action: :update, scope: scope)
+
+    assert {:ok, third} =
+             Tags.update_tag(third, %{name: "Third updated"}, action: :update, scope: scope)
+
+    assert {:ok, _first} = Tags.destroy_tag(first, scope: scope)
+    assert {:ok, _second} = Tags.destroy_tag(second, scope: scope)
+    assert {:ok, _third} = Tags.destroy_tag(third, scope: scope)
+
+    entries = list_entries(space)
+
+    assert [created] = Enum.filter(entries, &(&1.kind == :topic_created))
+    assert [updated] = Enum.filter(entries, &(&1.kind == :topic_updated))
+    assert [deleted] = Enum.filter(entries, &(&1.kind == :topic_deleted))
+
+    assert created.occurrence_count == 3
+    assert target_ids(created) == [first.id, second.id, third.id]
+    assert Enum.all?(created.metadata["targets"], &is_binary(&1["path"]))
+
+    assert updated.occurrence_count == 3
+    assert target_ids(updated) == [first.id, second.id, third.id]
+
+    assert deleted.occurrence_count == 3
+    assert target_ids(deleted) == [first.id, second.id, third.id]
+    assert Enum.all?(deleted.metadata["targets"], &is_nil(&1["path"]))
+  end
+
+  test "collapses consecutive page creations into an ordered target list" do
+    %{scope: scope, space: space} = space_fixture()
+
+    assert {:ok, _node, first} = Wiki.ensure_page_and_node_at_path("first", scope: scope)
+    assert {:ok, _node, second} = Wiki.ensure_page_and_node_at_path("second", scope: scope)
+    assert {:ok, _node, third} = Wiki.ensure_page_and_node_at_path("third", scope: scope)
+
+    assert [created] =
+             space
+             |> list_entries()
+             |> Enum.filter(&(&1.kind == :page_created))
+
+    assert created.occurrence_count == 3
+    assert target_ids(created) == [first.id, second.id, third.id]
+  end
+
   test "collapses participation changes and keeps the latest social state" do
     %{scope: owner_scope, space: space} = space_fixture()
     member = generate(user())
@@ -217,6 +271,8 @@ defmodule Wik.Activity.NotificationMapperTest do
     |> Ash.Query.sort(occurred_at: :desc)
     |> Ash.read!(authorize?: false, tenant: space.id)
   end
+
+  defp target_ids(entry), do: Enum.map(entry.metadata["targets"], & &1["id"])
 
   defp event_attrs do
     %{

@@ -130,6 +130,14 @@ defmodule WikWeb.Components.Activity do
   attr :view_all_path, :string, default: nil
 
   def preview(assigns) do
+    loads = [
+      :event_starts_at,
+      actor_membership: [:avatar_url, :space, user: [:external_identities]]
+    ]
+
+    loads = if assigns.show_space?, do: [:space | loads], else: loads
+    assigns = assign(assigns, :loads, loads)
+
     ~H"""
     <section id={"#{@id}-section"} class={@class}>
       <Components.UI.panel_title class="justify-between">
@@ -153,13 +161,7 @@ defmodule WikWeb.Components.Activity do
           layout={:list}
           page_size={@page_size}
           query={@query}
-          query_opts={[
-            load: [
-              :event_starts_at,
-              :space,
-              actor_membership: [:avatar_url, :space, user: [:external_identities]]
-            ]
-          ]}
+          query_opts={[load: @loads]}
           scope={@scope}
           show_filters={false}
           show_pagination={false}

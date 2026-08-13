@@ -119,7 +119,66 @@ defmodule WikWeb.Components.Activity do
     Enum.find(Wik.Activity.categories(), :all, &(Atom.to_string(&1) == category))
   end
 
+  attr :class, :any, default: []
+  attr :empty_message, :string, default: "No updates yet."
+  attr :id, :string, required: true
+  attr :page_size, :integer, default: 8
+  attr :query, :any, required: true
+  attr :scope, :any, required: true
+  attr :show_space?, :boolean, default: false
+  attr :user_tz, :string, required: true
+  attr :view_all_path, :string, default: nil
+
+  def preview(assigns) do
+    ~H"""
+    <section id={"#{@id}-section"} class={@class}>
+      <Components.UI.panel_title class="justify-between">
+        <span class="flex gap-2">
+          <.icon name="hero-arrow-path-micro" class="opacity-50" /> Updates
+        </span>
+        <.link
+          :if={@view_all_path}
+          class="normal-case tracking-normal hover:text-base-content transition-colors"
+          id={"#{@id}-view-all"}
+          navigate={@view_all_path}
+        >
+          View all <.icon name="hero-arrow-right-micro" class="size-3" />
+        </.link>
+      </Components.UI.panel_title>
+
+      <div id={"#{@id}-preview"}>
+        <Cinder.collection
+          empty_message={@empty_message}
+          id={"#{@id}-preview-collection"}
+          layout={:list}
+          page_size={@page_size}
+          query={@query}
+          query_opts={[
+            load: [
+              :event_starts_at,
+              :space,
+              actor_membership: [:avatar_url, :space, user: [:external_identities]]
+            ]
+          ]}
+          scope={@scope}
+          show_filters={false}
+          show_pagination={false}
+          show_sort={false}
+          theme={WikWeb.Cinder.Themes.Dense}
+        >
+          <:item :let={entry}>
+            <.row entry={entry} show_space?={@show_space?} user_tz={@user_tz} />
+          </:item>
+
+          <:col :if={false} field="occurred_at" label="When" sort></:col>
+        </Cinder.collection>
+      </div>
+    </section>
+    """
+  end
+
   attr :entry, :map, required: true
+  attr :show_space?, :boolean, default: false
   attr :user_tz, :string, default: "Etc/UTC"
 
   def row(assigns) do
@@ -134,6 +193,14 @@ defmodule WikWeb.Components.Activity do
       <.actor entry={@entry} />
 
       <div class="min-w-0 flex-1">
+        <.link
+          :if={@show_space?}
+          class="mb-1 inline-flex text-xs font-bold text-base-content/50 hover:text-base-content"
+          data-testid={"activity-space-#{@entry.space_id}"}
+          navigate={"/#{@entry.space.slug}"}
+        >
+          {@entry.space.name}
+        </.link>
         <.summary entry={@entry} />
         <.note entry={@entry} />
       </div>

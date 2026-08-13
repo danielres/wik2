@@ -116,10 +116,13 @@ defmodule WikWeb.HomeLive do
     <Layouts.app context={@context} flash={@flash} scope={@current_scope} home?={true}>
       <Layouts.container>
         <div class="grid sm:grid-cols-2 gap-8 my-4">
-          <div class="space-y-8">
+          <div class="space-y-12">
             <section>
               <UI.panel_title class="flex justify-between items-end">
-                <span>Your spaces</span>
+                <span class="flex gap-1">
+                  <.icon name="hero-home-micro" class="opacity-50" /> Your spaces
+                </span>
+
                 <UI.button_plus
                   :if={Ash.can?({Space, :create}, @current_scope)}
                   data-testid="create-space-start"
@@ -168,7 +171,9 @@ defmodule WikWeb.HomeLive do
             "border-base-content/8"
           ]}>
             <UI.panel_title class="flex justify-between items-end">
-              <span>Participation </span>
+              <span class="flex items-center gap-1">
+                <.icon name="hero-heart-micro" class="opacity-50" /> Participation
+              </span>
               <Components.CalendarFeed.aggregate_subscribe_button scope={@current_scope} />
             </UI.panel_title>
             <div

@@ -287,7 +287,8 @@ defmodule WikWeb.Components.Activity do
             class="font-bold hover:underline text-primary"
             data-testid={"activity-target-#{target.id}"}
             navigate={target.path}
-          >{target.label}</.link><span
+          >{target.label}</.link>
+          <span
             :if={!target.path}
             class="font-bold"
             data-testid={"activity-target-#{target.id}"}

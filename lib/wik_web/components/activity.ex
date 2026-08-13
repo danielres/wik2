@@ -56,7 +56,7 @@ defmodule WikWeb.Components.Activity do
   attr :scope, :any, required: true
   attr :search, :any, default: nil
   attr :show_pagination, :boolean, default: true
-  attr :show_sort, :boolean, default: nil
+  attr :show_sort, :boolean, default: true
   attr :url_state, :any, default: false
   attr :user_tz, :string, required: true
   attr :wrapper_id, :string, required: true

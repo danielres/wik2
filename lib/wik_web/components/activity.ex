@@ -4,6 +4,121 @@ defmodule WikWeb.Components.Activity do
   alias Wik.Accounts.Membership
   alias WikWeb.Components
 
+  attr :active_category, :atom, required: true
+  attr :category_paths, :map, required: true
+
+  def category_nav(assigns) do
+    assigns = assign(assigns, :categories, [:all | Wik.Activity.categories()])
+
+    ~H"""
+    <nav
+      aria-label="Filter updates by category"
+      class="flex flex-wrap gap-1 sm:ml-3"
+      id="activity-category-filter"
+    >
+      <.link
+        :for={category <- @categories}
+        aria-current={if(@active_category == category, do: "page")}
+        class={[
+          "flex items-center gap-1",
+          "relative top-1",
+          "bg-base-200",
+          "px-3 sm:px-4 py-2",
+          "font-bold text-sm",
+          "transition",
+          "rounded-t-box rounded-b-none",
+          @active_category != category && "opacity-30 hover:opacity-70 btn-ghost"
+        ]}
+        data-testid={"activity-category-#{category}"}
+        id={"activity-category-#{category}"}
+        patch={Map.fetch!(@category_paths, category)}
+      >
+        <div class="opacity-60 inline-flex">
+          <.icon :if={category == :all} name="hero-eye-micro" />
+          <.icon :if={category == :wiki} name="hero-book-open-micro" />
+          <.icon :if={category == :topics} name="hero-tag-micro" />
+          <.icon :if={category == :events} name="hero-calendar-micro" />
+          <.icon :if={category == :members} name="hero-user-micro" />
+          <.icon :if={category == :other} name="hero-ellipsis-horizontal-micro" />
+        </div>
+        <span class={@active_category != category && "max-sm:sr-only"}>
+          {category_label(category)}
+        </span>
+      </.link>
+    </nav>
+    """
+  end
+
+  attr :empty_message, :string, default: "No updates in this category yet."
+  attr :id, :string, required: true
+  attr :page_size, :any, required: true
+  attr :query, :any, required: true
+  attr :scope, :any, required: true
+  attr :search, :any, default: nil
+  attr :show_pagination, :boolean, default: true
+  attr :show_sort, :boolean, default: nil
+  attr :url_state, :any, default: false
+  attr :user_tz, :string, required: true
+  attr :wrapper_id, :string, required: true
+
+  def collection(assigns) do
+    ~H"""
+    <div id={@wrapper_id}>
+      <Cinder.collection
+        class={[
+          "[&_thead]:hidden",
+          "[&>*>*]:pt-2",
+          "[&>*>*]:pb-4"
+        ]}
+        empty_message={@empty_message}
+        id={@id}
+        page_size={@page_size}
+        query={@query}
+        query_opts={[
+          load: [
+            :event_starts_at,
+            actor_membership: [:avatar_url, :space, user: [:external_identities]]
+          ]
+        ]}
+        scope={@scope}
+        search={@search}
+        show_filters={false}
+        show_pagination={@show_pagination}
+        show_sort={@show_sort}
+        sort_mode="exclusive"
+        theme={WikWeb.Cinder.Themes.Dense}
+        url_state={@url_state}
+      >
+        <:col :let={entry} field="actor_label" label="">
+          <.actor entry={entry} />
+        </:col>
+
+        <:col :let={entry} field="subject_label" label="">
+          <div data-testid={"activity-entry-#{entry.id}"}>
+            <.summary entry={entry} />
+            <.note entry={entry} />
+          </div>
+        </:col>
+
+        <:col :let={entry} field="occurred_at" label="" class="w-0">
+          <Components.Time.relative_and_precise
+            ago?
+            class="text-xs"
+            datetime={entry.occurred_at}
+            user_tz={@user_tz}
+          />
+        </:col>
+      </Cinder.collection>
+    </div>
+    """
+  end
+
+  def param_to_category(nil), do: :all
+
+  def param_to_category(category) do
+    Enum.find(Wik.Activity.categories(), :all, &(Atom.to_string(&1) == category))
+  end
+
   attr :entry, :map, required: true
   attr :user_tz, :string, default: "Etc/UTC"
 
@@ -197,4 +312,11 @@ defmodule WikWeb.Components.Activity do
   defp metadata_value(%{metadata: metadata}, key) do
     Map.get(metadata, key) || Map.get(metadata, Atom.to_string(key))
   end
+
+  defp category_label(:all), do: "All"
+  defp category_label(:events), do: "Events"
+  defp category_label(:members), do: "Members"
+  defp category_label(:other), do: "Other"
+  defp category_label(:topics), do: "Topics"
+  defp category_label(:wiki), do: "Wiki"
 end

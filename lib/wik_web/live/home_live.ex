@@ -246,16 +246,16 @@ defmodule WikWeb.HomeLive do
 
   @impl true
   def handle_info(%{topic: "activity_entry:space:" <> space_id}, socket) do
-    if MapSet.member?(socket.assigns.subscribed_activity_space_ids, space_id) do
-      socket =
+    socket =
+      if MapSet.member?(socket.assigns.subscribed_activity_space_ids, space_id) do
         socket
         |> assign_spaces()
         |> Cinder.Refresh.refresh_table("home-activity-preview-collection")
+      else
+        socket
+      end
 
-      {:noreply, socket}
-    else
-      {:noreply, socket}
-    end
+    {:noreply, socket}
   end
 
   defp assign_spaces_and_form(socket) do

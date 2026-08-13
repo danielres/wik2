@@ -116,40 +116,51 @@ defmodule WikWeb.HomeLive do
     <Layouts.app context={@context} flash={@flash} scope={@current_scope} home?={true}>
       <Layouts.container>
         <div class="grid sm:grid-cols-2 gap-8 my-4">
-          <section>
-            <UI.panel_title class="flex justify-between items-end">
-              <span>Your spaces</span>
-              <UI.button_plus
-                :if={Ash.can?({Space, :create}, @current_scope)}
-                data-testid="create-space-start"
-                phx-click="create_space_start"
+          <div class="space-y-8">
+            <section>
+              <UI.panel_title class="flex justify-between items-end">
+                <span>Your spaces</span>
+                <UI.button_plus
+                  :if={Ash.can?({Space, :create}, @current_scope)}
+                  data-testid="create-space-start"
+                  phx-click="create_space_start"
+                />
+              </UI.panel_title>
+
+              <.spaces_grid spaces={@spaces} user_tz={@active_tz} />
+
+              <span :if={@spaces == []} class="opacity-70">
+                You are not a member of any spaces yet.
+              </span>
+
+              <Components.Modal.render
+                :if={@create_space_modal_open?}
+                cancel="create_space_cancel"
+                cancel_testid="create-space-cancel"
+                open?={true}
+                testid="create-space-dialog"
+              >
+                <:title>Create space</:title>
+
+                <Components.Space.form
+                  :if={Ash.can?({Space, :create}, @current_scope)}
+                  class="flex-1"
+                  event_validate="validate"
+                  event_submit="submit"
+                  form={@form}
+                />
+              </Components.Modal.render>
+            </section>
+            <section>
+              <ActivityComponent.preview
+                id="home-activity"
+                query={@activity_query}
+                scope={@current_scope}
+                show_space?
+                user_tz={@active_tz}
               />
-            </UI.panel_title>
-
-            <.spaces_grid spaces={@spaces} user_tz={@active_tz} />
-
-            <span :if={@spaces == []} class="opacity-70">
-              You are not a member of any spaces yet.
-            </span>
-
-            <Components.Modal.render
-              :if={@create_space_modal_open?}
-              cancel="create_space_cancel"
-              cancel_testid="create-space-cancel"
-              open?={true}
-              testid="create-space-dialog"
-            >
-              <:title>Create space</:title>
-
-              <Components.Space.form
-                :if={Ash.can?({Space, :create}, @current_scope)}
-                class="flex-1"
-                event_validate="validate"
-                event_submit="submit"
-                form={@form}
-              />
-            </Components.Modal.render>
-          </section>
+            </section>
+          </div>
 
           <section class={[
             "lg:border-l",
@@ -180,16 +191,6 @@ defmodule WikWeb.HomeLive do
                 user_tz={@active_tz}
               />
             </div>
-          </section>
-
-          <section class="max-lg:col-span-full">
-            <ActivityComponent.preview
-              id="home-activity"
-              query={@activity_query}
-              scope={@current_scope}
-              show_space?
-              user_tz={@active_tz}
-            />
           </section>
         </div>
       </Layouts.container>

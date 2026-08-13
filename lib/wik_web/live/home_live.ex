@@ -6,8 +6,10 @@ defmodule WikWeb.HomeLive do
   alias AshPhoenix.Form
   alias Wik.Accounts
   alias Wik.Accounts.Space
+  alias Wik.Activity
   alias Wik.Events
   alias WikWeb.Components
+  alias WikWeb.Components.Activity, as: ActivityComponent
   alias WikWeb.Components.UI
   alias WikWeb.EventsLive.TimelinePresenter
   alias Utils.Log
@@ -16,10 +18,15 @@ defmodule WikWeb.HomeLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:create_space_modal_open?, false)
-     |> assign_spaces_and_form()}
+    socket =
+      socket
+      |> assign(:activity_query, Activity.aggregate_entries_query())
+      |> assign(:create_space_modal_open?, false)
+      |> assign(:subscribed_activity_space_ids, MapSet.new())
+      |> assign_spaces_and_form()
+      |> subscribe_to_activity()
+
+    {:ok, socket}
   end
 
   slot :body, required: true
@@ -174,6 +181,16 @@ defmodule WikWeb.HomeLive do
               />
             </div>
           </section>
+
+          <sections>
+            <ActivityComponent.preview
+              id="home-activity"
+              query={@activity_query}
+              scope={@current_scope}
+              show_space?
+              user_tz={@active_tz}
+            />
+          </sections>
         </div>
       </Layouts.container>
     </Layouts.app>
@@ -213,6 +230,7 @@ defmodule WikWeb.HomeLive do
         socket =
           socket
           |> assign_spaces_and_form()
+          |> subscribe_to_activity()
           |> assign(:create_space_modal_open?, false)
 
         {:noreply, socket}
@@ -225,6 +243,20 @@ defmodule WikWeb.HomeLive do
     end
   end
 
+  @impl true
+  def handle_info(%{topic: "activity_entry:space:" <> space_id}, socket) do
+    if MapSet.member?(socket.assigns.subscribed_activity_space_ids, space_id) do
+      socket =
+        socket
+        |> assign_spaces()
+        |> Cinder.Refresh.refresh_table("home-activity-preview-collection")
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
+  end
+
   defp assign_spaces_and_form(socket) do
     scope = socket.assigns.current_scope
     event_items = list_aggregate_event_items(scope)
@@ -232,8 +264,31 @@ defmodule WikWeb.HomeLive do
     socket
     |> assign(event_items: event_items)
     |> assign(grouped_event_items: TimelinePresenter.grouped_timeline_items(event_items))
-    |> assign(spaces: scope |> list_spaces())
     |> assign(form: scope |> init_form())
+    |> assign_spaces()
+  end
+
+  defp assign_spaces(socket) do
+    assign(socket, :spaces, list_spaces(socket.assigns.current_scope))
+  end
+
+  defp subscribe_to_activity(socket) do
+    if connected?(socket) do
+      subscribed_space_ids = socket.assigns.subscribed_activity_space_ids
+      space_ids = MapSet.new(socket.assigns.spaces, & &1.id)
+
+      space_ids
+      |> MapSet.difference(subscribed_space_ids)
+      |> Enum.each(&Activity.subscribe/1)
+
+      assign(
+        socket,
+        :subscribed_activity_space_ids,
+        MapSet.union(subscribed_space_ids, space_ids)
+      )
+    else
+      socket
+    end
   end
 
   defp init_form(scope) do

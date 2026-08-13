@@ -69,7 +69,7 @@ defmodule WikWeb.SpaceUpdatesLive do
 
             <ActivityComponent.collection
               id="space-activity-table-collection"
-              page_size={[default: 10, options: [10, 25, 50, 100]]}
+              page_size={[default: 25, options: [10, 25, 50, 100]]}
               query={@activity_query}
               scope={@current_scope}
               search={[placeholder: "Search updates"]}

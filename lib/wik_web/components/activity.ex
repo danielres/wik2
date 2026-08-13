@@ -89,7 +89,7 @@ defmodule WikWeb.Components.Activity do
         theme={WikWeb.Cinder.Themes.Dense}
         url_state={@url_state}
       >
-        <:col :let={entry} field="actor_label" label="">
+        <:col :let={entry} field="actor_label" label="" class="w-0 align-baseline pt-[0.90rem]">
           <.actor entry={entry} />
         </:col>
 
@@ -230,6 +230,7 @@ defmodule WikWeb.Components.Activity do
   end
 
   attr :entry, :map, required: true
+  attr :name?, :boolean, default: false
 
   def actor(assigns) do
     ~H"""
@@ -238,7 +239,7 @@ defmodule WikWeb.Components.Activity do
       avatar_size="xs"
       class="max-w-36 text-xs"
       link?
-      name?={false}
+      name?={@name?}
       membership={@entry.actor_membership}
     />
 
@@ -249,7 +250,9 @@ defmodule WikWeb.Components.Activity do
       <span class="grid size-4 place-items-center rounded-full bg-base-300">
         <.icon name="hero-user-micro" class="size-3" />
       </span>
-      {@entry.actor_label || "Someone"}
+      <%= if @name? do %>
+        {@entry.actor_label || "Someone"}
+      <% end %>
     </span>
     """
   end

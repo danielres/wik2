@@ -110,54 +110,18 @@ defmodule WikWeb.SpaceLive do
             </UI.editable_zone>
           </div>
 
-          <section
-            id="space-activity-section"
+          <ActivityComponent.preview
             class={[
               "sm:border-l",
               "sm:border-base-content/10",
               "sm:pl-8"
             ]}
-          >
-            <UI.panel_title class="justify-between">
-              <span class="flex gap-2">
-                <.icon name="hero-arrow-path-micro" class="opacity-50" /> Updates
-              </span>
-              <.link
-                navigate={~p"/#{@space.slug}/updates"}
-                class="normal-case tracking-normal hover:text-base-content transition-colors"
-                id="space-activity-view-all"
-              >
-                View all <.icon name="hero-arrow-right-micro" class="size-3" />
-              </.link>
-            </UI.panel_title>
-
-            <div id="space-activity-preview">
-              <Cinder.collection
-                empty_message="No updates yet."
-                id="space-activity-preview-collection"
-                layout={:list}
-                page_size={8}
-                query={@activity_query}
-                query_opts={[
-                  load: [
-                    :event_starts_at,
-                    actor_membership: [:avatar_url, :space, user: [:external_identities]]
-                  ]
-                ]}
-                scope={@current_scope}
-                show_filters={false}
-                show_pagination={false}
-                show_sort={false}
-                theme={WikWeb.Cinder.Themes.Dense}
-              >
-                <:item :let={entry}>
-                  <ActivityComponent.row entry={entry} user_tz={@active_tz} />
-                </:item>
-
-                <:col :if={false} field="occurred_at" label="When" sort></:col>
-              </Cinder.collection>
-            </div>
-          </section>
+            id="space-activity"
+            query={@activity_query}
+            scope={@current_scope}
+            user_tz={@active_tz}
+            view_all_path={~p"/#{@space.slug}/activity"}
+          />
         </div>
       </Layouts.space>
     </Layouts.app>

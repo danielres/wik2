@@ -32,6 +32,12 @@ defmodule Wik.Activity do
     |> Ash.Query.sort(occurred_at: :desc, id: :desc)
   end
 
+  def aggregate_entries_query do
+    Entry
+    |> Ash.Query.for_read(:aggregate)
+    |> Ash.Query.sort(occurred_at: :desc, id: :desc)
+  end
+
   def subscribe(space_id) when is_binary(space_id) do
     WikWeb.Endpoint.subscribe(Entry.space_pub_sub_topic(space_id))
   end

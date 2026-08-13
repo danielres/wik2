@@ -8,12 +8,98 @@ defmodule WikWeb.HomeLiveTest do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts
   alias Wik.Accounts.Membership
+  alias Wik.Activity.Recorder
   alias Wik.Events
   alias Wik.Events.Event
   alias Wik.Events.EventPublication
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
+
+  test "shows aggregate activity from accessible spaces", %{conn: conn} do
+    user = generate(user())
+    outsider = generate(user())
+    first_space = generate(space(author: user, name: "First space"))
+    second_space = generate(space(author: user, name: "Second space"))
+    inaccessible_space = generate(space(author: outsider, name: "Private space"))
+    first_membership = add_membership(first_space, user, :owner)
+    second_membership = add_membership(second_space, user, :owner)
+    inaccessible_membership = add_membership(inaccessible_space, outsider, :owner)
+
+    assert {:ok, first_entry} =
+             Recorder.record(activity_attrs(first_space, first_membership, :wiki, :page_updated))
+
+    assert {:ok, second_entry} =
+             Recorder.record(
+               activity_attrs(second_space, second_membership, :events, :event_created)
+             )
+
+    assert {:ok, inaccessible_entry} =
+             Recorder.record(
+               activity_attrs(
+                 inaccessible_space,
+                 inaccessible_membership,
+                 :wiki,
+                 :page_updated
+               )
+             )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/")
+
+    render_async(view)
+
+    assert has_element?(view, "#home-activity-section")
+    assert has_element?(view, "#home-activity-preview")
+    assert has_element?(view, testid("activity-entry-#{first_entry.id}"))
+    assert has_element?(view, testid("activity-entry-#{second_entry.id}"))
+    refute has_element?(view, testid("activity-entry-#{inaccessible_entry.id}"))
+    assert has_element?(view, testid("activity-space-#{first_space.id}"), first_space.name)
+    assert has_element?(view, testid("activity-space-#{second_space.id}"), second_space.name)
+  end
+
+  test "refreshes aggregate activity when an accessible space publishes an entry", %{conn: conn} do
+    user = generate(user())
+    space = generate(space(author: user))
+    membership = add_membership(space, user, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/")
+
+    render_async(view)
+
+    assert {:ok, entry} =
+             Recorder.record(activity_attrs(space, membership, :events, :event_created))
+
+    _ = :sys.get_state(view.pid)
+    render_async(view)
+
+    assert has_element?(view, testid("activity-entry-#{entry.id}"))
+  end
+
+  test "limits aggregate activity to eight entries", %{conn: conn} do
+    user = generate(user())
+    space = generate(space(author: user))
+    membership = add_membership(space, user, :owner)
+
+    for _index <- 1..9 do
+      assert {:ok, _entry} =
+               Recorder.record(activity_attrs(space, membership, :wiki, :page_updated))
+    end
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(user)
+      |> live(~p"/")
+
+    render_async(view)
+
+    assert activity_entry_count(view) == 8
+  end
 
   test "sorts spaces without activity alphabetically", %{conn: conn} do
     user = generate(user())
@@ -228,6 +314,29 @@ defmodule WikWeb.HomeLiveTest do
       %{space_id: space.id, type: type, user_id: user.id},
       authorize?: false
     )
+  end
+
+  defp activity_attrs(space, membership, category, kind) do
+    %{
+      actor_label: to_string(membership.user_id),
+      actor_membership_id: membership.id,
+      category: category,
+      kind: kind,
+      metadata: %{},
+      space_id: space.id,
+      subject_id: Ash.UUIDv7.generate(),
+      subject_label: "Activity subject",
+      subject_path: nil,
+      subject_type: if(category == :events, do: :event, else: :page)
+    }
+  end
+
+  defp activity_entry_count(view) do
+    view
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("#home-activity-preview [data-testid^='activity-entry-']")
+    |> Enum.count()
   end
 
   defp event_attrs(overrides) do

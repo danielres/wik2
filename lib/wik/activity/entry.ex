@@ -58,6 +58,14 @@ defmodule Wik.Activity.Entry do
   actions do
     defaults [:read]
 
+    read :aggregate do
+      multitenancy :bypass
+
+      pagination do
+        offset? true
+      end
+    end
+
     create :record do
       accept [
         :actor_label,

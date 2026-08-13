@@ -22,6 +22,21 @@ defmodule Wik.Activity.Entry.Calculations.EventStartsAt do
   end
 
   defp load_events(entries, resource, source, context) do
+    if context.tenant do
+      load_events_for_tenant(entries, resource, source, context, context.tenant)
+    else
+      entries
+      |> Enum.group_by(& &1.space_id)
+      |> Enum.reduce_while({:ok, %{}}, fn {space_id, space_entries}, {:ok, events} ->
+        case load_events_for_tenant(space_entries, resource, source, context, space_id) do
+          {:ok, space_events} -> {:cont, {:ok, Map.merge(events, space_events)}}
+          {:error, error} -> {:halt, {:error, error}}
+        end
+      end)
+    end
+  end
+
+  defp load_events_for_tenant(entries, resource, source, context, tenant) do
     event_ids =
       entries
       |> Enum.filter(&(&1.subject_type == :event and event_source(&1) == source))
@@ -37,7 +52,7 @@ defmodule Wik.Activity.Entry.Calculations.EventStartsAt do
       |> Ash.read(
         actor: context.actor,
         authorize?: context.authorize?,
-        tenant: context.tenant
+        tenant: tenant
       )
       |> case do
         {:ok, events} -> {:ok, Map.new(events, &{{source, &1.id}, &1.starts_at})}

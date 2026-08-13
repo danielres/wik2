@@ -24,7 +24,7 @@ defmodule WikWeb.SpaceUpdatesLive do
 
   @impl true
   def handle_params(params, uri, socket) do
-    category = param_to_category(params["category"])
+    category = ActivityComponent.param_to_category(params["category"])
 
     socket =
       params
@@ -57,92 +57,26 @@ defmodule WikWeb.SpaceUpdatesLive do
         <div class="max-w-[80ch]">
           <UI.page_head>
             <UI.page_title>
-              <.icon name="hero-arrow-path-micro" class="opacity-50" /> Updates
+              <.icon name="hero-arrow-path-micro" class="opacity-50" /> Activity
             </UI.page_title>
           </UI.page_head>
 
           <section>
-            <nav
-              aria-label="Filter updates by category"
-              class="flex flex-wrap gap-1 sm:ml-3"
-              id="activity-category-filter"
-            >
-              <.link
-                :for={category <- [:all | Activity.categories()]}
-                aria-current={if(@activity_category == category, do: "page")}
-                class={[
-                  "flex items-center gap-1",
-                  "relative top-1",
-                  "bg-base-200",
-                  "px-3 sm:px-4 py-2",
-                  "font-bold text-sm",
-                  "transition",
-                  "rounded-t-box rounded-b-none ",
-                  @activity_category != category && "opacity-30 hover:opacity-70 btn-ghost"
-                ]}
-                data-testid={"activity-category-#{category}"}
-                id={"activity-category-#{category}"}
-                patch={category_path(@space, @params, category)}
-              >
-                <div class="opacity-60 inline-flex">
-                  <.icon :if={category == :all} name="hero-eye-micro" />
-                  <.icon :if={category == :wiki} name="hero-book-open-micro" />
-                  <.icon :if={category == :topics} name="hero-tag-micro" />
-                  <.icon :if={category == :events} name="hero-calendar-micro" />
-                  <.icon :if={category == :members} name="hero-user-micro" />
-                  <.icon :if={category == :other} name="hero-ellipsis-horizontal-micro" />
-                </div>
-                <span class={@activity_category != category && "max-sm:sr-only"}>
-                  {category_label(category)}
-                </span>
-              </.link>
-            </nav>
+            <ActivityComponent.category_nav
+              active_category={@activity_category}
+              category_paths={category_paths(@space, @params)}
+            />
 
-            <div id="space-activity-table">
-              <Cinder.collection
-                empty_message="No updates in this category yet."
-                id="space-activity-table-collection"
-                page_size={[default: 10, options: [10, 25, 50, 100]]}
-                query={@activity_query}
-                query_opts={[
-                  load: [
-                    :event_starts_at,
-                    actor_membership: [:avatar_url, :space, user: [:external_identities]]
-                  ]
-                ]}
-                scope={@current_scope}
-                search={[placeholder: "Search updates"]}
-                show_filters={false}
-                sort_mode="exclusive"
-                theme={WikWeb.Cinder.Themes.Dense}
-                url_state={@url_state}
-                class={[
-                  "[&_thead]:hidden",
-                  "[&>*>*]:pt-2",
-                  "[&>*>*]:pb-4"
-                ]}
-              >
-                <:col :let={entry} field="actor_label" label="">
-                  <ActivityComponent.actor entry={entry} />
-                </:col>
-
-                <:col :let={entry} field="subject_label" label="">
-                  <div data-testid={"activity-entry-#{entry.id}"}>
-                    <ActivityComponent.summary entry={entry} />
-                    <ActivityComponent.note entry={entry} />
-                  </div>
-                </:col>
-
-                <:col :let={entry} field="occurred_at" label="" class="w-0">
-                  <WikWeb.Components.Time.relative_and_precise
-                    ago?
-                    datetime={entry.occurred_at}
-                    user_tz={@active_tz}
-                    class="text-xs"
-                  />
-                </:col>
-              </Cinder.collection>
-            </div>
+            <ActivityComponent.collection
+              id="space-activity-table-collection"
+              page_size={[default: 10, options: [10, 25, 50, 100]]}
+              query={@activity_query}
+              scope={@current_scope}
+              search={[placeholder: "Search updates"]}
+              url_state={@url_state}
+              user_tz={@active_tz}
+              wrapper_id="space-activity-table"
+            />
           </section>
         </div>
       </Layouts.space>
@@ -150,10 +84,8 @@ defmodule WikWeb.SpaceUpdatesLive do
     """
   end
 
-  defp param_to_category(nil), do: :all
-
-  defp param_to_category(category) do
-    Enum.find(Activity.categories(), :all, &(Atom.to_string(&1) == category))
+  defp category_paths(space, params) do
+    Map.new([:all | Activity.categories()], &{&1, category_path(space, params, &1)})
   end
 
   defp category_path(space, params, category) do
@@ -170,11 +102,4 @@ defmodule WikWeb.SpaceUpdatesLive do
 
     if params == %{}, do: path, else: path <> "?" <> URI.encode_query(params)
   end
-
-  defp category_label(:all), do: "All"
-  defp category_label(:events), do: "Events"
-  defp category_label(:members), do: "Members"
-  defp category_label(:other), do: "Other"
-  defp category_label(:topics), do: "Topics"
-  defp category_label(:wiki), do: "Wiki"
 end

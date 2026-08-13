@@ -122,7 +122,7 @@ defmodule WikWeb.Components.Activity do
   attr :class, :any, default: []
   attr :empty_message, :string, default: "No updates yet."
   attr :id, :string, required: true
-  attr :page_size, :integer, default: 8
+  attr :page_size, :integer, default: 25
   attr :query, :any, required: true
   attr :scope, :any, required: true
   attr :show_space?, :boolean, default: false
@@ -154,7 +154,7 @@ defmodule WikWeb.Components.Activity do
         </.link>
       </Components.UI.panel_title>
 
-      <div id={"#{@id}-preview"}>
+      <div id={"#{@id}-preview"} class="max-h-[32rem] overflow-y-auto overflow-x-hidden">
         <Cinder.collection
           empty_message={@empty_message}
           id={"#{@id}-preview-collection"}

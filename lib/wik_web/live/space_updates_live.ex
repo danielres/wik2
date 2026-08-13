@@ -98,7 +98,7 @@ defmodule WikWeb.SpaceUpdatesLive do
         Map.put(params, "category", Atom.to_string(category))
       end
 
-    path = ~p"/#{space.slug}/updates"
+    path = ~p"/#{space.slug}/activity"
 
     if params == %{}, do: path, else: path <> "?" <> URI.encode_query(params)
   end

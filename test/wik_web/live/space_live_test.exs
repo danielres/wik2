@@ -69,12 +69,12 @@ defmodule WikWeb.SpaceLiveTest do
       |> live(~p"/#{space.slug}")
 
     assert has_element?(view, "#space-activity-preview")
-    assert has_element?(view, "#space-activity-view-all[href='/#{space.slug}/updates']")
+    assert has_element?(view, "#space-activity-view-all[href='/#{space.slug}/activity']")
     assert has_element?(view, testid("activity-entry-#{entry.id}"))
     refute has_element?(view, ".stacked #space-activity-section")
   end
 
-  test "filters the full updates page with URL-backed category buttons", %{conn: conn} do
+  test "filters the full activity page with URL-backed category buttons", %{conn: conn} do
     owner = generate(user())
     space = generate(space(author: owner))
     membership = add_membership(space, owner, :owner)
@@ -94,7 +94,7 @@ defmodule WikWeb.SpaceLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live(~p"/#{space.slug}/updates")
+      |> live(~p"/#{space.slug}/activity")
 
     render_async(view)
 
@@ -105,7 +105,7 @@ defmodule WikWeb.SpaceLiveTest do
 
     view |> element(testid("activity-category-events")) |> render_click()
 
-    assert_patch(view, ~p"/#{space.slug}/updates?category=events")
+    assert_patch(view, ~p"/#{space.slug}/activity?category=events")
     render_async(view)
     assert has_element?(view, testid("activity-category-events") <> ~s([aria-current="page"]))
     assert has_element?(view, testid("activity-entry-#{event_entry.id}"))
@@ -120,7 +120,7 @@ defmodule WikWeb.SpaceLiveTest do
     {:ok, view, _html} =
       conn
       |> log_in(owner)
-      |> live("/#{space.slug}/updates?category=unknown")
+      |> live("/#{space.slug}/activity?category=unknown")
 
     assert has_element?(view, testid("activity-category-all") <> ~s([aria-current="page"]))
   end

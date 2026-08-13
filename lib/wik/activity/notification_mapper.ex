@@ -158,19 +158,24 @@ defmodule Wik.Activity.NotificationMapper do
   defp map_tag(notification, kind) do
     tag = notification.data
     space = load_space(tag.space_id)
+    target = %{id: tag.id, label: tag.name, path: topic_path(space, tag, kind)}
 
     [
-      entry(notification, tag.space_id, %{
-        category: :topics,
-        collapse_key: if(kind == :topic_updated, do: "topic:#{tag.id}"),
-        collapsible?: kind == :topic_updated,
-        kind: kind,
-        metadata: %{},
-        subject_id: tag.id,
-        subject_label: tag.name,
-        subject_path: topic_path(space, tag, kind),
-        subject_type: :topic
-      })
+      entry(
+        notification,
+        tag.space_id,
+        Map.merge(
+          %{
+            category: :topics,
+            kind: kind,
+            subject_id: tag.id,
+            subject_label: tag.name,
+            subject_path: target.path,
+            subject_type: :topic
+          },
+          consecutive_target_attrs(notification, kind, [target], "topic:#{tag.id}")
+        )
+      )
     ]
   end
 
@@ -382,35 +387,27 @@ defmodule Wik.Activity.NotificationMapper do
             []
 
           [primary | _rest] ->
-            collapse_key =
-              case targets do
-                [_single] ->
-                  "page:#{primary.id}"
-
-                multiple ->
-                  target_hash =
-                    multiple
-                    |> Enum.map(& &1.id)
-                    |> Enum.sort()
-                    |> Enum.join(":")
-                    |> then(&:crypto.hash(:sha256, &1))
-                    |> Base.encode16(case: :lower)
-
-                  "pages:#{target_hash}"
-              end
-
             [
-              entry(notification, space_id, %{
-                category: :wiki,
-                collapse_key: collapse_key,
-                collapsible?: true,
-                kind: :page_updated,
-                metadata: %{targets: targets},
-                subject_id: primary.id,
-                subject_label: primary.label,
-                subject_path: primary.path,
-                subject_type: :page
-              })
+              entry(
+                notification,
+                space_id,
+                Map.merge(
+                  %{
+                    category: :wiki,
+                    kind: :page_updated,
+                    subject_id: primary.id,
+                    subject_label: primary.label,
+                    subject_path: primary.path,
+                    subject_type: :page
+                  },
+                  consecutive_target_attrs(
+                    notification,
+                    :page_updated,
+                    targets,
+                    page_targets_collapse_key(targets)
+                  )
+                )
+              )
             ]
         end
       else
@@ -426,18 +423,23 @@ defmodule Wik.Activity.NotificationMapper do
       |> Ash.read!(authorize?: false, tenant: block.owner_space_id)
       |> Enum.map(fn tag ->
         space = load_space(tag.space_id)
+        target = %{id: tag.id, label: tag.name, path: topic_path(space, tag, :topic_updated)}
 
-        entry(notification, tag.space_id, %{
-          category: :topics,
-          collapse_key: "topic:#{tag.id}",
-          collapsible?: true,
-          kind: :topic_updated,
-          metadata: %{},
-          subject_id: tag.id,
-          subject_label: tag.name,
-          subject_path: topic_path(space, tag, :topic_updated),
-          subject_type: :topic
-        })
+        entry(
+          notification,
+          tag.space_id,
+          Map.merge(
+            %{
+              category: :topics,
+              kind: :topic_updated,
+              subject_id: tag.id,
+              subject_label: tag.name,
+              subject_path: target.path,
+              subject_type: :topic
+            },
+            consecutive_target_attrs(notification, :topic_updated, [target], "topic:#{tag.id}")
+          )
+        )
       end)
     else
       []
@@ -467,18 +469,23 @@ defmodule Wik.Activity.NotificationMapper do
 
   defp page_entry(notification, space, nodes, node, kind) do
     target = page_target(space, nodes, node)
+    target = if kind == :page_deleted, do: Map.put(target, :path, nil), else: target
 
-    entry(notification, space.id, %{
-      category: :wiki,
-      collapse_key: if(kind == :page_updated, do: "page:#{target.id}"),
-      collapsible?: kind == :page_updated,
-      kind: kind,
-      metadata: %{},
-      subject_id: target.id,
-      subject_label: target.label,
-      subject_path: if(kind == :page_deleted, do: nil, else: target.path),
-      subject_type: :page
-    })
+    entry(
+      notification,
+      space.id,
+      Map.merge(
+        %{
+          category: :wiki,
+          kind: kind,
+          subject_id: target.id,
+          subject_label: target.label,
+          subject_path: target.path,
+          subject_type: :page
+        },
+        consecutive_target_attrs(notification, kind, [target], "page:#{target.id}")
+      )
+    )
   end
 
   defp page_target(space, nodes, node) do
@@ -554,6 +561,43 @@ defmodule Wik.Activity.NotificationMapper do
       actor_username: actor.username,
       space_id: space_id
     })
+  end
+
+  defp consecutive_target_attrs(
+         %Notification{actor: %User{id: actor_id}},
+         kind,
+         targets,
+         _fallback_key
+       )
+       when is_binary(actor_id) do
+    %{
+      collapse_key: "consecutive:#{kind}:#{actor_id}",
+      collapse_mode: :consecutive_targets,
+      collapsible?: true,
+      metadata: %{targets: targets}
+    }
+  end
+
+  defp consecutive_target_attrs(_notification, kind, targets, fallback_key) do
+    %{
+      collapse_key: if(kind in [:page_updated, :topic_updated], do: fallback_key),
+      collapsible?: kind in [:page_updated, :topic_updated],
+      metadata: %{targets: targets}
+    }
+  end
+
+  defp page_targets_collapse_key([target]), do: "page:#{target.id}"
+
+  defp page_targets_collapse_key(targets) do
+    target_hash =
+      targets
+      |> Enum.map(& &1.id)
+      |> Enum.sort()
+      |> Enum.join(":")
+      |> then(&:crypto.hash(:sha256, &1))
+      |> Base.encode16(case: :lower)
+
+    "pages:#{target_hash}"
   end
 
   defp actor_membership(%{actor: %User{id: user_id}}, space_id) do

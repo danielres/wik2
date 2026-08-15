@@ -275,9 +275,10 @@ defmodule WikWeb.MemberProfileLive do
     scope = socket.assigns.current_scope
 
     case Accounts.get_or_create_primary_block(socket.assigns.membership, scope: scope) do
-      {:ok, _membership, block} ->
+      {:ok, membership, block} ->
         {:noreply,
          socket
+         |> assign(:membership, membership)
          |> assign_primary_block(block)
          |> assign(:primary_block_editing?, true)
          |> assign_primary_block_form(block)}

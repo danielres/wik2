@@ -130,8 +130,32 @@ defmodule WikWeb.MemberProfileLiveTest do
     refute has_element?(view, "#primary-block-form")
     assert has_element?(view, testid("markdown-block"))
 
-    html = render(view)
-    assert html =~ "I like fusion."
+    assert has_element?(view, testid("markdown-block"), "I like fusion.")
+
+    primary_block_id = reload_membership(membership).primary_block_id
+    assert primary_block_id
+
+    render_click(element(view, testid("primary-block-edit")))
+
+    assert has_element?(
+             view,
+             "#edit-block-markdown-textarea-#{primary_block_id}",
+             "## About I like fusion."
+           )
+
+    assert reload_membership(membership).primary_block_id == primary_block_id
+
+    render_submit(
+      form(view, "#primary-block-form",
+        block: %{
+          "text" => "## About\n\nI still like fusion."
+        }
+      )
+    )
+
+    refute has_element?(view, "#primary-block-form")
+    assert has_element?(view, testid("markdown-block"), "I still like fusion.")
+    assert reload_membership(membership).primary_block_id == primary_block_id
   end
 
   test "other space members can read but not edit another member's taggings", %{conn: conn} do

@@ -8,6 +8,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   alias Wik.Events.ExternalCalendar
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
+  alias Wik.Tags
   alias Wik.Tags.Tagging
   alias WikWeb.EventsLive.TimelinePresenter
 
@@ -45,6 +46,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
            Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
          {:ok, taggings_by_subscription_id} <-
            load_taggings_by_subscription_id(subscriptions, scope),
+         {:ok, space_tags} <- Tags.list_space_tags(scope),
          {:ok, external_events} <- read_external_events(scope, future_windows),
          {:ok, participations_by_external_event_id} <-
            load_participations_by_external_event_id(external_events, scope) do
@@ -56,6 +58,7 @@ defmodule WikWeb.EventsLive.TimelineLoader do
          participations_by_publication_id: participations_by_publication_id,
          participations_by_external_event_id: participations_by_external_event_id,
          subscription_records: subscriptions,
+         space_tags: space_tags,
          taggings_by_subscription_id: taggings_by_subscription_id,
          external_events: external_events,
          more_external_future?: more_external_future?(scope, show_external?, future_windows)

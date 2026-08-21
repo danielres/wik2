@@ -9,6 +9,7 @@ defmodule WikWeb.EventsLive.TimelineState do
   alias WikWeb.EventsLive.SubscriptionState
   alias WikWeb.EventsLive.TimelineLoader
   alias WikWeb.EventsLive.TimelinePresenter
+  alias WikWeb.EventsLive.TopicMatchingPrototype
 
   def empty(show_external? \\ false) do
     %{
@@ -16,6 +17,7 @@ defmodule WikWeb.EventsLive.TimelineState do
       future_windows: 1,
       internal_publications: [],
       internal_items: [],
+      base_external_items: [],
       external_items: [],
       load_more_path: nil,
       more_external_future?: false,
@@ -35,9 +37,17 @@ defmodule WikWeb.EventsLive.TimelineState do
              show_external?: timeline.show_external?,
              future_windows: timeline.future_windows
            ) do
+      topic_matching =
+        TopicMatchingPrototype.reconcile(
+          socket.assigns.topic_matching,
+          loaded_data.subscription_records,
+          loaded_data.space_tags
+        )
+
       presented_timeline = TimelinePresenter.build(loaded_data, timeline.show_external?)
 
       socket
+      |> assign(:topic_matching, topic_matching)
       |> put_loaded_timeline(presented_timeline)
       |> put_loaded_subscriptions(presented_timeline)
     else
@@ -49,6 +59,7 @@ defmodule WikWeb.EventsLive.TimelineState do
           socket.assigns.timeline
           | internal_publications: [],
             internal_items: [],
+            base_external_items: [],
             external_items: [],
             load_more_path: nil,
             more_external_future?: false,
@@ -97,13 +108,15 @@ defmodule WikWeb.EventsLive.TimelineState do
     |> put_timeline_items()
   end
 
+  def refresh_topic_matching(socket), do: put_timeline_items(socket)
+
   defp put_loaded_timeline(socket, loaded_data) do
     socket
     |> assign(:timeline, %{
       socket.assigns.timeline
       | internal_publications: loaded_data.internal_publications,
         internal_items: loaded_data.internal_items,
-        external_items: loaded_data.external_items,
+        base_external_items: loaded_data.external_items,
         more_external_future?: loaded_data.more_external_future?
     })
     |> put_timeline_items()
@@ -120,10 +133,16 @@ defmodule WikWeb.EventsLive.TimelineState do
   defp put_timeline_items(socket) do
     timeline = socket.assigns.timeline
 
+    external_items =
+      TopicMatchingPrototype.apply_to_external_items(
+        timeline.base_external_items,
+        socket.assigns.topic_matching
+      )
+
     unfiltered_items =
       TimelinePresenter.timeline_items(
         timeline.internal_items,
-        timeline.external_items,
+        external_items,
         timeline.show_external?
       )
 
@@ -136,6 +155,7 @@ defmodule WikWeb.EventsLive.TimelineState do
     assign(socket, :timeline, %{
       timeline
       | items: items,
+        external_items: external_items,
         disabled_topic_ids: disabled_topic_ids,
         topic_options: topic_options,
         load_more_path: load_more_path(current_scope, timeline),

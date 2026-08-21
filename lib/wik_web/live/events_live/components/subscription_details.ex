@@ -12,6 +12,7 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
   alias WikWeb.Components.RangeInput
   alias WikWeb.Components.Time
   alias WikWeb.EventsLive.SubscriptionState
+  alias WikWeb.EventsLive.Components.TopicMatchingPrototype
 
   @impl true
   def update(assigns, socket) do
@@ -104,6 +105,15 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
           </dl>
 
           <div class="space-y-4">
+            <.live_component
+              module={TopicMatchingPrototype}
+              id={"events-topic-matching-#{@subscription.id}"}
+              can_manage?={can_manage_subscription?(@subscription, @current_scope)}
+              current_scope={@current_scope}
+              subscription_id={@subscription.id}
+              view={@topic_matching_view}
+            />
+
             <.form
               :if={@name_form != nil}
               for={@name_form}
@@ -152,7 +162,12 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
                 Dimensions.get!("external_calendar_subscription", "relevancy") %>
 
               <div class="flex justify-between gap-2 items-baseline">
-                <div class="label font-bold text-sm">Topics</div>
+                <div>
+                  <div class="label font-bold text-sm">Always applied topics</div>
+                  <p class="text-xs text-base-content/55">
+                    These topics apply to every event from this calendar.
+                  </p>
+                </div>
 
                 <button
                   :if={

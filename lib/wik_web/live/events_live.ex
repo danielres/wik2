@@ -13,6 +13,7 @@ defmodule WikWeb.EventsLive do
   alias WikWeb.EventsLive.Params
   alias WikWeb.EventsLive.SubscriptionState
   alias WikWeb.EventsLive.TimelineState
+  alias WikWeb.EventsLive.TopicMatchingPrototype
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
 
@@ -23,6 +24,7 @@ defmodule WikWeb.EventsLive do
      |> assign(modal: nil)
      |> assign(presences: [])
      |> assign(subscriptions: SubscriptionState.empty())
+     |> assign(topic_matching: TopicMatchingPrototype.empty())
      |> assign(timeline: TimelineState.empty())
      |> refresh_page_data()}
   end
@@ -156,6 +158,12 @@ defmodule WikWeb.EventsLive do
         <% {:subscription, {:show, subscription_id}} -> %>
           <% subscription = SubscriptionState.find(@subscriptions, subscription_id) %>
           <% metadata = SubscriptionState.metadata(@subscriptions, subscription) %>
+          <% topic_matching_view =
+            TopicMatchingPrototype.subscription_view(
+              @topic_matching,
+              subscription_id,
+              @timeline.base_external_items
+            ) %>
 
           <.live_component
             module={SubscriptionDetails}
@@ -164,6 +172,7 @@ defmodule WikWeb.EventsLive do
             current_membership={@tenant_context && @tenant_context.current_membership}
             metadata={metadata}
             subscription={subscription}
+            topic_matching_view={topic_matching_view}
           />
         <% _ -> %>
       <% end %>
@@ -409,6 +418,19 @@ defmodule WikWeb.EventsLive do
      socket
      |> refresh_page_data()
      |> assign(:modal, {:subscription, {:show, id}})}
+  end
+
+  def handle_info(
+        {:events_live, {:topic_matching_update, subscription_id, action}},
+        socket
+      ) do
+    topic_matching =
+      TopicMatchingPrototype.update(socket.assigns.topic_matching, subscription_id, action)
+
+    {:noreply,
+     socket
+     |> assign(:topic_matching, topic_matching)
+     |> TimelineState.refresh_topic_matching()}
   end
 
   # Flash

@@ -120,7 +120,17 @@ defmodule WikWeb.Components.Event.ExternalDetails do
         testid_prefix="external-event-topic"
       >
         <:title :let={summary}>
-          <div class="truncate text-sm">{summary.tag.name}</div>
+          <div class="flex min-w-0 items-center gap-1.5">
+            <.icon
+              :if={Map.get(summary, :automatic?, false)}
+              name="hero-sparkles-micro"
+              class="size-3 shrink-0 text-base-content opacity-70"
+            />
+            <div class="truncate text-sm">{summary.tag.name}</div>
+            <span :if={Map.get(summary, :automatic?, false)} class="sr-only">
+              Detected from event text
+            </span>
+          </div>
         </:title>
       </DimensionsList.render>
     </section>

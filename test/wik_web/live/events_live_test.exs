@@ -13,6 +13,7 @@ defmodule WikWeb.EventsLiveTest do
   alias Wik.Events.EventParticipation
   alias Wik.Events.EventPublication
   alias Wik.Events.ExternalCalendar
+  alias Wik.Events.ExternalCalendarTopicRule
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
   alias Wik.Tags
@@ -1531,7 +1532,7 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("external-event-topic-relevancy-#{tag.id}"))
   end
 
-  test "automatic topic matching prototypes rules against real external events", %{conn: conn} do
+  test "automatic topic matching persists rules against real external events", %{conn: conn} do
     owner = generate(user())
     space = generate(space(author: owner))
     add_membership(space, owner, :owner)
@@ -1571,7 +1572,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
 
-    assert has_element?(view, testid("events-topic-matching-prototype"))
+    assert has_element?(view, testid("events-topic-matching"))
     assert has_element?(view, testid("events-topic-matching-toggle") <> ~s([aria-checked="true"]))
     assert has_element?(view, testid("events-topic-matching-active-#{dinner.id}"))
     assert has_element?(view, testid("events-topic-matching-active-#{calendar.id}"))
@@ -1634,15 +1635,20 @@ defmodule WikWeb.EventsLiveTest do
       |> log_in(owner)
       |> live(~p"/#{space.slug}/events?calendars")
 
-    assert has_element?(
+    refute has_element?(
              reloaded_view,
              testid("timeline-event-topic-#{external_event_id}-#{dinner.id}")
            )
 
-    refute has_element?(
+    assert has_element?(
              reloaded_view,
              testid("timeline-event-topic-#{external_event_id}-#{zouk.id}")
            )
+
+    rules = Ash.read!(ExternalCalendarTopicRule, scope: owner_scope)
+    assert Enum.find(rules, &(&1.tag_id == dinner.id)).enabled == false
+    assert Enum.find(rules, &(&1.tag_id == zouk.id)).aliases == ["dinner"]
+    refute Enum.any?(rules, &(&1.tag_id == calendar.id))
   end
 
   test "automatic topic matching controls are read-only for regular members", %{conn: conn} do
@@ -1670,7 +1676,7 @@ defmodule WikWeb.EventsLiveTest do
 
     render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
 
-    assert has_element?(view, testid("events-topic-matching-prototype"))
+    assert has_element?(view, testid("events-topic-matching"))
     refute has_element?(view, testid("events-topic-matching-toggle"))
 
     render_click(element(view, testid("events-topic-matching-adjust")))

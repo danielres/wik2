@@ -1,5 +1,8 @@
-defmodule WikWeb.EventsLive.Components.TopicMatchingPrototype do
+defmodule WikWeb.EventsLive.Components.TopicMatching do
   use WikWeb, :live_component
+
+  alias Utils.Log
+  alias Wik.Events.ExternalCalendar.TopicMatching, as: EventTopicMatching
 
   @impl true
   def update(assigns, socket) do
@@ -15,18 +18,16 @@ defmodule WikWeb.EventsLive.Components.TopicMatchingPrototype do
     ~H"""
     <section
       class={["rounded-box border border-primary/15 bg-primary/5 p-3", "space-y-3"]}
-      data-testid="events-topic-matching-prototype"
+      data-testid="events-topic-matching"
     >
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0 space-y-1">
           <div class="flex flex-wrap items-center gap-2">
-            <h3 class="font-bold text-sm">Automatic matching</h3>
-            <span class="badge badge-xs badge-warning badge-soft">Prototype</span>
+            <h3 class="font-bold text-sm">Topics: automatic matching</h3>
           </div>
 
           <p class="text-xs leading-relaxed text-base-content/65">
             Topic names and aliases are matched in event titles and descriptions.
-            Changes reset when this page reloads.
           </p>
         </div>
 
@@ -373,11 +374,11 @@ defmodule WikWeb.EventsLive.Components.TopicMatchingPrototype do
   end
 
   def handle_event("topic_matching_subscription_toggle", _params, socket) do
-    {:noreply, notify_update(socket, :toggle_subscription)}
+    {:noreply, persist_update(socket, :toggle_subscription)}
   end
 
   def handle_event("topic_matching_rule_toggle", %{"tag_id" => tag_id}, socket) do
-    {:noreply, notify_update(socket, {:toggle_rule, tag_id})}
+    {:noreply, persist_update(socket, {:toggle_rule, tag_id})}
   end
 
   def handle_event(
@@ -386,7 +387,7 @@ defmodule WikWeb.EventsLive.Components.TopicMatchingPrototype do
         socket
       ) do
     field = if field == "title", do: :title?, else: :description?
-    {:noreply, notify_update(socket, {:toggle_field, tag_id, field})}
+    {:noreply, persist_update(socket, {:toggle_field, tag_id, field})}
   end
 
   def handle_event(
@@ -394,7 +395,7 @@ defmodule WikWeb.EventsLive.Components.TopicMatchingPrototype do
         %{"tag_id" => tag_id, "topic_matching_alias" => %{"value" => value}},
         socket
       ) do
-    {:noreply, notify_update(socket, {:add_alias, tag_id, value})}
+    {:noreply, persist_update(socket, {:add_alias, tag_id, value})}
   end
 
   def handle_event(
@@ -402,19 +403,26 @@ defmodule WikWeb.EventsLive.Components.TopicMatchingPrototype do
         %{"alias" => value, "tag_id" => tag_id},
         socket
       ) do
-    {:noreply, notify_update(socket, {:remove_alias, tag_id, value})}
+    {:noreply, persist_update(socket, {:remove_alias, tag_id, value})}
   end
 
-  defp notify_update(%{assigns: %{can_manage?: true}} = socket, action) do
-    send(
-      self(),
-      {:events_live, {:topic_matching_update, socket.assigns.subscription_id, action}}
-    )
+  defp persist_update(%{assigns: %{can_manage?: true}} = socket, action) do
+    subscription = socket.assigns.subscription
+    scope = socket.assigns.current_scope
 
-    socket
+    case EventTopicMatching.update(subscription, action, scope: scope) do
+      {:ok, _result} ->
+        send(self(), {:events_live, {:subscription_refreshed, subscription.id}})
+        socket
+
+      {:error, error} ->
+        Log.scoped_error(scope, error, "external calendar topic matching update failed")
+        send(self(), {:events_live, {:flash, :error, "Couldn't save that matching rule."}})
+        socket
+    end
   end
 
-  defp notify_update(socket, _action), do: socket
+  defp persist_update(socket, _action), do: socket
 
   defp matching_rules(view), do: Enum.filter(view.rules, &(&1.enabled? and &1.count > 0))
 

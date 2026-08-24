@@ -11,8 +11,8 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
   alias WikWeb.Components.DimensionsList
   alias WikWeb.Components.RangeInput
   alias WikWeb.Components.Time
+  alias WikWeb.EventsLive.Components.TopicMatching
   alias WikWeb.EventsLive.SubscriptionState
-  alias WikWeb.EventsLive.Components.TopicMatchingPrototype
 
   @impl true
   def update(assigns, socket) do
@@ -32,9 +32,37 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
     ~H"""
     <div>
       <div :if={@subscription} class="space-y-2">
-        <div class="collapse collapse-plus bg-base-content/3 rounded">
+        <section class="space-y-2 bg-base-content/3 rounded p-4">
+          <dl :if={@subscription.cached_at} class="flex gap-4 items-center">
+            <dt class="font-bold text-sm">
+              Last updated:
+            </dt>
+            <dd class="text-sm flex items-center gap-2">
+              <Time.relative_and_precise
+                datetime={@subscription.cached_at}
+                direction="right"
+                ago?
+              />
+              <div class="tooltip tooltip-accent tooltip-xs tooltip-right">
+                <div class="tooltip-content text-xs">Refresh now</div>
+                <button
+                  class={["btn btn-circle btn-xs btn-accent btn-ghost"]}
+                  data-testid={"events-subscription-refresh-#{@subscription.id}"}
+                  phx-click="external_calendar_subscription_refresh"
+                  phx-target={@myself}
+                  phx-value-id={@subscription.id}
+                  type="button"
+                >
+                  <.icon name="hero-arrow-path-micro" class="size-3" />
+                </button>
+              </div>
+            </dd>
+          </dl>
+        </section>
+
+        <section class="collapse collapse-plus bg-base-content/3 rounded">
           <input type="checkbox" />
-          <div class="collapse-title label font-bold text-sm">Info</div>
+          <div class="collapse-title font-bold text-sm">Info</div>
           <div class="collapse-content text-sm space-y-4">
             <dl :if={@metadata.timezone} class="flex gap-4 items-center">
               <dt class="text-xs uppercase opacity-70">
@@ -75,198 +103,175 @@ defmodule WikWeb.EventsLive.Components.SubscriptionDetails do
               </dd>
             </dl>
           </div>
-        </div>
+        </section>
 
-        <div class="space-y-2 bg-base-content/3 rounded p-4">
-          <dl :if={@subscription.cached_at} class="flex gap-4 items-center">
-            <dt class="label font-bold text-sm">
-              Last updated:
-            </dt>
-            <dd class="text-sm flex items-center gap-2">
-              <Time.relative_and_precise
-                datetime={@subscription.cached_at}
-                direction="right"
-                ago?
-              />
-              <div class="tooltip tooltip-accent tooltip-xs tooltip-right">
-                <div class="tooltip-content text-xs">Refresh now</div>
-                <button
-                  class={["btn btn-circle btn-xs btn-accent btn-ghost"]}
-                  data-testid={"events-subscription-refresh-#{@subscription.id}"}
-                  phx-click="external_calendar_subscription_refresh"
-                  phx-target={@myself}
-                  phx-value-id={@subscription.id}
-                  type="button"
-                >
-                  <.icon name="hero-arrow-path-micro" class="size-3" />
-                </button>
-              </div>
-            </dd>
-          </dl>
+        <section
+          class="space-y-2 bg-base-content/3 rounded p-4"
+          data-testid="events-subscription-topics"
+        >
+          <% relevancy_dimension =
+            Dimensions.get!("external_calendar_subscription", "relevancy") %>
 
-          <div class="space-y-4">
-            <.live_component
-              module={TopicMatchingPrototype}
-              id={"events-topic-matching-#{@subscription.id}"}
-              can_manage?={can_manage_subscription?(@subscription, @current_scope)}
-              current_scope={@current_scope}
-              subscription_id={@subscription.id}
-              view={@topic_matching_view}
-            />
+          <div class="flex justify-between gap-2 items-baseline">
+            <div>
+              <div class="font-bold text-sm">Topics: always applied</div>
+              <p class="text-xs text-base-content/55">
+                These topics apply to every event from this calendar.
+              </p>
+            </div>
 
-            <.form
-              :if={@name_form != nil}
-              for={@name_form}
-              id="events-subscription-name-form"
-              data-testid="events-subscription-name-form"
-              phx-submit="external_calendar_subscription_name_submit"
+            <button
+              :if={
+                can_manage_subscription?(@subscription, @current_scope) and
+                  @current_membership != nil and @subscription_topic_options != []
+              }
+              type="button"
+              class="btn btn-circle btn-xs btn-accent btn-soft"
+              data-testid="events-subscription-topic-add"
+              phx-click="subscription_topic_add_start"
               phx-target={@myself}
             >
-              <div class="space-y-3 [&_label]:text-sm">
-                <.input field={@name_form[:id]} type="hidden" />
+              <span class="sr-only">Add topic</span>
+              <.icon name="hero-plus-mini" class="size-3" />
+            </button>
+          </div>
 
-                <.input
-                  field={@name_form[:custom_name]}
-                  label="Custom name (optional)"
-                  class="input input-sm w-full"
-                />
+          <DimensionsList.render
+            dimension={relevancy_dimension}
+            item_id={& &1.tag.id}
+            items={@subscription_topic_summaries}
+            level={& &1.average_relevancy}
+            list_testid="events-subscription-topic-list"
+            navigate={&~p"/#{@current_scope.tenant.slug}/topics/#{&1.tag.slug}"}
+            testid_prefix="events-subscription-topic"
+          >
+            <:title :let={summary}>
+              <div class="truncate text-sm">{summary.tag.name}</div>
+            </:title>
 
-                <div class="flex justify-between">
-                  <div class="flex gap-2">
-                    <button
-                      :if={Ash.can?({@subscription, :destroy}, @current_scope)}
-                      class="btn btn-error btn-soft btn-sm"
-                      data-testid={"events-subscription-remove-#{@subscription.id}"}
-                      phx-click="external_calendar_subscription_remove"
-                      phx-target={@myself}
-                      phx-value-id={@subscription.id}
-                      type="button"
-                    >
-                      <.icon name="hero-trash-mini" class="size-3" /> Remove subscription
-                    </button>
-                  </div>
+            <:action :let={summary}>
+              <button
+                :if={
+                  can_manage_subscription?(@subscription, @current_scope) and
+                    summary.current_member_tagging
+                }
+                type="button"
+                class={[
+                  "btn btn-xs btn-circle btn-ghost text-error",
+                  "opacity-50 hover:opacity-100 transition-opacity"
+                ]}
+                data-testid={"events-subscription-topic-remove-#{summary.tag.id}"}
+                phx-click="subscription_topic_remove"
+                phx-target={@myself}
+                phx-value-tag_id={summary.tag.id}
+              >
+                <span class="sr-only">Remove topic</span>
+                <.icon name="hero-x-mark" class="size-3" />
+              </button>
+            </:action>
+          </DimensionsList.render>
 
+          <.form
+            :if={@subscription_topic_form}
+            for={@subscription_topic_form}
+            id="events-subscription-topic-form"
+            class="space-y-3 rounded-box border border-base-300 bg-base-100 p-3"
+            data-testid="events-subscription-topic-form"
+            phx-change="subscription_topic_validate"
+            phx-submit="subscription_topic_submit"
+            phx-target={@myself}
+          >
+            <.input
+              field={@subscription_topic_form[:tag_id]}
+              label="Topic"
+              options={Enum.map(@subscription_topic_options, &{&1.name, &1.id})}
+              prompt="Select a topic"
+              type="select"
+            />
+
+            <RangeInput.render
+              field={@subscription_topic_form[:relevancy_level]}
+              dimension={relevancy_dimension}
+              label={relevancy_dimension.label}
+              max_level={relevancy_dimension.max}
+            />
+
+            <div class="flex justify-end gap-2">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                data-testid="events-subscription-topic-cancel"
+                phx-click="subscription_topic_cancel"
+                phx-target={@myself}
+              >
+                Cancel
+              </button>
+
+              <.button
+                class="btn btn-accent btn-soft btn-sm"
+                data-testid="events-subscription-topic-submit"
+              >
+                Save
+              </.button>
+            </div>
+          </.form>
+        </section>
+
+        <section>
+          <.live_component
+            module={TopicMatching}
+            id={"events-topic-matching-#{@subscription.id}"}
+            can_manage?={can_manage_subscription?(@subscription, @current_scope)}
+            current_scope={@current_scope}
+            subscription={@subscription}
+            view={@topic_matching_view}
+          />
+        </section>
+
+        <section class="space-y-2 bg-base-content/3 rounded p-4">
+          <.form
+            :if={@name_form != nil}
+            for={@name_form}
+            id="events-subscription-name-form"
+            data-testid="events-subscription-name-form"
+            phx-submit="external_calendar_subscription_name_submit"
+            phx-target={@myself}
+          >
+            <div class="space-y-3 [&_label]:text-sm [&_label]:opacity-100">
+              <.input field={@name_form[:id]} type="hidden" />
+
+              <.input
+                field={@name_form[:custom_name]}
+                label="Calendar: custom name (optional)"
+                class="input input-sm w-full"
+              />
+
+              <div class="flex justify-between">
+                <div class="flex gap-2">
                   <button
-                    type="submit"
-                    class="btn btn-accent btn-sm"
-                    data-testid="events-subscription-name-submit"
+                    :if={Ash.can?({@subscription, :destroy}, @current_scope)}
+                    class="btn btn-error btn-soft btn-sm"
+                    data-testid={"events-subscription-remove-#{@subscription.id}"}
+                    phx-click="external_calendar_subscription_remove"
+                    phx-target={@myself}
+                    phx-value-id={@subscription.id}
+                    type="button"
                   >
-                    Save
+                    <.icon name="hero-trash-mini" class="size-3" /> Remove subscription
                   </button>
-                </div>
-              </div>
-            </.form>
-
-            <section class="space-y-1" data-testid="events-subscription-topics">
-              <% relevancy_dimension =
-                Dimensions.get!("external_calendar_subscription", "relevancy") %>
-
-              <div class="flex justify-between gap-2 items-baseline">
-                <div>
-                  <div class="label font-bold text-sm">Always applied topics</div>
-                  <p class="text-xs text-base-content/55">
-                    These topics apply to every event from this calendar.
-                  </p>
                 </div>
 
                 <button
-                  :if={
-                    can_manage_subscription?(@subscription, @current_scope) and
-                      @current_membership != nil and @subscription_topic_options != []
-                  }
-                  type="button"
-                  class="btn btn-circle btn-xs btn-accent btn-soft"
-                  data-testid="events-subscription-topic-add"
-                  phx-click="subscription_topic_add_start"
-                  phx-target={@myself}
+                  type="submit"
+                  class="btn btn-accent btn-sm"
+                  data-testid="events-subscription-name-submit"
                 >
-                  <span class="sr-only">Add topic</span>
-                  <.icon name="hero-plus-mini" class="size-3" />
+                  Save
                 </button>
               </div>
-
-              <DimensionsList.render
-                dimension={relevancy_dimension}
-                item_id={& &1.tag.id}
-                items={@subscription_topic_summaries}
-                level={& &1.average_relevancy}
-                list_testid="events-subscription-topic-list"
-                navigate={&~p"/#{@current_scope.tenant.slug}/topics/#{&1.tag.slug}"}
-                testid_prefix="events-subscription-topic"
-              >
-                <:title :let={summary}>
-                  <div class="truncate text-sm">{summary.tag.name}</div>
-                </:title>
-
-                <:action :let={summary}>
-                  <button
-                    :if={
-                      can_manage_subscription?(@subscription, @current_scope) and
-                        summary.current_member_tagging
-                    }
-                    type="button"
-                    class={[
-                      "btn btn-xs btn-circle btn-ghost text-error",
-                      "opacity-50 hover:opacity-100 transition-opacity"
-                    ]}
-                    data-testid={"events-subscription-topic-remove-#{summary.tag.id}"}
-                    phx-click="subscription_topic_remove"
-                    phx-target={@myself}
-                    phx-value-tag_id={summary.tag.id}
-                  >
-                    <span class="sr-only">Remove topic</span>
-                    <.icon name="hero-x-mark" class="size-3" />
-                  </button>
-                </:action>
-              </DimensionsList.render>
-
-              <.form
-                :if={@subscription_topic_form}
-                for={@subscription_topic_form}
-                id="events-subscription-topic-form"
-                class="space-y-3 rounded-box border border-base-300 bg-base-100 p-3"
-                data-testid="events-subscription-topic-form"
-                phx-change="subscription_topic_validate"
-                phx-submit="subscription_topic_submit"
-                phx-target={@myself}
-              >
-                <.input
-                  field={@subscription_topic_form[:tag_id]}
-                  label="Topic"
-                  options={Enum.map(@subscription_topic_options, &{&1.name, &1.id})}
-                  prompt="Select a topic"
-                  type="select"
-                />
-
-                <RangeInput.render
-                  field={@subscription_topic_form[:relevancy_level]}
-                  dimension={relevancy_dimension}
-                  label={relevancy_dimension.label}
-                  max_level={relevancy_dimension.max}
-                />
-
-                <div class="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                    data-testid="events-subscription-topic-cancel"
-                    phx-click="subscription_topic_cancel"
-                    phx-target={@myself}
-                  >
-                    Cancel
-                  </button>
-
-                  <.button
-                    class="btn btn-accent btn-soft btn-sm"
-                    data-testid="events-subscription-topic-submit"
-                  >
-                    Save
-                  </.button>
-                </div>
-              </.form>
-            </section>
-          </div>
-        </div>
+            </div>
+          </.form>
+        </section>
       </div>
     </div>
     """

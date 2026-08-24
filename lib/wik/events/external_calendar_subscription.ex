@@ -18,6 +18,7 @@ defmodule Wik.Events.ExternalCalendarSubscription do
     define :create, action: :create
     define :destroy, action: :destroy
     define :update_custom_name, action: :update_custom_name
+    define :update_topic_matching, action: :update_topic_matching
   end
 
   actions do
@@ -36,6 +37,10 @@ defmodule Wik.Events.ExternalCalendarSubscription do
 
     update :update_custom_name do
       accept [:custom_name]
+    end
+
+    update :update_topic_matching do
+      accept [:automatic_topic_matching]
     end
 
     update :update_cache do
@@ -70,6 +75,10 @@ defmodule Wik.Events.ExternalCalendarSubscription do
     policy action(:update_custom_name) do
       authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
     end
+
+    policy action(:update_topic_matching) do
+      authorize_if Space.Checks.ActorCanManageCurrentTenantSpace
+    end
   end
 
   multitenancy do
@@ -85,6 +94,12 @@ defmodule Wik.Events.ExternalCalendarSubscription do
     attribute :ics_url, :string do
       public? true
       allow_nil? false
+    end
+
+    attribute :automatic_topic_matching, :boolean do
+      public? true
+      allow_nil? false
+      default true
     end
 
     attribute :custom_name, :string do
@@ -128,9 +143,14 @@ defmodule Wik.Events.ExternalCalendarSubscription do
       destination_attribute :id
       allow_nil? false
     end
+
+    has_many :topic_rules, Wik.Events.ExternalCalendarTopicRule do
+      destination_attribute :subscription_id
+    end
   end
 
   identities do
     identity :unique_subscription_url_per_space, [:space_id, :ics_url]
+    identity :unique_space_scoped_id, [:id, :space_id]
   end
 end

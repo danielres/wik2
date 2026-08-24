@@ -2,6 +2,7 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
   alias Utils.Tz
   alias Wik.Accounts
   alias Wik.Events.ExternalCalendar
+  alias Wik.Events.ExternalCalendar.TopicMatching
   alias Wik.Tags.TopicSummaries
 
   def aggregate_items(entries, user, opts \\ []) do
@@ -28,13 +29,21 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
         loaded_data.current_membership
       )
 
-    external_items =
+    base_external_items =
       external_items(
         loaded_data.external_events,
         loaded_subscriptions,
         loaded_data.participations_by_external_event_id,
         loaded_data.current_membership,
         loaded_data.taggings_by_subscription_id
+      )
+
+    external_items =
+      TopicMatching.apply_to_external_items(
+        base_external_items,
+        loaded_data.subscription_records,
+        loaded_data.space_tags,
+        loaded_data.topic_rules_by_subscription_id
       )
 
     items = timeline_items(internal_items, external_items, show_external?)
@@ -46,10 +55,12 @@ defmodule WikWeb.EventsLive.TimelinePresenter do
       items: items,
       grouped_items: grouped_timeline_items(items),
       more_external_future?: loaded_data.more_external_future?,
+      space_tags: loaded_data.space_tags,
       subscription_records: loaded_subscriptions.records,
       subscription_errors_by_id: loaded_subscriptions.errors_by_id,
       subscription_names_by_id: loaded_subscriptions.names_by_id,
-      subscription_metadata_by_id: loaded_subscriptions.metadata_by_id
+      subscription_metadata_by_id: loaded_subscriptions.metadata_by_id,
+      topic_rules_by_subscription_id: loaded_data.topic_rules_by_subscription_id
     }
   end
 

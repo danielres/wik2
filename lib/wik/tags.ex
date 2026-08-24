@@ -12,6 +12,7 @@ defmodule Wik.Tags do
   alias Wik.Accounts.Membership
   alias Wik.Blocks
   alias Wik.Blocks.Block
+  alias Wik.Events.ExternalCalendar.TopicMatching
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
@@ -288,11 +289,29 @@ defmodule Wik.Tags do
   def list_tag_external_events(%Tag{} = tag, opts \\ []) do
     scope = Keyword.fetch!(opts, :scope)
 
-    with {:ok, taggings} <- list_tag_external_calendar_subscription_taggings(tag, scope) do
-      taggings
-      |> Enum.map(& &1.taggable_id)
-      |> Enum.uniq()
-      |> list_upcoming_external_events(scope)
+    with {:ok, taggings} <- list_tag_external_calendar_subscription_taggings(tag, scope),
+         {:ok, subscriptions} <-
+           Ash.read(Wik.Events.external_calendar_subscriptions_query(), scope: scope),
+         {:ok, rules_by_subscription_id} <- TopicMatching.load_rules(subscriptions, scope),
+         {:ok, events} <-
+           subscriptions
+           |> Enum.map(& &1.id)
+           |> list_upcoming_external_events(scope) do
+      subscriptions_by_id = Map.new(subscriptions, &{&1.id, &1})
+      always_applied_subscription_ids = MapSet.new(taggings, & &1.taggable_id)
+
+      {:ok,
+       Enum.filter(events, fn event ->
+         subscription = Map.fetch!(subscriptions_by_id, event.subscription_id)
+
+         stored_rule =
+           rules_by_subscription_id
+           |> Map.get(event.subscription_id, [])
+           |> Enum.find(&(&1.tag_id == tag.id))
+
+         MapSet.member?(always_applied_subscription_ids, event.subscription_id) or
+           TopicMatching.topic_matches_event?(subscription, tag, stored_rule, event)
+       end)}
     end
   end
 

@@ -18,6 +18,7 @@ defmodule Wik.Events do
   alias Wik.Events.EventParticipation
   alias Wik.Events.ExternalEvent
   alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Events.ExternalCalendarTopicRule
   alias Wik.Events.EventPublication
   alias Wik.Events.EventPublication.Checks
   alias Wik.Events.Feeds
@@ -33,6 +34,7 @@ defmodule Wik.Events do
     resource EventPublication
     resource ExternalEvent
     resource ExternalCalendarSubscription
+    resource ExternalCalendarTopicRule
   end
 
   def record_interest(%EventPublication{} = publication, attrs, opts \\ []) do

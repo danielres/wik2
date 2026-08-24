@@ -16,10 +16,7 @@ defmodule WikWeb.EventsLive.Components.TopicMatching do
   @impl true
   def render(assigns) do
     ~H"""
-    <section
-      class={["rounded-box border border-primary/15 bg-primary/5 p-3", "space-y-3"]}
-      data-testid="events-topic-matching"
-    >
+    <div>
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0 space-y-1">
           <div class="flex flex-wrap items-center gap-2">
@@ -135,7 +132,7 @@ defmodule WikWeb.EventsLive.Components.TopicMatching do
           />
         </div>
       </div>
-    </section>
+    </div>
     """
   end
 

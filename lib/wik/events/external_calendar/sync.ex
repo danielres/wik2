@@ -65,10 +65,18 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   end
 
   def materialized_events(subscription, calendar, calendar_name, raw_event_metadata) do
+    calendar_timezone = calendar_timezone(calendar)
+
     calendar.events
     |> Enum.group_by(&(&1.uid || fallback_uid(&1)))
     |> Enum.flat_map(fn {_uid, events} ->
-      materialized_events_for_uid(subscription, events, calendar_name, raw_event_metadata)
+      materialized_events_for_uid(
+        subscription,
+        events,
+        calendar_name,
+        raw_event_metadata,
+        calendar_timezone
+      )
     end)
     |> Enum.sort_by(&{DateTime.to_unix(&1.starts_at, :microsecond), &1.id})
   end
@@ -161,7 +169,13 @@ defmodule Wik.Events.ExternalCalendar.Sync do
     end
   end
 
-  defp materialized_events_for_uid(subscription, events, calendar_name, raw_event_metadata) do
+  defp materialized_events_for_uid(
+         subscription,
+         events,
+         calendar_name,
+         raw_event_metadata,
+         calendar_timezone
+       ) do
     {overrides, bases} =
       Enum.split_with(events, &(not is_nil(&1.recurrence_id)))
 
@@ -170,14 +184,15 @@ defmodule Wik.Events.ExternalCalendar.Sync do
     base_occurrences =
       bases
       |> Enum.flat_map(fn event ->
-        occurrences_for_event(event, override_by_key, raw_event_metadata)
+        occurrences_for_event(event, override_by_key, raw_event_metadata, calendar_timezone)
         |> Enum.map(fn {starts_at, base_or_override_event, occurrence_key_value} ->
           materialized_event_attrs(
             subscription,
             base_or_override_event,
             starts_at,
             calendar_name,
-            occurrence_key_value
+            occurrence_key_value,
+            calendar_timezone
           )
         end)
       end)
@@ -194,7 +209,8 @@ defmodule Wik.Events.ExternalCalendar.Sync do
             []
 
           dtstart ->
-            starts_at = normalize_datetime!(dtstart)
+            starts_at =
+              normalize_datetime!(dtstart, timezone_for_event(event, calendar_timezone))
 
             [
               materialized_event_attrs(
@@ -202,7 +218,8 @@ defmodule Wik.Events.ExternalCalendar.Sync do
                 event,
                 starts_at,
                 calendar_name,
-                occurrence_key_value
+                occurrence_key_value,
+                calendar_timezone
               )
             ]
         end
@@ -214,13 +231,14 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   defp occurrences_for_event(
          %ICal.Event{dtstart: nil} = event,
          _override_by_key,
-         _raw_event_metadata
+         _raw_event_metadata,
+         _calendar_timezone
        ) do
     log_unscheduled_ics_event(event)
     []
   end
 
-  defp occurrences_for_event(event, override_by_key, raw_event_metadata) do
+  defp occurrences_for_event(event, override_by_key, raw_event_metadata, calendar_timezone) do
     horizon_start = recent_past_start()
     horizon_end = materialization_horizon_end()
     raw_until = raw_until_for_event(event, raw_event_metadata)
@@ -244,9 +262,13 @@ defmodule Wik.Events.ExternalCalendar.Sync do
 
           starts_at =
             occurrence_event.dtstart
-            |> normalize_datetime!()
+            |> normalize_datetime!(timezone_for_event(occurrence_event, calendar_timezone))
 
-          if within_raw_until?(occurrence_event.dtstart, raw_until) and
+          if within_raw_until?(
+               occurrence_event.dtstart,
+               raw_until,
+               timezone_for_event(occurrence_event, calendar_timezone)
+             ) and
                DateTime.compare(starts_at, horizon_start) in [:eq, :gt] and
                DateTime.compare(starts_at, horizon_end) in [:eq, :lt] do
             [{starts_at, occurrence_event, occurrence_key_value} | acc]
@@ -257,7 +279,8 @@ defmodule Wik.Events.ExternalCalendar.Sync do
         |> Enum.reverse()
 
       true ->
-        starts_at = normalize_datetime!(event.dtstart)
+        starts_at =
+          normalize_datetime!(event.dtstart, timezone_for_event(event, calendar_timezone))
 
         if within_materialization_horizon?(starts_at) do
           [{starts_at, event, "single"}]
@@ -281,10 +304,12 @@ defmodule Wik.Events.ExternalCalendar.Sync do
          event,
          starts_at,
          calendar_name,
-         occurrence_key_value
+         occurrence_key_value,
+         calendar_timezone
        ) do
     all_day? = match?(%Date{}, event.dtstart)
-    ends_at = normalize_ends_at(event, starts_at, all_day?)
+    event_timezone = timezone_for_event(event, calendar_timezone)
+    ends_at = normalize_ends_at(event, starts_at, all_day?, event_timezone)
     event_uid = event.uid || fallback_uid(event)
 
     %{
@@ -298,7 +323,7 @@ defmodule Wik.Events.ExternalCalendar.Sync do
       starts_at: starts_at,
       ends_at: ends_at,
       all_day: all_day?,
-      tz: timezone_for_event(event),
+      tz: event_timezone,
       status: external_status(event.status),
       location: Values.blank_to_nil(event.location),
       description: Values.blank_to_nil(event.description),
@@ -335,6 +360,10 @@ defmodule Wik.Events.ExternalCalendar.Sync do
     |> Calendar.strftime("%Y%m%dT%H%M%SZ")
   end
 
+  defp occurrence_key(%NaiveDateTime{} = recurrence) do
+    Calendar.strftime(recurrence, "%Y%m%dT%H%M%S")
+  end
+
   defp occurrence_key(%Date{} = recurrence) do
     Calendar.strftime(recurrence, "%Y%m%d")
   end
@@ -367,53 +396,86 @@ defmodule Wik.Events.ExternalCalendar.Sync do
   defp external_status(:tentative), do: :draft
   defp external_status(:cancelled), do: :cancelled
 
-  defp timezone_for_event(%ICal.Event{dtstart: %DateTime{time_zone: tz}}),
-    do: Values.blank_to_nil(tz) || @default_tz
+  defp calendar_timezone(%ICal{default_timezone: timezone}) do
+    Values.blank_to_nil(timezone) || @default_tz
+  end
 
-  defp timezone_for_event(_event), do: @default_tz
+  defp timezone_for_event(
+         %ICal.Event{dtstart: %DateTime{time_zone: timezone}},
+         calendar_timezone
+       ) do
+    case Values.blank_to_nil(timezone) do
+      nil -> calendar_timezone
+      @default_tz -> calendar_timezone
+      event_timezone -> event_timezone
+    end
+  end
 
-  defp normalize_datetime!(%DateTime{} = datetime),
+  defp timezone_for_event(%ICal.Event{dtstart: %Date{}}, _calendar_timezone), do: @default_tz
+  defp timezone_for_event(_event, calendar_timezone), do: calendar_timezone
+
+  defp normalize_datetime!(%DateTime{} = datetime, _timezone),
     do: datetime |> DateTime.shift_zone!(@default_tz) |> with_utc_usec()
 
-  defp normalize_datetime!(%Date{} = date) do
-    DateTime.new!(date, ~T[00:00:00], @default_tz)
+  defp normalize_datetime!(%NaiveDateTime{} = datetime, timezone) do
+    datetime
+    |> NaiveDateTime.to_date()
+    |> ICal.as_valid_datetime(NaiveDateTime.to_time(datetime), timezone)
+    |> normalize_datetime!(timezone)
+  end
+
+  defp normalize_datetime!(%Date{} = date, timezone) do
+    DateTime.new!(date, ~T[00:00:00], timezone)
+    |> DateTime.shift_zone!(@default_tz)
     |> with_utc_usec()
   end
 
-  defp normalize_ends_at(%ICal.Event{dtend: nil}, starts_at, false), do: starts_at
-  defp normalize_ends_at(%ICal.Event{dtend: nil}, starts_at, true), do: starts_at
+  defp normalize_ends_at(%ICal.Event{dtend: nil}, starts_at, false, _timezone), do: starts_at
+  defp normalize_ends_at(%ICal.Event{dtend: nil}, starts_at, true, _timezone), do: starts_at
 
-  defp normalize_ends_at(%ICal.Event{dtend: %Date{} = end_date}, _starts_at, true) do
+  defp normalize_ends_at(
+         %ICal.Event{dtend: %Date{} = end_date},
+         _starts_at,
+         true,
+         timezone
+       ) do
     end_date
     |> Date.add(-1)
-    |> DateTime.new!(~T[00:00:00], @default_tz)
-    |> with_utc_usec()
+    |> normalize_datetime!(timezone)
   end
 
-  defp normalize_ends_at(%ICal.Event{dtend: dtend}, _starts_at, _all_day?) do
-    normalize_datetime!(dtend)
+  defp normalize_ends_at(%ICal.Event{dtend: dtend}, _starts_at, _all_day?, timezone) do
+    normalize_datetime!(dtend, timezone)
   end
 
   defp with_utc_usec(%DateTime{} = datetime) do
     %{datetime | microsecond: {0, 6}}
   end
 
-  defp within_raw_until?(_dtstart, nil), do: true
+  defp within_raw_until?(_dtstart, nil, _timezone), do: true
 
-  defp within_raw_until?(%Date{} = dtstart, %Date{} = until_date) do
+  defp within_raw_until?(%Date{} = dtstart, %Date{} = until_date, _timezone) do
     Date.compare(dtstart, until_date) in [:lt, :eq]
   end
 
-  defp within_raw_until?(%Date{} = dtstart, %DateTime{} = until_datetime) do
+  defp within_raw_until?(%Date{} = dtstart, %DateTime{} = until_datetime, _timezone) do
     Date.compare(dtstart, DateTime.to_date(until_datetime)) in [:lt, :eq]
   end
 
-  defp within_raw_until?(%DateTime{} = dtstart, %Date{} = until_date) do
+  defp within_raw_until?(%DateTime{} = dtstart, %Date{} = until_date, _timezone) do
     Date.compare(DateTime.to_date(dtstart), until_date) in [:lt, :eq]
   end
 
-  defp within_raw_until?(%DateTime{} = dtstart, %DateTime{} = until_datetime) do
-    DateTime.compare(normalize_datetime!(dtstart), normalize_datetime!(until_datetime)) in [
+  defp within_raw_until?(%NaiveDateTime{} = dtstart, %Date{} = until_date, _timezone) do
+    Date.compare(NaiveDateTime.to_date(dtstart), until_date) in [:lt, :eq]
+  end
+
+  defp within_raw_until?(dtstart, %DateTime{} = until_datetime, timezone)
+       when is_struct(dtstart, DateTime) or is_struct(dtstart, NaiveDateTime) do
+    DateTime.compare(
+      normalize_datetime!(dtstart, timezone),
+      normalize_datetime!(until_datetime, timezone)
+    ) in [
       :lt,
       :eq
     ]

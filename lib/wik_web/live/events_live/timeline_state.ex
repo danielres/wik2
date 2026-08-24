@@ -22,7 +22,9 @@ defmodule WikWeb.EventsLive.TimelineState do
       disabled_topic_ids: [],
       topic_options: [],
       items: [],
-      grouped_items: []
+      grouped_items: [],
+      space_tags: [],
+      topic_rules_by_subscription_id: %{}
     }
   end
 
@@ -55,7 +57,9 @@ defmodule WikWeb.EventsLive.TimelineState do
             disabled_topic_ids: [],
             topic_options: [],
             items: [],
-            grouped_items: []
+            grouped_items: [],
+            space_tags: [],
+            topic_rules_by_subscription_id: %{}
         })
         |> assign(:subscriptions, SubscriptionState.empty())
         |> put_flash(:error, "Could not load events")
@@ -104,7 +108,9 @@ defmodule WikWeb.EventsLive.TimelineState do
       | internal_publications: loaded_data.internal_publications,
         internal_items: loaded_data.internal_items,
         external_items: loaded_data.external_items,
-        more_external_future?: loaded_data.more_external_future?
+        more_external_future?: loaded_data.more_external_future?,
+        space_tags: loaded_data.space_tags,
+        topic_rules_by_subscription_id: loaded_data.topic_rules_by_subscription_id
     })
     |> put_timeline_items()
   end

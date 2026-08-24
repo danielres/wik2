@@ -3,6 +3,7 @@ defmodule WikWeb.EventsLive do
 
   alias Utils.Log
   alias Wik.Events.Event
+  alias Wik.Events.ExternalCalendar.TopicMatching
   alias Wik.Locations
   alias WikWeb.Components
   alias WikWeb.EventsLive
@@ -156,6 +157,13 @@ defmodule WikWeb.EventsLive do
         <% {:subscription, {:show, subscription_id}} -> %>
           <% subscription = SubscriptionState.find(@subscriptions, subscription_id) %>
           <% metadata = SubscriptionState.metadata(@subscriptions, subscription) %>
+          <% topic_matching_view =
+            TopicMatching.subscription_view(
+              subscription,
+              @timeline.space_tags,
+              Map.get(@timeline.topic_rules_by_subscription_id, subscription_id, []),
+              @timeline.external_items
+            ) %>
 
           <.live_component
             module={SubscriptionDetails}
@@ -164,6 +172,7 @@ defmodule WikWeb.EventsLive do
             current_membership={@tenant_context && @tenant_context.current_membership}
             metadata={metadata}
             subscription={subscription}
+            topic_matching_view={topic_matching_view}
           />
         <% _ -> %>
       <% end %>

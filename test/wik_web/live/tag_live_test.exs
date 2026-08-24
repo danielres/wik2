@@ -337,6 +337,31 @@ defmodule WikWeb.TagLiveTest do
            )
   end
 
+  test "tag page lists external events matched automatically by topic name", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    scope = scope(owner, space)
+    {:ok, tag} = Tags.create_tag("fusion", "Fusion", scope: scope)
+
+    {:ok, subscription} =
+      ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: scope
+      )
+
+    matching_event = external_event_fixture(space, subscription, title: "Fusion social")
+    other_event = external_event_fixture(space, subscription, title: "Blues social")
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/topics/#{tag.slug}")
+
+    assert has_element?(view, testid("event-open-external:#{matching_event.id}"))
+    refute has_element?(view, testid("event-open-external:#{other_event.id}"))
+  end
+
   defp assert_tag_page_pages_section_works(conn) do
     owner = generate(user())
     space = generate(space(author: owner))

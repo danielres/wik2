@@ -13,6 +13,7 @@ defmodule WikWeb.EventsLiveTest do
   alias Wik.Events.EventParticipation
   alias Wik.Events.EventPublication
   alias Wik.Events.ExternalCalendar
+  alias Wik.Events.ExternalCalendarTopicRule
   alias Wik.Events.ExternalEvent
   alias Wik.Repo
   alias Wik.Tags
@@ -1529,6 +1530,160 @@ defmodule WikWeb.EventsLiveTest do
     assert has_element?(view, testid("external-event-topics"))
     assert has_element?(view, testid("external-event-topic-#{tag.id}"))
     assert has_element?(view, testid("external-event-topic-relevancy-#{tag.id}"))
+  end
+
+  test "automatic topic matching persists rules against real external events", %{conn: conn} do
+    owner = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    owner_scope = scope(owner, space)
+    {:ok, dinner} = Tags.create_tag("dinner", "Dinner", scope: owner_scope)
+    {:ok, calendar} = Tags.create_tag("calendar", "Calendar", scope: owner_scope)
+    {:ok, zouk} = Tags.create_tag("zouk", "Zouk", scope: owner_scope)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: owner_scope
+      )
+
+    sync_subscription!(subscription)
+    external_event_id = external_event_id(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?calendars")
+
+    assert has_element?(
+             view,
+             testid("timeline-event-topic-#{external_event_id}-#{dinner.id}")
+           )
+
+    assert has_element?(
+             view,
+             testid("timeline-event-topic-#{external_event_id}-#{calendar.id}")
+           )
+
+    refute has_element?(
+             view,
+             testid("timeline-event-topic-#{external_event_id}-#{zouk.id}")
+           )
+
+    render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
+
+    assert has_element?(view, testid("events-topic-matching"))
+    assert has_element?(view, testid("events-topic-matching-toggle") <> ~s([aria-checked="true"]))
+    assert has_element?(view, testid("events-topic-matching-active-#{dinner.id}"))
+    assert has_element?(view, testid("events-topic-matching-active-#{calendar.id}"))
+
+    render_click(element(view, testid("events-topic-matching-adjust")))
+    render_click(element(view, testid("events-topic-matching-rule-expand-#{zouk.id}")))
+
+    render_submit(
+      form(view, testid("events-topic-matching-alias-form-#{zouk.id}"),
+        topic_matching_alias: %{"value" => "dinner"}
+      )
+    )
+
+    assert has_element?(view, testid("events-topic-matching-alias-#{zouk.id}-dinner"))
+
+    assert has_element?(
+             view,
+             testid("timeline-event-topic-#{external_event_id}-#{zouk.id}")
+           )
+
+    render_click(element(view, testid("events-topic-matching-rule-toggle-#{dinner.id}")))
+
+    refute has_element?(
+             view,
+             testid("timeline-event-topic-#{external_event_id}-#{dinner.id}")
+           )
+
+    render_click(element(view, testid("events-modal-close")))
+    render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
+    render_click(element(view, testid("events-topic-matching-adjust")))
+
+    assert has_element?(
+             view,
+             testid("events-topic-matching-rule-toggle-#{dinner.id}") <>
+               ~s([aria-checked="false"])
+           )
+
+    render_click(element(view, testid("events-topic-matching-toggle")))
+
+    refute has_element?(
+             view,
+             testid("timeline-event-topic-#{external_event_id}-#{calendar.id}")
+           )
+
+    refute has_element?(
+             view,
+             testid("timeline-event-topic-#{external_event_id}-#{zouk.id}")
+           )
+
+    render_click(element(view, testid("events-topic-matching-toggle")))
+    render_click(element(view, testid("events-modal-close")))
+    render_click(element(view, testid("event-open-#{external_event_id}")))
+
+    assert has_element?(view, testid("external-event-topic-#{calendar.id}"))
+    assert has_element?(view, testid("external-event-topic-#{zouk.id}"))
+    refute has_element?(view, testid("external-event-topic-relevancy-#{zouk.id}"))
+
+    {:ok, reloaded_view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/events?calendars")
+
+    refute has_element?(
+             reloaded_view,
+             testid("timeline-event-topic-#{external_event_id}-#{dinner.id}")
+           )
+
+    assert has_element?(
+             reloaded_view,
+             testid("timeline-event-topic-#{external_event_id}-#{zouk.id}")
+           )
+
+    rules = Ash.read!(ExternalCalendarTopicRule, scope: owner_scope)
+    assert Enum.find(rules, &(&1.tag_id == dinner.id)).enabled == false
+    assert Enum.find(rules, &(&1.tag_id == zouk.id)).aliases == ["dinner"]
+    refute Enum.any?(rules, &(&1.tag_id == calendar.id))
+  end
+
+  test "automatic topic matching controls are read-only for regular members", %{conn: conn} do
+    owner = generate(user())
+    member = generate(user())
+    space = generate(space(author: owner))
+    add_membership(space, owner, :owner)
+    add_membership(space, member, :member)
+    grant_active_telegram_access(space, member)
+    owner_scope = scope(owner, space)
+    {:ok, dinner} = Tags.create_tag("dinner", "Dinner", scope: owner_scope)
+
+    {:ok, subscription} =
+      Wik.Events.ExternalCalendarSubscription.create(
+        %{ics_url: "https://calendar.example.test/community.ics"},
+        scope: owner_scope
+      )
+
+    sync_subscription!(subscription)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(member)
+      |> live(~p"/#{space.slug}/events?calendars")
+
+    render_click(element(view, testid("events-subscription-open-#{subscription.id}")))
+
+    assert has_element?(view, testid("events-topic-matching"))
+    refute has_element?(view, testid("events-topic-matching-toggle"))
+
+    render_click(element(view, testid("events-topic-matching-adjust")))
+    render_click(element(view, testid("events-topic-matching-rule-expand-#{dinner.id}")))
+
+    refute has_element?(view, testid("events-topic-matching-rule-toggle-#{dinner.id}"))
+    refute has_element?(view, testid("events-topic-matching-alias-form-#{dinner.id}"))
   end
 
   test "topic filters focus and reset external events by inherited calendar topics", %{conn: conn} do

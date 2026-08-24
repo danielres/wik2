@@ -305,9 +305,21 @@ defmodule WikWeb.Components.Event.Timeline do
         "pr-3 pl-2"
       ]}
       data-testid={"timeline-event-topic-#{@item.id}-#{summary.tag.id}"}
+      title={Map.get(summary, :automatic?, false) && "Detected from event text"}
     >
-      <.icon name="hero-tag-micro" class="size-3 opacity-50" />
+      <.icon
+        name={
+          if(Map.get(summary, :automatic?, false),
+            do: "hero-sparkles-micro",
+            else: "hero-tag-micro"
+          )
+        }
+        class="size-3 opacity-50"
+      />
       <div class="truncate text-xs">{summary.tag.name}</div>
+      <span :if={Map.get(summary, :automatic?, false)} class="sr-only">
+        Detected from event text
+      </span>
 
       <%!-- <LevelMeter.render --%>
       <%!--   :if={summary.average_relevancy} --%>

@@ -6,8 +6,10 @@ defmodule WikWeb.EventsLive.TimelineLoader do
   alias Wik.Accounts
   alias Wik.Events
   alias Wik.Events.ExternalCalendar
+  alias Wik.Events.ExternalCalendar.TopicMatching
   alias Wik.Events.ExternalCalendarSubscription
   alias Wik.Events.EventPublication
+  alias Wik.Tags
   alias Wik.Tags.Tagging
   alias WikWeb.EventsLive.TimelinePresenter
 
@@ -45,6 +47,9 @@ defmodule WikWeb.EventsLive.TimelineLoader do
            Ash.read(Events.external_calendar_subscriptions_query(), scope: scope),
          {:ok, taggings_by_subscription_id} <-
            load_taggings_by_subscription_id(subscriptions, scope),
+         {:ok, topic_rules_by_subscription_id} <-
+           TopicMatching.load_rules(subscriptions, scope),
+         {:ok, space_tags} <- Tags.list_space_tags(scope),
          {:ok, external_events} <- read_external_events(scope, future_windows),
          {:ok, participations_by_external_event_id} <-
            load_participations_by_external_event_id(external_events, scope) do
@@ -56,7 +61,9 @@ defmodule WikWeb.EventsLive.TimelineLoader do
          participations_by_publication_id: participations_by_publication_id,
          participations_by_external_event_id: participations_by_external_event_id,
          subscription_records: subscriptions,
+         space_tags: space_tags,
          taggings_by_subscription_id: taggings_by_subscription_id,
+         topic_rules_by_subscription_id: topic_rules_by_subscription_id,
          external_events: external_events,
          more_external_future?: more_external_future?(scope, show_external?, future_windows)
        }}
@@ -71,17 +78,28 @@ defmodule WikWeb.EventsLive.TimelineLoader do
          {:ok, subscriptions} <- load_external_event_subscriptions(external_events, scope),
          {:ok, taggings_by_subscription_id} <-
            load_taggings_by_subscription_id(subscriptions, scope),
+         {:ok, topic_rules_by_subscription_id} <-
+           TopicMatching.load_rules(subscriptions, scope),
+         {:ok, space_tags} <- Tags.list_space_tags(scope),
          {:ok, participations_by_external_event_id} <-
            load_participations_by_external_event_id(external_events, scope) do
       loaded_subscriptions = ExternalCalendar.load_subscriptions(subscriptions)
 
+      external_items =
+        TimelinePresenter.external_items(
+          external_events,
+          loaded_subscriptions,
+          participations_by_external_event_id,
+          current_membership,
+          taggings_by_subscription_id
+        )
+
       {:ok,
-       TimelinePresenter.external_items(
-         external_events,
-         loaded_subscriptions,
-         participations_by_external_event_id,
-         current_membership,
-         taggings_by_subscription_id
+       TopicMatching.apply_to_external_items(
+         external_items,
+         subscriptions,
+         space_tags,
+         topic_rules_by_subscription_id
        )}
     end
   end

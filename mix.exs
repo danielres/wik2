@@ -45,7 +45,7 @@ defmodule Wik.MixProject do
       {:mdex_gfm, "~> 0.2.0"},
       {:memoize, "~> 1.4"},
       {:iconify_ex, "~> 0.7.2"},
-      {:ical, "~> 2.0"},
+      {:ical, "~> 3.2"},
       {:error_tracker, "~> 0.9"},
       {:hunt_szymanski_diff, "~> 0.1.0"},
       {:cinder, "~> 0.12"},

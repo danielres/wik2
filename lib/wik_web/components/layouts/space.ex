@@ -111,7 +111,7 @@ defmodule WikWeb.Layouts.Space do
     ~H"""
     <div class={[
       "grid",
-      "grid-cols-[1fr_1fr_1fr_1fr_auto]",
+      "grid-cols-[1fr_1fr_1fr_1fr_1fr_auto]",
       "items-center",
       "[&>a]:justify-center",
       "[&>*]:min-h-10",
@@ -154,6 +154,14 @@ defmodule WikWeb.Layouts.Space do
         icon="hero-calendar-micro"
         item="events"
         label="Events"
+        scope={@scope}
+        view={@view}
+      />
+
+      <.space_menu_link
+        icon="hero-rectangle-stack-micro"
+        item="libraries"
+        label="Library"
         scope={@scope}
         view={@view}
       />

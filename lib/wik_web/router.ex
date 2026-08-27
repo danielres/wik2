@@ -41,6 +41,7 @@ defmodule WikWeb.Router do
       pipe_through :browser
 
       live "/lexical-editor", LexicalEditorTestLive
+      live "/library-fields", LibraryFieldsTestLive
     end
   end
 
@@ -160,6 +161,17 @@ defmodule WikWeb.Router do
         live "/topics", TagGraphLive, :index
         live "/topics/:tag_slug", TagLive, :tag
         live "/events", EventsLive, :index
+        live "/libraries", LibraryPrototypeLive, :index
+        live "/libraries/new", LibraryPrototypeLive, :new
+        live "/libraries/:collection_slug", LibraryPrototypeLive, :show
+        live "/libraries/:collection_slug/settings", LibraryPrototypeLive, :settings
+        live "/libraries/:collection_slug/entries/new", LibraryPrototypeLive, :entry_new
+        live "/libraries/:collection_slug/entries/:entry_id", LibraryPrototypeLive, :entry_show
+
+        live "/libraries/:collection_slug/entries/:entry_id/edit",
+             LibraryPrototypeLive,
+             :entry_edit
+
         live "/tree", PageTreeLive, :index
         live "/blog", BlogLive, :index
 

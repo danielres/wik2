@@ -145,6 +145,26 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
            )
   end
 
+  test "stale or malformed rename events close the form instead of crashing", %{conn: conn} do
+    space = generate(space())
+    superadmin = generate(user(role: :superadmin))
+    generate(page_tree(space: space, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, space.slug, superadmin.id)
+    rename_button = testid("page-tree-editor-node-2-rename")
+
+    render_click(element(view, rename_button))
+    assert has_element?(view, testid("page-rename-form"))
+
+    render_click(element(view, rename_button), %{"node_id" => "999"})
+    refute has_element?(view, testid("page-rename-form"))
+
+    render_click(element(view, rename_button))
+    assert has_element?(view, testid("page-rename-form"))
+
+    render_click(element(view, rename_button), %{"node_id" => "not-an-id"})
+    refute has_element?(view, testid("page-rename-form"))
+  end
+
   test "move button stays visible when top level is the only valid destination", %{conn: conn} do
     space = generate(space())
     superadmin = generate(user(role: :superadmin))

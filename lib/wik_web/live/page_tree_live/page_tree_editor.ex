@@ -313,9 +313,17 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
   def handle_event("rename_node_start", %{"node_id" => node_id}, socket) do
     socket =
       if socket.assigns.editable? do
-        node = PageTree.get_node(socket.assigns.page_tree.nodes, String.to_integer(node_id))
-        page_rename = RenameFormState.open(node, socket.assigns.current_scope)
-        assign(socket, page_rename: page_rename)
+        with {node_id, ""} <- Integer.parse(node_id),
+             node when not is_nil(node) <-
+               PageTree.get_node(socket.assigns.page_tree.nodes, node_id) do
+          page_rename = RenameFormState.open(node, socket.assigns.current_scope)
+          assign(socket, page_rename: page_rename)
+        else
+          _error ->
+            socket
+            |> assign(page_rename: RenameFormState.init())
+            |> put_flash(:error, "That page is no longer available.")
+        end
       else
         socket
       end

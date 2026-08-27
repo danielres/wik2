@@ -101,6 +101,7 @@ defmodule WikWeb.Components.Page do
               :if={@cancel_event != nil}
               class="btn btn-sm btn-soft"
               data-testid={@cancel_testid}
+              id={"#{@testid_prefix}-cancel"}
               phx-click={@cancel_event}
               phx-target={@target}
               type="button"
@@ -111,6 +112,7 @@ defmodule WikWeb.Components.Page do
             <.button
               class="btn btn-primary"
               data-testid={"#{@testid_prefix}-submit"}
+              id={"#{@testid_prefix}-submit"}
               type="submit"
             >
               {@action_label}

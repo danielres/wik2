@@ -48,6 +48,8 @@ defmodule WikWeb.PageLiveRenameTest do
 
     assert has_element?(view, testid("page-rename-dialog"))
     assert has_element?(view, testid("page-rename-form"))
+    assert has_element?(view, "#page-rename-cancel" <> testid("page-rename-cancel"))
+    assert has_element?(view, "#page-rename-submit" <> testid("page-rename-submit"))
     assert has_element?(view, testid("page-rename-title") <> ~s([value="Home"]))
   end
 

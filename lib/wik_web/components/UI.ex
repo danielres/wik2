@@ -10,14 +10,31 @@ defmodule WikWeb.Components.UI do
   attr :rest, :global
   slot :inner_block, required: true
 
+  slot :tooltip, required: false do
+    attr :class, :string
+  end
+
   # aria-label={"Edit topic #{@selected_tag.name}"}
   # data-testid="tag-detail-edit"
   # phx-click="tag_edit_open"
   # phx-value-tag_id={@selected_tag.id}
   # title={"Edit topic #{@selected_tag.name}"}
   def editable_zone(assigns) do
+    tooltip = List.first(assigns.tooltip)
+
+    assigns =
+      assign(assigns,
+        tooltip?: tooltip != nil,
+        tooltip_class: tooltip && Map.get(tooltip, :class)
+      )
+
     ~H"""
-    <div class={["stacked", @class]}>
+    <div class={[
+      "stacked",
+      @tooltip != [] && "tooltip tooltip-delayed",
+      @tooltip_class,
+      @class
+    ]}>
       <div>
         {render_slot(@inner_block)}
       </div>
@@ -26,7 +43,7 @@ defmodule WikWeb.Components.UI do
         :if={@editing?}
         {@rest}
         type="button"
-        title={@title}
+        title={if @tooltip == [], do: @title}
         aria-label={@title}
         class={[
           "border",
@@ -41,6 +58,10 @@ defmodule WikWeb.Components.UI do
         ]}
       >
       </button>
+
+      <div class="tooltip-content">
+        {render_slot(@tooltip)}
+      </div>
     </div>
     """
   end

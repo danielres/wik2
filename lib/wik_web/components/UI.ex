@@ -59,7 +59,7 @@ defmodule WikWeb.Components.UI do
       >
       </button>
 
-      <div class="tooltip-content">
+      <div :if={@tooltip != []} class="tooltip-content">
         {render_slot(@tooltip)}
       </div>
     </div>

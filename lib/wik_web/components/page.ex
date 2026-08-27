@@ -2,6 +2,7 @@ defmodule WikWeb.Components.Page do
   use WikWeb, :html
 
   alias Wik.Wiki.PageTree
+  alias WikWeb.Components.UI
 
   attr :include_current?, :boolean, default: true
   attr :node, :map, required: true
@@ -37,6 +38,92 @@ defmodule WikWeb.Components.Page do
     """
   end
 
+  attr :action_label, :string, required: true
+  attr :cancel_event, :string, default: nil
+  attr :cancel_testid, :string, default: nil
+  attr :event_submit, :string, required: true
+  attr :event_validate, :string, required: true
+  attr :form, :any, required: true
+  attr :include_parent_id?, :boolean, default: false
+  attr :parent_id, :integer, default: nil
+  attr :target, :any, default: nil
+  attr :testid_prefix, :string, required: true
+
+  def node_title_form(assigns) do
+    title_value = Phoenix.HTML.Form.input_value(assigns.form, :title) || ""
+    auto_slug = Utils.Slugify.generate(title_value)
+
+    assigns =
+      assigns
+      |> assign(:auto_slug, auto_slug)
+      |> assign(:form_errors, AshPhoenix.Form.errors(assigns.form))
+      |> assign(:title_value, title_value)
+
+    ~H"""
+    <Phoenix.Component.form
+      autocomplete="off"
+      data-testid={"#{@testid_prefix}-form"}
+      for={@form}
+      phx-change={@event_validate}
+      phx-submit={@event_submit}
+      phx-target={@target}
+    >
+      <div class="card bg-base-100">
+        <div class="card-body [&_input]:bg-base-200">
+          <.input
+            :if={@include_parent_id?}
+            data-testid={"#{@testid_prefix}-parent-id"}
+            field={@form[:parent_id]}
+            type="hidden"
+            value={@parent_id}
+          />
+
+          <.input
+            data-testid={"#{@testid_prefix}-title"}
+            field={@form[:title]}
+            label="Title"
+            phx-hook="CapitalizeFirstLetter"
+          />
+
+          <.input hidden field={@form[:slug]} value={@auto_slug} />
+
+          <UI.Forms.autoslug_preview
+            data-testid={autoslug_testid(@testid_prefix, @auto_slug)}
+            source_value={@title_value}
+          />
+
+          <div :for={{:nodes, message} <- @form_errors} data-testid={"#{@testid_prefix}-error-nodes"}>
+            <.error>{message}</.error>
+          </div>
+
+          <div class="flex items-center justify-between gap-2">
+            <button
+              :if={@cancel_event != nil}
+              class="btn btn-sm btn-soft"
+              data-testid={@cancel_testid}
+              id={"#{@testid_prefix}-cancel"}
+              phx-click={@cancel_event}
+              phx-target={@target}
+              type="button"
+            >
+              Cancel
+            </button>
+
+            <.button
+              class="btn btn-primary"
+              data-testid={"#{@testid_prefix}-submit"}
+              id={"#{@testid_prefix}-submit"}
+              type="submit"
+            >
+              {@action_label}
+            </.button>
+          </div>
+        </div>
+      </div>
+    </Phoenix.Component.form>
+    """
+  end
+
   def breadcrumb_items(page_tree, path, include_current? \\ true)
   def breadcrumb_items(%PageTree{}, nil, _include_current?), do: []
 
@@ -66,6 +153,9 @@ defmodule WikWeb.Components.Page do
   defp build_page_path(%{tenant: tenant}, path) do
     "/" <> tenant.slug <> "/wiki" <> "/" <> path
   end
+
+  defp autoslug_testid(prefix, ""), do: "#{prefix}-auto-slug-empty"
+  defp autoslug_testid(prefix, auto_slug), do: "#{prefix}-auto-slug-#{auto_slug}"
 
   defp breadcrumb_path(%PageTree{}, %{path: path}) when is_binary(path), do: path
 

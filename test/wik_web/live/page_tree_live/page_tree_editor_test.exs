@@ -89,6 +89,82 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
            )
   end
 
+  test "editable page titles open the shared rename flow and update the tree in place", %{
+    conn: conn
+  } do
+    space = generate(space())
+    superadmin = generate(user(role: :superadmin))
+    generate(page_tree(space: space, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, space.slug, superadmin.id)
+
+    assert has_element?(view, testid("page-tree-editor-node-2-rename"))
+    refute has_element?(view, testid("page-tree-editor-node-2-link"))
+
+    render_click(element(view, testid("page-tree-editor-node-2-rename")))
+
+    assert has_element?(view, testid("page-rename-dialog"))
+    assert has_element?(view, testid("page-rename-form"))
+    assert has_element?(view, testid("page-rename-title") <> ~s([value="Docs"]))
+
+    render_change(
+      form(view, testid("page-rename-form"),
+        form: %{"slug" => "draft-title", "title" => "Draft Title"}
+      )
+    )
+
+    assert has_element?(view, testid("page-rename-auto-slug-draft-title"))
+
+    render_click(element(view, testid("page-rename-cancel")))
+    refute has_element?(view, testid("page-rename-form"))
+
+    render_click(element(view, testid("page-tree-editor-node-2-rename")))
+
+    render_submit(
+      form(view, testid("page-rename-form"), form: %{"slug" => "blog", "title" => "Blog"})
+    )
+
+    assert has_element?(view, testid("page-rename-error-nodes"))
+
+    render_submit(
+      form(view, testid("page-rename-form"),
+        form: %{"slug" => "documentation", "title" => "Documentation"}
+      )
+    )
+
+    refute has_element?(view, testid("page-rename-form"))
+
+    assert has_element?(
+             view,
+             testid("page-tree-editor-node-2-title"),
+             "Documentation"
+           )
+
+    assert Enum.any?(
+             page_tree_for(space.slug, superadmin.id).nodes,
+             &(&1.id == 2 and &1.slug == "documentation" and &1.title == "Documentation")
+           )
+  end
+
+  test "stale or malformed rename events close the form instead of crashing", %{conn: conn} do
+    space = generate(space())
+    superadmin = generate(user(role: :superadmin))
+    generate(page_tree(space: space, nodes: base_nodes()))
+    {:ok, view, _html} = mount_editor(conn, space.slug, superadmin.id)
+    rename_button = testid("page-tree-editor-node-2-rename")
+
+    render_click(element(view, rename_button))
+    assert has_element?(view, testid("page-rename-form"))
+
+    render_click(element(view, rename_button), %{"node_id" => "999"})
+    refute has_element?(view, testid("page-rename-form"))
+
+    render_click(element(view, rename_button))
+    assert has_element?(view, testid("page-rename-form"))
+
+    render_click(element(view, rename_button), %{"node_id" => "not-an-id"})
+    refute has_element?(view, testid("page-rename-form"))
+  end
+
   test "move button stays visible when top level is the only valid destination", %{conn: conn} do
     space = generate(space())
     superadmin = generate(user(role: :superadmin))
@@ -138,6 +214,8 @@ defmodule WikWeb.PageTreeLive.PageTreeEditorTest do
     refute has_element?(view, testid("page-tree-editor-node-2-add-child"))
     refute has_element?(view, testid("page-tree-editor-node-2-move"))
     refute has_element?(view, testid("page-tree-editor-node-3-remove"))
+    refute has_element?(view, testid("page-tree-editor-node-2-rename"))
+    assert has_element?(view, testid("page-tree-editor-node-2-link"))
   end
 
   defp mount_editor(conn, tenant, actor_id, extra_session \\ %{}) do

@@ -56,10 +56,19 @@
             />
           </:prepend>
 
-          <UI.page_title class="flex items-center gap-2">
-            <.icon name="hero-book-open-micro" class="opacity-30 size-5" />
-            {@node.title}
-          </UI.page_title>
+          <UI.editable_zone
+            data-testid="page-title-edit"
+            editing?={@editing?}
+            phx-click="page_rename:start"
+            title={"Rename page \"#{@node.title}\""}
+          >
+            <div class="p-2">
+              <UI.page_title class="flex items-center gap-2">
+                <.icon name="hero-book-open-micro" class="opacity-30 size-5" />
+                {@node.title}
+              </UI.page_title>
+            </div>
+          </UI.editable_zone>
         </UI.page_head>
 
         <UI.editable_zone
@@ -192,4 +201,23 @@
     id="add-block-dialog"
     open?={@add_block_modal_open?}
   />
+
+  <Components.Modal.render
+    cancel="page_rename:cancel"
+    cancel_testid="page-rename-close"
+    open?={@page_rename.form != nil}
+    testid="page-rename-dialog"
+  >
+    <:title>Rename page</:title>
+
+    <Components.Page.node_title_form
+      action_label="Update"
+      cancel_event="page_rename:cancel"
+      cancel_testid="page-rename-cancel"
+      event_submit="page_rename:submit"
+      event_validate="page_rename:validate"
+      form={@page_rename.form}
+      testid_prefix="page-rename"
+    />
+  </Components.Modal.render>
 <% end %>

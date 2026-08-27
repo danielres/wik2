@@ -13,6 +13,7 @@ defmodule WikWeb.PageLive do
   alias WikWeb.PageLive.Locks
   alias WikWeb.PageLive.MissingWikilinks
   alias WikWeb.PageLive.PageAuthor
+  alias WikWeb.PageLive.PageRename
   alias WikWeb.PageLive.PageState
   alias WikWeb.PageLive.PageTopics
   alias WikWeb.Presence
@@ -44,6 +45,7 @@ defmodule WikWeb.PageLive do
         page_tree: nil,
         path: nil
       )
+      |> PageRename.assign_defaults()
       |> PageTopics.assign_defaults()
       |> Locks.assign_locks()
 
@@ -104,6 +106,24 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_event("edit_mode:toggle", _params, socket),
     do: {:noreply, EditMode.toggle(socket)}
+
+  # page rename ----------------------------------------------------------------
+
+  @impl true
+  def handle_event("page_rename:cancel", _params, socket),
+    do: {:noreply, PageRename.cancel(socket)}
+
+  @impl true
+  def handle_event("page_rename:start", _params, socket),
+    do: {:noreply, PageRename.open(socket)}
+
+  @impl true
+  def handle_event("page_rename:submit", %{"form" => params}, socket),
+    do: {:noreply, PageRename.submit(socket, params)}
+
+  @impl true
+  def handle_event("page_rename:validate", %{"form" => params}, socket),
+    do: {:noreply, PageRename.validate(socket, params)}
 
   # page_topic -----------------------------------------------------------------
 

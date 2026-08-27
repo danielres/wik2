@@ -4,6 +4,7 @@ defmodule WikWeb.PageLive.EditMode do
   import Phoenix.Component, only: [assign: 2]
 
   alias WikWeb.PageLive.BlockEdit
+  alias WikWeb.PageLive.PageRename
   alias WikWeb.PageLive.PageTopics
 
   def toggle(socket) do
@@ -11,6 +12,6 @@ defmodule WikWeb.PageLive.EditMode do
 
     if socket.assigns.editing?,
       do: socket,
-      else: socket |> BlockEdit.clear() |> PageTopics.close_form()
+      else: socket |> BlockEdit.clear() |> PageRename.cancel() |> PageTopics.close_form()
   end
 end

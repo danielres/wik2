@@ -53,6 +53,7 @@ defmodule Wik.Wiki.PageTree do
     define :create_node_at_path, args: [:path, :title, :page_id, :titles]
     define :link_page, args: [:node_id, :page_id]
     define :move_node, args: [:node_id, :new_parent_id]
+    define :rename_node, args: [:node_id, :slug, :title]
     define :ensure, action: :ensure, args: []
 
     # Used for authorization semantics with Ash.can?(), not for mutating data
@@ -158,6 +159,25 @@ defmodule Wik.Wiki.PageTree do
       change Wik.Wiki.PageTree.Changes.MoveNode
       change Wik.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
     end
+
+    update :rename_node do
+      require_atomic? false
+
+      argument :node_id, :integer do
+        allow_nil? false
+      end
+
+      argument :slug, :string do
+        allow_nil? false
+      end
+
+      argument :title, :string do
+        allow_nil? false
+      end
+
+      change Wik.Wiki.PageTree.Changes.RenameNode
+      change Wik.Wiki.PageTree.Changes.ValidateUniqueSiblingSlugs
+    end
   end
 
   policies do
@@ -195,6 +215,7 @@ defmodule Wik.Wiki.PageTree do
     publish :link_page, ["space", :space_id]
     publish :destroy_node, ["space", :space_id]
     publish :move_node, ["space", :space_id]
+    publish :rename_node, ["space", :space_id]
   end
 
   multitenancy do

@@ -205,7 +205,7 @@
   <Components.Modal.render
     cancel="page_rename:cancel"
     cancel_testid="page-rename-close"
-    open?={@page_rename_form != nil}
+    open?={@page_rename.form != nil}
     testid="page-rename-dialog"
   >
     <:title>Rename page</:title>
@@ -216,7 +216,7 @@
       cancel_testid="page-rename-cancel"
       event_submit="page_rename:submit"
       event_validate="page_rename:validate"
-      form={@page_rename_form}
+      form={@page_rename.form}
       testid_prefix="page-rename"
     />
   </Components.Modal.render>

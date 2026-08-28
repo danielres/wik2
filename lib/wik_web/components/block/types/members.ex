@@ -40,7 +40,6 @@ defmodule WikWeb.Components.Block.Types.Members do
           member_edit_action(
             membership,
             @actions?,
-            @scope,
             @event_membership_type_change_start,
             @event_transfer_ownership_start
           ) %>
@@ -155,17 +154,15 @@ defmodule WikWeb.Components.Block.Types.Members do
     """
   end
 
-  defp member_edit_action(_membership, false, _scope, _membership_type_event, _transfer_event),
+  defp member_edit_action(_membership, false, _membership_type_event, _transfer_event),
     do: nil
 
-  defp member_edit_action(membership, true, scope, membership_type_event, transfer_event) do
+  defp member_edit_action(membership, true, membership_type_event, transfer_event) do
     cond do
-      actionable_event?(transfer_event) and membership.type == :owner and
-          Ash.can?({membership, :transfer_ownership}, scope) ->
+      actionable_event?(transfer_event) and membership.type == :owner ->
         %{event: transfer_event, title: "Transfer ownership"}
 
-      actionable_event?(membership_type_event) and membership.type != :owner and
-          Ash.can?({membership, :update_membership_type}, scope) ->
+      actionable_event?(membership_type_event) and membership.type != :owner ->
         %{event: membership_type_event, title: "Change membership type"}
 
       true ->

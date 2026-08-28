@@ -8,6 +8,15 @@ defmodule Wik.Wiki.PagePolicyTest do
   alias Wik.Wiki.Page
 
   describe "page access" do
+    test "management code interface only exposes authorization helpers" do
+      function_names = Page.__info__(:functions) |> Enum.map(&elem(&1, 0))
+
+      assert :can_manage_page in function_names
+      assert :can_manage_page? in function_names
+      refute :manage_page in function_names
+      refute :manage_page! in function_names
+    end
+
     test "superadmin can read and manage any page" do
       %{space: space, page: page, superadmin: superadmin} = access_fixture()
 
@@ -49,6 +58,7 @@ defmodule Wik.Wiki.PagePolicyTest do
       refute Ash.can?({other_page, :read}, scope(admin, member_space))
       refute Ash.can?({other_page, :update}, scope(admin, member_space))
       refute Ash.can?({other_page, :destroy}, scope(admin, member_space))
+      refute Page.can_manage_page?(admin, other_page, scope: scope(admin, member_space))
 
       assert {:ok, pages} = Ash.read(Page, scope: scope(admin, member_space))
       refute Enum.any?(pages, &(&1.id == other_page.id))
@@ -60,6 +70,7 @@ defmodule Wik.Wiki.PagePolicyTest do
     assert Ash.can?({Page, :create}, scope(actor, space))
     assert Ash.can?({page, :update}, scope(actor, space))
     assert Ash.can?({page, :destroy}, scope(actor, space))
+    assert Page.can_manage_page?(actor, page, scope: scope(actor, space))
 
     assert {:ok, pages} = Ash.read(Page, scope: scope(actor, space))
     assert Enum.any?(pages, &(&1.id == page.id))
@@ -70,6 +81,7 @@ defmodule Wik.Wiki.PagePolicyTest do
     refute Ash.can?({Page, :create}, scope(actor, space))
     refute Ash.can?({page, :update}, scope(actor, space))
     refute Ash.can?({page, :destroy}, scope(actor, space))
+    refute Page.can_manage_page?(actor, page, scope: scope(actor, space))
 
     assert {:ok, pages} = Ash.read(Page, scope: scope(actor, space))
     assert Enum.any?(pages, &(&1.id == page.id))
@@ -80,6 +92,7 @@ defmodule Wik.Wiki.PagePolicyTest do
     refute Ash.can?({Page, :create}, scope(actor, space))
     refute Ash.can?({page, :update}, scope(actor, space))
     refute Ash.can?({page, :destroy}, scope(actor, space))
+    refute Page.can_manage_page?(actor, page, scope: scope(actor, space))
 
     assert {:ok, pages} = Ash.read(Page, scope: scope(actor, space))
     refute Enum.any?(pages, &(&1.id == page.id))

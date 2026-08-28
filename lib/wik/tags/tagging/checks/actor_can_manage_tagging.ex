@@ -45,9 +45,14 @@ defmodule Wik.Tags.Tagging.Checks.ActorCanManageTagging do
     |> Ash.Query.filter(space_id == ^space_id and id == ^page_id)
     |> Ash.read_one(authorize?: false, domain: Wik.Wiki, tenant: space_id)
     |> case do
-      {:ok, nil} -> {:ok, false}
-      {:ok, %Page{} = page} -> {:ok, Ash.can?({page, :manage_page}, scope)}
-      {:error, error} -> {:error, error}
+      {:ok, nil} ->
+        {:ok, false}
+
+      {:ok, %Page{} = page} ->
+        {:ok, Page.can_manage_page?(scope.actor, page, scope: scope)}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

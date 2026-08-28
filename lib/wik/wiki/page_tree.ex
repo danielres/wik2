@@ -56,8 +56,8 @@ defmodule Wik.Wiki.PageTree do
     define :rename_node, args: [:node_id, :slug, :title]
     define :ensure, action: :ensure, args: []
 
-    # Used for authorization semantics with Ash.can?(), not for mutating data
-    define :manage_tree, action: :manage_tree, args: []
+    # Used for authorization semantics, not for mutating data
+    define :manage_tree, action: :manage_tree, args: [], functions: [:can, :can?]
   end
 
   actions do

@@ -238,22 +238,16 @@ defmodule Wik.Access.Google.Workflow do
     |> Query.filter(
       source_id == ^source_id and external_identity.email == ^email and status == :active
     )
-    |> Ash.read(authorize?: false, domain: Access)
+    |> Ash.bulk_update(:update, %{status: :inactive},
+      authorize?: false,
+      domain: Access,
+      return_errors?: true,
+      stop_on_error?: true,
+      transaction: :all
+    )
     |> case do
-      {:ok, grants} ->
-        Enum.reduce_while(grants, :ok, fn grant, :ok ->
-          case Ash.update(grant, %{status: :inactive},
-                 action: :update,
-                 authorize?: false,
-                 domain: Access
-               ) do
-            {:ok, _grant} -> {:cont, :ok}
-            {:error, error} -> {:halt, {:error, error}}
-          end
-        end)
-
-      {:error, error} ->
-        {:error, error}
+      %Ash.BulkResult{status: :success} -> :ok
+      %Ash.BulkResult{errors: [error | _errors]} -> {:error, error}
     end
   end
 

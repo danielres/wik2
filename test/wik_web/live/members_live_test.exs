@@ -67,7 +67,7 @@ defmodule WikWeb.MembersLiveTest do
     owner = generate(user())
     member = generate(user())
     space = generate(space(author: owner))
-    add_membership(space, owner, :owner)
+    owner_membership = add_membership(space, owner, :owner)
     member_membership = add_membership(space, member, :member)
 
     {:ok, view, _html} =
@@ -77,14 +77,24 @@ defmodule WikWeb.MembersLiveTest do
 
     assert has_element?(view, testid("member-row-role-#{member_membership.id}"), "Member")
 
+    membership_type_action =
+      ~s(button[phx-click="membership_type_change_start"][phx-value-membership_id="#{member_membership.id}"])
+
+    transfer_ownership_action =
+      ~s(button[phx-click="transfer_ownership_start"][phx-value-membership_id="#{owner_membership.id}"])
+
+    refute has_element?(view, membership_type_action)
+    refute has_element?(view, transfer_ownership_action)
+
     view
     |> element(~s(button[phx-click="toggle_edit_mode"]))
     |> render_click()
 
+    assert has_element?(view, membership_type_action)
+    assert has_element?(view, transfer_ownership_action)
+
     view
-    |> element(
-      ~s(button[phx-click="membership_type_change_start"][phx-value-membership_id="#{member_membership.id}"])
-    )
+    |> element(membership_type_action)
     |> render_click()
 
     view
@@ -92,6 +102,36 @@ defmodule WikWeb.MembersLiveTest do
     |> render_submit()
 
     assert has_element?(view, testid("member-row-role-#{member_membership.id}"), "Admin")
+  end
+
+  test "owner can only start an ownership transfer from their own membership", %{conn: conn} do
+    owner = generate(user())
+    other_owner = generate(user())
+    space = generate(space(author: owner))
+    owner_membership = add_membership(space, owner, :owner)
+    other_owner_membership = add_membership(space, other_owner, :owner)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in(owner)
+      |> live(~p"/#{space.slug}/members")
+
+    assert has_element?(view, testid("member-row-role-#{owner_membership.id}"), "Owner")
+    assert has_element?(view, testid("member-row-role-#{other_owner_membership.id}"), "Owner")
+
+    view
+    |> element(~s(button[phx-click="toggle_edit_mode"]))
+    |> render_click()
+
+    assert has_element?(
+             view,
+             ~s(button[phx-click="transfer_ownership_start"][phx-value-membership_id="#{owner_membership.id}"])
+           )
+
+    refute has_element?(
+             view,
+             ~s(button[phx-click="transfer_ownership_start"][phx-value-membership_id="#{other_owner_membership.id}"])
+           )
   end
 
   defp add_membership(space, user, type) do

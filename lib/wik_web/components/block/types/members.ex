@@ -160,12 +160,10 @@ defmodule WikWeb.Components.Block.Types.Members do
 
   defp member_edit_action(membership, true, scope, membership_type_event, transfer_event) do
     cond do
-      actionable_event?(transfer_event) and membership.type == :owner and
-          Ash.can?({membership, :transfer_ownership}, scope) ->
+      actionable_event?(transfer_event) and transfer_ownership_available?(membership, scope) ->
         %{event: transfer_event, title: "Transfer ownership"}
 
-      actionable_event?(membership_type_event) and membership.type != :owner and
-          Ash.can?({membership, :update_membership_type}, scope) ->
+      actionable_event?(membership_type_event) and membership.type != :owner ->
         %{event: membership_type_event, title: "Change membership type"}
 
       true ->
@@ -174,6 +172,17 @@ defmodule WikWeb.Components.Block.Types.Members do
   end
 
   defp actionable_event?(event), do: is_binary(event) and event != ""
+
+  defp transfer_ownership_available?(%{type: :owner}, %{actor: %{role: :superadmin}}),
+    do: true
+
+  defp transfer_ownership_available?(
+         %{type: :owner, user_id: user_id},
+         %{actor: %{id: user_id}}
+       ),
+       do: true
+
+  defp transfer_ownership_available?(_membership, _scope), do: false
 
   defp member_since_tooltip(inserted_at, user_tz) do
     precise_inserted_at =

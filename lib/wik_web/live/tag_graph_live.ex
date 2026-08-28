@@ -48,7 +48,7 @@ defmodule WikWeb.TagGraphLive do
       tenant_context={@tenant_context}
       scope={@current_scope}
     >
-      <Layouts.space editing?={@editing?} presences={@presences} scope={@current_scope} view="tags">
+      <Layouts.space editing?={@editing?} presences={@presences} scope={@current_scope} view="topics">
         <:actions :if={@editable?}>
           <%= if @editing? do %>
             <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />

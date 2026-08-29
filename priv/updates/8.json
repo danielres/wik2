@@ -1,0 +1,24 @@
+{
+  "merged_on": "2026-05-08",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Superadmins can now view application errors and individual occurrences in a dedicated dashboard.",
+        "Error reports now include relevant user, tenant, role, and membership context to help identify affected sessions."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Error context is captured consistently across regular page requests and interactive LiveView sessions, including when session context changes."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Development dashboards and the local email preview are now grouped under the `/dev` path."
+      ]
+    }
+  ]
+}

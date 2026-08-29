@@ -14,4 +14,12 @@ defmodule WikWeb.DocsLiveTest do
 
     assert has_element?(view, ~s([data-testid="docs-page-core-features"]))
   end
+
+  test "renders the updates page", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/docs/updates")
+
+    assert has_element?(view, ~s([data-testid="docs-page-updates"]))
+    assert has_element?(view, "#product-updates")
+    assert has_element?(view, "#product-updates-empty")
+  end
 end

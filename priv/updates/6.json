@@ -1,0 +1,25 @@
+{
+  "merged_on": "2026-05-02",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Authorized group managers can change a non-owner member’s role from a simple selector.",
+        "Available role choices exclude the owner role, keeping ownership changes separate."
+      ]
+    },
+    {
+      "category": "permissions",
+      "items": [
+        "Role changes are limited to superadmins and authorized members managing their own group membership."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Membership changes now appear automatically across connected group views.",
+        "Users are notified when their membership changes, and their current access and profile information refresh automatically."
+      ]
+    }
+  ]
+}

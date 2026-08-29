@@ -1,0 +1,24 @@
+{
+  "merged_on": "2026-05-01",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Move blocks between the main column and sidebar using clear placement controls."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Page content now renders in distinct main and sidebar areas.",
+        "Moving pages only offers valid destinations, excluding the page itself and its descendants."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Missing or outdated block references are handled gracefully instead of disrupting the page."
+      ]
+    }
+  ]
+}

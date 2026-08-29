@@ -1,19 +1,23 @@
 defmodule WikWeb.DocsLive do
   use WikWeb, :live_view
 
+  alias Wik.Updates
   alias WikWeb.Docs.Pages
   alias WikWeb.Components.UI
 
   @pages [
     Pages.Index,
-    Pages.CoreFeatures
+    Pages.CoreFeatures,
+    Pages.Updates
   ]
 
   @impl true
   def mount(_params, _session, socket) do
+    {:ok, updates} = Updates.list_updates()
+
     socket =
       socket
-      |> assign(page: nil)
+      |> assign(page: nil, updates: updates)
 
     {:ok, socket}
   end
@@ -54,6 +58,9 @@ defmodule WikWeb.DocsLive do
           </li>
           <li>
             <.link patch={~p"/docs/core-features"}>Core features</.link>
+          </li>
+          <li>
+            <.link patch={~p"/docs/updates"}>Updates</.link>
           </li>
         </ul>
       </:aside>

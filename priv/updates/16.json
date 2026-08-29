@@ -1,0 +1,25 @@
+{
+  "merged_on": "2026-05-13",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Set a unique username for each group you belong to, with an automatic suggestion to get started.",
+        "Usernames are formatted consistently as you type, while keeping the cursor position stable."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Avatars and initials now use your group-specific identity for a more consistent experience.",
+        "Presence indicators now show the correct membership details for each group."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Username uniqueness is enforced within each group to prevent duplicate identities."
+      ]
+    }
+  ]
+}

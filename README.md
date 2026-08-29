@@ -208,6 +208,16 @@ Useful workflow notes:
 - `mix test.interactive --trace`
 - `mix precommit` - the expected final verification command
 
+### Local Product Update Generation
+
+Enable the tracked Git hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+After a pull or merge introduces GitHub PR merge commits, the post-merge hook generates their missing product update files. Run `scripts/updates/generate.sh PR_NUMBER` to generate an update manually.
+
 ## Production Notes
 
 At minimum, production expects:

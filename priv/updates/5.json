@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-02",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Browse the revision history of markdown blocks from a new “Show history” action.",
+        "Preview any saved revision and see who created it.",
+        "Move between earlier and later revisions using navigation controls.",
+        "New markdown blocks now begin with an initial revision automatically."
+      ]
+    },
+    {
+      "category": "permissions",
+      "items": [
+        "Block history is available only to people who can view the associated block."
+      ]
+    }
+  ]
+}

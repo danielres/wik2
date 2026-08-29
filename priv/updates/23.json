@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-20",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Use member wikilinks such as `[[@username]]` to link directly to member profiles.",
+        "Use tag wikilinks such as `[[#tagname]]` to link directly to tag pages.",
+        "Get autocomplete suggestions for members and tags when typing `[[@` or `[[#` in the Markdown editor."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Member, tag, and page wikilinks are preserved consistently when content is edited and displayed.",
+        "Unrecognized tag wikilinks remain visible as literal text instead of disappearing."
+      ]
+    }
+  ]
+}

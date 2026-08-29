@@ -1,0 +1,14 @@
+{
+  "merged_on": "2026-06-03",
+  "sections": [
+    {
+      "category": "improvements",
+      "items": [
+        "Sort member and tag association lists by tag or username, interest level, or skill level.",
+        "See the currently selected sort option at a glance, with interest level selected by default.",
+        "Changing the sort immediately reorders results and returns the list to its first page.",
+        "Continue filtering lists while using the new sorting controls."
+      ]
+    }
+  ]
+}

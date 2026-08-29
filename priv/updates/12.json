@@ -1,0 +1,26 @@
+{
+  "merged_on": "2026-05-09",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Search and select locations with autocomplete when creating or editing an event.",
+        "Enter a custom location when no suggested result fits."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Location searches wait briefly while you type and keep newer results from being replaced by older responses.",
+        "The timezone picker now uses the same consistent dropdown experience as location search."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Event location entry remains available as a basic text field when location search is unavailable.",
+        "Failed location searches return an empty result list without interrupting the event form."
+      ]
+    }
+  ]
+}

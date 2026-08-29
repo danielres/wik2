@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repository_root="$(git rev-parse --show-toplevel)"
+
+mapfile -t pr_numbers < <(
+  git -C "$repository_root" log --format=%s ORIG_HEAD..HEAD |
+    sed -nE 's/^Merge pull request #([1-9][0-9]*).*/\1/p'
+)
+
+if [[ "${#pr_numbers[@]}" -eq 0 ]]; then
+  exit 0
+fi
+
+"$repository_root/scripts/updates/generate.sh" "${pr_numbers[@]}"

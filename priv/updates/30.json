@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-29",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Tag-tree entries now show how many members have tagged themselves with each tag.",
+        "Tags with member data can open a detailed view showing interest and skill distributions across levels 1–10.",
+        "Distribution charts display weighted averages and can include numeric labels."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Tag statistics now distinguish rated responses from unspecified values, providing a clearer view of member data.",
+        "Tag-tree hover and expand controls have clearer visual feedback."
+      ]
+    }
+  ]
+}

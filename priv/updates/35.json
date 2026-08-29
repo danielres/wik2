@@ -1,0 +1,28 @@
+{
+  "merged_on": "2026-06-08",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "You can now mark interest in external calendar events, with your choice kept in sync across event views.",
+        "External events you’re participating in now appear alongside internal events in the home feed."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "The timeline groups events by the event’s local date, making day headings accurate across time zones.",
+        "Event details are organized into clearer location, participation, and description panels.",
+        "Event descriptions safely display formatted text and automatically turn web addresses into links.",
+        "Member selectors and role displays have improved spacing, wrapping, and refresh behavior."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Calendar sync removes events that are no longer available and ignores external events that do not have a scheduled time.",
+        "Interest forms now show clearer errors when an external event is unavailable in the current space."
+      ]
+    }
+  ]
+}

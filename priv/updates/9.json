@@ -1,0 +1,21 @@
+{
+  "merged_on": "2026-05-08",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Create and manage group events with timezone-aware schedules and all-day options.",
+        "Browse upcoming events in a timeline or month calendar, with controls for creating, editing, and relaying events.",
+        "Share events with other groups when permitted, with clear provenance and relay controls.",
+        "Subscribe to secure iCalendar feeds for a single group or all your events. Draft events are excluded, and feeds are ordered by start time.",
+        "See your detected timezone in your profile and access group events directly from the group menu."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Calendar dialogs and form feedback now provide a cleaner, more focused experience."
+      ]
+    }
+  ]
+}

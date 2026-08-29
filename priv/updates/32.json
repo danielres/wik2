@@ -1,0 +1,16 @@
+{
+  "merged_on": "2026-06-02",
+  "sections": [
+    {
+      "category": "improvements",
+      "items": [
+        "Member and author identities now appear consistently across events, pages, histories, spaces, selectors, and home feeds.",
+        "Display names and avatars now use richer membership and connected-identity information, with sensible fallbacks when details are unavailable.",
+        "Author identities can link directly to member profiles in more event, history, tagging, and member-list views.",
+        "Event links now use stable event identifiers, improving navigation from timelines and feeds.",
+        "Relayed event details show the originating space only when it is relevant.",
+        "The “All your events” feed now combines events with their associated author identities for clearer context."
+      ]
+    }
+  ]
+}

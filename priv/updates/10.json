@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-09",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Choose an event timezone with a searchable picker when creating or editing events.",
+        "Navigate timezone choices with the keyboard or mouse, with suggested timezones and matching results for faster selection.",
+        "See each event’s timezone on event list cards."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Event edit forms now open with the event’s current timezone already selected.",
+        "New event forms use your timezone as the suggested default."
+      ]
+    }
+  ]
+}

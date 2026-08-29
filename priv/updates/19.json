@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-18",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "New members now follow a clear two-step setup that covers the house rules and username selection.",
+        "Username setup includes immediate validation and automatic formatting.",
+        "Privacy information now clarifies that the hosted service is invitation-only."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Updated step navigation and clearer action buttons make onboarding and page editing easier to follow.",
+        "Terms, privacy information, headings, and lists now use a cleaner, more readable layout."
+      ]
+    }
+  ]
+}

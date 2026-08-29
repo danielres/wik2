@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-01",
+  "sections": [
+    {
+      "category": "bug_fixes",
+      "items": [
+        "Shows a clear “That block is no longer available” message when a block or placement has become stale, and clears outdated editing state.",
+        "Prevents pages from getting stuck when block information is requested after the block has been removed."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Improves page-tree move choices by excluding descendants and other invalid parent locations.",
+        "Makes page-tree navigation and editing behavior more consistent across the app.",
+        "Provides clearer fallback logging when a page tree cannot be prepared."
+      ]
+    }
+  ]
+}

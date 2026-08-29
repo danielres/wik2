@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-13",
+  "sections": [
+    {
+      "category": "bug_fixes",
+      "items": [
+        "Avatars now display consistently for group members and people actively editing content.",
+        "When no usable avatar or initials are available, the interface now shows a fallback user icon."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "The app prefers recently verified avatar information when multiple options are available.",
+        "Event buttons now have clearer labels for screen readers and helpful hover text.",
+        "Home navigation has simpler, more consistent styling."
+      ]
+    }
+  ]
+}

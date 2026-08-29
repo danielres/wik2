@@ -20,6 +20,6 @@ defmodule WikWeb.DocsLiveTest do
 
     assert has_element?(view, ~s([data-testid="docs-page-updates"]))
     assert has_element?(view, "#product-updates")
-    assert has_element?(view, "#product-updates-empty")
+    assert has_element?(view, "#product-updates article")
   end
 end

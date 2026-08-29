@@ -1,0 +1,21 @@
+{
+  "merged_on": "2026-06-01",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Subscribe to external ICS calendars and manage those subscriptions from the events view.",
+        "View imported calendar events alongside existing timeline items, grouped by date.",
+        "Refresh a calendar subscription on demand or remove it when it is no longer needed.",
+        "See recurring events expanded into individual occurrences with timezone-aware scheduling."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Calendar subscriptions refresh automatically and use conditional fetching to avoid unnecessary downloads.",
+        "Imported event descriptions are sanitized, and synchronization updates or removes outdated events consistently."
+      ]
+    }
+  ]
+}

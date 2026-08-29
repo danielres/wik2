@@ -1,0 +1,14 @@
+{
+  "merged_on": "2026-05-10",
+  "sections": [
+    {
+      "category": "improvements",
+      "items": [
+        "Personal settings and access details now have separate pages, making each easier to find and manage.",
+        "A shared navigation menu lets you quickly switch between Settings and Access, with relevant workspace links shown when available.",
+        "Timezone settings retain editing, validation, automatic detection, and cancellation in the new Settings page.",
+        "Combobox controls now show a pointer cursor, making clickable elements easier to recognize."
+      ]
+    }
+  ]
+}

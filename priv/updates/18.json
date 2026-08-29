@@ -1,0 +1,33 @@
+{
+  "merged_on": "2026-05-16",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Submit support tickets, review your previous requests, and open ticket details from your account.",
+        "Superadmins can filter incoming tickets, review their details, and update their triage status and notes.",
+        "New Privacy and Terms pages, footer links, and contact information make legal and support details easier to find."
+      ]
+    },
+    {
+      "category": "permissions",
+      "items": [
+        "Ticket access is scoped so users can view their own submissions while superadmins can manage all tickets."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Calendar feed links can now be revoked, and revoked links return a not-found response.",
+        "Calendar feed links use persisted, time-limited tokens with stronger tampering checks."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Navigation now includes Tickets, while refreshed layouts, typography, and administrative screens improve readability and consistency.",
+        "Magic-link emails now use configured contact and privacy addresses for sender and reply-to details."
+      ]
+    }
+  ]
+}

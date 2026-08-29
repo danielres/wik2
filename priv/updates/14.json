@@ -1,0 +1,21 @@
+{
+  "merged_on": "2026-05-12",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Page navigation now shows a loading progress bar."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Icons are sharper and more consistent across navigation, event sharing, and relay actions.",
+        "Page titles now have consistent sizing and styling across blogs, events, groups, and pages.",
+        "Editing controls stay visible in a sticky bottom action panel, without automatically scrolling the page.",
+        "Forms and light-mode colors have refined styling, including clearer checkbox borders.",
+        "Long links and markdown content wrap more naturally, while page layouts adapt better on medium-sized screens."
+      ]
+    }
+  ]
+}

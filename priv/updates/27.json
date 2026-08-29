@@ -1,0 +1,32 @@
+{
+  "merged_on": "2026-05-27",
+  "sections": [
+    {
+      "category": "permissions",
+      "items": [
+        "Authorization is now applied more consistently across spaces, profiles, memberships, blocks, and shared events.",
+        "Membership roles and space ownership can only be changed by people with the appropriate access."
+      ]
+    },
+    {
+      "category": "new_features",
+      "items": [
+        "A dedicated members page now supports role changes, ownership transfers, live presence, and an edit mode.",
+        "Tag management now includes clearer parent, child, descendant, linking, creation, editing, and deletion workflows."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Space navigation now uses a clearer text menu, with refreshed layouts for tags, members, and editing controls.",
+        "Space pages can now display orphaned blocks, and the inbox badge is directly clickable."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Space feeds, membership lists, and presence information now load through more consistent data paths."
+      ]
+    }
+  ]
+}

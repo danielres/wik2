@@ -1,0 +1,20 @@
+{
+  "merged_on": "2026-05-28",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Member profiles now include an Access section showing the member’s access grants for the current space.",
+        "Profiles with no access grants now display a clear empty state."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Access grant cards now present consistent details across personal and member profile views.",
+        "Grant issuers are easier to identify thanks to username and email fallbacks.",
+        "Telegram access grants now display their associated identity and source details."
+      ]
+    }
+  ]
+}

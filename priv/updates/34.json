@@ -1,0 +1,25 @@
+{
+  "merged_on": "2026-06-07",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Record, update, or remove your interest in events, including events from external calendars.",
+        "View participation levels directly on the event timeline.",
+        "Convert an external event into a linked local event and add local details without losing its source connection."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Event details, interest forms, subscriptions, and timeline navigation now provide a more consistent experience."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Linked external events are preserved and marked as cancelled when they disappear from their source calendar."
+      ]
+    }
+  ]
+}

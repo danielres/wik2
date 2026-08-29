@@ -1,0 +1,25 @@
+{
+  "merged_on": "2026-05-13",
+  "sections": [
+    {
+      "category": "improvements",
+      "items": [
+        "Group links now use readable, URL-friendly slugs instead of group names.",
+        "Group creation shows an automatic slug preview and reports availability problems before submission.",
+        "Group navigation consistently uses the group’s slug after creation and across posts, events, and wiki pages."
+      ]
+    },
+    {
+      "category": "new_features",
+      "items": [
+        "Telegram sources can now be claimed through a staged group-creation flow with validation and an option to cancel."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Each group now has a required unique slug, preventing conflicting group URLs."
+      ]
+    }
+  ]
+}

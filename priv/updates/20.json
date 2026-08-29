@@ -1,0 +1,32 @@
+{
+  "merged_on": "2026-05-18",
+  "sections": [
+    {
+      "category": "new_features",
+      "items": [
+        "Create, edit, and delete tags from the new Tags page.",
+        "Organize tags into parent-child relationships and browse them as a tree.",
+        "Navigate through tag ancestors and descendants.",
+        "See tag changes refresh automatically as relationships are updated."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Invalid relationships are blocked to prevent circular tag structures."
+      ]
+    },
+    {
+      "category": "permissions",
+      "items": [
+        "Tag access and management respect group membership and administrative roles."
+      ]
+    },
+    {
+      "category": "improvements",
+      "items": [
+        "Tag management is now available directly from the main navigation."
+      ]
+    }
+  ]
+}

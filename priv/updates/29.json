@@ -1,0 +1,19 @@
+{
+  "merged_on": "2026-05-29",
+  "sections": [
+    {
+      "category": "improvements",
+      "items": [
+        "Choose YouTube, SoundCloud, Google Calendar, or Google Maps directly when adding an embedded block.",
+        "Embed editing now uses provider-specific headings and a full-screen workflow.",
+        "Google Calendar embeds now fill the available display area."
+      ]
+    },
+    {
+      "category": "reliability",
+      "items": [
+        "Each provider accepts only matching links, preventing a YouTube, SoundCloud, Google Calendar, or Google Maps block from being saved with the wrong kind of URL."
+      ]
+    }
+  ]
+}

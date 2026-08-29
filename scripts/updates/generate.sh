@@ -116,6 +116,14 @@ for pr_number in "$@"; do
 
   walkthrough="${comment_body#*"$walkthrough_start"}"
   walkthrough="${walkthrough%%"$walkthrough_end"*}"
+  walkthrough="$(
+    printf '%s\n' "$walkthrough" |
+      awk '
+        /^## (Estimated code review effort|Possibly related PRs|Poem)([[:space:]]|$)/ { exit }
+        /^[[:space:]]*<\/?(details|summary)([[:space:]>])/ { next }
+        { print }
+      '
+  )"
 
   temp_dir="$(mktemp -d)"
   output_draft="$(mktemp "$output_dir/.$pr_number.json.XXXXXX")"

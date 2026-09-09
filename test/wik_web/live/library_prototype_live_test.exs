@@ -66,26 +66,26 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     refute has_element?(view, testid("topic-filter-unassigned"))
     assert has_element?(view, testid("type-filter-place") <> " .hero-check-micro")
     assert has_element?(view, testid("type-filter-video") <> " .hero-check-micro")
-    assert has_element?(view, testid("library-entry-entry-place"))
-    assert has_element?(view, testid("library-entry-entry-contact"))
-    assert has_element?(view, testid("library-entry-entry-video"))
-    assert has_element?(view, testid("library-entry-entry-music"))
+    assert has_element?(view, testid("entry-open-entry-place"))
+    assert has_element?(view, testid("entry-open-entry-contact"))
+    assert has_element?(view, testid("entry-open-entry-video"))
+    assert has_element?(view, testid("entry-open-entry-music"))
 
     assert has_element?(
              view,
-             testid("library-entry-entry-place") <>
+             testid("entry-open-entry-place") <>
                ~s( dt[title="Location"] .hero-map-pin-micro)
            )
 
     assert has_element?(
              view,
-             testid("library-entry-entry-contact") <>
+             testid("entry-open-entry-contact") <>
                ~s( dt[title="Organization"] .hero-home)
            )
 
     assert has_element?(
              view,
-             testid("library-entry-entry-contact") <>
+             testid("entry-open-entry-contact") <>
                ~s( dt[title="Role or title"] .hero-academic-cap)
            )
 
@@ -106,8 +106,8 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert_patch(view, ~p"/#{space.slug}/libraries?#{%{topics: berlin.slug}}")
     assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
     assert has_element?(view, testid("topic-filter-software") <> " .hero-minus-micro")
-    assert has_element?(view, testid("library-entry-entry-place"))
-    refute has_element?(view, testid("library-entry-entry-video"))
+    assert has_element?(view, testid("entry-open-entry-place"))
+    refute has_element?(view, testid("entry-open-entry-video"))
 
     view |> element(testid("topic-filter-software")) |> render_click()
 
@@ -116,13 +116,13 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
       ~p"/#{space.slug}/libraries?#{%{topics: Enum.join([berlin.slug, software.slug], ",")}}"
     )
 
-    assert has_element?(view, testid("library-entry-entry-place"))
-    assert has_element?(view, testid("library-entry-entry-video"))
+    assert has_element?(view, testid("entry-open-entry-place"))
+    assert has_element?(view, testid("entry-open-entry-video"))
 
     view |> element(testid("type-filter-video")) |> render_click()
 
-    assert has_element?(view, testid("library-entry-entry-video"))
-    refute has_element?(view, testid("library-entry-entry-place"))
+    assert has_element?(view, testid("entry-open-entry-video"))
+    refute has_element?(view, testid("entry-open-entry-place"))
   end
 
   test "adds an entry by choosing its type first", %{conn: conn, space: space} do
@@ -154,7 +154,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
 
     assert has_element?(
              view,
-             ~s(#library-entries [data-testid^="library-entry-entry-"] [data-testid^="entry-open-entry-"] .badge-outline)
+             ~s(#library-entries [data-testid^="entry-open-entry-"] .badge-outline)
            )
   end
 

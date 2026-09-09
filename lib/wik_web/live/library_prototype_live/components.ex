@@ -230,60 +230,23 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
       |> assign(:title, entry_title(assigns.type, assigns.entry))
 
     ~H"""
-    <button
-      class={[
-        "grid w-full cursor-pointer gap-4 p-4 text-left",
-      ]}
-      data-testid={"entry-open-#{@entry.id}"}
-      phx-click="entry:show"
-      phx-value-entry_id={@entry.id}
-      type="button"
+    <div class="flex gap-2 pt-4 pl-4 mb-4 pr-2">
+      <h3 class="leading-none text-balance Xself-end line-clamp-2 font-bold text-base-content/85">
+        {@title}
+      </h3>
+      <span class="ml-auto badge badge-xs badge-ghost shrink-0">{@type.name}</span>
+    </div>
+
+    <div
+      :if={@media_field?}
+      class="row-span-4 px-4 mb-4"
+      data-testid={"entry-media-#{@entry.id}"}
     >
-      <div class="min-w-0 self-center">
-        <div class="flex min-w-0 items-baseline gap-2">
-          <h3 class="leading-tight line-clamp-2 font-bold text-base-content/85">{@title}</h3>
-          <span class="ml-auto badge badge-xs badge-ghost shrink-0">{@type.name}</span>
-        </div>
-
-        <dl class="mt-2 space-y-1 text-xs text-base-content/55">
-          <div :for={field <- @summary_fields} class="flex min-w-0 gap-1">
-            <dt class="flex items-center font-semibold" title={field.label}>
-              <%= if icon = entry_field_icon(field) do %>
-                <.icon name={icon} class="size-3.5" />
-                <span class="sr-only">{field.label}:</span>
-              <% else %>
-                {field.label}:
-              <% end %>
-            </dt>
-            <dd class="max-w-52 truncate">
-              {display_value(Schema.field_value(@entry, field), field)}
-            </dd>
-          </div>
-        </dl>
-        <div :if={@topic_summaries != []} class="mt-3 flex flex-wrap gap-1.5">
-          <span
-            :for={summary <- Enum.take(@topic_summaries, 6)}
-            class="badge badge-sm gap-1 border-primary/15 bg-primary/8 text-primary"
-            data-testid={"entry-topic-#{@entry.id}-#{summary.tag.id}"}
-          >
-            <.icon :if={summary.automatic?} name="hero-sparkles-micro" class="size-3" />
-            {summary.tag.name}
-          </span>
-          <span :if={length(@topic_summaries) > 6} class="badge badge-sm badge-ghost">
-            +{length(@topic_summaries) - 6}
-          </span>
-        </div>
-      </div>
-
-      <div
-        :if={@media_field?}
-        class="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-base-300"
-        data-testid={"entry-media-#{@entry.id}"}
-      >
+      <div class="flex aspect-video items-center justify-center overflow-hidden rounded bg-base-300">
         <img
           :if={@media && @media.thumbnail_url}
           alt=""
-          class="h-full w-full object-cover opacity-80 transition group-hover:opacity-100"
+          class="h-full w-full object-cover opacity-80 transition"
           loading="lazy"
           src={@media.thumbnail_url}
         />
@@ -294,11 +257,44 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
         />
         <.icon :if={!@media} name="hero-document-text" class="size-8 opacity-20" />
       </div>
+    </div>
+    <div class="space-y-2 px-4">
+      <dl class="space-y-1 text-xs text-base-content/55">
+        <div :for={field <- @summary_fields} class="flex min-w-0 gap-1">
+          <dt class="flex items-center font-semibold" title={field.label}>
+            <%= if icon = entry_field_icon(field) do %>
+              <.icon name={icon} class="size-3.5" />
+              <span class="sr-only">{field.label}:</span>
+            <% else %>
+              {field.label}:
+            <% end %>
+          </dt>
+          <dd class="max-w-52 truncate">
+            {display_value(Schema.field_value(@entry, field), field)}
+          </dd>
+        </div>
+      </dl>
+    </div>
 
-      <div class="flex items-center gap-2 self-center">
-        <span :if={@owned?} class="badge badge-sm badge-outline">Yours</span>
+    <div class="flex items-center gap-2 self-center">
+      <span :if={@owned?} class="badge badge-sm badge-outline">Yours</span>
+    </div>
+
+    <div class="px-4 pb-4">
+      <div :if={@topic_summaries != []} class="flex flex-wrap gap-1.5">
+        <span
+          :for={summary <- Enum.take(@topic_summaries, 6)}
+          class="badge badge-sm gap-1 border-primary/15 bg-primary/8 text-primary"
+          data-testid={"entry-topic-#{@entry.id}-#{summary.tag.id}"}
+        >
+          <.icon :if={summary.automatic?} name="hero-sparkles-micro" class="size-3" />
+          {summary.tag.name}
+        </span>
+        <span :if={length(@topic_summaries) > 6} class="badge badge-sm badge-ghost">
+          +{length(@topic_summaries) - 6}
+        </span>
       </div>
-    </button>
+    </div>
     """
   end
 

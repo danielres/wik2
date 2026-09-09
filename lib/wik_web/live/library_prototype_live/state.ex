@@ -574,6 +574,12 @@ defmodule WikWeb.LibraryPrototypeLive.State do
         "phone" => "+49 30 123456",
         "website" => "https://example.org/spreeacker"
       }),
+      seeded_entry(types, "video", "entry-video-downtempo", DateTime.add(now, -10, :second), %{
+        "creator" => "Tom",
+        "media" => "https://www.youtube.com/watch?v=UuU-Go8GoeY&t=886s",
+        "notes" => "Lorem",
+        "title" => "Downtempo music"
+      }),
       seeded_entry(types, "contact", "entry-contact", DateTime.add(now, -60, :second), %{
         "email" => "hello@example.org",
         "name" => "Dr. Ada Rivera",
@@ -599,6 +605,13 @@ defmodule WikWeb.LibraryPrototypeLive.State do
       seeded_entry(types, "place", "entry-place-garden", DateTime.add(now, -200, :second), %{
         "location" => "Tempelhofer Garten, Berlin",
         "name" => "Communal garden Tempelhof",
+        "notes" => "Community garden and open-air dance location.",
+        "phone" => "+49 30 123456",
+        "website" => "https://example.org/garden"
+      }),
+      seeded_entry(types, "place", "entry-place-garden2", DateTime.add(now, -200, :second), %{
+        "location" => "Tempelhofer Garten 2, Berlin",
+        "name" => "Communal garden Tempelhof 2",
         "notes" => "Community garden and open-air dance location.",
         "phone" => "+49 30 123456",
         "website" => "https://example.org/garden"

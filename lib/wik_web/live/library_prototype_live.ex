@@ -172,7 +172,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     />
 
     <div
-      class="autogrid [--autogrid-min:16rem] grid gap-3"
+      class="autogrid [--autogrid-min:16rem] grid gap-3 grid-flow-row-dense "
       id="library-entries"
       phx-update="stream"
     >
@@ -183,14 +183,20 @@ defmodule WikWeb.LibraryPrototypeLive do
         <.icon name="hero-inbox-micro" class="mx-auto size-8 opacity-25" />
       </div>
 
-      <article
+      <button
         :for={{dom_id, item} <- @streams.entries}
+        id={dom_id}
         class={[
-          "group overflow-hidden rounded-box bg-base-200/50",
+          "grid grid-rows-subgrid cursor-pointer gap-0 text-left",
+          (Enum.any?(item.type.fields, &(&1.type == :media)) && "row-span-8") || "row-span-4",
+          "X[&>*]:border",
+          "overflow-hidden rounded-box bg-base-200/50",
           "transition hover:border-primary/20 hover:bg-base-200/75"
         ]}
-        id={dom_id}
-        data-testid={"library-entry-#{item.entry.id}"}
+        data-testid={"entry-open-#{item.entry.id}"}
+        phx-click="entry:show"
+        phx-value-entry_id={item.entry.id}
+        type="button"
       >
         <Components.entry_card
           entry={item.entry}
@@ -205,7 +211,7 @@ defmodule WikWeb.LibraryPrototypeLive do
           topic_summaries={item.topic_summaries}
           type={item.type}
         />
-      </article>
+      </button>
     </div>
     """
   end

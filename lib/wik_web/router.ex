@@ -162,15 +162,13 @@ defmodule WikWeb.Router do
         live "/topics/:tag_slug", TagLive, :tag
         live "/events", EventsLive, :index
         live "/libraries", LibraryPrototypeLive, :index
-        live "/libraries/new", LibraryPrototypeLive, :new
-        live "/libraries/:collection_slug", LibraryPrototypeLive, :show
-        live "/libraries/:collection_slug/settings", LibraryPrototypeLive, :settings
-        live "/libraries/:collection_slug/entries/new", LibraryPrototypeLive, :entry_new
-        live "/libraries/:collection_slug/entries/:entry_id", LibraryPrototypeLive, :entry_show
-
-        live "/libraries/:collection_slug/entries/:entry_id/edit",
-             LibraryPrototypeLive,
-             :entry_edit
+        live "/libraries/entries/new", LibraryPrototypeLive, :entry_new
+        live "/libraries/entries/:entry_id", LibraryPrototypeLive, :entry_show
+        live "/libraries/entries/:entry_id/edit", LibraryPrototypeLive, :entry_edit
+        live "/libraries/types", LibraryPrototypeLive, :types
+        live "/libraries/types/new", LibraryPrototypeLive, :type_new
+        live "/libraries/types/:type_slug/settings", LibraryPrototypeLive, :type_settings
+        live "/libraries/topic-matching", LibraryPrototypeLive, :topic_matching
 
         live "/tree", PageTreeLive, :index
         live "/blog", BlogLive, :index

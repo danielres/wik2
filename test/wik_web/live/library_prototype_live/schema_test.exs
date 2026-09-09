@@ -5,11 +5,13 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
 
   test "built-in templates are ordinary schemas and custom can reproduce them" do
     templates = Schema.built_in_templates()
-    videos = Schema.find_template(templates, "videos")
+    videos = Schema.find_template(templates, "video")
+    contacts = Schema.find_template(templates, "contact")
     custom = Schema.find_template(templates, "custom")
 
     assert Enum.map(videos.fields, & &1.type) == [:title, :media, :text, :rich_text]
     assert Enum.map(custom.fields, & &1.type) == [:title]
+    assert Enum.find(contacts.fields, &(&1.key == "role")).label == "Role or title"
 
     manually_recreated = %{Schema.instantiate_template(custom) | fields: videos.fields}
 
@@ -17,11 +19,11 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
              Enum.map(videos.fields, &Map.drop(&1, [:id]))
   end
 
-  test "export and import round-trip a data-free collection blueprint" do
-    template = Schema.built_in_templates() |> Schema.find_template("contacts")
+  test "export and import round-trip a data-free type blueprint" do
+    template = Schema.built_in_templates() |> Schema.find_template("contact")
     draft = Schema.instantiate_template(template)
 
-    collection = %{
+    type = %{
       creator_id: "must-not-leak",
       description: draft.description,
       entries: [%{id: "must-not-leak"}],
@@ -42,20 +44,20 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
       slug: "must-not-leak"
     }
 
-    json = Schema.export(collection)
+    json = Schema.export(type)
 
     assert {:ok, imported} = Schema.import(json)
-    assert imported.name == collection.name
-    assert imported.description == collection.description
+    assert imported.name == type.name
+    assert imported.description == type.description
 
     assert Enum.map(imported.fields, &Map.drop(&1, [:id])) ==
-             Enum.map(collection.fields, &Map.drop(&1, [:id]))
+             Enum.map(type.fields, &Map.drop(&1, [:id]))
 
     refute json =~ "must-not-leak"
 
     assert %{
              "fields" => exported_fields,
-             "format" => "wik-library-schema",
+             "format" => "wik-library-type",
              "version" => 1
            } = Jason.decode!(json)
 
@@ -71,9 +73,9 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
   test "import rejects unsupported versions and malformed title fields" do
     unsupported =
       Jason.encode!(%{
-        "collection" => %{"name" => "Places"},
+        "type" => %{"name" => "Places"},
         "fields" => [],
-        "format" => "wik-library-schema",
+        "format" => "wik-library-type",
         "version" => 99
       })
 
@@ -81,7 +83,7 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
 
     missing_title =
       Jason.encode!(%{
-        "collection" => %{"name" => "Places"},
+        "type" => %{"name" => "Places"},
         "fields" => [
           %{
             "key" => "notes",
@@ -91,11 +93,11 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
             "type" => "text"
           }
         ],
-        "format" => "wik-library-schema",
+        "format" => "wik-library-type",
         "version" => 1
       })
 
-    assert {:error, "The first field must be the collection title."} =
+    assert {:error, "The first field must be the type title."} =
              Schema.import(missing_title)
   end
 

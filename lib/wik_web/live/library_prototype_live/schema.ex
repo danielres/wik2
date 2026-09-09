@@ -1,7 +1,7 @@
 defmodule WikWeb.LibraryPrototypeLive.Schema do
   @moduledoc false
 
-  @format "wik-library-schema"
+  @format "wik-library-type"
   @version 1
 
   @field_types [
@@ -35,8 +35,8 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
   def built_in_templates do
     [
       template(
-        "places",
-        "Places",
+        "place",
+        "Place",
         "Landmarks, venues, and other useful locations.",
         "hero-map-pin-micro",
         [
@@ -48,14 +48,14 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
         ]
       ),
       template(
-        "contacts",
-        "Contacts",
+        "contact",
+        "Contact",
         "Professionals, organizations, and other useful contacts.",
         "hero-identification-micro",
         [
           title_field("name", "Name"),
           field("organization", "Organization", :text),
-          field("role", "Role", :text),
+          field("role", "Role or title", :text),
           field("phone", "Phone", :phone),
           field("email", "Email", :email),
           field("website", "Website", :url),
@@ -63,8 +63,8 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
         ]
       ),
       template(
-        "videos",
-        "Videos",
+        "video",
+        "Video",
         "Tutorials, performances, music videos, or other video references.",
         "hero-video-camera-micro",
         [
@@ -106,13 +106,13 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
     }
   end
 
-  def export(collection) do
+  def export(type) do
     blueprint = %{
-      "collection" => %{
-        "description" => collection.description,
-        "name" => collection.name
+      "type" => %{
+        "description" => type.description,
+        "name" => type.name
       },
-      "fields" => Enum.map(collection.fields, &export_field/1),
+      "fields" => Enum.map(type.fields, &export_field/1),
       "format" => @format,
       "version" => @version
     }
@@ -123,9 +123,9 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
   def import(json) when is_binary(json) do
     with {:ok, blueprint} <- Jason.decode(json),
          :ok <- validate_blueprint_header(blueprint),
-         {:ok, collection} <- import_collection(blueprint["collection"]),
+         {:ok, type} <- import_type(blueprint["type"]),
          {:ok, fields} <- import_fields(blueprint["fields"]) do
-      {:ok, Map.put(collection, :fields, fields)}
+      {:ok, Map.put(type, :fields, fields)}
     else
       {:error, %Jason.DecodeError{}} -> {:error, "Paste valid JSON to import a schema."}
       {:error, message} when is_binary(message) -> {:error, message}
@@ -135,16 +135,16 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
 
   def import(_json), do: {:error, "Paste valid JSON to import a schema."}
 
-  def collection_attrs(params) do
+  def type_attrs(params) do
     name = Map.get(params, "name", "")
     description = Map.get(params, "description", "")
 
     cond do
       not is_binary(name) or not is_binary(description) ->
-        {:error, "The collection metadata is invalid."}
+        {:error, "The type metadata is invalid."}
 
       String.trim(name) == "" ->
-        {:error, "A collection name is required."}
+        {:error, "A type name is required."}
 
       true ->
         {:ok, %{description: String.trim(description), name: String.trim(name)}}
@@ -260,17 +260,17 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
   end
 
   defp validate_blueprint_header(_blueprint) do
-    {:error, "This is not a Wik Library schema."}
+    {:error, "This is not a Wik Library type."}
   end
 
-  defp import_collection(%{"name" => name} = collection) when is_binary(name) do
-    collection_attrs(%{
-      "description" => Map.get(collection, "description", ""),
+  defp import_type(%{"name" => name} = type) when is_binary(name) do
+    type_attrs(%{
+      "description" => Map.get(type, "description", ""),
       "name" => name
     })
   end
 
-  defp import_collection(_collection), do: {:error, "The collection metadata is invalid."}
+  defp import_type(_type), do: {:error, "The type metadata is invalid."}
 
   defp import_fields(fields) when is_list(fields) do
     with {:ok, imported_fields} <- import_field_list(fields),
@@ -352,7 +352,7 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
   end
 
   defp validate_imported_fields(_fields) do
-    {:error, "The first field must be the collection title."}
+    {:error, "The first field must be the type title."}
   end
 
   defp normalize_entry_value(field, value) do

@@ -7,178 +7,313 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
   alias WikWeb.Components.RichTextInput
   alias WikWeb.LibraryPrototypeLive.Schema
 
-  attr :can_manage_collections?, :boolean, required: true
-  attr :collections, :list, required: true
-  attr :current_collection, :map, default: nil
+  attr :active_topics, :list, required: true
+  attr :active_types, :list, required: true
+  attr :can_create_entry?, :boolean, required: true
+  attr :can_manage_types?, :boolean, required: true
   attr :space_slug, :string, required: true
-  attr :live_action, :atom, required: true
-  attr :current_scope, :map, required: true
+  attr :topics, :list, required: true
+  attr :types, :list, required: true
 
-  def collection_navigation(assigns) do
+  def library_toolbar(assigns) do
     ~H"""
-    <nav aria-label="Collections" data-testid="library-navigation">
-      <div class="mb-3 flex items-center justify-between px-1">
-        <.link
-          class="text-xs font-bold uppercase tracking-wider text-base-content/50 hover:text-base-content/70 transition"
-          patch={~p"/#{@current_scope.tenant.slug}/libraries"}
-        >
-          Collections
-        </.link>
+    <header class="flex flex-wrap items-end justify-between gap-3" data-testid="library-toolbar">
+      <div class="flex flex-wrap items-center gap-2" data-testid="library-filters">
+        <.filter_menu
+          icon="hero-tag-micro"
+          items={@topics}
+          kind="topic"
+          selected_ids={Enum.map(@active_topics, & &1.id)}
+          testid="topic-filter"
+          title="Topics"
+        />
+        <.filter_menu
+          icon="hero-circle-stack-micro"
+          items={@types}
+          kind="type"
+          selected_ids={Enum.map(@active_types, & &1.id)}
+          testid="type-filter"
+          title="Types"
+        />
 
-        <.link
-          :if={@can_manage_collections? and @live_action == :index}
-          aria-label="Create collection"
-          class="btn btn-accent btn-circle btn-xs btn-soft hover:btn-accent transition h-0"
-          data-testid="collection-create-open"
-          patch={~p"/#{@space_slug}/libraries/new"}
+        <button
+          :for={topic <- @active_topics}
+          class="badge badge-sm gap-1 border-primary/20 bg-primary/10 text-primary"
+          data-testid={"active-topic-filter-#{topic.slug}"}
+          phx-click="filter:toggle"
+          phx-value-id={topic.id}
+          phx-value-kind="topic"
+          type="button"
         >
-          <.icon name="hero-plus-micro" />
-        </.link>
-      </div>
-
-      <div class="max-md:flex max-md:flex-wrap max-md:gap-2 md:space-y-1">
-        <.link
-          :for={collection <- @collections}
-          aria-current={
-            if(@current_collection && collection.id == @current_collection.id, do: "page")
-          }
-          class={[
-            "group flex shrink-0 items-center rounded px-3 py-2",
-            "text-sm transition",
-            @current_collection && collection.id == @current_collection.id &&
-              "bg-base-content/10",
-            (!@current_collection || collection.id != @current_collection.id) &&
-              "bg-base-300/50 hover:bg-base-content/5"
-          ]}
-          data-testid={"collection-nav-#{collection.slug}"}
-          patch={~p"/#{@space_slug}/libraries/#{collection.slug}"}
+          {topic.name} <.icon name="hero-x-mark-micro" class="size-3" />
+        </button>
+        <button
+          :for={type <- @active_types}
+          class="badge badge-sm gap-1"
+          data-testid={"active-type-filter-#{type.slug}"}
+          phx-click="filter:toggle"
+          phx-value-id={type.id}
+          phx-value-kind="type"
+          type="button"
         >
-          <span class="truncate font-medium whitespace-nowrap">{collection.name}</span>
-        </.link>
+          {type.name} <.icon name="hero-x-mark-micro" class="size-3" />
+        </button>
       </div>
-    </nav>
+      <div class="flex items-center gap-2">
+        <button
+          :if={@can_manage_types?}
+          aria-label="Library settings"
+          class="btn btn-sm btn-circle btn-ghost"
+          data-testid="library-settings-open"
+          popovertarget="library-settings-popover"
+          style="anchor-name:--library-settings-anchor"
+          type="button"
+        >
+          <.icon name="hero-cog-6-tooth-micro" />
+        </button>
+        <ul
+          :if={@can_manage_types?}
+          class="dropdown dropdown-end menu z-20 w-48 rounded-box bg-base-300 shadow-sm"
+          id="library-settings-popover"
+          popover
+          style="position-anchor:--library-settings-anchor"
+        >
+          <li>
+            <.link data-testid="types-manage-open" patch={~p"/#{@space_slug}/libraries/types"}>
+              <.icon name="hero-circle-stack-micro" /> Types
+            </.link>
+          </li>
+          <li>
+            <.link
+              data-testid="topic-matching-open"
+              patch={~p"/#{@space_slug}/libraries/topic-matching"}
+            >
+              <.icon name="hero-sparkles-micro" /> Smart topics
+            </.link>
+          </li>
+        </ul>
+        <button
+          :if={@can_create_entry?}
+          class="btn btn-sm btn-primary"
+          data-testid="entry-create-open"
+          phx-click="entry:new"
+          type="button"
+        >
+          <.icon name="hero-plus-micro" /> Add entry
+        </button>
+      </div>
+    </header>
     """
   end
 
-  attr :collection, :map, required: true
-  attr :id, :string, required: true
-  attr :space_slug, :string, required: true
+  attr :icon, :string, required: true
+  attr :items, :list, required: true
+  attr :kind, :string, required: true
+  attr :selected_ids, :list, required: true
+  attr :testid, :string, required: true
+  attr :title, :string, required: true
 
-  def collection_card(assigns) do
+  defp filter_menu(assigns) do
     ~H"""
-    <.link
-      id={@id}
-      class={[
-        "group card bg-base-300/45 shadow-sm",
-        "transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
-      ]}
-      data-testid={"collection-card-#{@collection.slug}"}
-      patch={~p"/#{@space_slug}/libraries/#{@collection.slug}"}
+    <button
+      class="btn btn-sm btn-ghost bg-base-200"
+      data-testid={@testid}
+      popovertarget={"#{@testid}-popover"}
+      style={"anchor-name:--#{@testid}-anchor"}
+      type="button"
     >
-      <div class="card-body gap-3 p-5">
-        <div class="flex items-center justify-between gap-4">
-          <h2 class="card-title text-base">{@collection.name}</h2>
-          <span class="badge badge-sm badge-ghost text-base-content/50">
-            {@collection.entry_count} entries
-          </span>
-        </div>
-        <div>
-          <p class="line-clamp-2 text-sm leading-relaxed text-base-content/55">
-            {@collection.description}
-          </p>
-        </div>
-      </div>
-    </.link>
+      <.icon name={@icon} /> {@title}
+      <.icon name="hero-chevron-down-micro" />
+    </button>
+    <ul
+      class="dropdown menu z-20 max-h-72 w-56 overflow-y-auto rounded-box bg-base-300"
+      id={"#{@testid}-popover"}
+      popover
+      style={"position-anchor:--#{@testid}-anchor"}
+    >
+      <li :for={item <- @items}>
+        <button
+          data-testid={"#{@testid}-#{item.slug}"}
+          phx-click="filter:toggle"
+          phx-value-id={item.id}
+          phx-value-kind={@kind}
+          type="button"
+        >
+          <.icon
+            name={
+              if(@selected_ids == [] or item.id in @selected_ids,
+                do: "hero-check-micro",
+                else: "hero-minus-micro"
+              )
+            }
+            class={
+              if(@selected_ids == [] or item.id in @selected_ids,
+                do: "text-success",
+                else: "opacity-20"
+              )
+            }
+          />
+          <span class="truncate">{item.name}</span>
+        </button>
+      </li>
+    </ul>
     """
   end
 
-  attr :collection, :map, required: true
+  attr :types, :list, required: true
+
+  def type_picker(assigns) do
+    ~H"""
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="entry-type-picker">
+      <button
+        :for={type <- @types}
+        class="group rounded-box bg-base-200 p-4 text-left transition hover:bg-base-300 cursor-pointer"
+        data-testid={"entry-type-select-#{type.slug}"}
+        phx-click="entry:type"
+        phx-value-type_id={type.id}
+        type="button"
+      >
+        <span class="font-semibold">{type.name}</span>
+      </button>
+    </div>
+    """
+  end
+
+  attr :space_slug, :string, required: true
+  attr :types, :list, required: true
+
+  def type_list(assigns) do
+    ~H"""
+    <div class="space-y-4" data-testid="types-page">
+      <div class="flex items-center justify-between gap-3">
+        <h1 class="text-2xl flex items-center gap-2 text-base-content/80">
+          <.icon name="hero-circle-stack-micro" /> Types
+        </h1>
+
+        <.link
+          class="btn btn-sm btn-primary"
+          data-testid="type-create-open"
+          patch={~p"/#{@space_slug}/libraries/types/new"}
+        >
+          <.icon name="hero-plus-micro" /> Add type
+        </.link>
+      </div>
+      <div class="divide-y divide-base-content/10 rounded-box bg-base-200/40 px-4">
+        <.link
+          :for={type <- @types}
+          class="flex items-center justify-between gap-4 py-4"
+          data-testid={"type-manage-#{type.slug}"}
+          patch={~p"/#{@space_slug}/libraries/types/#{type.slug}/settings"}
+        >
+          <span class="font-semibold">{type.name}</span>
+          <span class="flex items-center gap-2 text-sm text-base-content/45">
+            {type.entry_count} <.icon name="hero-chevron-right-micro" />
+          </span>
+        </.link>
+      </div>
+    </div>
+    """
+  end
+
+  attr :type, :map, required: true
   attr :entry, :map, required: true
   attr :manageable?, :boolean, required: true
   attr :owned?, :boolean, required: true
+  attr :topic_summaries, :list, required: true
 
   def entry_card(assigns) do
     assigns =
       assigns
-      |> assign(:media, entry_media(assigns.collection, assigns.entry))
-      |> assign(:media_field?, Enum.any?(assigns.collection.fields, &(&1.type == :media)))
-      |> assign(:summary_fields, summary_fields(assigns.collection, assigns.entry))
-      |> assign(:title, entry_title(assigns.collection, assigns.entry))
+      |> assign(:media, entry_media(assigns.type, assigns.entry))
+      |> assign(:media_field?, Enum.any?(assigns.type.fields, &(&1.type == :media)))
+      |> assign(:summary_fields, summary_fields(assigns.type, assigns.entry))
+      |> assign(:title, entry_title(assigns.type, assigns.entry))
 
     ~H"""
-    <article
+    <button
       class={[
-        "group overflow-hidden rounded-box border border-base-content/10 bg-base-200/50",
-        "transition hover:border-primary/20 hover:bg-base-200/75 hover:shadow-md"
+        "grid w-full cursor-pointer gap-4 p-4 text-left",
       ]}
-      data-testid={"library-entry-#{@entry.id}"}
+      data-testid={"entry-open-#{@entry.id}"}
+      phx-click="entry:show"
+      phx-value-entry_id={@entry.id}
+      type="button"
     >
-      <button
-        class={[
-          "grid w-full cursor-pointer gap-4 p-4 text-left",
-          if(@media_field?,
-            do: "sm:grid-cols-[9rem_minmax(0,1fr)_auto]",
-            else: "sm:grid-cols-[minmax(0,1fr)_auto]"
-          )
-        ]}
-        data-testid={"entry-open-#{@entry.id}"}
-        phx-click="entry:show"
-        phx-value-entry_id={@entry.id}
-        type="button"
+      <div class="min-w-0 self-center">
+        <div class="flex min-w-0 items-baseline gap-2">
+          <h3 class="leading-tight line-clamp-2 font-bold text-base-content/85">{@title}</h3>
+          <span class="ml-auto badge badge-xs badge-ghost shrink-0">{@type.name}</span>
+        </div>
+
+        <dl class="mt-2 space-y-1 text-xs text-base-content/55">
+          <div :for={field <- @summary_fields} class="flex min-w-0 gap-1">
+            <dt class="flex items-center font-semibold" title={field.label}>
+              <%= if icon = entry_field_icon(field) do %>
+                <.icon name={icon} class="size-3.5" />
+                <span class="sr-only">{field.label}:</span>
+              <% else %>
+                {field.label}:
+              <% end %>
+            </dt>
+            <dd class="max-w-52 truncate">
+              {display_value(Schema.field_value(@entry, field), field)}
+            </dd>
+          </div>
+        </dl>
+        <div :if={@topic_summaries != []} class="mt-3 flex flex-wrap gap-1.5">
+          <span
+            :for={summary <- Enum.take(@topic_summaries, 6)}
+            class="badge badge-sm gap-1 border-primary/15 bg-primary/8 text-primary"
+            data-testid={"entry-topic-#{@entry.id}-#{summary.tag.id}"}
+          >
+            <.icon :if={summary.automatic?} name="hero-sparkles-micro" class="size-3" />
+            {summary.tag.name}
+          </span>
+          <span :if={length(@topic_summaries) > 6} class="badge badge-sm badge-ghost">
+            +{length(@topic_summaries) - 6}
+          </span>
+        </div>
+      </div>
+
+      <div
+        :if={@media_field?}
+        class="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-base-300"
+        data-testid={"entry-media-#{@entry.id}"}
       >
-        <div
-          :if={@media_field?}
-          class="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-base-300"
-          data-testid={"entry-media-#{@entry.id}"}
-        >
-          <img
-            :if={@media && @media.thumbnail_url}
-            alt=""
-            class="h-full w-full object-cover opacity-80 transition group-hover:opacity-100"
-            loading="lazy"
-            src={@media.thumbnail_url}
-          />
-          <.icon
-            :if={@media && !@media.thumbnail_url}
-            name={if(@media.provider == :soundcloud, do: "hero-musical-note", else: "hero-link")}
-            class="size-8 opacity-25"
-          />
-          <.icon :if={!@media} name="hero-document-text" class="size-8 opacity-20" />
-        </div>
+        <img
+          :if={@media && @media.thumbnail_url}
+          alt=""
+          class="h-full w-full object-cover opacity-80 transition group-hover:opacity-100"
+          loading="lazy"
+          src={@media.thumbnail_url}
+        />
+        <.icon
+          :if={@media && !@media.thumbnail_url}
+          name={if(@media.provider == :soundcloud, do: "hero-musical-note", else: "hero-link")}
+          class="size-8 opacity-25"
+        />
+        <.icon :if={!@media} name="hero-document-text" class="size-8 opacity-20" />
+      </div>
 
-        <div class="min-w-0 self-center">
-          <h3 class="truncate font-bold text-base-content/85">{@title}</h3>
-          <dl class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-base-content/55">
-            <div :for={field <- @summary_fields} class="flex min-w-0 gap-1">
-              <dt class="font-semibold">{field.label}:</dt>
-              <dd class="max-w-52 truncate">
-                {display_value(Schema.field_value(@entry, field), field)}
-              </dd>
-            </div>
-          </dl>
-        </div>
-
-        <div class="flex items-center gap-2 self-center">
-          <span :if={@owned?} class="badge badge-sm badge-outline">Yours</span>
-          <.icon
-            name="hero-chevron-right-micro"
-            class="size-5 opacity-25 transition group-hover:translate-x-0.5 group-hover:opacity-60"
-          />
-        </div>
-      </button>
-    </article>
+      <div class="flex items-center gap-2 self-center">
+        <span :if={@owned?} class="badge badge-sm badge-outline">Yours</span>
+      </div>
+    </button>
     """
   end
 
-  attr :collection, :map, required: true
+  attr :type, :map, required: true
   attr :entry, :map, required: true
   attr :manageable?, :boolean, required: true
+  attr :topic_form, :map, default: nil
+  attr :topic_options, :list, required: true
+  attr :topic_summaries, :list, required: true
 
   def entry_detail(assigns) do
     assigns =
       assigns
-      |> assign(:media, entry_media(assigns.collection, assigns.entry))
-      |> assign(:title, entry_title(assigns.collection, assigns.entry))
+      |> assign(:media, entry_media(assigns.type, assigns.entry))
+      |> assign(:title, entry_title(assigns.type, assigns.entry))
 
     ~H"""
     <div class="space-y-6" data-testid={"library-entry-detail-#{@entry.id}"}>
@@ -200,7 +335,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
 
       <dl class="divide-y divide-base-content/10">
         <div
-          :for={field <- @collection.fields}
+          :for={field <- @type.fields}
           :if={not Schema.blank_value?(Schema.field_value(@entry, field))}
           class="grid gap-2 py-4 sm:grid-cols-[9rem_minmax(0,1fr)]"
         >
@@ -212,6 +347,88 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
           </dd>
         </div>
       </dl>
+
+      <section class="space-y-3 border-t border-base-content/10 pt-4" data-testid="entry-topics">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-sm font-bold">Topics</h3>
+          <button
+            class="btn btn-xs btn-ghost"
+            data-testid="entry-topic-add-open"
+            phx-click="topic:add"
+            type="button"
+          >
+            <.icon name="hero-plus-micro" /> Add
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <div
+            :for={summary <- @topic_summaries}
+            class="flex items-center gap-2 rounded-box bg-base-200/55 px-3 py-2"
+            data-testid={"entry-topic-detail-#{summary.tag.id}"}
+          >
+            <.icon :if={summary.automatic?} name="hero-sparkles-micro" class="size-3 text-primary" />
+            <span class="min-w-0 flex-1 truncate text-sm font-medium">{summary.tag.name}</span>
+            <span :if={!summary.automatic?} class="text-xs tabular-nums text-base-content/45">
+              {summary.average_relevancy}/10
+            </span>
+            <button
+              :if={summary.automatic?}
+              aria-label={"Dismiss #{summary.tag.name}"}
+              class="btn btn-xs btn-circle btn-ghost"
+              data-testid={"entry-topic-dismiss-#{summary.tag.id}"}
+              phx-click="topic:dismiss"
+              phx-value-topic_id={summary.tag.id}
+              type="button"
+            >
+              <.icon name="hero-x-mark-micro" />
+            </button>
+            <button
+              :if={!summary.automatic? && summary.current_member_contribution}
+              aria-label={"Remove #{summary.tag.name}"}
+              class="btn btn-xs btn-circle btn-ghost"
+              data-testid={"entry-topic-remove-#{summary.tag.id}"}
+              phx-click="topic:remove"
+              phx-value-topic_id={summary.tag.id}
+              type="button"
+            >
+              <.icon name="hero-x-mark-micro" />
+            </button>
+          </div>
+        </div>
+
+        <.form
+          :if={@topic_form}
+          class="grid gap-3 rounded-box border border-base-content/10 p-3 sm:grid-cols-[1fr_10rem_auto] sm:items-end"
+          data-testid="entry-topic-form"
+          for={@topic_form}
+          id="entry-topic-form"
+          phx-submit="topic:save"
+        >
+          <.input
+            field={@topic_form[:topic_id]}
+            label="Topic"
+            options={Enum.map(@topic_options, &{&1.name, &1.id})}
+            prompt="Choose a topic"
+            type="select"
+          />
+          <.input
+            field={@topic_form[:relevancy]}
+            label="Relevance"
+            max="10"
+            min="1"
+            type="number"
+          />
+          <div class="flex gap-1">
+            <button class="btn btn-sm btn-ghost" phx-click="topic:cancel" type="button">
+              Cancel
+            </button>
+            <button class="btn btn-sm btn-primary" data-testid="entry-topic-save" type="submit">
+              Save
+            </button>
+          </div>
+        </.form>
+      </section>
 
       <div :if={@manageable?} class="flex justify-end gap-2 border-t border-base-content/10 pt-4">
         <button
@@ -288,22 +505,129 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
     """
   end
 
+  attr :automatic_topic_matching?, :boolean, required: true
+  attr :expanded_topic_id, :string, default: nil
+  attr :space_slug, :string, required: true
+  attr :topic_views, :list, required: true
+
+  def topic_matching(assigns) do
+    ~H"""
+    <div class="space-y-4" data-testid="topic-matching-page">
+      <div class="flex items-center justify-between gap-3">
+        <h1 class="text-2xl flex items-center gap-2 text-base-content/80">
+          <.icon name="hero-sparkles-micro" class="size-5" /> Smart topics
+        </h1>
+        <button
+          aria-checked={to_string(@automatic_topic_matching?)}
+          class={[
+            "btn btn-sm rounded-full",
+            @automatic_topic_matching? && "btn-primary",
+            !@automatic_topic_matching? && "btn-ghost bg-base-200"
+          ]}
+          data-testid="topic-matching-toggle"
+          phx-click="matching:toggle"
+          role="switch"
+          type="button"
+        >
+          {if(@automatic_topic_matching?, do: "On", else: "Off")}
+        </button>
+      </div>
+
+      <div
+        :if={@topic_views == []}
+        class="rounded-box bg-base-200/55 px-4 py-6 text-center text-sm"
+        data-testid="topic-matching-empty"
+      >
+        <.link class="link link-primary" navigate={~p"/#{@space_slug}/topics"}>Create a topic</.link>
+      </div>
+
+      <div class="divide-y divide-base-content/10 rounded-box bg-base-200/40 px-4">
+        <div :for={view <- @topic_views} data-testid={"topic-matching-rule-#{view.topic.slug}"}>
+          <div class="flex items-center gap-2 py-3">
+            <button
+              aria-expanded={to_string(@expanded_topic_id == view.topic.id)}
+              class="flex min-w-0 flex-1 items-center gap-2 text-left"
+              data-testid={"topic-matching-expand-#{view.topic.slug}"}
+              phx-click="matching:expand"
+              phx-value-topic_id={view.topic.id}
+              type="button"
+            >
+              <.icon
+                name={
+                  if(@expanded_topic_id == view.topic.id,
+                    do: "hero-chevron-down-micro",
+                    else: "hero-chevron-right-micro"
+                  )
+                }
+                class="size-3 opacity-40"
+              />
+              <span class="truncate text-sm font-medium">{view.topic.name}</span>
+              <span class="badge badge-xs badge-ghost">{view.count}</span>
+            </button>
+            <button
+              aria-checked={to_string(view.rule.enabled?)}
+              class={[
+                "btn btn-xs rounded-full",
+                view.rule.enabled? && "btn-primary btn-soft",
+                !view.rule.enabled? && "btn-ghost opacity-60"
+              ]}
+              data-testid={"topic-matching-rule-toggle-#{view.topic.slug}"}
+              phx-click="matching:rule:toggle"
+              phx-value-topic_id={view.topic.id}
+              role="switch"
+              type="button"
+            >
+              {if(view.rule.enabled?, do: "Enabled", else: "Disabled")}
+            </button>
+          </div>
+
+          <div :if={@expanded_topic_id == view.topic.id} class="space-y-3 pb-4 pl-5">
+            <div :if={view.rule.aliases != []} class="flex flex-wrap gap-1.5">
+              <button
+                :for={alias_value <- view.rule.aliases}
+                class="badge badge-sm gap-1"
+                data-testid={"topic-matching-alias-#{view.topic.slug}"}
+                phx-click="matching:alias:remove"
+                phx-value-alias={alias_value}
+                phx-value-topic_id={view.topic.id}
+                type="button"
+              >
+                {alias_value} <.icon name="hero-x-mark-micro" class="size-3" />
+              </button>
+            </div>
+            <.form
+              class="flex gap-2"
+              data-testid={"topic-matching-alias-form-#{view.topic.slug}"}
+              for={to_form(%{"value" => ""}, as: :topic_alias)}
+              id={"topic-matching-alias-form-#{view.topic.id}"}
+              phx-submit="matching:alias:add"
+            >
+              <input name="topic_id" type="hidden" value={view.topic.id} />
+              <.input
+                aria-label="Alias"
+                class="input input-sm flex-1"
+                field={to_form(%{"value" => ""}, as: :topic_alias)[:value]}
+                placeholder="Alias"
+              />
+              <button class="btn btn-sm btn-ghost" type="submit">Add</button>
+            </.form>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr :draft, :map, default: nil
   attr :form, :map, required: true
   attr :import_form, :map, required: true
   attr :templates, :list, required: true
 
-  def collection_wizard(assigns) do
+  def type_wizard(assigns) do
     ~H"""
-    <div class="space-y-8" data-testid="collection-wizard">
+    <div class="space-y-6" data-testid="type-wizard">
       <div :if={!@draft}>
-        <div class="mb-5">
-          <p class="text-sm font-semibold text-primary">Step 1 of 2</p>
-          <h1 class="mt-1 text-2xl font-bold">What are you collecting?</h1>
-          <p class="mt-2 text-sm text-base-content/55">
-            Templates are starting points, but remain entirely configurable.
-          </p>
-        </div>
+        <h1 class="mb-5 text-2xl font-bold">Add type</h1>
 
         <div class="grid grid-cols-2 gap-1 xl:grid-cols-4">
           <button
@@ -339,8 +663,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
         >
           <.input
             field={@import_form[:json]}
-            label="Paste a collection schema"
-            placeholder={~c"{\"format\": \"wik-library-schema\", ...}"}
+            label="Paste a type schema"
+            placeholder={~c"{\"format\": \"wik-library-type\", ...}"}
             rows="7"
             type="textarea"
           />
@@ -354,24 +678,20 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
 
       <div :if={@draft} class="mx-auto max-w-3xl">
         <div class="mb-5">
-          <p class="text-sm font-semibold text-primary">Step 2 of 2</p>
-          <h1 class="mt-1 text-2xl font-bold">Review your collection</h1>
-          <p class="mt-2 text-sm text-base-content/55">
-            You can refine the schema from collection settings after creation.
-          </p>
+          <h1 class="text-2xl font-bold">Review type</h1>
         </div>
 
         <.form
           class="space-y-6"
-          data-testid="collection-create-form"
+          data-testid="type-create-form"
           for={@form}
-          id="collection-create-form"
-          phx-submit="collection:create"
+          id="type-create-form"
+          phx-submit="type:create"
         >
           <div class="grid gap-4 sm:grid-cols-2">
             <.input
               field={@form[:name]}
-              label="Collection name"
+              label="Type name"
               phx-hook="CapitalizeFirstLetter"
               required
             />
@@ -385,7 +705,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
           <.schema_summary fields={@draft.fields} />
 
           <.entry_creation_permissions
-            id="collection-create-permissions"
+            id="type-create-permissions"
             name={@form[:entry_creation_permission].name}
             required
             selected={@form[:entry_creation_permission].value}
@@ -393,8 +713,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
 
           <div class="flex justify-between gap-3">
             <button class="btn btn-ghost" phx-click="wizard:back" type="button">Back</button>
-            <button class="btn btn-primary" data-testid="collection-create-submit" type="submit">
-              Create collection <.icon name="hero-arrow-right-micro" />
+            <button class="btn btn-primary" data-testid="type-create-submit" type="submit">
+              Create type <.icon name="hero-arrow-right-micro" />
             </button>
           </div>
         </.form>
@@ -413,7 +733,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
     ~H"""
     <section
       class="rounded-box border border-base-content/10 bg-base-200/35 p-5"
-      data-testid="collection-permissions"
+      data-testid="type-permissions"
       id={@id}
     >
       <h2 class="text-lg font-bold">Permissions</h2>
@@ -486,7 +806,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
     """
   end
 
-  attr :collection, :map, required: true
+  attr :type, :map, required: true
   attr :form, :map, required: true
   attr :mode, :atom, required: true
 
@@ -499,7 +819,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
       id="entry-form"
       phx-submit={if(@mode == :new, do: "entry:create", else: "entry:update")}
     >
-      <div :for={field <- @collection.fields}>
+      <div :for={field <- @type.fields}>
         <RichTextInput.field
           :if={field.type == :rich_text}
           id={"entry-#{field.key}"}
@@ -538,8 +858,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
     """
   end
 
-  attr :collection, :map, required: true
-  attr :collection_form, :map, required: true
+  attr :type, :map, required: true
+  attr :type_form, :map, required: true
   attr :editing_field, :map, default: nil
   attr :field_form, :map, required: true
   attr :field_usage_counts, :map, required: true
@@ -550,19 +870,19 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
       <section class="rounded-box border border-base-content/10 bg-base-200/35 p-5">
         <.form
           class="grid gap-4  sm:items-end"
-          data-testid="collection-settings-form"
-          for={@collection_form}
-          id="collection-settings-form"
-          phx-submit="collection:update"
+          data-testid="type-settings-form"
+          for={@type_form}
+          id="type-settings-form"
+          phx-submit="type:update"
         >
           <.input
-            field={@collection_form[:name]}
+            field={@type_form[:name]}
             label="Name"
             phx-hook="CapitalizeFirstLetter"
             required
           />
           <.input
-            field={@collection_form[:description]}
+            field={@type_form[:description]}
             label="Short description"
             phx-hook="CapitalizeFirstLetter"
           />
@@ -571,10 +891,10 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
       </section>
 
       <.entry_creation_permissions
-        event="collection:entry_creation_permission:update"
-        id="collection-settings-permissions"
+        event="type:entry_creation_permission:update"
+        id="type-settings-permissions"
         name="entry-creation-permission"
-        selected={@collection.entry_creation_permission}
+        selected={@type.entry_creation_permission}
       />
 
       <section class="rounded-box border border-base-content/10 bg-base-200/35 p-5">
@@ -587,7 +907,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
 
         <div class="mt-5 divide-y divide-base-content/10">
           <div
-            :for={{field, index} <- Enum.with_index(@collection.fields)}
+            :for={{field, index} <- Enum.with_index(@type.fields)}
             class="flex items-center gap-3 py-3"
             data-testid={"schema-field-#{field.key}"}
           >
@@ -620,7 +940,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
                 <.icon name="hero-chevron-up-micro" />
               </button>
               <button
-                :if={index > 0 && index < length(@collection.fields) - 1}
+                :if={index > 0 && index < length(@type.fields) - 1}
                 aria-label={"Move #{field.label} down"}
                 class="btn btn-square btn-ghost btn-xs"
                 phx-click="field:move"
@@ -718,12 +1038,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
       data-testid="portable-schema"
     >
       <div class="flex items-center justify-between gap-4">
-        <div>
-          <h2 class="font-bold">Portable schema</h2>
-          <p class="mt-1 text-sm text-base-content/50">
-            Contains configuration only—never entries, owners, or space identifiers.
-          </p>
-        </div>
+        <h2 class="font-bold">Portable schema</h2>
         <button
           class="btn btn-sm btn-primary"
           data-copy-source-id="library-schema-json"
@@ -740,15 +1055,12 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
         class="textarea mt-4 h-80 w-full font-mono text-xs leading-relaxed"
         readonly
       >{@export_json}</textarea>
-      <p class="mt-2 text-xs text-base-content/45">
-        If automatic copying is unavailable, select the JSON above and copy it manually.
-      </p>
     </section>
     """
   end
 
-  def entry_title(collection, entry) do
-    title_field = Enum.find(collection.fields, &(&1.type == :title))
+  def entry_title(type, entry) do
+    title_field = Enum.find(type.fields, &(&1.type == :title))
     Schema.field_value(entry, title_field) || "Untitled"
   end
 
@@ -764,8 +1076,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
 
   def media_embed(_value), do: nil
 
-  defp entry_media(collection, entry) do
-    collection.fields
+  defp entry_media(type, entry) do
+    type.fields
     |> Enum.find(&(&1.type == :media and not Schema.blank_value?(Schema.field_value(entry, &1))))
     |> case do
       nil ->
@@ -803,8 +1115,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
 
   defp media_provider(_embed_url), do: nil
 
-  defp summary_fields(collection, entry) do
-    collection.fields
+  defp summary_fields(type, entry) do
+    type.fields
     |> Enum.filter(fn field ->
       field.type not in [:title, :media, :rich_text] and
         not Schema.blank_value?(Schema.field_value(entry, field))
@@ -824,6 +1136,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components do
   defp input_type(:select), do: "select"
   defp input_type(:url), do: "url"
   defp input_type(_type), do: "text"
+
+  defp entry_field_icon(%{key: "organization"}), do: "hero-home"
+  defp entry_field_icon(%{key: "role"}), do: "hero-academic-cap"
+  defp entry_field_icon(%{type: :text}), do: nil
+  defp entry_field_icon(%{type: type}), do: field_icon(type)
 
   defp field_icon(:boolean), do: "hero-check-circle-micro"
   defp field_icon(:date), do: "hero-calendar-days-micro"

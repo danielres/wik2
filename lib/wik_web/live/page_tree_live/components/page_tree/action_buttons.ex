@@ -17,36 +17,36 @@ defmodule WikWeb.PageTreeLive.Components.PageTree.ActionButtons do
     """
   end
 
-  attr :"data-tip", :string, required: true
-  attr :icon, :string, required: true
-  attr :class, :string, default: ""
-  attr :variant, :string, default: "accent"
-  attr :rest, :global
-
-  def button(assigns) do
-    variant_class =
-      case assigns.variant do
-        "error" -> "hover:btn-error tooltip-error"
-        _ -> "hover:btn-accent tooltip-accent"
-      end
-
-    assigns = assigns |> assign(variant_class: variant_class)
-
-    ~H"""
-    <CoreComponents.button
-      class={[
-        "btn btn-xs btn-circle btn-soft btn-accent",
-        "tooltip tooltip-left tooltip-delayed",
-        @variant_class,
-        @class
-      ]}
-      data-tip={assigns[:"data-tip"]}
-      style="--tt-delay: 400ms"
-      {@rest}
-    >
-      <CoreComponents.icon name={@icon} class="size-4" />
-      <span class="sr-only">{assigns[:"data-tip"]}</span>
-    </CoreComponents.button>
-    """
-  end
+  # attr :"data-tip", :string, required: true
+  # attr :icon, :string, required: true
+  # attr :class, :string, default: ""
+  # attr :variant, :string, default: "accent"
+  # attr :rest, :global
+  #
+  # def button(assigns) do
+  #   variant_class =
+  #     case assigns.variant do
+  #       "error" -> "hover:btn-error tooltip-error"
+  #       _ -> "hover:btn-accent tooltip-accent"
+  #     end
+  #
+  #   assigns = assigns |> assign(variant_class: variant_class)
+  #
+  #   ~H"""
+  #   <CoreComponents.button
+  #     class={[
+  #       "btn btn-xs btn-circle btn-soft btn-accent",
+  #       "tooltip tooltip-left tooltip-delayed",
+  #       @variant_class,
+  #       @class
+  #     ]}
+  #     data-tip={assigns[:"data-tip"]}
+  #     style="--tt-delay: 400ms"
+  #     {@rest}
+  #   >
+  #     <CoreComponents.icon name={@icon} class="size-4" />
+  #     <span class="sr-only">{assigns[:"data-tip"]}</span>
+  #   </CoreComponents.button>
+  #   """
+  # end
 end

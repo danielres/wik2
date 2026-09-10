@@ -3,6 +3,43 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  alias WikWeb.CoreComponents
+
+  attr :"data-tip", :string, required: true
+  attr :icon, :string, required: true
+  attr :class, :string, default: ""
+  attr :size_class, :string, default: "btn-xs"
+  attr :variant, :string, default: "accent"
+  attr :rest, :global
+
+  def action_button(assigns) do
+    variant_class =
+      case assigns.variant do
+        "error" -> "hover:btn-error tooltip-error"
+        _ -> "hover:btn-accent tooltip-accent"
+      end
+
+    assigns = assigns |> assign(variant_class: variant_class)
+
+    ~H"""
+    <CoreComponents.button
+      class={[
+        "btn btn-circle btn-soft btn-accent",
+        "tooltip tooltip-left tooltip-delayed",
+        "[--tt-delay:400ms]",
+        @size_class,
+        @variant_class,
+        @class
+      ]}
+      data-tip={assigns[:"data-tip"]}
+      {@rest}
+    >
+      <CoreComponents.icon name={@icon} class="size-4" />
+      <span class="sr-only">{assigns[:"data-tip"]}</span>
+    </CoreComponents.button>
+    """
+  end
+
   attr :class, :string, default: ""
   attr :editing?, :boolean, required: true
   attr :in_place?, :boolean, default: false

@@ -1,15 +1,16 @@
 defmodule WikWeb.PageTreeLive.PageTreeEditor do
   use WikWeb, :live_component
 
+  alias Utils.Log
   alias Wik.Wiki.PageTree
   alias WikWeb.Components.Modal
+  alias WikWeb.Components.UI
   alias WikWeb.PageTreeLive.Components
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias WikWeb.PageTreeLive.PageTreeEditor.FlowAddChild
   alias WikWeb.PageTreeLive.PageTreeEditor.FlowMoveNode
   alias WikWeb.PageTreeLive.PageTreeEditor.FormAddChild
   alias WikWeb.PageTreeLive.PageTreeEditor.FormMoveNode
-  alias Utils.Log
 
   @impl true
   def update(assigns, socket) do
@@ -32,7 +33,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
     ~H"""
     <div class="relative">
       <div class="absolute right-0 -top-9">
-        <ActionButtons.button
+        <UI.action_button
           :if={@editable?}
           data-tip="add at top level"
           data-testid="page-tree-editor-add-root"
@@ -141,7 +142,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
 
     ~H"""
     <ActionButtons.wrapper>
-      <ActionButtons.button
+      <UI.action_button
         :if={@node.children == []}
         data-tip="delete"
         data-testid={"page-tree-editor-node-#{@node.id}-remove"}
@@ -152,7 +153,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
         variant="error"
       />
 
-      <ActionButtons.button
+      <UI.action_button
         data-tip="add child"
         data-testid={"page-tree-editor-node-#{@node.id}-add-child"}
         icon="hero-plus-mini"
@@ -161,7 +162,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor do
         phx-value-node_id={@node.id}
       />
 
-      <ActionButtons.button
+      <UI.action_button
         :if={@has_candidates?}
         data-tip="move"
         data-testid={"page-tree-editor-node-#{@node.id}-move"}

@@ -12,80 +12,74 @@ defmodule WikWeb.LibraryPrototypeLive.Components.LibraryToolbar do
   attr :types, :list, required: true
 
   def render(assigns) do
+    assigns =
+      assigns
+      |> assign(:active_type_ids, Enum.map(assigns.active_types, & &1.id))
+      |> assign(:sorted_types, Enum.sort_by(assigns.types, &String.downcase(&1.name)))
+
     ~H"""
-    <header class="flex flex-wrap items-end justify-between gap-3" data-testid="library-toolbar">
-      <div class="flex flex-wrap items-center gap-2" data-testid="library-filters">
-        <.filter_menu
-          icon="hero-circle-stack-micro"
-          items={@types}
-          kind="type"
-          selected_ids={Enum.map(@active_types, & &1.id)}
-          testid="type-filter"
-          title="Types"
-        />
-
-        <.filter_menu
-          icon="hero-tag-micro"
-          items={@topics}
-          kind="topic"
-          selected_ids={Enum.map(@active_topics, & &1.id)}
-          testid="topic-filter"
-          title="Topics"
-        />
-
-        <button
-          :for={type <- @active_types}
-          class={[
-            "badge badge-sm",
-            "gap-1",
-            "bg-base-content/10",
-            "opacity-50 hover:opacity-100 transition",
-            "cursor-pointer",
-            "group"
-          ]}
-          data-testid={"active-type-filter-#{type.slug}"}
-          phx-click="filter:toggle"
-          phx-value-id={type.id}
-          phx-value-kind="type"
-          type="button"
-        >
-          {type.name}
-          <.icon
-            name="hero-x-mark-micro"
+    <header class="flex flex-wrap items-baseline justify-between gap-3" data-testid="library-toolbar">
+      <div class="space-y-4" data-testid="library-filters">
+        <div class="flex flex-wrap gap-1" data-testid="type-filters">
+          <button
+            :for={type <- @sorted_types}
             class={[
-              "size-3",
-              "opacity-50 group-hover:opacity-100"
+              "bg-base-200/50 hover:bg-base-200/80 px-4 py-1 rounded",
+              "cursor-pointer",
+              (Enum.empty?(@active_type_ids) or type.id in @active_type_ids) && "opacity-100",
+              (@active_type_ids != [] and type.id not in @active_type_ids) &&
+                "opacity-50 hover:opacity-80"
             ]}
-          />
-        </button>
+            data-testid={"type-filter-#{type.slug}"}
+            phx-click="filter:toggle"
+            phx-value-id={type.id}
+            phx-value-kind="type"
+            type="button"
+          >
+            <span class="uppercase tracking-wider text-[12px] font-semibold opacity-80">
+              {type.name}
+            </span>
+          </button>
+        </div>
 
-        <button
-          :for={topic <- @active_topics}
-          class={[
-            "badge badge-sm",
-            "gap-1",
-            "bg-primary/10",
-            "text-primary",
-            "opacity-80 hover:opacity-100 transition",
-            "cursor-pointer",
-            "group"
-          ]}
-          data-testid={"active-topic-filter-#{topic.slug}"}
-          phx-click="filter:toggle"
-          phx-value-id={topic.id}
-          phx-value-kind="topic"
-          type="button"
-        >
-          {topic.name}
-          <.icon
-            name="hero-x-mark-micro"
-            class={[
-              "size-3",
-              "opacity-50 group-hover:opacity-100"
-            ]}
+        <div class="flex items-center gap-1">
+          <.filter_menu
+            icon="hero-tag-micro"
+            items={@topics}
+            kind="topic"
+            selected_ids={Enum.map(@active_topics, & &1.id)}
+            testid="topic-filter"
+            title="Topics"
           />
-        </button>
+
+          <button
+            :for={topic <- @active_topics}
+            class={[
+              "badge badge-sm",
+              "gap-1",
+              "bg-base-content/10",
+              "opacity-80 hover:opacity-100 transition",
+              "cursor-pointer",
+              "group"
+            ]}
+            data-testid={"active-topic-filter-#{topic.slug}"}
+            phx-click="filter:toggle"
+            phx-value-id={topic.id}
+            phx-value-kind="topic"
+            type="button"
+          >
+            {topic.name}
+            <.icon
+              name="hero-x-mark-micro"
+              class={[
+                "size-3",
+                "opacity-50 group-hover:opacity-100"
+              ]}
+            />
+          </button>
+        </div>
       </div>
+
       <div class="flex items-center gap-2">
         <UI.action_button
           :if={@can_manage_types?}
@@ -148,7 +142,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.LibraryToolbar do
   defp filter_menu(assigns) do
     ~H"""
     <button
-      class="btn btn-sm"
+      class="btn btn-xs rounded-full"
       data-testid={@testid}
       popovertarget={"#{@testid}-popover"}
       style={"anchor-name:--#{@testid}-anchor"}

@@ -13,7 +13,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
 
   def render(assigns) do
     ~H"""
-    <div class="space-y-8" data-testid="schema-settings">
+    <div class="space-y-4" data-testid="schema-settings">
       <section class="rounded-box border border-base-content/10 bg-base-200/35 p-5">
         <.form
           class="grid gap-4  sm:items-end"
@@ -166,7 +166,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
             >
               Cancel edit
             </button>
-            <button class="btn btn-primary btn-sm" data-testid="field-submit" type="submit">
+            <button class="btn btn-accent btn-soft btn-sm" data-testid="field-submit" type="submit">
               {if(@editing_field, do: "Save field", else: "Add field")}
             </button>
           </div>

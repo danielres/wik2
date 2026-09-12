@@ -233,7 +233,8 @@ defmodule WikWeb.LibraryPrototypeLive do
         class="hidden rounded-box border border-dashed border-base-content/20 py-16 text-center only:block"
         id="library-entries-empty"
       >
-        <.icon name="hero-inbox-micro" class="mx-auto size-8 opacity-25" />
+        <div class="font-bold text-xs text-base-content/50">No results found</div>
+        <.icon name="hero-magnifying-glass-micro" class="mx-auto size-6 opacity-25" />
       </div>
 
       <article
@@ -298,7 +299,11 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   defp render_content(%{live_action: :type_settings} = assigns) do
     ~H"""
-    <div class="space-y-6 max-w-[80ch] mx-auto">
+    <div class="space-y-4 max-w-[80ch] mx-auto">
+      <h1 class="text-2xl flex items-center gap-2 text-base-content/80">
+        <.icon name="hero-circle-stack-micro" /> Type settings
+      </h1>
+
       <SchemaSettings.render
         editing_field={@editing_field}
         field_form={@field_form}
@@ -306,7 +311,9 @@ defmodule WikWeb.LibraryPrototypeLive do
         type={@current_type}
         type_form={@type_form}
       />
+
       <PortableSchema.render export_json={Schema.export(@current_type)} />
+
       <div class="flex items-center justify-end gap-3">
         <span
           :if={@current_type_entry_count > 0}

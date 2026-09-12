@@ -86,8 +86,8 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
              ~s(#topic-filter-popover[popover][style="position-anchor:--topic-filter-anchor"])
            )
 
-    assert has_element?(view, testid("type-filter") <> ~s([popovertarget="type-filter-popover"]))
-    assert has_element?(view, "#type-filter-popover[popover]")
+    assert has_element?(view, testid("type-filters"))
+    refute has_element?(view, "#type-filter-popover[popover]")
     assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
     refute has_element?(view, testid("topic-filter-unassigned"))
     assert has_element?(view, testid("type-filter-place") <> " .hero-check-micro")

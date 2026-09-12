@@ -12,11 +12,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
 
   def render(assigns) do
     ~H"""
-    <div class="space-y-6" data-testid="type-wizard">
+    <div class="space-y-6 max-w-[80ch] mx-auto" data-testid="type-wizard">
       <div :if={!@draft}>
-        <h1 class="mb-5 text-2xl font-bold">Add type</h1>
+        <h1 class="mb-4 text-2xl">Add type</h1>
 
-        <div class="grid grid-cols-2 gap-1 xl:grid-cols-4">
+        <div class="grid grid-cols-4 gap-1">
           <button
             :for={template <- @templates}
             class={[
@@ -28,11 +28,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
             phx-value-template_id={template.id}
             type="button"
           >
-            <div class="flex items-center gap-3">
-              <span class="rounded-box bg-primary/10 p-2 text-primary">
-                <.icon name={template.icon} class="size-5" />
-              </span>
-              <span class="font-bold">{template.name}</span>
+            <div class="flex justify-center">
+              <span class="font-semibold small-caps">{template.name}</span>
             </div>
           </button>
         </div>
@@ -65,7 +62,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
 
       <div :if={@draft} class="mx-auto max-w-3xl">
         <div class="mb-5">
-          <h1 class="text-2xl font-bold">Review type</h1>
+          <h1 class="text-2xl font-semibold">Review type</h1>
         </div>
 
         <.form
@@ -99,9 +96,9 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
           />
 
           <div class="flex justify-between gap-3">
-            <button class="btn btn-ghost" phx-click="wizard:back" type="button">Back</button>
-            <button class="btn btn-primary" data-testid="type-create-submit" type="submit">
-              Create type <.icon name="hero-arrow-right-micro" />
+            <button class="btn btn-ghost opacity-50 hover:opacity-100 transition" phx-click="wizard:back" type="button">Back</button>
+            <button class="btn btn-accent" data-testid="type-create-submit" type="submit">
+              Create type 
             </button>
           </div>
         </.form>

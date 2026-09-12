@@ -63,26 +63,30 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
         ]
       ),
       template(
-        "video",
-        "Video",
-        "Tutorials, performances, music videos, or other video references.",
-        "hero-video-camera-micro",
+        "external-media",
+        "External media",
+        "Videos, tracks, mixes, and other external media.",
+        "hero-play-circle-micro",
         [
-          title_field("title", "Title"),
           field("media", "Media", :media, required?: true),
+          title_field("title", "Title"),
           field("creator", "Creator", :text),
+          field("duration", "Duration", :text),
           field("notes", "Notes", :rich_text)
         ]
       ),
       template(
-        "music",
-        "Music",
-        "Tracks, mixes, albums, and other listening references.",
-        "hero-musical-note-micro",
+        "recipe",
+        "Recipe",
+        "Recipes, dishes, and other cooking references.",
+        "hero-book-open-micro",
         [
-          title_field("title", "Title"),
-          field("artist", "Artist", :text),
-          field("media", "Media", :media),
+          title_field("name", "Name"),
+          field("duration", "Duration", :select,
+            options: ["0-5 min", "5-10 min", "10-20 min", "20-30 min", "30-60 min", "60+ min"]
+          ),
+          field("ingredients", "Ingredients", :rich_text),
+          field("instructions", "Instructions", :rich_text),
           field("notes", "Notes", :rich_text)
         ]
       ),
@@ -336,7 +340,7 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
 
   defp import_field(_field), do: {:error, "Every field needs a key, label, and type."}
 
-  defp validate_imported_fields([%{type: :title} | _rest] = fields) do
+  defp validate_imported_fields(fields) when is_list(fields) and fields != [] do
     keys = Enum.map(fields, & &1.key)
 
     cond do
@@ -351,9 +355,7 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
     end
   end
 
-  defp validate_imported_fields(_fields) do
-    {:error, "The first field must be the type title."}
-  end
+  defp validate_imported_fields(_fields), do: {:error, "A schema needs at least one field."}
 
   defp normalize_entry_value(field, value) do
     value = normalize_raw_value(field.type, value)

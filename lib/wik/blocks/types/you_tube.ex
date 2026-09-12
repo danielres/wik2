@@ -53,6 +53,9 @@ defmodule Wik.Blocks.Types.YouTube do
       embed_url?(input) ->
         {:ok, input |> embed_url_to_nocookie_embed_url()}
 
+      playlist_id = youtube_playlist_id(input) ->
+        {:ok, "https://www.youtube-nocookie.com/embed?listType=playlist&list=#{playlist_id}"}
+
       video_id = youtube_video_id(input) ->
         {:ok, "https://www.youtube-nocookie.com/embed/#{video_id}"}
 
@@ -77,14 +80,14 @@ defmodule Wik.Blocks.Types.YouTube do
 
   def embed_url?(url) when is_binary(url) do
     case URI.parse(url) do
-      %URI{scheme: "https", host: host, path: path}
+      %URI{scheme: "https", host: host, path: path, query: query}
       when host in [
              "youtube.com",
              "www.youtube.com",
              "youtube-nocookie.com",
              "www.youtube-nocookie.com"
            ] ->
-        String.starts_with?(path || "", "/embed/")
+        String.starts_with?(path || "", "/embed/") or playlist_embed_url?(path, query)
 
       _ ->
         false
@@ -92,6 +95,13 @@ defmodule Wik.Blocks.Types.YouTube do
   end
 
   def embed_url?(_), do: false
+
+  defp playlist_embed_url?("/embed", query) do
+    playlist_id_from_query(query) != nil and
+      Regex.match?(~r/(?:^|&)listType=playlist(?:&|$)/, query || "")
+  end
+
+  defp playlist_embed_url?(_path, _query), do: false
 
   defp embed_url_to_nocookie_embed_url(url) do
     url
@@ -120,6 +130,32 @@ defmodule Wik.Blocks.Types.YouTube do
         valid_video_id(input)
     end
   end
+
+  defp youtube_playlist_id(input) do
+    case URI.parse(input) do
+      %URI{scheme: "https", host: host, path: "/playlist", query: query}
+      when host in [
+             "youtube.com",
+             "www.youtube.com",
+             "m.youtube.com",
+             "youtube-nocookie.com",
+             "www.youtube-nocookie.com"
+           ] ->
+        playlist_id_from_query(query)
+
+      _uri ->
+        nil
+    end
+  end
+
+  defp playlist_id_from_query(query) when is_binary(query) do
+    case Regex.run(~r/(?:^|&)list=([A-Za-z0-9_-]{2,128})(?:&|$)/, query) do
+      [_, playlist_id] -> playlist_id
+      _no_match -> nil
+    end
+  end
+
+  defp playlist_id_from_query(_query), do: nil
 
   defp youtube_video_id_from_query(query) when is_binary(query) do
     case Regex.run(~r/(?:^|&)v=([A-Za-z0-9_-]{11})(?:&|$)/, query) do

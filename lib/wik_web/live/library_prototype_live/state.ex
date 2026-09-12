@@ -177,12 +177,11 @@ defmodule WikWeb.LibraryPrototypeLive.State do
 
   def move_field(state, type_id, field_id, direction) when direction in [:up, :down] do
     with %{} = type <- find_type_by_id(state, type_id),
-         index when is_integer(index) <- Enum.find_index(type.fields, &(&1.id == field_id)),
-         false <- index == 0 do
+         index when is_integer(index) <- Enum.find_index(type.fields, &(&1.id == field_id)) do
       destination = if direction == :up, do: index - 1, else: index + 1
 
       fields =
-        if destination in 1..(length(type.fields) - 1) do
+        if destination in 0..(length(type.fields) - 1) do
           field = Enum.at(type.fields, index)
 
           type.fields
@@ -196,7 +195,6 @@ defmodule WikWeb.LibraryPrototypeLive.State do
       {:ok, put_type(state, type), type}
     else
       nil -> {:error, "That field is no longer available."}
-      true -> {:error, "The title field always stays first."}
     end
   end
 
@@ -206,11 +204,12 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     |> Enum.count(fn entry -> not Schema.blank_value?(Schema.field_value(entry, field)) end)
   end
 
-  def create_entry(state, type, creator_id, admin?, params) do
+  def create_entry(state, type, creator_id, admin?, params, external_media_metadata \\ nil) do
     with true <- can_create_entry?(type, admin?),
          {:ok, values} <- Schema.entry_values(type.fields, params) do
       entry = %{
         creator_id: creator_id,
+        external_media_metadata: external_media_metadata,
         id: unique_id("entry"),
         inserted_at: DateTime.utc_now(),
         type_id: type.id,
@@ -224,12 +223,24 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     end
   end
 
-  def update_entry(state, type, entry_id, actor_id, admin?, params) do
+  def update_entry(
+        state,
+        type,
+        entry_id,
+        actor_id,
+        admin?,
+        params,
+        external_media_metadata \\ nil
+      ) do
     with %{} = entry <- find_entry(state, entry_id),
          true <- entry.type_id == type.id,
          true <- can_manage_entry?(entry, actor_id, admin?),
          {:ok, values} <- Schema.entry_values(type.fields, params) do
-      entry = %{entry | values: values}
+      entry =
+        entry
+        |> Map.put(:external_media_metadata, external_media_metadata)
+        |> Map.put(:values, values)
+
       {:ok, %{state | entries: Map.put(state.entries, entry.id, entry)}, entry}
     else
       nil -> {:error, :not_found}
@@ -566,6 +577,10 @@ defmodule WikWeb.LibraryPrototypeLive.State do
   defp seeded_entries(types) do
     now = DateTime.utc_now()
 
+    playlist_url =
+      "https://www.youtube.com/playlist?list=PL-ZQIvQFPv4LYaNhtbleNaepGSGsuzQyp"
+
+# 
     [
       seeded_entry(types, "place", "entry-place", now, %{
         "location" => "Spreeacker, Wilhelmine-Gemberg-Weg 12, Berlin",
@@ -574,12 +589,54 @@ defmodule WikWeb.LibraryPrototypeLive.State do
         "phone" => "+49 30 123456",
         "website" => "https://example.org/spreeacker"
       }),
-      seeded_entry(types, "video", "entry-video-downtempo", DateTime.add(now, -10, :second), %{
-        "creator" => "Tom",
-        "media" => "https://www.youtube.com/watch?v=UuU-Go8GoeY&t=886s",
-        "notes" => "Lorem",
-        "title" => "Downtempo music"
-      }),
+      seeded_entry(
+        types,
+        "external-media",
+        "entry-playlist",
+        DateTime.add(now, -20, :second),
+        %{
+          "creator" => "8-bit Music Theory",
+          "duration" => "",
+          "media" => playlist_url,
+          "notes" => "",
+          "title" => "Modes Analysis Videos"
+        },
+        %{
+          item_count: 8,
+          kind: :playlist,
+          playlist_items: [
+            %{title: "LOCRIAN doesn't have to be S p O o K y", video_id: "tbRdHktBv58"},
+            %{title: "How to Use the LYDIAN Mode", video_id: "XElvBrpaUP8"},
+            %{title: "The MIXOLYDIAN Mode is Really Kind of Goofy", video_id: "strpCnUKs_g"},
+            %{title: "The PHRYGIAN Mode Feels THREATENING", video_id: "tWthNcF_4Uk"},
+            %{
+              title: "The DORIAN Mode Feels MYSTERIOUS (among other things)",
+              video_id: "SbRD3tPipNw"
+            },
+            %{title: "The AEOLIAN Mode Feels Devastating", video_id: "UFqfSTdg5Xg"},
+            %{title: "The Ionian Mode Feels RELAXING", video_id: "RXxU324nCEY"},
+            %{title: "What are the Melodic Minor Modes?", video_id: "E_mto_Dkpo0"}
+          ],
+          provider: :youtube,
+          source_url: playlist_url,
+          thumbnail_url: "https://i.ytimg.com/vi/tbRdHktBv58/hqdefault.jpg"
+        }
+      ),
+      seeded_entry(
+        types,
+        "external-media",
+        "entry-video-downtempo",
+        DateTime.add(now, -10, :second),
+        %{
+          "creator" => "Tom",
+          "duration" => "14:46",
+          "media" => "https://www.youtube.com/watch?v=UuU-Go8GoeY&t=886s",
+          "notes" =>
+            "The platypus (Ornithorhynchus anatinus), sometimes referred to as the duck-billed platypus, is a semiaquatic, egg-laying mammal endemic to eastern Australia, including Tasmania. The platypus is the sole living representative of its family Ornithorhynchidae and genus Ornithorhynchus, though a number of related species appear in the fossil record. Together with the four species of echidna, it is one of the five extant species of monotremes, mammals that lay eggs instead of giving birth to live young. Like other monotremes, the platypus has a sense of electrolocation, which it uses to detect prey in water while its eyes, ears and nostrils are closed. It is one of the few species of venomous mammals, as the male platypus has a spur on each hind foot that delivers an extremely painful venom.",
+          "title" =>
+            "Downtempo music  The platypus (Ornithorhynchus anatinus), sometimes referred to as the duck-billed platypus, is a semiaquatic, egg-laying mammal endemic to eastern Australia, including Tasmania. The  "
+        }
+      ),
       seeded_entry(types, "contact", "entry-contact", DateTime.add(now, -60, :second), %{
         "email" => "hello@example.org",
         "name" => "Dr. Ada Rivera",
@@ -589,19 +646,31 @@ defmodule WikWeb.LibraryPrototypeLive.State do
         "role" => "General practitioner",
         "website" => "https://example.org/health"
       }),
-      seeded_entry(types, "video", "entry-video", DateTime.add(now, -120, :second), %{
+      seeded_entry(types, "external-media", "entry-video", DateTime.add(now, -120, :second), %{
         "creator" => "Local-first community",
         "media" => "https://www.youtube.com/watch?v=BvlGs25tCxI",
         "notes" =>
           "A gentle introduction to tools that keep communities in control of their data.",
         "title" => "Local-first software: you own your data"
       }),
-      seeded_entry(types, "music", "entry-music", DateTime.add(now, -180, :second), %{
-        "artist" => "Nils Frahm",
+      seeded_entry(types, "external-media", "entry-music", DateTime.add(now, -180, :second), %{
+        "creator" => "Nils Frahm",
         "media" => "https://soundcloud.com/nils_frahm",
-        "notes" => "A dance reference for the next improvisation session.",
-        "title" => "Community listening reference"
+        "notes" => "A dance reference for the next improvisation session. Coming in Berlin",
+        "title" => "Sheep in Black and White"
       }),
+      seeded_entry(
+        types,
+        "external-media",
+        "entry-music-tfw",
+        DateTime.add(now, -190, :second),
+        %{
+          "creator" => "Tales from Within",
+          "media" => "https://soundcloud.com/tales-from-within/impossible-suns",
+          "notes" => "Inner and Outer space Travels",
+          "title" => "Impossible Suns"
+        }
+      ),
       seeded_entry(types, "place", "entry-place-garden", DateTime.add(now, -200, :second), %{
         "location" => "Tempelhofer Garten, Berlin",
         "name" => "Communal garden Tempelhof",
@@ -619,11 +688,12 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     ]
   end
 
-  defp seeded_entry(types, slug, id, inserted_at, values) do
+  defp seeded_entry(types, slug, id, inserted_at, values, external_media_metadata \\ nil) do
     type = Enum.find(types, &(&1.slug == slug))
 
     %{
       creator_id: nil,
+      external_media_metadata: external_media_metadata,
       id: id,
       inserted_at: inserted_at,
       type_id: type.id,

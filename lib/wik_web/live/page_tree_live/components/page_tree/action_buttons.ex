@@ -1,6 +1,5 @@
 defmodule WikWeb.PageTreeLive.Components.PageTree.ActionButtons do
   use Phoenix.Component
-  alias WikWeb.CoreComponents
 
   slot :inner_block, required: true
 

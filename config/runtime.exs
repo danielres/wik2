@@ -24,6 +24,12 @@ config :wik, WikWeb.Endpoint, http: [port: String.to_integer(System.get_env("POR
 
 config :wik, Wik.Locations, api_url: System.get_env("LOCATION_API_URL")
 
+config :wik, WikWeb.LibraryPrototypeLive.Components,
+  google_maps_api_key: System.get_env("GOOGLE_MAPS_API_KEY")
+
+config :wik, WikWeb.LibraryPrototypeLive.ExternalMedia,
+  youtube_api_key: System.get_env("YOUTUBE_DATA_API_KEY")
+
 config :wik,
   contact_email: System.get_env("CONTACT_EMAIL") || "noreply@example.com",
   privacy_contact_email:

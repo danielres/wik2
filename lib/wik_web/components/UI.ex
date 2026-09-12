@@ -10,7 +10,7 @@ defmodule WikWeb.Components.UI do
   attr :class, :string, default: ""
   attr :size_class, :string, default: "btn-xs"
   attr :variant, :string, default: "accent"
-  attr :rest, :global
+  attr :rest, :global, include: ~w(popovertarget)
 
   def action_button(assigns) do
     variant_class =
@@ -100,21 +100,21 @@ defmodule WikWeb.Components.UI do
     <div class="drawer drawer-end md:drawer-open md:z-20">
       <input id={@id} type="checkbox" class="drawer-toggle" phx-update="ignore" />
       <div class="drawer-content">
-        <WikWeb.Layouts.container>
-          <div class="flex justify-end pt-2 h-0">
-            <label
-              :if={@aside != []}
-              for={@id}
-              class={[
-                "btn btn-square ",
-                "opacity-80 hover:opacity-100",
-                "md:hidden"
-              ]}
-            >
-              <.icon name="hero-bars-3" />
-            </label>
-          </div>
-        </WikWeb.Layouts.container>
+        <%!-- <WikWeb.Layouts.container> --%>
+        <%!--   <div class="flex justify-end pt-2 h-0"> --%>
+        <%!--     <label --%>
+        <%!--       :if={@aside != []} --%>
+        <%!--       for={@id} --%>
+        <%!--       class={[ --%>
+        <%!--         "btn btn-square ", --%>
+        <%!--         "opacity-80 hover:opacity-100", --%>
+        <%!--         "md:hidden" --%>
+        <%!--       ]} --%>
+        <%!--     > --%>
+        <%!--       <.icon name="hero-bars-3" /> --%>
+        <%!--     </label> --%>
+        <%!--   </div> --%>
+        <%!-- </WikWeb.Layouts.container> --%>
         {render_slot(@inner_block)}
       </div>
 
@@ -514,8 +514,28 @@ defmodule WikWeb.Components.UI do
       class="btn btn-xs btn-circle btn-accent"
       {@rest}
     >
-      <.icon name="hero-lock-open-micro" class="size-3.5" />
+      <.icon name="hero-check-micro" class="size-3.5" />
     </button>
+    """
+  end
+
+  attr :class, :string, default: ""
+  attr :rest, :global
+
+  def button_drawer(assigns) do
+    ~H"""
+    <label
+      class={[
+        "btn btn-xs btn-circle bg-base-200",
+        "text-base-content/50",
+        "hover:text-base-content",
+        "transition",
+        @class
+      ]}
+      {@rest}
+    >
+      <.icon name="hero-chevron-left-micro" />
+    </label>
     """
   end
 
@@ -525,13 +545,13 @@ defmodule WikWeb.Components.UI do
     ~H"""
     <button
       class={[
-        "btn btn-xs btn-circle btn-accent",
+        "btn btn-xs btn-circle btn-accent btn-soft",
         "hover:text-base-content",
-        "opacity-60 hover:opacity-100"
+        "backdrop-blur"
       ]}
       {@rest}
     >
-      <.icon name="hero-lock-closed-micro" class="size-3.5" />
+      <.icon name="hero-pencil-micro" />
     </button>
     """
   end

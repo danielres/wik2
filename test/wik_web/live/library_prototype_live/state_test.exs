@@ -77,6 +77,48 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
              State.create_entry(state, type, "admin", true, params)
   end
 
+  test "keeps external media metadata when creating and updating an entry" do
+    state = State.new()
+    type = State.find_type(state, "external-media")
+
+    params = %{
+      "creator" => "Channel",
+      "duration" => "",
+      "media" => "https://youtube.com/playlist?list=playlist-one",
+      "notes" => "",
+      "title" => "Playlist"
+    }
+
+    metadata = %{
+      item_count: 24,
+      kind: :playlist,
+      playlist_items: [%{title: "First video", video_id: "video-one"}],
+      provider: :youtube,
+      source_url: params["media"],
+      thumbnail_url: "https://example.test/playlist.jpg"
+    }
+
+    assert {:ok, state, entry} =
+             State.create_entry(state, type, "member", false, params, metadata)
+
+    assert entry.external_media_metadata == metadata
+
+    updated_metadata = %{metadata | item_count: 12}
+
+    assert {:ok, _state, updated_entry} =
+             State.update_entry(
+               state,
+               type,
+               entry.id,
+               "member",
+               false,
+               params,
+               updated_metadata
+             )
+
+    assert updated_entry.external_media_metadata == updated_metadata
+  end
+
   test "populated fields cannot change type and required fields cannot strand entries" do
     state = State.new()
     type = State.find_type(state, "place")
@@ -134,19 +176,30 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
     berlin = topic("berlin", "Berlin")
     software = topic("software", "Software")
     place = State.find_type(state, "place")
-    video = State.find_type(state, "video")
+    external_media = State.find_type(state, "external-media")
 
     assert Enum.map(State.filter_entries(state, [berlin, software], [], []), & &1.id) == [
              "entry-place",
+             "entry-video-downtempo",
+             "entry-playlist",
              "entry-contact",
              "entry-video",
-             "entry-music"
+             "entry-music",
+             "entry-music-tfw",
+             "entry-place-garden",
+             "entry-place-garden2"
            ]
 
     assert Enum.map(
              State.filter_entries(state, [berlin, software], [berlin.id, software.id], []),
              & &1.id
-           ) == ["entry-place", "entry-video"]
+           ) == [
+             "entry-place",
+             "entry-video",
+             "entry-music",
+             "entry-place-garden",
+             "entry-place-garden2"
+           ]
 
     assert Enum.map(
              State.filter_entries(
@@ -156,10 +209,17 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
                [place.id]
              ),
              & &1.id
-           ) == ["entry-place"]
+           ) == ["entry-place", "entry-place-garden", "entry-place-garden2"]
 
-    assert Enum.map(State.filter_entries(state, [berlin, software], [], [video.id]), & &1.id) == [
-             "entry-video"
+    assert Enum.map(
+             State.filter_entries(state, [berlin, software], [], [external_media.id]),
+             & &1.id
+           ) == [
+             "entry-video-downtempo",
+             "entry-playlist",
+             "entry-video",
+             "entry-music",
+             "entry-music-tfw"
            ]
   end
 
@@ -186,7 +246,7 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
     state = State.new()
     community = topic("community", "Community")
     video = State.find_entry(state, "entry-video")
-    video_type = State.find_type(state, "video")
+    video_type = State.find_type(state, "external-media")
 
     assert [%{automatic?: true, tag: ^community}] =
              State.topic_summaries(state, video, video_type, [community])
@@ -234,7 +294,7 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
     state = State.new()
     place = State.find_type(state, "place")
 
-    assert {:error, "This type is used by 1 entry."} = State.delete_type(state, place.id)
+    assert {:error, "This type is used by 3 entries."} = State.delete_type(state, place.id)
 
     draft =
       state

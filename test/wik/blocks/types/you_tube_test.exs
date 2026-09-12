@@ -151,6 +151,27 @@ defmodule Wik.Blocks.Types.YouTubeTest do
                "https://www.youtube-nocookie.com/embed/BvlGs25tCxI"
     end
 
+    test "accepts a youtube playlist URL" do
+      actor = generate(user())
+      scope = scope(actor)
+
+      {:ok, block} = Blocks.create_user_owned_block(%{type: :youtube}, scope: scope)
+
+      assert {:ok, updated_block} =
+               Blocks.update_block(
+                 block,
+                 %{
+                   "title" => "",
+                   "url" =>
+                     "https://youtube.com/playlist?list=PL-ZQIvQFPv4LYaNhtbleNaepGSGsuzQyp&si=example"
+                 },
+                 scope: scope
+               )
+
+      assert updated_block.data["url"] ==
+               "https://www.youtube-nocookie.com/embed?listType=playlist&list=PL-ZQIvQFPv4LYaNhtbleNaepGSGsuzQyp"
+    end
+
     test "rejects another embed provider instead of switching type" do
       actor = generate(user())
       scope = scope(actor)

@@ -153,7 +153,7 @@ defmodule WikWeb.MemberProfileLive do
         <div
           :if={@membership}
           class={[
-            "[&>section]:max-w-[80ch]"
+            "max-w-[80ch] mx-auto"
           ]}
           data-testid="member-profile-page"
         >

@@ -5,18 +5,25 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
 
   test "built-in templates are ordinary schemas and custom can reproduce them" do
     templates = Schema.built_in_templates()
-    videos = Schema.find_template(templates, "video")
     contacts = Schema.find_template(templates, "contact")
     custom = Schema.find_template(templates, "custom")
+    external_media = Schema.find_template(templates, "external-media")
 
-    assert Enum.map(videos.fields, & &1.type) == [:title, :media, :text, :rich_text]
+    assert Enum.map(external_media.fields, & &1.type) == [
+             :media,
+             :title,
+             :text,
+             :text,
+             :rich_text
+           ]
+
     assert Enum.map(custom.fields, & &1.type) == [:title]
     assert Enum.find(contacts.fields, &(&1.key == "role")).label == "Role or title"
 
-    manually_recreated = %{Schema.instantiate_template(custom) | fields: videos.fields}
+    manually_recreated = %{Schema.instantiate_template(custom) | fields: external_media.fields}
 
     assert Enum.map(manually_recreated.fields, &Map.drop(&1, [:id])) ==
-             Enum.map(videos.fields, &Map.drop(&1, [:id]))
+             Enum.map(external_media.fields, &Map.drop(&1, [:id]))
   end
 
   test "export and import round-trip a data-free type blueprint" do
@@ -97,7 +104,7 @@ defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
         "version" => 1
       })
 
-    assert {:error, "The first field must be the type title."} =
+    assert {:error, "A schema must contain exactly one title field."} =
              Schema.import(missing_title)
   end
 

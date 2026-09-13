@@ -779,7 +779,8 @@ defmodule WikWeb.LibraryPrototypeLive do
           {:noreply,
            socket
            |> assign(:editing_field, field)
-           |> assign(:field_form, field_form(field))}
+           |> assign(:field_form, field_form(field))
+           |> push_event("field:focus-label", %{})}
       end
     else
       forbidden(socket)

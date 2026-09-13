@@ -562,6 +562,11 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
 
     assert has_element?(view, testid("schema-field-role"))
 
+    view |> element(testid("field-edit-role")) |> render_click()
+
+    assert_push_event(view, "field:focus-label", %{})
+    assert has_element?(view, "#field-label[value=\"Role\"]")
+
     {:ok, used_view, _html} =
       live(conn, ~p"/#{space.slug}/libraries/types/place/settings")
 

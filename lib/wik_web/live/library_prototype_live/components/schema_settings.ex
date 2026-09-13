@@ -131,9 +131,10 @@ defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
           for={@field_form}
           id="field-form"
           phx-change="field:change"
+          phx-hook=".FocusFieldLabel"
           phx-submit={if(@editing_field, do: "field:update", else: "field:add")}
         >
-          <.input field={@field_form[:label]} label="Field label" required />
+          <.input field={@field_form[:label]} id="field-label" label="Field label" required />
           <div :if={@editing_field && @editing_field.type == :title} class="fieldset">
             <span class="label">Field type</span>
             <div class="input flex items-center text-base-content/55">Title</div>
@@ -171,6 +172,16 @@ defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
             </button>
           </div>
         </.form>
+
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".FocusFieldLabel">
+          export default {
+            mounted() {
+              this.handleEvent("field:focus-label", () => {
+                this.el.querySelector("#field-label")?.focus()
+              })
+            }
+          }
+        </script>
       </section>
     </div>
     """

@@ -30,11 +30,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryCard do
     ]}>
       <div class={[
         "px-2 py-1",
-        "text-[10px] uppercase tracking-wider text-base-content/40 whitespace-nowrap",
-        "font-bold",
+        "text-[11px] uppercase tracking-wider text-base-content/28 whitespace-nowrap",
+        "font-semibold",
         "absolute right-0 top-0"
       ]}>
-        {@type.name |> String.replace("External", "Ext.")}
+        {@type.name |> String.replace("External", "Ex.")}
       </div>
       <div class="flex gap-2 px-4 pt-4">
         <h3 class={[

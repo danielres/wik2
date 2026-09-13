@@ -152,7 +152,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     view |> element(testid("topic-filter-berlin")) |> render_click()
     assert_patch(view, ~p"/#{space.slug}/libraries?#{%{topics: berlin.slug}}")
     assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
-    assert has_element?(view, testid("topic-filter-software") <> " .hero-minus-micro")
+    assert has_element?(view, testid("topic-filter-software") <> " .hero-check-micro.opacity-20")
     assert has_element?(view, testid("entry-open-entry-place"))
     refute has_element?(view, testid("entry-open-entry-video"))
 
@@ -168,6 +168,15 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
 
     view |> element(testid("type-filter-external-media")) |> render_click()
 
+    assert has_element?(view, testid("entry-open-entry-video"))
+    refute has_element?(view, testid("entry-open-entry-place"))
+
+    view |> element(testid("active-topic-filters-clear")) |> render_click()
+
+    assert_patch(view, ~p"/#{space.slug}/libraries?#{%{types: "external-media"}}")
+    refute has_element?(view, testid("active-topic-filters-clear"))
+    assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
+    assert has_element?(view, testid("topic-filter-software") <> " .hero-check-micro")
     assert has_element?(view, testid("entry-open-entry-video"))
     refute has_element?(view, testid("entry-open-entry-place"))
   end

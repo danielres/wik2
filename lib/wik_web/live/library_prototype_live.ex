@@ -363,6 +363,10 @@ defmodule WikWeb.LibraryPrototypeLive do
      push_patch(socket, to: library_path(socket, socket.assigns.active_topic_ids, type_ids))}
   end
 
+  def handle_event("filter:clear", %{"kind" => "topic"}, socket) do
+    {:noreply, push_patch(socket, to: library_path(socket, [], socket.assigns.active_type_ids))}
+  end
+
   def handle_event("entry:new", _params, socket) do
     {:noreply, push_patch(socket, to: entry_new_path(socket))}
   end

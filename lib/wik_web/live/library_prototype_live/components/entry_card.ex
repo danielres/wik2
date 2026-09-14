@@ -36,14 +36,14 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryCard do
       ]}>
         {@type.name |> String.replace("External", "Ex.")}
       </div>
-      <div class="flex gap-2 px-4 pt-4">
-        <h3 class={[
-          "leading-tight text-balance Xself-end line-clamp-2 font-bold",
-          "text-base-content/95 group-hover:text-base-content transition"
-        ]}>
-          {@title}
-        </h3>
-      </div>
+
+      <h3 class={[
+        "px-4 pt-4",
+        "leading-tight text-balance line-clamp-2 font-semibold",
+        "text-base-content/95 group-hover:text-base-content transition"
+      ]}>
+        {@title}
+      </h3>
 
       <div class="space-y-2 px-4">
         <dl class="space-y-0.5 text-xs text-base-content/55">

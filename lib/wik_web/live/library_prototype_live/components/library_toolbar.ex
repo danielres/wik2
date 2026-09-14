@@ -199,9 +199,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components.LibraryToolbar do
       <span class="small-caps">{@title}</span>
       <.icon name="hero-chevron-down-micro" class="opacity-60" />
     </button>
+
     <ul
       class={[
         "dropdown",
+        "mt-1",
         "menu menu-sm z-20 max-h-64 w-56",
         "overflow-y-auto rounded-box bg-base-300"
       ]}
@@ -227,6 +229,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.LibraryToolbar do
             }
           />
           <span class="truncate">{item.name}</span>
+          <span class="badge badge-xs opacity-70">{item.entry_count}</span>
         </button>
       </li>
     </ul>

@@ -45,18 +45,17 @@ defmodule WikWeb.LibraryPrototypeLive.State do
   end
 
   def assigned_topics(state, topics) do
-    assigned_topic_ids =
-      state
-      |> list_entries()
-      |> Enum.reduce(MapSet.new(), fn entry, topic_ids ->
-        type = find_type_by_id(state, entry.type_id)
+    entry_counts = topic_entry_counts(state, topics)
 
-        state
-        |> topic_summaries(entry, type, topics)
-        |> Enum.reduce(topic_ids, &MapSet.put(&2, &1.tag.id))
-      end)
+    Enum.filter(topics, &Map.has_key?(entry_counts, &1.id))
+  end
 
-    Enum.filter(topics, &MapSet.member?(assigned_topic_ids, &1.id))
+  def assigned_topics_with_counts(state, topics) do
+    entry_counts = topic_entry_counts(state, topics)
+
+    topics
+    |> Enum.filter(&Map.has_key?(entry_counts, &1.id))
+    |> Enum.map(&Map.put(&1, :entry_count, Map.fetch!(entry_counts, &1.id)))
   end
 
   def default_type(state), do: List.first(state.types)
@@ -407,6 +406,20 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     end
   end
 
+  defp topic_entry_counts(state, topics) do
+    state
+    |> list_entries()
+    |> Enum.reduce(%{}, fn entry, entry_counts ->
+      type = find_type_by_id(state, entry.type_id)
+
+      state
+      |> topic_summaries(entry, type, topics)
+      |> Enum.reduce(entry_counts, fn summary, entry_counts ->
+        Map.update(entry_counts, summary.tag.id, 1, &(&1 + 1))
+      end)
+    end)
+  end
+
   defp manual_topic_summaries(state, entry_id, topics, current_membership_id) do
     topics_by_id = Map.new(topics, &{&1.id, &1})
 
@@ -580,7 +593,7 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     playlist_url =
       "https://www.youtube.com/playlist?list=PL-ZQIvQFPv4LYaNhtbleNaepGSGsuzQyp"
 
-# 
+    # 
     [
       seeded_entry(types, "place", "entry-place", now, %{
         "location" => "Spreeacker, Wilhelmine-Gemberg-Weg 12, Berlin",

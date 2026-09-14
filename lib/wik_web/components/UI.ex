@@ -367,16 +367,25 @@ defmodule WikWeb.Components.UI do
   end
 
   attr :class, :string, default: ""
+  attr :icon, :string, default: ""
   slot :inner_block, required: true
+  slot :subtitle, required: false
 
   def page_title(assigns) do
     ~H"""
     <h1 class={[
       "text-2xl",
-      "flex items-center gap-2",
+      "flex items-baseline gap-2",
       @class
     ]}>
-      {render_slot(@inner_block)}
+      <.icon :if={@icon != ""} name={@icon} class="opacity-60" />
+      <div>{render_slot(@inner_block)}</div>
+      <div
+        :if={@subtitle != []}
+        class="small-caps text-sm opacity-60 ml-auto"
+      >
+        {render_slot(@subtitle)}
+      </div>
     </h1>
     """
   end

@@ -1,21 +1,57 @@
 defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
   use WikWeb, :html
 
+  alias WikWeb.Components.UI
   alias WikWeb.LibraryPrototypeLive.EntryPresentation
   alias WikWeb.LibraryPrototypeLive.Schema
+
+  attr :entry, :map, required: true
+
+  def button_entry_edit(assigns) do
+    ~H"""
+    <UI.action_button
+      data-tip="Edit"
+      icon="hero-pencil-micro"
+      data-testid={"entry-edit-#{@entry.id}"}
+      phx-click="entry:edit"
+      phx-value-entry_id={@entry.id}
+    />
+    """
+  end
+
+  attr :entry, :map, required: true
+
+  def button_entry_delete(assigns) do
+    ~H"""
+    <UI.action_button
+      data-tip="Delete"
+      icon="hero-trash-micro"
+      data-confirm="Delete this entry?"
+      data-testid={"entry-delete-#{@entry.id}"}
+      phx-click="entry:delete"
+      phx-value-entry_id={@entry.id}
+      variant="error"
+    />
+    """
+  end
 
   attr :type, :map, required: true
   attr :entry, :map, required: true
   attr :manageable?, :boolean, required: true
+  attr :playlist_label, :string, required: false
+  attr :selected_playlist_video_id, :string, default: nil
   attr :topic_form, :map, default: nil
   attr :topic_options, :list, required: true
   attr :topic_summaries, :list, required: true
 
   def render(assigns) do
+    media = EntryPresentation.media(assigns.type, assigns.entry)
+
     assigns =
       assigns
       |> assign(:map_embed_url, EntryPresentation.map_embed_url(assigns.type, assigns.entry))
-      |> assign(:media, EntryPresentation.media(assigns.type, assigns.entry))
+      |> assign(:media, media)
+      |> assign(:media_embed_url, media_embed_url(media, assigns.selected_playlist_video_id))
       |> assign(:playlist, EntryPresentation.playlist(assigns.type, assigns.entry))
       |> assign(:title, EntryPresentation.title(assigns.type, assigns.entry))
 
@@ -31,7 +67,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
           ]}
           loading="lazy"
           referrerpolicy="strict-origin-when-cross-origin"
-          src={@media.embed_url}
+          src={@media_embed_url}
+          data-testid="entry-media-player"
           title={@title}
         >
         </iframe>
@@ -50,41 +87,78 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
         </iframe>
       </div>
 
-      <div class="divide-y divide-base-content/10 pt-3">
-        <section :if={@playlist.items != []} class="py-3 space-y-3">
-          <h4 class="text-xs font-bold uppercase tracking-wide text-base-content/45">
-            Playlist preview
-          </h4>
+      <div
+        :if={@manageable?}
+        class="relative flex justify-end top-3 items-center gap-4"
+      >
+        <.button_entry_delete entry={@entry} />
+        <.button_entry_edit entry={@entry} />
+      </div>
+
+      <div class="divide-y divide-base-content/10">
+        <section :if={@playlist.items != []} class="pb-3">
+          <div
+            :if={@playlist_label}
+            class={[
+              "mb-2",
+              "badge badge-sm bg-base-200",
+              "text-xs small-caps text-base-content/60 whitespace-nowrap"
+            ]}
+            data-testid="entry-playlist-indicator"
+          >
+            {@playlist_label}
+          </div>
 
           <ol
             aria-label="Playlist videos"
-            class="space-y-0.5 text-xs sm:ml-26"
+            class="text-xs"
             data-testid="entry-playlist-items"
           >
-            <li
-              :for={{item, index} <- Enum.with_index(@playlist.items, 1)}
-              class=""
-            >
-              <.link
-                class="opacity-70 hover:opacity-100 transition hover:text-primary"
+            <li :for={{item, index} <- Enum.with_index(@playlist.items, 1)}>
+              <button
+                aria-label={"Play #{item.title}"}
+                aria-pressed={to_string(@selected_playlist_video_id == item.video_id)}
+                class={[
+                  "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left",
+                  "transition hover:bg-base-200 hover:text-primary",
+                  "cursor-pointer",
+                  if(@selected_playlist_video_id == item.video_id,
+                    do: "bg-base-200 font-medium text-primary",
+                    else: "opacity-70 hover:opacity-100"
+                  )
+                ]}
                 data-testid={"entry-playlist-item-#{index}"}
-                href={EntryPresentation.youtube_video_url(item.video_id)}
-                rel="noopener noreferrer"
-                target="_blank"
+                id={"entry-playlist-item-#{@entry.id}-#{index}"}
+                phx-click="playlist:play"
+                phx-value-video_id={item.video_id}
+                type="button"
               >
+                <.icon name="hero-play-micro" class="size-3 shrink-0" />
                 <span>{item.title}</span>
-                <.icon name="hero-arrow-top-right-on-square-micro" class="size-3" />
-              </.link>
+              </button>
             </li>
           </ol>
 
-          <p
-            :if={@playlist.remaining_count > 0}
-            class="mt-2 pl-5 text-xs text-base-content/45"
+          <div
+            :if={@playlist.remaining_count == 0}
+            class="pl-6 text-xs"
             data-testid="entry-playlist-remaining"
           >
-            …and {@playlist.remaining_count} more
-          </p>
+            <.link
+              class={[
+                "flex items-center gap-1",
+                "hover:link",
+                "pt-1",
+                "opacity-80 hover:opacity-100 transition"
+              ]}
+              href={@playlist.source_url}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <span>…and {@playlist.remaining_count} more</span>
+              <.icon name="hero-arrow-top-right-on-square-micro" class="opacity-60" />
+            </.link>
+          </div>
         </section>
 
         <div
@@ -176,36 +250,25 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
             <button class="btn btn-sm btn-ghost" phx-click="topic:cancel" type="button">
               Cancel
             </button>
-            <button class="btn btn-sm btn-primary" data-testid="entry-topic-save" type="submit">
+            <button
+              class="btn btn-sm btn-accent btn-soft"
+              data-testid="entry-topic-save"
+              type="submit"
+            >
               Save
             </button>
           </div>
         </.form>
       </section>
-
-      <div :if={@manageable?} class="flex justify-end gap-2 border-t border-base-content/10 pt-4">
-        <button
-          class="btn btn-sm btn-ghost text-error"
-          data-confirm="Delete this entry?"
-          data-testid={"entry-delete-#{@entry.id}"}
-          phx-click="entry:delete"
-          phx-value-entry_id={@entry.id}
-          type="button"
-        >
-          <.icon name="hero-trash-micro" /> Delete
-        </button>
-        <button
-          class="btn btn-sm btn-primary"
-          data-testid={"entry-edit-#{@entry.id}"}
-          phx-click="entry:edit"
-          phx-value-entry_id={@entry.id}
-          type="button"
-        >
-          <.icon name="hero-pencil-square-micro" /> Edit
-        </button>
-      </div>
     </div>
     """
+  end
+
+  defp media_embed_url(%{embed_url: embed_url}, nil), do: embed_url
+  defp media_embed_url(_media, nil), do: nil
+
+  defp media_embed_url(_media, video_id) do
+    EntryPresentation.youtube_video_embed_url(video_id)
   end
 
   attr :field, :map, required: true

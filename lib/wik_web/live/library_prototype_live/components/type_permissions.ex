@@ -1,6 +1,8 @@
 defmodule WikWeb.LibraryPrototypeLive.Components.TypePermissions do
   use WikWeb, :html
 
+  alias WikWeb.Components.UI
+
   attr :event, :string, default: nil
   attr :id, :string, required: true
   attr :name, :string, required: true
@@ -14,8 +16,9 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypePermissions do
       data-testid="type-permissions"
       id={@id}
     >
-      <h2 class="text-lg font-bold">Permissions</h2>
-      <p class="mt-1 text-sm text-base-content/50">Who can add entries?</p>
+      <UI.panel_title>Permissions</UI.panel_title>
+
+      <p class="mt-1 text-sm text-base-content/80">Who can add entries?</p>
 
       <fieldset class="mt-4 grid gap-2 sm:grid-cols-2">
         <legend class="sr-only">Who can add entries?</legend>

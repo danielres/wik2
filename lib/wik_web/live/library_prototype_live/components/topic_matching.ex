@@ -1,6 +1,8 @@
 defmodule WikWeb.LibraryPrototypeLive.Components.TopicMatching do
   use WikWeb, :html
 
+  alias WikWeb.Components.UI
+
   attr :automatic_topic_matching?, :boolean, required: true
   attr :expanded_topic_id, :string, default: nil
   attr :space_slug, :string, required: true
@@ -10,13 +12,14 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TopicMatching do
     ~H"""
     <div class="space-y-4" data-testid="topic-matching-page">
       <div class="flex items-center justify-between gap-3">
-        <h1 class="text-2xl flex items-center gap-2 text-base-content/80">
-          <.icon name="hero-sparkles-micro" class="size-5" /> Smart topics
-        </h1>
+        <UI.page_title icon="hero-sparkles-micro">
+          Smart topics
+        </UI.page_title>
+
         <button
           aria-checked={to_string(@automatic_topic_matching?)}
           class={[
-            "btn btn-sm rounded-full",
+            "btn btn-xs rounded-full",
             @automatic_topic_matching? && "btn-primary",
             !@automatic_topic_matching? && "btn-ghost bg-base-200"
           ]}

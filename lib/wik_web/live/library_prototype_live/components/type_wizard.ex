@@ -1,6 +1,7 @@
 defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
   use WikWeb, :html
 
+  alias WikWeb.Components.UI
   alias WikWeb.LibraryPrototypeLive.Components.TypePermissions
   alias WikWeb.LibraryPrototypeLive.FieldPresentation
   alias WikWeb.LibraryPrototypeLive.Schema
@@ -13,8 +14,10 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 max-w-[80ch] mx-auto" data-testid="type-wizard">
-      <div :if={!@draft}>
-        <h1 class="mb-4 text-2xl">Add type</h1>
+      <div :if={!@draft} class="space-y-4">
+        <UI.page_title icon="hero-circle-stack-micro">
+          Add type
+        </UI.page_title>
 
         <div class="grid grid-cols-4 gap-1">
           <button
@@ -62,7 +65,10 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
 
       <div :if={@draft} class="mx-auto max-w-3xl">
         <div class="mb-5">
-          <h1 class="text-2xl font-semibold">Review type</h1>
+          <h1 class="text-2xl font-semibold flex items-center gap-2">
+            <.icon name="hero-circle-stack-micro" class="opacity-60" />
+            <span>Create type</span>
+          </h1>
         </div>
 
         <.form
@@ -96,9 +102,15 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
           />
 
           <div class="flex justify-between gap-3">
-            <button class="btn btn-ghost opacity-50 hover:opacity-100 transition" phx-click="wizard:back" type="button">Back</button>
+            <button
+              class="btn btn-ghost opacity-50 hover:opacity-100 transition"
+              phx-click="wizard:back"
+              type="button"
+            >
+              Back
+            </button>
             <button class="btn btn-accent" data-testid="type-create-submit" type="submit">
-              Create type 
+              Create type
             </button>
           </div>
         </.form>

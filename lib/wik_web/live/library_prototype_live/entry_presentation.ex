@@ -136,15 +136,15 @@ defmodule WikWeb.LibraryPrototypeLive.EntryPresentation do
         remaining_count =
           if is_integer(item_count), do: max(item_count - length(items), 0), else: 0
 
-        %{items: items, remaining_count: remaining_count}
+        %{items: items, remaining_count: remaining_count, source_url: media_value}
 
       _media_and_metadata ->
-        %{items: [], remaining_count: 0}
+        %{items: [], remaining_count: 0, source_url: nil}
     end
   end
 
-  def youtube_video_url(video_id) do
-    "https://www.youtube.com/watch?v=#{URI.encode_www_form(video_id)}"
+  def youtube_video_embed_url(video_id) do
+    "https://www.youtube-nocookie.com/embed/#{URI.encode_www_form(video_id)}?autoplay=1"
   end
 
   defp playlist_count_label(

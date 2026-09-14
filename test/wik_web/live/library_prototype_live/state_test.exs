@@ -230,6 +230,11 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
 
     assert State.assigned_topics(state, [berlin, unassigned]) == [berlin]
 
+    assert [%{entry_count: 4, id: berlin_id}] =
+             State.assigned_topics_with_counts(state, [berlin, unassigned])
+
+    assert berlin_id == berlin.id
+
     assert {:ok, state, _contribution} =
              State.upsert_topic_contribution(
                state,
@@ -240,6 +245,14 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
              )
 
     assert State.assigned_topics(state, [berlin, unassigned]) == [berlin, unassigned]
+
+    assert [
+             %{entry_count: 4, id: berlin_id},
+             %{entry_count: 1, id: unassigned_id}
+           ] = State.assigned_topics_with_counts(state, [berlin, unassigned])
+
+    assert berlin_id == berlin.id
+    assert unassigned_id == unassigned.id
   end
 
   test "automatic topics support aliases, disabling, and entry exclusions" do

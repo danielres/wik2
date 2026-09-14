@@ -1,6 +1,8 @@
 defmodule WikWeb.LibraryPrototypeLive.Components.PortableSchema do
   use WikWeb, :html
 
+  alias WikWeb.Components.UI
+
   attr :export_json, :string, required: true
 
   def render(assigns) do
@@ -10,7 +12,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.PortableSchema do
       data-testid="portable-schema"
     >
       <div class="flex items-center justify-between gap-4">
-        <h2 class="font-bold">Portable schema</h2>
+        <UI.panel_title>Portable schema</UI.panel_title>
         <button
           class="btn btn-sm"
           data-copy-source-id="library-schema-json"
@@ -19,7 +21,8 @@ defmodule WikWeb.LibraryPrototypeLive.Components.PortableSchema do
           phx-hook="CopyToClipboard"
           type="button"
         >
-          <.icon name="hero-document-duplicate-micro" class="opacity-50" /> Copy JSON
+          <.icon name="hero-document-duplicate-micro" class="opacity-50" />
+          <span class="opacity-80">Copy JSON</span>
         </button>
       </div>
       <textarea

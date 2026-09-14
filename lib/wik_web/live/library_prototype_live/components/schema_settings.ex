@@ -1,6 +1,7 @@
 defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
   use WikWeb, :html
 
+  alias WikWeb.Components.UI
   alias WikWeb.LibraryPrototypeLive.Components.TypePermissions
   alias WikWeb.LibraryPrototypeLive.FieldPresentation
   alias WikWeb.LibraryPrototypeLive.Schema
@@ -45,14 +46,9 @@ defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
       />
 
       <section class="rounded-box border border-base-content/10 bg-base-200/35 p-5">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <h2 class="text-lg font-bold">Fields</h2>
-            <p class="mt-1 text-sm text-base-content/50">Cards and details follow this order.</p>
-          </div>
-        </div>
+        <UI.panel_title>Fields</UI.panel_title>
 
-        <div class="mt-5 divide-y divide-base-content/10">
+        <div class="divide-y divide-base-content/10">
           <div
             :for={{field, index} <- Enum.with_index(@type.fields)}
             class="flex items-center gap-3 py-3"

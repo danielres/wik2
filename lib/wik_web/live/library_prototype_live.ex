@@ -4,6 +4,7 @@ defmodule WikWeb.LibraryPrototypeLive do
   alias Wik.Locations
   alias Wik.Tags
   alias WikWeb.Components.Modal
+  alias WikWeb.Components.UI
 
   alias WikWeb.LibraryPrototypeLive.Components.{
     EntryCard,
@@ -53,6 +54,7 @@ defmodule WikWeb.LibraryPrototypeLive do
      |> assign(:import_form, to_form(%{"json" => ""}, as: :schema))
      |> assign(:prototype_state, state)
      |> assign(:selected_entry, nil)
+     |> assign(:selected_playlist_video_id, nil)
      |> assign(:topic_form, nil)
      |> assign(:topics, topics)
      |> assign(:type_form, type_form(nil))
@@ -105,6 +107,7 @@ defmodule WikWeb.LibraryPrototypeLive do
           |> assign(:current_type, current_type)
           |> assign(:entry_mode, entry_mode)
           |> assign(:selected_entry, selected_entry)
+          |> assign(:selected_playlist_video_id, nil)
           |> assign(:topic_form, nil)
           |> assign_route_forms()
           |> assign_route_entry_form()
@@ -118,7 +121,7 @@ defmodule WikWeb.LibraryPrototypeLive do
   def render(assigns) do
     state = assigns.prototype_state
     types = State.types_with_counts(state)
-    filter_topics = State.assigned_topics(state, assigns.topics)
+    filter_topics = State.assigned_topics_with_counts(state, assigns.topics)
     current_membership_id = current_membership_id(assigns)
 
     current_type_entry_count =
@@ -161,28 +164,19 @@ defmodule WikWeb.LibraryPrototypeLive do
       testid="library-entry-dialog"
     >
       <:title>
-        <div class="flex gap-4 justify-between items-baseline">
+        <div class="flex gap-4 justify-between items-baseline mt-1">
           <div class="line-clamp-2">
             {entry_modal_title(@entry_mode, @current_type, @selected_entry)}
           </div>
-          <div :if={@current_type} class="grid shrink-0">
-            <div class={[
-              "badge badge-sm bg-base-300",
-              "text-xs small-caps text-base-content/60 whitespace-nowrap"
-            ]}>
-              {@current_type.name}
-            </div>
-
+          <div :if={@current_type}>
             <div
-              :if={@playlist_label}
+              :if={@entry_mode == :detail && @selected_entry}
               class={[
-                "justify-self-end",
-                "badge badge-sm",
+                "badge badge-sm bg-base-300",
                 "text-xs small-caps text-base-content/60 whitespace-nowrap"
               ]}
-              data-testid="entry-playlist-indicator"
             >
-              {@playlist_label}
+              {@current_type.name}
             </div>
           </div>
         </div>
@@ -194,11 +188,14 @@ defmodule WikWeb.LibraryPrototypeLive do
         :if={@entry_mode == :detail && @selected_entry}
         entry={@selected_entry}
         manageable?={can_manage_entry?(@current_scope.actor.id, @selected_entry, @can_manage_types?)}
+        playlist_label={@playlist_label}
+        selected_playlist_video_id={@selected_playlist_video_id}
         topic_form={@topic_form}
         topic_options={@topics}
         topic_summaries={@topic_summaries}
         type={@current_type}
       />
+
       <EntryForm.render
         :if={@entry_mode in [:new, :edit]}
         form={@entry_form}
@@ -225,7 +222,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     />
 
     <div
-      class="autogrid [--autogrid-min:15rem] grid gap-4 sm:gap-2 grid-flow-row-dense "
+      class="autogrid [--autogrid-min:14rem] grid gap-4 sm:gap-2 grid-flow-row-dense "
       id="library-entries"
       phx-update="stream"
     >
@@ -300,9 +297,10 @@ defmodule WikWeb.LibraryPrototypeLive do
   defp render_content(%{live_action: :type_settings} = assigns) do
     ~H"""
     <div class="space-y-4 max-w-[80ch] mx-auto">
-      <h1 class="text-2xl flex items-center gap-2 text-base-content/80">
-        <.icon name="hero-circle-stack-micro" /> Type settings
-      </h1>
+      <UI.page_title icon="hero-circle-stack-micro">
+        {@current_type.name}
+        <:subtitle>Customize type</:subtitle>
+      </UI.page_title>
 
       <SchemaSettings.render
         editing_field={@editing_field}
@@ -436,6 +434,17 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   def handle_event("entry:show", %{"entry_id" => entry_id}, socket) do
     {:noreply, push_patch(socket, to: entry_path(socket, entry_id))}
+  end
+
+  def handle_event("playlist:play", %{"video_id" => video_id}, socket) do
+    playlist =
+      EntryPresentation.playlist(socket.assigns.current_type, socket.assigns.selected_entry)
+
+    if Enum.any?(playlist.items, &(&1.video_id == video_id)) do
+      {:noreply, assign(socket, :selected_playlist_video_id, video_id)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("entry:edit", %{"entry_id" => entry_id}, socket) do
@@ -1286,7 +1295,10 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   defp entry_modal_title(:type_picker, _type, _entry), do: "Add entry"
   defp entry_modal_title(:new, type, _entry), do: "Add #{type.name}"
-  defp entry_modal_title(:edit, type, entry), do: "Edit #{EntryPresentation.title(type, entry)}"
+
+  defp entry_modal_title(:edit, type, entry),
+    do: "Edit entry \"#{EntryPresentation.title(type, entry)}\""
+
   defp entry_modal_title(:detail, type, entry), do: EntryPresentation.title(type, entry)
   defp entry_modal_title(_mode, _type, _entry), do: nil
 

@@ -60,9 +60,9 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryForm do
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 border-t border-base-content/10 pt-4">
+      <div class="flex justify-between gap-2 ">
         <button class="btn btn-ghost" phx-click="modal:close" type="button">Cancel</button>
-        <button class="btn btn-primary" data-testid="entry-submit" type="submit">
+        <button class="btn btn-accent" data-testid="entry-submit" type="submit">
           {if(@mode == :new, do: "Add entry", else: "Save entry")}
         </button>
       </div>

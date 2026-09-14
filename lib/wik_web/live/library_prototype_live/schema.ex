@@ -93,7 +93,7 @@ defmodule WikWeb.LibraryPrototypeLive.Schema do
       template(
         "custom",
         "Custom",
-        "Start with a name and build exactly the schema you need.",
+        "",
         "hero-adjustments-horizontal-micro",
         [title_field("name", "Name")]
       )

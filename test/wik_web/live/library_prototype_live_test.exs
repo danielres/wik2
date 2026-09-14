@@ -89,6 +89,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert has_element?(view, testid("type-filters"))
     refute has_element?(view, "#type-filter-popover[popover]")
     assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
+    assert has_element?(view, testid("topic-filter-berlin") <> " .badge", "4")
     refute has_element?(view, testid("topic-filter-unassigned"))
     assert has_element?(view, testid("type-filter-place") <> " .hero-check-micro")
     assert has_element?(view, testid("type-filter-external-media") <> " .hero-check-micro")
@@ -207,7 +208,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert has_element?(
              view,
              testid("entry-playlist-item-1") <>
-               ~s([href="https://www.youtube.com/watch?v=tbRdHktBv58"]),
+               ~s([phx-click="playlist:play"][aria-pressed="false"]),
              "LOCRIAN doesn't have to be S p O o K y"
            )
 
@@ -218,6 +219,19 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
            )
 
     refute has_element?(view, testid("entry-playlist-remaining"))
+
+    view |> element(testid("entry-playlist-item-1")) |> render_click()
+
+    assert has_element?(
+             view,
+             testid("entry-media-player") <>
+               ~s([src="https://www.youtube-nocookie.com/embed/tbRdHktBv58?autoplay=1"])
+           )
+
+    assert has_element?(
+             view,
+             testid("entry-playlist-item-1") <> ~s([aria-pressed="true"])
+           )
   end
 
   test "uses the first populated location or media field as the card preview" do
@@ -374,18 +388,23 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert has_element?(
              view,
              testid("entry-playlist-item-1") <>
-               ~s([href="https://www.youtube.com/watch?v=playlist-video-one"]),
+               ~s([phx-click="playlist:play"]),
              "First playlist video"
            )
 
     assert has_element?(
              view,
              testid("entry-playlist-item-2") <>
-               ~s([href="https://www.youtube.com/watch?v=playlist-video-two"]),
+               ~s([phx-click="playlist:play"]),
              "Second playlist video"
            )
 
-    assert has_element?(view, testid("entry-playlist-remaining"), "…and 22 more")
+    assert has_element?(
+             view,
+             testid("entry-playlist-remaining") <>
+               ~s( a[href^="https://youtube.com/playlist?list=PL-ZQIvQFPv4LYaNhtbleNaepGSGsuzQyp"]),
+             "…and 22 more"
+           )
 
     view |> element(testid("library-modal-close")) |> render_click()
 

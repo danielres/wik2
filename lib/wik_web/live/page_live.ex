@@ -11,6 +11,7 @@ defmodule WikWeb.PageLive do
   alias WikWeb.PageLive.BlockInfo
   alias WikWeb.PageLive.EditMode
   alias WikWeb.PageLive.Locks
+  alias WikWeb.PageLive.LibraryEntries
   alias WikWeb.PageLive.MissingWikilinks
   alias WikWeb.PageLive.PageAuthor
   alias WikWeb.PageLive.PageState
@@ -46,6 +47,7 @@ defmodule WikWeb.PageLive do
       )
       |> PageTopics.assign_defaults()
       |> Locks.assign_locks()
+      |> LibraryEntries.assign_defaults()
 
     {:ok, socket}
   end
@@ -68,6 +70,7 @@ defmodule WikWeb.PageLive do
     socket =
       socket
       |> PageState.load_path(path, title_path: title_path)
+      |> LibraryEntries.sync_page()
       |> PageTopics.sync_subscription()
       |> PageTopics.assign_topics()
       # |> PageTopics.open_form()
@@ -103,7 +106,7 @@ defmodule WikWeb.PageLive do
 
   @impl true
   def handle_event("edit_mode:toggle", _params, socket),
-    do: {:noreply, EditMode.toggle(socket)}
+    do: {:noreply, socket |> EditMode.toggle() |> LibraryEntries.sync_edit_mode()}
 
   # page_topic -----------------------------------------------------------------
 
@@ -150,16 +153,26 @@ defmodule WikWeb.PageLive do
   # block ----------------------------------------------------------------------
 
   @impl true
-  def handle_event("block:edit_start", %{"block_id" => block_id}, socket),
-    do: {:noreply, BlockActions.start_edit(socket, block_id)}
+  def handle_event("block:edit_start", %{"block_id" => block_id}, socket) do
+    socket =
+      socket
+      |> LibraryEntries.cancel_edit()
+      |> BlockActions.start_edit(block_id)
+      |> LibraryEntries.refresh_placements()
+
+    {:noreply, socket}
+  end
 
   @impl true
   def handle_event("block:edit_cancel", %{"block_id" => block_id}, socket) do
-    if socket.assigns.editing_block_id == block_id do
-      {:noreply, socket |> BlockEdit.clear()}
-    else
-      {:noreply, socket}
-    end
+    socket =
+      if socket.assigns.editing_block_id == block_id do
+        socket |> BlockEdit.clear() |> LibraryEntries.refresh_placements()
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -168,7 +181,9 @@ defmodule WikWeb.PageLive do
         %{"block" => params, "block_id" => block_id},
         socket
       ),
-      do: {:noreply, socket |> BlockActions.save_edit(block_id, params)}
+      do:
+        {:noreply,
+         socket |> BlockActions.save_edit(block_id, params) |> LibraryEntries.refresh_placements()}
 
   @impl true
   def handle_event("block:add", %{"type" => type_param}, socket),
@@ -177,7 +192,7 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_event("block:add_start", %{"position" => position}, socket)
       when position in ["top", "bottom"],
-      do: {:noreply, socket |> assign(add_block_modal_open?: true, add_block_position: position)}
+      do: {:noreply, LibraryEntries.start_add(socket, position)}
 
   @impl true
   def handle_event("block:add_cancel", _params, socket),
@@ -198,6 +213,80 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_event("block:toggle_aside", %{"placement_id" => placement_id}, socket),
     do: {:noreply, socket |> BlockActions.toggle_aside(placement_id)}
+
+  # library entries ------------------------------------------------------------
+
+  @impl true
+  def handle_event("library_entry:choose_type", %{"type_id" => type_id}, socket),
+    do: {:noreply, LibraryEntries.choose_type(socket, type_id)}
+
+  @impl true
+  def handle_event("library_entry:back_to_block_menu", _params, socket),
+    do: {:noreply, LibraryEntries.back_to_block_menu(socket)}
+
+  @impl true
+  def handle_event("library_entry:close_modal", _params, socket),
+    do: {:noreply, LibraryEntries.close_modal(socket)}
+
+  @impl true
+  def handle_event("library_entry:search", %{"library_search" => %{"query" => query}}, socket),
+    do: {:noreply, LibraryEntries.search(socket, query)}
+
+  @impl true
+  def handle_event("library_entry:start_create", _params, socket),
+    do: {:noreply, LibraryEntries.start_create(socket)}
+
+  @impl true
+  def handle_event("library_entry:back_to_chooser", _params, socket),
+    do: {:noreply, LibraryEntries.back_to_chooser(socket)}
+
+  @impl true
+  def handle_event("library_entry:change_create", %{"entry" => params}, socket),
+    do: {:noreply, LibraryEntries.change_create(socket, params)}
+
+  @impl true
+  def handle_event("library_entry:create", %{"entry" => params}, socket),
+    do: {:noreply, LibraryEntries.create(socket, params)}
+
+  @impl true
+  def handle_event("library_entry:insert", %{"entry_id" => entry_id}, socket),
+    do: {:noreply, LibraryEntries.insert(socket, entry_id)}
+
+  @impl true
+  def handle_event("library_entry:show", %{"entry_id" => entry_id}, socket),
+    do: {:noreply, LibraryEntries.show(socket, entry_id)}
+
+  @impl true
+  def handle_event("library_entry:playlist_play", %{"video_id" => video_id}, socket),
+    do: {:noreply, LibraryEntries.play_video(socket, video_id)}
+
+  @impl true
+  def handle_event("library_entry:start_edit", %{"placement_id" => placement_id}, socket),
+    do: {:noreply, LibraryEntries.start_edit(socket, placement_id)}
+
+  @impl true
+  def handle_event("library_entry:change_edit", %{"entry" => params}, socket),
+    do: {:noreply, LibraryEntries.change_edit(socket, params)}
+
+  @impl true
+  def handle_event("library_entry:save_edit", %{"entry" => params}, socket),
+    do: {:noreply, LibraryEntries.save_edit(socket, params)}
+
+  @impl true
+  def handle_event("library_entry:cancel_edit", _params, socket),
+    do: {:noreply, LibraryEntries.cancel_edit(socket)}
+
+  @impl true
+  def handle_event("library_entry:remove", %{"placement_id" => placement_id}, socket),
+    do: {:noreply, LibraryEntries.remove(socket, placement_id)}
+
+  @impl true
+  def handle_event(
+        "library_entry:move",
+        %{"direction" => direction, "placement_id" => placement_id},
+        socket
+      ),
+      do: {:noreply, LibraryEntries.move(socket, placement_id, direction)}
 
   # linked_copy ----------------------------------------------------------------
 

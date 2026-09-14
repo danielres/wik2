@@ -5,11 +5,64 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryCard do
   alias WikWeb.LibraryPrototypeLive.FieldPresentation
   alias WikWeb.LibraryPrototypeLive.Schema
 
+  attr :click_event, :string, default: nil
+  attr :click_label, :string, default: nil
+  attr :click_testid, :string, default: nil
+  attr :dom_id, :string, required: true
+  attr :entry, :map, required: true
+  attr :manageable?, :boolean, required: true
+  attr :owned?, :boolean, required: true
+  attr :testid, :string, required: true
+  attr :topic_summaries, :list, required: true
   attr :type, :map, required: true
+
+  def card(assigns) do
+    assigns =
+      assign_new(assigns, :resolved_click_label, fn ->
+        assigns.click_label || "Open #{EntryPresentation.title(assigns.type, assigns.entry)}"
+      end)
+
+    ~H"""
+    <article
+      class={[
+        "relative grid grid-rows-subgrid text-left group row-span-3",
+        "rounded-box overflow-hidden",
+        "bg-base-300/60 hover:bg-base-300 hover:scale-103",
+        "border border-base-content/10 hover:border-base-content/20",
+        "shadow hover:shadow-xl",
+        "opacity-90 hover:opacity-100",
+        "transition"
+      ]}
+      data-testid={@testid}
+      id={@dom_id}
+    >
+      <.render
+        entry={@entry}
+        manageable?={@manageable?}
+        owned?={@owned?}
+        topic_summaries={@topic_summaries}
+        type={@type}
+      />
+
+      <button
+        :if={@click_event}
+        aria-label={@resolved_click_label}
+        class="absolute inset-0 z-10 cursor-pointer rounded-box focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        data-testid={@click_testid}
+        phx-click={@click_event}
+        phx-value-entry_id={@entry.id}
+        type="button"
+      >
+      </button>
+    </article>
+    """
+  end
+
   attr :entry, :map, required: true
   attr :manageable?, :boolean, required: true
   attr :owned?, :boolean, required: true
   attr :topic_summaries, :list, required: true
+  attr :type, :map, required: true
 
   def render(assigns) do
     assigns =

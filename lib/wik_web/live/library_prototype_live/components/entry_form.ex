@@ -4,21 +4,36 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryForm do
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.RichTextInput
 
-  attr :type, :map, required: true
+  attr :cancel_event, :string, default: "modal:close"
+  attr :change_event, :string, default: "entry:change"
   attr :form, :map, required: true
+  attr :id, :string, default: "entry-form"
   attr :metadata_error, :string, default: nil
   attr :metadata_loading?, :boolean, default: false
   attr :mode, :atom, required: true
+  attr :submit_event, :string, default: nil
+  attr :submit_label, :string, default: nil
+  attr :testid, :string, default: "entry-form"
+  attr :type, :map, required: true
 
   def render(assigns) do
+    assigns =
+      assigns
+      |> assign_new(:resolved_submit_event, fn ->
+        assigns.submit_event || if(assigns.mode == :new, do: "entry:create", else: "entry:update")
+      end)
+      |> assign_new(:resolved_submit_label, fn ->
+        assigns.submit_label || if(assigns.mode == :new, do: "Add entry", else: "Save entry")
+      end)
+
     ~H"""
     <.form
       class="space-y-5"
-      data-testid="entry-form"
+      data-testid={@testid}
       for={@form}
-      id="entry-form"
-      phx-change="entry:change"
-      phx-submit={if(@mode == :new, do: "entry:create", else: "entry:update")}
+      id={@id}
+      phx-change={@change_event}
+      phx-submit={@resolved_submit_event}
     >
       <div :for={field <- @type.fields}>
         <RichTextInput.field
@@ -61,9 +76,9 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryForm do
       </div>
 
       <div class="flex justify-between gap-2 ">
-        <button class="btn btn-ghost" phx-click="modal:close" type="button">Cancel</button>
+        <button class="btn btn-ghost" phx-click={@cancel_event} type="button">Cancel</button>
         <button class="btn btn-accent" data-testid="entry-submit" type="submit">
-          {if(@mode == :new, do: "Add entry", else: "Save entry")}
+          {@resolved_submit_label}
         </button>
       </div>
     </.form>

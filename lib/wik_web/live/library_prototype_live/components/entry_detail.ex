@@ -39,7 +39,9 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
   attr :entry, :map, required: true
   attr :manageable?, :boolean, required: true
   attr :playlist_label, :string, required: false
+  attr :playlist_play_event, :string, default: "playlist:play"
   attr :selected_playlist_video_id, :string, default: nil
+  attr :show_topics?, :boolean, default: true
   attr :topic_form, :map, default: nil
   attr :topic_options, :list, required: true
   attr :topic_summaries, :list, required: true
@@ -129,7 +131,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
                 ]}
                 data-testid={"entry-playlist-item-#{index}"}
                 id={"entry-playlist-item-#{@entry.id}-#{index}"}
-                phx-click="playlist:play"
+                phx-click={@playlist_play_event}
                 phx-value-video_id={item.video_id}
                 type="button"
               >
@@ -140,7 +142,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
           </ol>
 
           <div
-            :if={@playlist.remaining_count == 0}
+            :if={@playlist.remaining_count > 0}
             class="pl-6 text-xs"
             data-testid="entry-playlist-remaining"
           >
@@ -175,7 +177,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
         </div>
       </div>
 
-      <section class="space-y-3 border-t border-base-content/10 pt-4" data-testid="entry-topics">
+      <section
+        :if={@show_topics?}
+        class="space-y-3 border-t border-base-content/10 pt-4"
+        data-testid="entry-topics"
+      >
         <div class="flex items-center justify-between gap-3">
           <h3 class="text-sm font-bold">Topics</h3>
           <button

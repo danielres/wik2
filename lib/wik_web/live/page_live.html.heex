@@ -1,5 +1,9 @@
 <% has_aside_blocks? = PageLive.Components.Area.area_has_blocks?(@page, :aside) %>
-<% main_has_blocks? = PageLive.Components.Area.area_has_blocks?(@page, :main) %>
+<% library_main_has_blocks? =
+  Enum.any?(@library_placements, &(&1.page_id == (@page && @page.id))) %>
+<% main_has_blocks? =
+  PageLive.Components.Area.area_has_blocks?(@page, :main) or library_main_has_blocks? %>
+<% active_edit_id = @editing_block_id %>
 
 <Layouts.app
   context={@context}
@@ -13,7 +17,7 @@
     scope={@current_scope}
     view="wiki/home"
   >
-    <:actions :if={@can_manage_page? and @editing_block_id == nil}>
+    <:actions :if={@can_manage_page? and active_edit_id == nil}>
       <%= if @editing? do %>
         <UI.button_ok phx-click="edit_mode:toggle" />
       <% else %>
@@ -111,10 +115,21 @@
               />
             </div>
 
+            <PageLive.Components.LibraryEntries.placement_list
+              actor_id={@current_scope.actor.id}
+              admin?={@library_can_manage_types?}
+              editing?={@editing?}
+              focused_placement_id={@library_focused_placement_id}
+              id="library-top-placements"
+              page_block_editing?={@editing_block_id != nil}
+              placements={@streams.library_top_placements}
+              state={@library_state}
+            />
+
             <PageLive.Components.Area.render
               area={:main}
               editing?={@editing?}
-              editing_block_id={@editing_block_id}
+              editing_block_id={active_edit_id}
               form_edit_block={@form_edit_block}
               locks={@locks}
               node={@node}
@@ -122,6 +137,17 @@
               page_tree={@page_tree}
               path={@path}
               scope={@current_scope}
+            />
+
+            <PageLive.Components.LibraryEntries.placement_list
+              actor_id={@current_scope.actor.id}
+              admin?={@library_can_manage_types?}
+              editing?={@editing?}
+              focused_placement_id={@library_focused_placement_id}
+              id="library-bottom-placements"
+              page_block_editing?={@editing_block_id != nil}
+              placements={@streams.library_bottom_placements}
+              state={@library_state}
             />
 
             <Components.Block.AddBlockMenuButton.render
@@ -145,7 +171,7 @@
               if(@editing?, do: "border-transparent", else: "border-base-content/20")
             ]}
             editing?={@editing?}
-            editing_block_id={@editing_block_id}
+            editing_block_id={active_edit_id}
             form_edit_block={@form_edit_block}
             locks={@locks}
             node={@node}
@@ -187,9 +213,25 @@
   />
 
   <Components.Block.AddBlockMenuButton.modal_special_blocks
-    scope={@current_scope}
     event_cancel="block:add_cancel"
     id="add-block-dialog"
+    library_types={@library_state.types}
     open?={@add_block_modal_open?}
+    scope={@current_scope}
+  />
+
+  <PageLive.Components.LibraryEntries.modal
+    admin?={@library_can_manage_types?}
+    edit_error={@library_edit_error}
+    edit_form={@library_edit_form}
+    entry_error={@library_entry_error}
+    entry_form={@library_entry_form}
+    mode={@library_modal_mode}
+    picker_entries={@streams.library_picker_entries}
+    picker_form={@library_picker_form}
+    selected_entry_id={@library_selected_entry_id}
+    selected_playlist_video_id={@library_selected_playlist_video_id}
+    selected_type_id={@library_selected_type_id}
+    state={@library_state}
   />
 <% end %>

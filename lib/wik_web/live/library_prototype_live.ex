@@ -234,45 +234,24 @@ defmodule WikWeb.LibraryPrototypeLive do
         <.icon name="hero-magnifying-glass-micro" class="mx-auto size-6 opacity-25" />
       </div>
 
-      <article
+      <EntryCard.card
         :for={{dom_id, item} <- @streams.entries}
-        id={dom_id}
-        class={[
-          "relative grid grid-rows-subgrid text-left group",
-          (Enum.any?(item.type.fields, &(&1.type == :media)) && "row-span-3") || "row-span-3",
-          "rounded-box overflow-hidden",
-          "bg-base-300/60 hover:bg-base-300 hover:scale-103",
-          "border border-base-content/10 hover:border-base-content/20",
-          "shadow hover:shadow-xl",
-          "opacity-90 hover:opacity-100",
-          "transition"
-        ]}
-        data-testid={"library-entry-#{item.entry.id}"}
-      >
-        <EntryCard.render
-          entry={item.entry}
-          manageable?={
-            can_manage_entry?(
-              @current_scope.actor.id,
-              item.entry,
-              @can_manage_types?
-            )
-          }
-          owned?={item.entry.creator_id == @current_scope.actor.id}
-          topic_summaries={item.topic_summaries}
-          type={item.type}
-        />
-
-        <button
-          aria-label={"Open #{EntryPresentation.title(item.type, item.entry)}"}
-          class="absolute inset-0 z-10 cursor-pointer rounded-box focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          data-testid={"entry-open-#{item.entry.id}"}
-          phx-click="entry:show"
-          phx-value-entry_id={item.entry.id}
-          type="button"
-        >
-        </button>
-      </article>
+        click_event="entry:show"
+        click_testid={"entry-open-#{item.entry.id}"}
+        dom_id={dom_id}
+        entry={item.entry}
+        manageable?={
+          can_manage_entry?(
+            @current_scope.actor.id,
+            item.entry,
+            @can_manage_types?
+          )
+        }
+        owned?={item.entry.creator_id == @current_scope.actor.id}
+        testid={"library-entry-#{item.entry.id}"}
+        topic_summaries={item.topic_summaries}
+        type={item.type}
+      />
     </div>
     """
   end

@@ -34,6 +34,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
   attr :child_pages_available?, :boolean, default: false
   attr :event_cancel, :string, required: true
   attr :id, :string, required: true
+  attr :library_types, :list, default: []
   attr :open?, :boolean, default: false
   attr :scope, :map, required: true
 
@@ -65,6 +66,18 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
               label={Markdown.label()}
               phx-click="block:add"
               phx-value-type="markdown"
+            />
+          </section>
+
+          <section :if={@library_types != []}>
+            <UI.panel_title>From library</UI.panel_title>
+
+            <.button_special_block
+              :for={type <- @library_types}
+              data-testid={"library-type-#{type.slug}"}
+              label={type.name}
+              phx-click="library_entry:choose_type"
+              phx-value-type_id={type.id}
             />
           </section>
 

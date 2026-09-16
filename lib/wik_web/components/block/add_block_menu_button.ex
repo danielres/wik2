@@ -75,6 +75,7 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
             <.button_special_block
               :for={type <- @library_types}
               data-testid={"library-type-#{type.slug}"}
+              id={"library-type-button-#{type.id}"}
               label={type.name}
               phx-click="block:add_library_entry"
               phx-value-type_id={type.id}

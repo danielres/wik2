@@ -3,6 +3,7 @@ defmodule Wik.Blocks.Types do
   alias Wik.Blocks.Types.ChildPages
   alias Wik.Blocks.Types.GoogleCalendar
   alias Wik.Blocks.Types.GoogleMaps
+  alias Wik.Blocks.Types.LibraryEntry
   alias Wik.Blocks.Types.Markdown
   alias Wik.Blocks.Types.Members
   alias Wik.Blocks.Types.Pages
@@ -15,6 +16,7 @@ defmodule Wik.Blocks.Types do
     ChildPages,
     GoogleCalendar,
     GoogleMaps,
+    LibraryEntry,
     Markdown,
     Members,
     Pages,

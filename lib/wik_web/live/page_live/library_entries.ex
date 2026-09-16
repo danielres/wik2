@@ -2,15 +2,19 @@ defmodule WikWeb.PageLive.LibraryEntries do
   @moduledoc false
 
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
-  import Phoenix.LiveView, only: [stream: 4]
+  import Phoenix.LiveView, only: [start_async: 3, stream: 4]
 
+  alias Wik.Library
+  alias Wik.Tags
+  alias WikWeb.LibraryPrototypeLive.EntryFormMedia
   alias WikWeb.LibraryPrototypeLive.EntryPresentation
+  alias WikWeb.LibraryPrototypeLive.ExternalMedia
   alias WikWeb.LibraryPrototypeLive.State
-  alias WikWeb.PageLive.BlockEdit
+  alias WikWeb.PageLive.PageState
   alias WikWeb.TenantContext
 
   def assign_defaults(socket) do
-    state = State.new()
+    state = Wik.Library.page_snapshot(socket.assigns.current_scope)
 
     socket
     |> assign(
@@ -18,37 +22,105 @@ defmodule WikWeb.PageLive.LibraryEntries do
         TenantContext.space_admin?(socket.assigns.current_scope, socket.assigns.tenant_context),
       library_edit_error: nil,
       library_edit_form: nil,
-      library_edit_placement_id: nil,
+      library_entry_form_media: EntryFormMedia.reset(),
       library_entry_error: nil,
       library_entry_form: nil,
-      library_focused_placement_id: nil,
+      library_insert_position: nil,
       library_modal_mode: nil,
       library_picker_form: picker_form(),
-      library_placements: [],
       library_selected_entry_id: nil,
       library_selected_playlist_video_id: nil,
       library_selected_type_id: nil,
-      library_state: state
+      library_state: state,
+      library_topic_form: nil,
+      library_topics: load_topics(socket.assigns.current_scope)
     )
+    |> sync_subscriptions(state)
     |> stream(:library_picker_entries, [], reset: true)
-    |> stream(:library_top_placements, [], reset: true)
-    |> stream(:library_bottom_placements, [], reset: true)
   end
 
   def sync_page(socket) do
+    state = Wik.Library.page_snapshot(socket.assigns.current_scope)
+
     socket
+    |> assign(:library_state, state)
+    |> sync_subscriptions(state)
     |> close_modal()
-    |> clear_edit()
-    |> reset_placement_streams()
   end
 
-  def refresh_placements(socket), do: reset_placement_streams(socket)
+  def refresh(socket) do
+    state = Wik.Library.page_snapshot(socket.assigns.current_scope)
 
-  def start_add(socket, position) do
-    assign(socket, add_block_modal_open?: true, add_block_position: position)
+    socket =
+      socket
+      |> assign(:library_state, state)
+      |> sync_subscriptions(state)
+
+    case socket.assigns.library_modal_mode do
+      :picker ->
+        query = socket.assigns.library_picker_form[:query].value || ""
+        stream_picker_entries(socket, socket.assigns.library_selected_type_id, query)
+
+      mode when mode in [:detail, :edit] ->
+        if State.find_entry(state, socket.assigns.library_selected_entry_id) do
+          socket
+        else
+          close_modal(socket)
+        end
+
+      _other ->
+        socket
+    end
   end
 
-  def choose_type(socket, type_id) do
+  def close_modal(socket) do
+    socket
+    |> assign(
+      library_edit_error: nil,
+      library_edit_form: nil,
+      library_entry_form_media: EntryFormMedia.reset(),
+      library_entry_error: nil,
+      library_entry_form: nil,
+      library_insert_position: nil,
+      library_modal_mode: nil,
+      library_picker_form: picker_form(),
+      library_selected_entry_id: nil,
+      library_selected_playlist_video_id: nil,
+      library_selected_type_id: nil,
+      library_topic_form: nil
+    )
+    |> stream(:library_picker_entries, [], reset: true)
+  end
+
+  def start_insert(socket, type_id, position) when position in ["top", "bottom"] do
+    socket
+    |> assign(add_block_modal_open?: false, library_insert_position: position)
+    |> open_picker(type_id)
+  end
+
+  defp start_create(socket, type_id) do
+    case State.find_type_by_id(socket.assigns.library_state, type_id) do
+      nil ->
+        put_error(socket, "That Library type is no longer available.")
+
+      type ->
+        if State.can_create_entry?(type, socket.assigns.library_can_manage_types?) do
+          assign(socket,
+            library_entry_error: nil,
+            library_entry_form: entry_form(nil),
+            library_modal_mode: :new,
+            library_selected_type_id: type.id
+          )
+        else
+          put_error(socket, "You cannot add entries to that Library type.")
+        end
+    end
+  end
+
+  def start_picker_create(socket),
+    do: start_create(socket, socket.assigns.library_selected_type_id)
+
+  defp open_picker(socket, type_id) do
     case State.find_type_by_id(socket.assigns.library_state, type_id) do
       nil ->
         put_error(socket, "That Library type is no longer available.")
@@ -56,103 +128,58 @@ defmodule WikWeb.PageLive.LibraryEntries do
       type ->
         socket
         |> assign(
-          add_block_modal_open?: false,
           library_entry_error: nil,
-          library_entry_form: nil,
-          library_modal_mode: :chooser,
+          library_modal_mode: :picker,
           library_picker_form: picker_form(),
-          library_selected_entry_id: nil,
-          library_selected_playlist_video_id: nil,
           library_selected_type_id: type.id
         )
-        |> assign_picker_entries("")
+        |> stream_picker_entries(type.id, "")
     end
   end
 
-  def back_to_block_menu(socket) do
-    socket
-    |> close_modal()
-    |> assign(:add_block_modal_open?, true)
-  end
-
-  def close_modal(socket) do
-    socket
-    |> assign(
-      library_entry_error: nil,
-      library_entry_form: nil,
-      library_modal_mode: nil,
-      library_picker_form: picker_form(),
-      library_selected_entry_id: nil,
-      library_selected_playlist_video_id: nil,
-      library_selected_type_id: nil
-    )
-    |> clear_edit()
-    |> stream(:library_picker_entries, [], reset: true)
-  end
-
-  def search(socket, query) when is_binary(query) do
+  def search_picker(socket, query) do
     socket
     |> assign(:library_picker_form, picker_form(query))
-    |> assign_picker_entries(query)
+    |> stream_picker_entries(socket.assigns.library_selected_type_id, query)
   end
 
-  def start_create(socket) do
-    type = selected_type(socket)
+  def select_picker_entry(socket, entry_id) do
+    case State.find_entry(socket.assigns.library_state, entry_id) do
+      %{type_id: type_id} = entry when type_id == socket.assigns.library_selected_type_id ->
+        insert_entry_block(socket, entry)
 
-    if type && State.can_create_entry?(type, socket.assigns.library_can_manage_types?) do
-      socket
-      |> assign(
-        library_entry_error: nil,
-        library_entry_form: entry_form(nil),
-        library_modal_mode: :new
-      )
-    else
-      put_error(socket, "You cannot add entries to that Library type.")
+      _missing ->
+        put_error(socket, "That Library entry is no longer available.")
     end
   end
 
-  def back_to_chooser(socket) do
-    assign(socket,
-      library_entry_error: nil,
-      library_entry_form: nil,
-      library_modal_mode: :chooser
-    )
-  end
-
-  def change_create(socket, params) do
-    assign(socket, :library_entry_form, entry_form(params))
-  end
+  def change_create(socket, params), do: assign(socket, :library_entry_form, entry_form(params))
 
   def create(socket, params) do
     type = selected_type(socket)
     actor_id = socket.assigns.current_scope.actor.id
-    admin? = socket.assigns.library_can_manage_types?
 
-    case type && State.create_entry(socket.assigns.library_state, type, actor_id, admin?, params) do
+    case type &&
+           State.create_entry(
+             socket.assigns.library_state,
+             type,
+             actor_id,
+             socket.assigns.library_can_manage_types?,
+             params
+           ) do
       {:ok, state, entry} ->
         socket
         |> assign(:library_state, state)
-        |> place_entry(entry)
+        |> insert_entry_block(entry)
 
       {:error, errors} when is_list(errors) ->
-        socket
-        |> assign(:library_entry_error, Enum.join(errors, " · "))
-        |> assign(:library_entry_form, entry_form(params))
+        assign(socket,
+          library_entry_error: Enum.join(errors, " · "),
+          library_entry_form: entry_form(params)
+        )
 
       _error ->
         put_error(socket, "You cannot add entries to that Library type.")
-    end
-  end
-
-  def insert(socket, entry_id) do
-    state = socket.assigns.library_state
-    type = selected_type(socket)
-    entry = State.find_entry(state, entry_id)
-
-    if type && entry && entry.type_id == type.id do
-      place_entry(socket, entry)
-    else
-      put_error(socket, "That Library entry is no longer available.")
     end
   end
 
@@ -162,13 +189,26 @@ defmodule WikWeb.PageLive.LibraryEntries do
         put_error(socket, "That Library entry is no longer available.")
 
       entry ->
-        socket
-        |> assign(
+        assign(socket,
+          library_edit_error: nil,
+          library_entry_form_media: EntryFormMedia.reset(),
           library_modal_mode: :detail,
           library_selected_entry_id: entry.id,
           library_selected_playlist_video_id: nil,
           library_selected_type_id: entry.type_id
         )
+    end
+  end
+
+  def open_for_edit(socket, entry_id) do
+    case State.find_entry(socket.assigns.library_state, entry_id) do
+      nil ->
+        put_error(socket, "That Library entry is no longer available.")
+
+      entry ->
+        if manageable?(socket, entry),
+          do: start_edit(socket, entry.id),
+          else: show(socket, entry.id)
     end
   end
 
@@ -184,36 +224,47 @@ defmodule WikWeb.PageLive.LibraryEntries do
     end
   end
 
-  def start_edit(socket, placement_id) do
-    with %{} = placement <- find_placement(socket, placement_id),
-         %{} = entry <- State.find_entry(socket.assigns.library_state, placement.entry_id),
-         true <- manageable?(socket, entry) do
-      socket
-      |> BlockEdit.clear()
-      |> assign(
+  def start_edit(socket, entry_id) do
+    entry = State.find_entry(socket.assigns.library_state, entry_id)
+
+    if entry && manageable?(socket, entry) do
+      assign(socket,
         library_edit_error: nil,
         library_edit_form: entry_form(entry.values),
-        library_edit_placement_id: placement.id,
+        library_entry_form_media: EntryFormMedia.reset(entry.external_media_metadata),
         library_modal_mode: :edit,
         library_selected_entry_id: entry.id,
         library_selected_playlist_video_id: nil,
         library_selected_type_id: entry.type_id
       )
     else
-      _error -> put_error(socket, "You cannot edit that Library entry.")
+      put_error(socket, "You cannot edit that Library entry.")
     end
   end
 
-  def change_edit(socket, params) do
-    assign(socket, :library_edit_form, entry_form(params))
+  def change_edit(socket, params, event) do
+    target = get_in(event, ["_target", Access.at(1)])
+
+    case EntryFormMedia.change(
+           socket.assigns.library_entry_form_media,
+           socket.assigns.library_edit_form.params,
+           params,
+           target,
+           selected_type(socket)
+         ) do
+      {:ok, params, media_state} ->
+        assign_entry_form_media(socket, params, media_state)
+
+      {:resolve, params, media, media_state} ->
+        resolve_external_media(socket, params, media, media_state)
+    end
   end
 
   def save_edit(socket, params) do
-    with %{} = placement <- find_placement(socket, socket.assigns.library_edit_placement_id),
-         %{} = entry <- State.find_entry(socket.assigns.library_state, placement.entry_id),
-         %{} = type <- State.find_type_by_id(socket.assigns.library_state, entry.type_id),
-         true <- manageable?(socket, entry),
-         {:ok, state, _entry} <-
+    entry = selected_entry(socket)
+    type = selected_type(socket)
+
+    case entry && type &&
            State.update_entry(
              socket.assigns.library_state,
              type,
@@ -221,185 +272,173 @@ defmodule WikWeb.PageLive.LibraryEntries do
              socket.assigns.current_scope.actor.id,
              socket.assigns.library_can_manage_types?,
              params,
-             entry.external_media_metadata
+             socket.assigns.library_entry_form_media.external_metadata
            ) do
-      socket
-      |> assign(:library_state, state)
-      |> clear_edit()
-      |> assign(:library_modal_mode, :detail)
-      |> reset_placement_streams()
-    else
+      {:ok, state, entry} ->
+        assign(socket,
+          library_edit_error: nil,
+          library_edit_form: nil,
+          library_entry_form_media: EntryFormMedia.reset(),
+          library_modal_mode: :detail,
+          library_selected_entry_id: entry.id,
+          library_state: state
+        )
+
       {:error, errors} when is_list(errors) ->
-        socket
-        |> assign(:library_edit_error, Enum.join(errors, " · "))
-        |> assign(:library_edit_form, entry_form(params))
+        assign(socket,
+          library_edit_error: Enum.join(errors, " · "),
+          library_edit_form: entry_form(params)
+        )
 
       _error ->
         put_error(socket, "You cannot edit that Library entry.")
     end
   end
 
-  def cancel_edit(socket) do
-    socket
-    |> close_modal()
+  def cancel_create(socket) do
+    open_picker(socket, socket.assigns.library_selected_type_id)
   end
 
-  def sync_edit_mode(%{assigns: %{editing?: true}} = socket), do: reset_placement_streams(socket)
+  def cancel_edit(socket), do: close_modal(socket)
 
-  def sync_edit_mode(socket) do
-    socket
-    |> clear_edit()
-    |> reset_placement_streams()
-  end
+  def delete(socket, entry_id) do
+    entry = State.find_entry(socket.assigns.library_state, entry_id)
+    type = entry && State.find_type_by_id(socket.assigns.library_state, entry.type_id)
 
-  def remove(socket, placement_id) do
-    case find_placement(socket, placement_id) do
-      nil ->
-        put_error(socket, "That Library block is no longer available.")
+    if entry && type && manageable?(socket, entry) do
+      case State.delete_entry(
+             socket.assigns.library_state,
+             type.id,
+             entry.id,
+             socket.assigns.current_scope.actor.id,
+             socket.assigns.library_can_manage_types?
+           ) do
+        {:ok, state, _entry} ->
+          socket |> assign(:library_state, state) |> close_modal()
 
-      placement ->
-        placements = Enum.reject(socket.assigns.library_placements, &(&1.id == placement.id))
+        {:error, message} when is_binary(message) ->
+          assign(socket, :library_edit_error, message)
 
-        socket
-        |> assign(:library_placements, placements)
-        |> maybe_cancel_edit(placement.id)
-        |> reset_placement_streams()
-    end
-  end
-
-  def move(socket, placement_id, direction) when direction in ["up", "down"] do
-    placement = find_placement(socket, placement_id)
-
-    if placement do
-      siblings = current_siblings(socket, placement.position)
-      sibling_index = Enum.find_index(siblings, &(&1.id == placement.id))
-      destination = sibling_index + if(direction == "up", do: -1, else: 1)
-
-      case Enum.at(siblings, destination) do
-        nil ->
-          socket
-
-        sibling ->
-          socket |> swap_placements(placement.id, sibling.id) |> reset_placement_streams()
+        {:error, _reason} ->
+          assign(socket, :library_edit_error, "You cannot delete that Library entry.")
       end
     else
-      put_error(socket, "That Library block is no longer available.")
+      assign(socket, :library_edit_error, "You cannot delete that Library entry.")
     end
   end
 
-  def move(socket, _placement_id, _direction) do
-    put_error(socket, "That Library block cannot be moved.")
+  def open_topic_form(socket) do
+    assign(socket, :library_topic_form, topic_form())
   end
 
-  defp place_entry(socket, entry) do
-    placement = %{
-      entry_id: entry.id,
-      id: "library-placement-#{System.unique_integer([:monotonic, :positive])}",
-      page_id: socket.assigns.page.id,
-      position: socket.assigns.add_block_position
-    }
+  def close_topic_form(socket), do: assign(socket, :library_topic_form, nil)
 
-    socket
-    |> assign(
-      add_block_modal_open?: false,
-      library_focused_placement_id: placement.id,
-      library_placements: socket.assigns.library_placements ++ [placement]
-    )
-    |> close_modal()
-    |> reset_placement_streams()
-  end
+  def save_topic(socket, topic_id, relevancy) do
+    entry = selected_entry(socket)
+    membership_id = current_membership_id(socket)
+    topic = Enum.find(socket.assigns.library_topics, &(&1.id == topic_id))
 
-  defp assign_picker_entries(socket, query) do
-    entries =
-      case selected_type(socket) do
-        nil -> []
-        type -> State.entries_for(socket.assigns.library_state, type.id)
-      end
-
-    normalized_query = query |> String.trim() |> String.downcase()
-
-    entries =
-      if normalized_query == "" do
-        entries
+    result =
+      if entry && membership_id && topic do
+        State.upsert_topic_contribution(
+          socket.assigns.library_state,
+          entry.id,
+          membership_id,
+          topic_id,
+          relevancy
+        )
       else
-        Enum.filter(entries, fn entry ->
-          type = State.find_type_by_id(socket.assigns.library_state, entry.type_id)
-
-          type
-          |> EntryPresentation.title(entry)
-          |> String.downcase()
-          |> String.contains?(normalized_query)
-        end)
+        {:error, "Choose a topic and relevance from 1 to 10."}
       end
 
-    stream(socket, :library_picker_entries, entries, reset: true)
+    case result do
+      {:ok, state, _contribution} ->
+        assign(socket, library_state: state, library_topic_form: nil)
+
+      {:error, message} ->
+        put_error(socket, message)
+    end
   end
 
-  defp reset_placement_streams(socket) do
-    top = socket |> current_siblings("top") |> decorate_placements()
-    bottom = socket |> current_siblings("bottom") |> decorate_placements()
+  def remove_topic(socket, topic_id) do
+    entry = selected_entry(socket)
 
-    socket
-    |> stream(:library_top_placements, top, reset: true)
-    |> stream(:library_bottom_placements, bottom, reset: true)
+    case State.remove_topic_contribution(
+           socket.assigns.library_state,
+           entry.id,
+           current_membership_id(socket),
+           topic_id
+         ) do
+      {:ok, state} -> assign(socket, :library_state, state)
+      {:error, :not_found} -> socket
+    end
   end
 
-  defp current_siblings(socket, position) do
-    page_id = socket.assigns.page && socket.assigns.page.id
+  def dismiss_topic(socket, topic_id) do
+    entry = selected_entry(socket)
 
-    Enum.filter(
-      socket.assigns.library_placements,
-      &(&1.page_id == page_id && &1.position == position)
+    assign(
+      socket,
+      :library_state,
+      State.dismiss_automatic_topic(socket.assigns.library_state, entry.id, topic_id)
     )
   end
 
-  defp decorate_placements(placements) do
-    last_index = length(placements) - 1
+  def handle_external_media_result(socket, request_id, result) do
+    form = socket.assigns.library_edit_form
 
-    placements
-    |> Enum.with_index()
-    |> Enum.map(fn {placement, index} ->
-      Map.merge(placement, %{first?: index == 0, last?: index == last_index})
-    end)
+    if form &&
+         EntryFormMedia.matching_request?(
+           socket.assigns.library_entry_form_media,
+           request_id,
+           form.params
+         ) do
+      {params, media_state} =
+        EntryFormMedia.apply_result(
+          socket.assigns.library_entry_form_media,
+          form.params,
+          result
+        )
+
+      assign_entry_form_media(socket, params, media_state)
+    else
+      socket
+    end
   end
 
-  defp swap_placements(socket, first_id, second_id) do
-    placements = socket.assigns.library_placements
-    first_index = Enum.find_index(placements, &(&1.id == first_id))
-    second_index = Enum.find_index(placements, &(&1.id == second_id))
-    first = Enum.at(placements, first_index)
-    second = Enum.at(placements, second_index)
-
-    placements =
-      placements
-      |> List.replace_at(first_index, second)
-      |> List.replace_at(second_index, first)
-
-    assign(socket, :library_placements, placements)
+  def handle_external_media_exit(socket, request_id) do
+    if EntryFormMedia.request_id(socket.assigns.library_entry_form_media) == request_id do
+      assign(
+        socket,
+        :library_entry_form_media,
+        EntryFormMedia.fail(socket.assigns.library_entry_form_media)
+      )
+    else
+      socket
+    end
   end
 
-  defp maybe_cancel_edit(socket, placement_id) do
-    if socket.assigns.library_edit_placement_id == placement_id,
-      do: clear_edit(socket),
-      else: socket
+  defp insert_entry_block(socket, entry) do
+    position = position_to_atom(socket.assigns.library_insert_position)
+
+    case Library.create_entry_block_on_page(entry, socket.assigns.page,
+           position: position,
+           scope: socket.assigns.current_scope
+         ) do
+      {:ok, _block} ->
+        socket
+        |> close_modal()
+        |> PageState.reload()
+        |> assign(:editing?, false)
+
+      {:error, error} ->
+        Utils.Log.scoped_error(socket.assigns.current_scope, error, "create Library block failed")
+        put_error(socket, "Could not add Library entry to the page.")
+    end
   end
 
-  defp clear_edit(socket) do
-    assign(socket,
-      library_edit_error: nil,
-      library_edit_form: nil,
-      library_edit_placement_id: nil
-    )
-  end
-
-  defp find_placement(socket, placement_id) do
-    page_id = socket.assigns.page && socket.assigns.page.id
-
-    Enum.find(
-      socket.assigns.library_placements,
-      &(&1.id == placement_id && &1.page_id == page_id)
-    )
-  end
+  defp position_to_atom("top"), do: :top
+  defp position_to_atom("bottom"), do: :bottom
 
   defp selected_entry(socket) do
     State.find_entry(socket.assigns.library_state, socket.assigns.library_selected_entry_id)
@@ -417,8 +456,102 @@ defmodule WikWeb.PageLive.LibraryEntries do
     )
   end
 
-  defp picker_form(query \\ ""), do: to_form(%{"query" => query}, as: :library_search)
+  defp resolve_external_media(socket, params, media, media_state) do
+    request_id = System.unique_integer([:monotonic, :positive])
+    media_state = EntryFormMedia.begin_resolution(media_state, media, request_id)
+
+    socket
+    |> assign_entry_form_media(params, media_state)
+    |> start_async({:library_entry_external_media, request_id}, fn ->
+      ExternalMedia.resolve(media)
+    end)
+  end
+
+  defp assign_entry_form_media(socket, params, media_state) do
+    socket
+    |> assign(:library_edit_form, entry_form(params))
+    |> assign(:library_entry_form_media, media_state)
+  end
+
+  defp current_membership_id(socket) do
+    case socket.assigns.tenant_context do
+      %{current_membership: %{id: id}} -> id
+      _tenant_context -> nil
+    end
+  end
+
+  defp stream_picker_entries(socket, type_id, query) do
+    normalized_query = query |> to_string() |> String.trim() |> String.downcase()
+
+    entries =
+      socket.assigns.library_state.entries
+      |> Map.values()
+      |> Enum.filter(&(&1.type_id == type_id))
+      |> Enum.filter(fn entry ->
+        type = State.find_type_by_id(socket.assigns.library_state, type_id)
+
+        normalized_query == "" or
+          type
+          |> EntryPresentation.title(entry)
+          |> String.downcase()
+          |> String.contains?(normalized_query)
+      end)
+      |> Enum.sort_by(&EntryPresentation.title(type_for_entry(socket, &1), &1))
+
+    stream(socket, :library_picker_entries, entries, reset: true)
+  end
+
+  defp type_for_entry(socket, entry) do
+    State.find_type_by_id(socket.assigns.library_state, entry.type_id)
+  end
+
+  defp sync_subscriptions(socket, state) do
+    if Phoenix.LiveView.connected?(socket) do
+      space_id = socket.assigns.current_scope.tenant.id
+      subscribed_space_id = socket.assigns[:library_subscribed_space_id]
+
+      if subscribed_space_id != space_id do
+        if subscribed_space_id do
+          WikWeb.Endpoint.unsubscribe("library_entry:space:#{subscribed_space_id}")
+          WikWeb.Endpoint.unsubscribe("library_entry_type:space:#{subscribed_space_id}")
+        end
+
+        WikWeb.Endpoint.subscribe("library_entry:space:#{space_id}")
+        WikWeb.Endpoint.subscribe("library_entry_type:space:#{space_id}")
+      end
+
+      type_ids = MapSet.new(state.types, & &1.id)
+      subscribed_type_ids = socket.assigns[:library_subscribed_type_ids] || MapSet.new()
+
+      type_ids
+      |> MapSet.difference(subscribed_type_ids)
+      |> Enum.each(&WikWeb.Endpoint.subscribe("library_field:type:#{&1}"))
+
+      subscribed_type_ids
+      |> MapSet.difference(type_ids)
+      |> Enum.each(&WikWeb.Endpoint.unsubscribe("library_field:type:#{&1}"))
+
+      assign(socket,
+        library_subscribed_space_id: space_id,
+        library_subscribed_type_ids: type_ids
+      )
+    else
+      socket
+    end
+  end
+
+  defp picker_form(query \\ ""),
+    do: to_form(%{"query" => query}, as: :library_search)
+
   defp entry_form(params), do: to_form(params || %{}, as: :entry)
+  defp topic_form, do: to_form(%{"relevancy" => "5", "topic_id" => ""}, as: :entry_topic)
+
+  defp load_topics(scope) do
+    case Tags.list_space_tags(scope) do
+      {:ok, topics} -> topics
+      {:error, _error} -> []
+    end
+  end
 
   defp put_error(socket, message), do: Phoenix.LiveView.put_flash(socket, :error, message)
 end

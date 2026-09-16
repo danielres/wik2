@@ -33,6 +33,15 @@ defmodule Wik.Tags.Dimensions do
         label: "Relevancy",
         max: 10
       }
+    },
+    "library_entry" => %{
+      "relevancy" => %{
+        color: "oklch(50% 0.08 145)",
+        icon: "hero-sparkles-micro",
+        key: "relevancy",
+        label: "Relevancy",
+        max: 10
+      }
     }
   }
 

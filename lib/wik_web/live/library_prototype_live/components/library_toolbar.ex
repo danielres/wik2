@@ -146,6 +146,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.LibraryToolbar do
       <div class="flex items-center gap-2 ml-auto">
         <UI.action_button
           :if={@can_manage_types?}
+          data-tip="Library settings"
           icon="hero-adjustments-horizontal-micro"
           data-testid="library-settings-open"
           popovertarget="library-settings-popover"

@@ -424,7 +424,14 @@ defmodule WikWeb.TagLive do
                 <.icon name="hero-tag-micro" class="opacity-30 size-5" />
                 {@tag.name}
               </UI.page_title>
-              
+
+              <.link
+                class="btn btn-sm btn-ghost"
+                data-testid="tag-library-link"
+                navigate={~p"/#{@current_scope.tenant.slug}/libraries?topics=#{@tag.slug}"}
+              >
+                <.icon name="hero-rectangle-stack-micro" /> Library
+              </.link>
             </div>
           </UI.page_head>
 

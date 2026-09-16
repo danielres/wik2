@@ -17,33 +17,39 @@ defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
     <div class="space-y-4" data-testid="schema-settings">
       <section class="rounded-box border border-base-content/10 bg-base-200/35 p-5">
         <.form
-          class="grid gap-4  sm:items-end"
+          class="space-y-5"
           data-testid="type-settings-form"
           for={@type_form}
           id="type-settings-form"
+          phx-change="type:update_validate"
           phx-submit="type:update"
         >
-          <.input
-            field={@type_form[:name]}
-            label="Name"
-            phx-hook="CapitalizeFirstLetter"
+          <div class="grid gap-4 sm:grid-cols-2">
+            <.input
+              field={@type_form[:name]}
+              label="Name"
+              phx-hook="CapitalizeFirstLetter"
+              required
+            />
+            <.input
+              field={@type_form[:description]}
+              label="Short description"
+              phx-hook="CapitalizeFirstLetter"
+            />
+          </div>
+
+          <TypePermissions.render
+            class="pt-4"
+            field={@type_form[:entry_creation_permission]}
+            id="type-settings-permissions"
             required
           />
-          <.input
-            field={@type_form[:description]}
-            label="Short description"
-            phx-hook="CapitalizeFirstLetter"
-          />
-          <button class="btn btn-accent btn-soft" type="submit">Save</button>
+
+          <div class="flex justify-end pt-4">
+            <button class="btn btn-accent btn-soft" type="submit">Save changes</button>
+          </div>
         </.form>
       </section>
-
-      <TypePermissions.render
-        event="type:entry_creation_permission:update"
-        id="type-settings-permissions"
-        name="entry-creation-permission"
-        selected={@type.entry_creation_permission}
-      />
 
       <section class="rounded-box border border-base-content/10 bg-base-200/35 p-5">
         <UI.panel_title>Fields</UI.panel_title>

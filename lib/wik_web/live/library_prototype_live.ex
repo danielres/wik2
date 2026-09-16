@@ -8,8 +8,8 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   alias WikWeb.LibraryPrototypeLive.Components.{
     EntryCard,
-    EntryDetail,
     EntryForm,
+    EntryModal,
     LibraryToolbar,
     PortableSchema,
     SchemaSettings,
@@ -19,6 +19,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     TypeWizard
   }
 
+  alias WikWeb.LibraryPrototypeLive.EntryFormMedia
   alias WikWeb.LibraryPrototypeLive.EntryPresentation
   alias WikWeb.LibraryPrototypeLive.ExternalMedia
   alias WikWeb.LibraryPrototypeLive.Schema
@@ -30,7 +31,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    state = State.new()
+    state = State.new(socket.assigns.current_scope)
     topics = load_topics(socket.assigns.current_scope)
 
     {:ok,
@@ -40,13 +41,10 @@ defmodule WikWeb.LibraryPrototypeLive do
      |> assign(:can_manage_types?, space_admin?(socket))
      |> assign(:current_type, nil)
      |> assign(:editing_field, nil)
-     |> assign(:entry_autofill_values, %{})
-     |> assign(:entry_external_media_metadata, nil)
      |> assign(:entry_form, entry_form(nil))
+     |> assign(:entry_form_media, EntryFormMedia.reset())
+     |> assign(:entry_error, nil)
      |> assign(:entry_list_signature, nil)
-     |> assign(:entry_metadata_error, nil)
-     |> assign(:entry_metadata_loading?, false)
-     |> assign(:entry_metadata_request, nil)
      |> assign(:entry_mode, nil)
      |> assign(:expanded_topic_id, nil)
      |> assign(:field_form, field_form(nil))
@@ -106,6 +104,7 @@ defmodule WikWeb.LibraryPrototypeLive do
           |> assign(:active_type_ids, active_type_ids)
           |> assign(:current_type, current_type)
           |> assign(:entry_mode, entry_mode)
+          |> assign(:entry_error, nil)
           |> assign(:selected_entry, selected_entry)
           |> assign(:selected_playlist_video_id, nil)
           |> assign(:topic_form, nil)
@@ -158,6 +157,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     </Layouts.app>
 
     <Modal.render
+      :if={@entry_mode in [:type_picker, :new]}
       cancel="modal:close"
       cancel_testid="library-modal-close"
       open?={@entry_mode != nil}
@@ -184,27 +184,32 @@ defmodule WikWeb.LibraryPrototypeLive do
 
       <TypePicker.render :if={@entry_mode == :type_picker} types={@available_types} />
 
-      <EntryDetail.render
-        :if={@entry_mode == :detail && @selected_entry}
-        entry={@selected_entry}
-        manageable?={can_manage_entry?(@current_scope.actor.id, @selected_entry, @can_manage_types?)}
-        playlist_label={@playlist_label}
-        selected_playlist_video_id={@selected_playlist_video_id}
-        topic_form={@topic_form}
-        topic_options={@topics}
-        topic_summaries={@topic_summaries}
-        type={@current_type}
-      />
-
       <EntryForm.render
-        :if={@entry_mode in [:new, :edit]}
+        :if={@entry_mode == :new}
         form={@entry_form}
-        metadata_error={@entry_metadata_error}
-        metadata_loading?={@entry_metadata_loading?}
+        metadata_error={@entry_form_media.error}
+        metadata_loading?={@entry_form_media.loading?}
         mode={@entry_mode}
         type={@current_type}
       />
     </Modal.render>
+
+    <EntryModal.render
+      :if={@entry_mode in [:detail, :edit] && @selected_entry && @current_type}
+      entry={@selected_entry}
+      error={@entry_error}
+      form={@entry_form}
+      manageable?={can_manage_entry?(@current_scope.actor.id, @selected_entry, @can_manage_types?)}
+      metadata_error={@entry_form_media.error}
+      metadata_loading?={@entry_form_media.loading?}
+      mode={@entry_mode}
+      playlist_label={@playlist_label}
+      selected_playlist_video_id={@selected_playlist_video_id}
+      topic_form={@topic_form}
+      topic_options={@topics}
+      topic_summaries={@topic_summaries}
+      type={@current_type}
+    />
     """
   end
 
@@ -364,21 +369,24 @@ defmodule WikWeb.LibraryPrototypeLive do
   end
 
   def handle_event("entry:change", %{"entry" => params} = event, socket) do
-    previous_media = current_media(socket)
-    params = Map.merge(socket.assigns.entry_form.params, params)
     target = get_in(event, ["_target", Access.at(1)])
 
-    socket =
-      socket
-      |> assign(:entry_form, to_form(params, as: :entry))
-      |> track_manual_entry_change(target, params)
+    case EntryFormMedia.change(
+           socket.assigns.entry_form_media,
+           socket.assigns.entry_form.params,
+           params,
+           target,
+           socket.assigns.current_type
+         ) do
+      {:ok, params, media_state} ->
+        {:noreply,
+         socket |> assign(:entry_error, nil) |> assign_entry_form_media(params, media_state)}
 
-    media_changed? = Map.get(params, "media", "") != previous_media
-
-    if media_changed? and external_media_type?(socket.assigns.current_type) do
-      {:noreply, resolve_external_media(socket, params)}
-    else
-      {:noreply, socket}
+      {:resolve, params, media, media_state} ->
+        {:noreply,
+         socket
+         |> assign(:entry_error, nil)
+         |> resolve_external_media(params, media, media_state)}
     end
   end
 
@@ -391,7 +399,7 @@ defmodule WikWeb.LibraryPrototypeLive do
            socket.assigns.current_scope.actor.id,
            socket.assigns.can_manage_types?,
            params,
-           socket.assigns.entry_external_media_metadata
+           socket.assigns.entry_form_media.external_metadata
          ) do
       {:ok, state, entry} ->
         {:noreply,
@@ -451,7 +459,7 @@ defmodule WikWeb.LibraryPrototypeLive do
            socket.assigns.current_scope.actor.id,
            socket.assigns.can_manage_types?,
            params,
-           socket.assigns.entry_external_media_metadata
+           socket.assigns.entry_form_media.external_metadata
          ) do
       {:ok, state, entry} ->
         {:noreply,
@@ -464,7 +472,10 @@ defmodule WikWeb.LibraryPrototypeLive do
         {:noreply,
          socket
          |> assign(:entry_form, to_form(params, as: :entry))
-         |> put_flash(:error, Enum.join(errors, " · "))}
+         |> assign(:entry_error, Enum.join(errors, " · "))}
+
+      {:error, reason} when is_binary(reason) ->
+        {:noreply, assign(socket, :entry_error, reason)}
 
       {:error, _reason} ->
         forbidden_entry(socket)
@@ -488,8 +499,11 @@ defmodule WikWeb.LibraryPrototypeLive do
          |> refresh_entries()
          |> push_patch(to: library_path(socket))}
 
+      {:error, reason} when is_binary(reason) ->
+        {:noreply, assign(socket, :entry_error, reason)}
+
       {:error, _reason} ->
-        forbidden_entry(socket)
+        {:noreply, assign(socket, :entry_error, "You cannot delete that Library entry.")}
     end
   end
 
@@ -605,7 +619,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
           {:noreply,
            socket
-           |> assign(:type_form, type_form(draft))
+           |> assign(:type_form, type_create_form(socket.assigns.prototype_state, draft))
            |> assign(:wizard_draft, draft)}
       end
     else
@@ -627,7 +641,7 @@ defmodule WikWeb.LibraryPrototypeLive do
           {:noreply,
            socket
            |> assign(:import_form, to_form(%{"json" => json}, as: :schema))
-           |> assign(:type_form, type_form(draft))
+           |> assign(:type_form, type_create_form(socket.assigns.prototype_state, draft))
            |> assign(:wizard_draft, draft)}
 
         {:error, message} ->
@@ -643,13 +657,13 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   def handle_event("type:create", %{"type" => params}, socket) do
     if socket.assigns.can_manage_types? and socket.assigns.wizard_draft do
-      draft =
-        socket.assigns.wizard_draft
-        |> Map.put(:description, Map.get(params, "description", ""))
-        |> Map.put(:entry_creation_permission, Map.get(params, "entry_creation_permission"))
-        |> Map.put(:name, Map.get(params, "name", ""))
+      draft = update_type_draft(socket.assigns.wizard_draft, params)
 
-      case State.create_type(socket.assigns.prototype_state, draft) do
+      case State.submit_type_create_form(
+             socket.assigns.prototype_state,
+             draft,
+             socket.assigns.type_form
+           ) do
         {:ok, state, type} ->
           {:noreply,
            socket
@@ -657,12 +671,32 @@ defmodule WikWeb.LibraryPrototypeLive do
            |> assign(:wizard_draft, nil)
            |> push_patch(to: type_settings_path(socket, type))}
 
+        {:error, %Phoenix.HTML.Form{} = form} ->
+          {:noreply, assign(socket, :type_form, to_form(form))}
+
         {:error, message} ->
-          {:noreply,
-           socket
-           |> assign(:type_form, to_form(params, as: :type))
-           |> put_flash(:error, message)}
+          {:noreply, put_flash(socket, :error, message)}
       end
+    else
+      forbidden(socket)
+    end
+  end
+
+  def handle_event("type:validate", %{"type" => params}, socket) do
+    if socket.assigns.can_manage_types? and socket.assigns.wizard_draft do
+      draft = update_type_draft(socket.assigns.wizard_draft, params)
+
+      form =
+        State.validate_type_create_form(
+          socket.assigns.prototype_state,
+          draft,
+          socket.assigns.type_form
+        )
+
+      {:noreply,
+       socket
+       |> assign(:type_form, to_form(form))
+       |> assign(:wizard_draft, draft)}
     else
       forbidden(socket)
     end
@@ -672,40 +706,30 @@ defmodule WikWeb.LibraryPrototypeLive do
     with true <- socket.assigns.can_manage_types?,
          type when not is_nil(type) <- socket.assigns.current_type,
          {:ok, state, type} <-
-           State.update_type(socket.assigns.prototype_state, type.id, params) do
+           State.submit_type_update_form(
+             socket.assigns.prototype_state,
+             type.id,
+             socket.assigns.type_form,
+             params
+           ) do
       {:noreply,
        socket
        |> assign(:current_type, type)
        |> assign(:prototype_state, state)
-       |> assign(:type_form, type_form(type))}
+       |> assign(:type_form, type_update_form(state, type))}
     else
-      {:error, message} -> {:noreply, put_flash(socket, :error, message)}
-      _other -> forbidden(socket)
+      {:error, %Phoenix.HTML.Form{} = form} ->
+        {:noreply, assign(socket, :type_form, to_form(form))}
+
+      _other ->
+        forbidden(socket)
     end
   end
 
-  def handle_event(
-        "type:entry_creation_permission:update",
-        %{"permission" => permission},
-        socket
-      ) do
-    type = socket.assigns.current_type
-
-    if socket.assigns.can_manage_types? and type do
-      case State.update_entry_creation_permission(
-             socket.assigns.prototype_state,
-             type.id,
-             permission
-           ) do
-        {:ok, state, type} ->
-          {:noreply,
-           socket
-           |> assign(:current_type, type)
-           |> assign(:prototype_state, state)}
-
-        {:error, message} ->
-          {:noreply, put_flash(socket, :error, message)}
-      end
+  def handle_event("type:update_validate", %{"type" => params}, socket) do
+    if socket.assigns.can_manage_types? and socket.assigns.current_type do
+      form = State.validate_type_update_form(socket.assigns.type_form, params)
+      {:noreply, assign(socket, :type_form, to_form(form))}
     else
       forbidden(socket)
     end
@@ -742,10 +766,7 @@ defmodule WikWeb.LibraryPrototypeLive do
            |> assign_field_usage_counts()}
 
         {:error, message} ->
-          {:noreply,
-           socket
-           |> assign(:field_form, to_form(params, as: :field))
-           |> put_flash(:error, message)}
+          {:noreply, assign_field_error(socket, params, message)}
       end
     else
       forbidden(socket)
@@ -791,7 +812,7 @@ defmodule WikWeb.LibraryPrototypeLive do
            |> assign_field_usage_counts()}
 
         {:error, message} ->
-          {:noreply, put_flash(socket, :error, message)}
+          {:noreply, assign_field_error(socket, params, message)}
       end
     else
       forbidden(socket)
@@ -863,9 +884,11 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   @impl true
   def handle_async({:external_media, request_id}, {:ok, result}, socket) do
-    request = socket.assigns.entry_metadata_request
-
-    if request && request.id == request_id && current_media(socket) == request.url do
+    if EntryFormMedia.matching_request?(
+         socket.assigns.entry_form_media,
+         request_id,
+         socket.assigns.entry_form.params
+       ) do
       {:noreply, apply_external_media_result(socket, result)}
     else
       {:noreply, socket}
@@ -873,14 +896,9 @@ defmodule WikWeb.LibraryPrototypeLive do
   end
 
   def handle_async({:external_media, request_id}, {:exit, _reason}, socket) do
-    request = socket.assigns.entry_metadata_request
-
-    if request && request.id == request_id do
+    if EntryFormMedia.request_id(socket.assigns.entry_form_media) == request_id do
       {:noreply,
-       socket
-       |> assign(:entry_metadata_error, "Details couldn't be loaded")
-       |> assign(:entry_metadata_loading?, false)
-       |> assign(:entry_metadata_request, nil)}
+       assign(socket, :entry_form_media, EntryFormMedia.fail(socket.assigns.entry_form_media))}
     else
       {:noreply, socket}
     end
@@ -901,7 +919,10 @@ defmodule WikWeb.LibraryPrototypeLive do
     socket
     |> assign(:editing_field, nil)
     |> assign(:field_form, field_form(nil))
-    |> assign(:type_form, type_form(socket.assigns.current_type))
+    |> assign(
+      :type_form,
+      type_update_form(socket.assigns.prototype_state, socket.assigns.current_type)
+    )
     |> assign(:wizard_draft, nil)
     |> assign_field_usage_counts()
   end
@@ -1084,16 +1105,23 @@ defmodule WikWeb.LibraryPrototypeLive do
     )
   end
 
-  defp type_form(type) do
-    to_form(
-      %{
-        "description" => type.description,
-        "entry_creation_permission" =>
-          type |> Map.get(:entry_creation_permission, "") |> to_string(),
-        "name" => type.name
-      },
-      as: :type
-    )
+  defp type_create_form(state, draft) do
+    state
+    |> State.type_create_form(draft)
+    |> to_form()
+  end
+
+  defp type_update_form(state, type) do
+    state
+    |> State.type_update_form(type)
+    |> to_form()
+  end
+
+  defp update_type_draft(draft, params) do
+    draft
+    |> Map.put(:description, Map.get(params, "description", ""))
+    |> Map.put(:entry_creation_permission, Map.get(params, "entry_creation_permission"))
+    |> Map.put(:name, Map.get(params, "name", ""))
   end
 
   defp field_form(nil) do
@@ -1115,138 +1143,77 @@ defmodule WikWeb.LibraryPrototypeLive do
     )
   end
 
+  defp assign_field_error(socket, params, message) do
+    case field_error(message) do
+      {field, field_message} ->
+        form =
+          to_form(params,
+            action: :validate,
+            as: :field,
+            errors: [{field, {field_message, []}}]
+          )
+
+        assign(socket, :field_form, form)
+
+      nil ->
+        put_flash(socket, :error, message)
+    end
+  end
+
+  defp field_error("A field label is required."), do: {:label, "is required"}
+  defp field_error("Choose a supported field type."), do: {:type, "is not supported"}
+
+  defp field_error("Select fields need at least one option."),
+    do: {:options, "must include at least one option"}
+
+  defp field_error("The title field type cannot be changed."),
+    do: {:type, "cannot be changed for the title field"}
+
+  defp field_error("The title field is always required."),
+    do: {:required, "must remain enabled for the title field"}
+
+  defp field_error("Clear this field from every entry before changing its type."),
+    do: {:type, "cannot change while the field contains values"}
+
+  defp field_error("Fill this field in every entry before making it required."),
+    do: {:required, "cannot be enabled while some entries are empty"}
+
+  defp field_error("A select option still used by an entry cannot be removed."),
+    do: {:options, "cannot remove an option that is still in use"}
+
+  defp field_error(_message), do: nil
+
   defp entry_form(nil), do: to_form(%{}, as: :entry)
   defp entry_form(entry), do: to_form(entry.values, as: :entry)
 
-  defp resolve_external_media(socket, params) do
-    params = clear_previous_autofill(params, socket.assigns.entry_autofill_values)
-    media = params |> Map.get("media", "") |> String.trim()
+  defp resolve_external_media(socket, params, media, media_state) do
+    request_id = System.unique_integer([:monotonic, :positive])
+    media_state = EntryFormMedia.begin_resolution(media_state, media, request_id)
 
-    socket =
-      socket
-      |> assign(:entry_autofill_values, %{})
-      |> assign(:entry_external_media_metadata, nil)
-      |> assign(:entry_form, to_form(params, as: :entry))
-      |> assign(:entry_metadata_error, nil)
-      |> assign(:entry_metadata_loading?, false)
-      |> assign(:entry_metadata_request, nil)
-
-    if media == "" do
-      socket
-    else
-      request_id = System.unique_integer([:monotonic, :positive])
-
-      socket
-      |> assign(:entry_metadata_loading?, true)
-      |> assign(:entry_metadata_request, %{id: request_id, url: media})
-      |> start_async({:external_media, request_id}, fn -> ExternalMedia.resolve(media) end)
-    end
+    socket
+    |> assign_entry_form_media(params, media_state)
+    |> start_async({:external_media, request_id}, fn -> ExternalMedia.resolve(media) end)
   end
 
-  defp apply_external_media_result(socket, {:ok, metadata}) do
-    {params, autofill_values} =
-      Enum.reduce(
-        [creator: :creator, duration: :duration, notes: :description, title: :title],
-        {socket.assigns.entry_form.params, %{}},
-        fn {field, metadata_key}, acc ->
-          put_autofill_value(acc, Atom.to_string(field), Map.get(metadata, metadata_key))
-        end
+  defp apply_external_media_result(socket, result) do
+    {params, media_state} =
+      EntryFormMedia.apply_result(
+        socket.assigns.entry_form_media,
+        socket.assigns.entry_form.params,
+        result
       )
 
+    assign_entry_form_media(socket, params, media_state)
+  end
+
+  defp assign_entry_form_media(socket, params, media_state) do
     socket
-    |> assign(:entry_autofill_values, autofill_values)
-    |> assign(
-      :entry_external_media_metadata,
-      external_media_metadata(metadata, current_media(socket))
-    )
     |> assign(:entry_form, to_form(params, as: :entry))
-    |> assign(:entry_metadata_error, nil)
-    |> assign(:entry_metadata_loading?, false)
-    |> assign(:entry_metadata_request, nil)
+    |> assign(:entry_form_media, media_state)
   end
-
-  defp apply_external_media_result(socket, {:error, :unsupported_provider}) do
-    socket
-    |> assign(:entry_metadata_loading?, false)
-    |> assign(:entry_metadata_request, nil)
-  end
-
-  defp apply_external_media_result(socket, {:error, _reason}) do
-    socket
-    |> assign(:entry_metadata_error, "Details couldn't be loaded")
-    |> assign(:entry_metadata_loading?, false)
-    |> assign(:entry_metadata_request, nil)
-  end
-
-  defp put_autofill_value({params, autofill_values}, _key, nil),
-    do: {params, autofill_values}
-
-  defp put_autofill_value({params, autofill_values}, key, value) do
-    current_value = Map.get(params, key, "")
-
-    if Schema.blank_value?(current_value) do
-      {Map.put(params, key, value), Map.put(autofill_values, key, value)}
-    else
-      {params, autofill_values}
-    end
-  end
-
-  defp clear_previous_autofill(params, autofill_values) do
-    Enum.reduce(autofill_values, params, fn {key, value}, params ->
-      if Map.get(params, key) == value, do: Map.put(params, key, ""), else: params
-    end)
-  end
-
-  defp track_manual_entry_change(socket, key, params) when is_binary(key) do
-    case Map.fetch(socket.assigns.entry_autofill_values, key) do
-      {:ok, autofill_value} ->
-        if autofill_value == Map.get(params, key) do
-          socket
-        else
-          assign(
-            socket,
-            :entry_autofill_values,
-            Map.delete(socket.assigns.entry_autofill_values, key)
-          )
-        end
-
-      _value ->
-        socket
-    end
-  end
-
-  defp track_manual_entry_change(socket, _key, _params), do: socket
-
-  defp current_media(socket) do
-    socket.assigns.entry_form.params |> Map.get("media", "") |> String.trim()
-  end
-
-  defp external_media_type?(%{slug: "external-media"}), do: true
-  defp external_media_type?(_type), do: false
-
-  defp external_media_metadata(
-         %{provider: :youtube, kind: :playlist} = metadata,
-         source_url
-       ) do
-    %{
-      item_count: Map.get(metadata, :item_count),
-      kind: :playlist,
-      playlist_items: Map.get(metadata, :playlist_items, []),
-      provider: :youtube,
-      source_url: source_url,
-      thumbnail_url: Map.get(metadata, :thumbnail_url)
-    }
-  end
-
-  defp external_media_metadata(_metadata, _source_url), do: nil
 
   defp reset_entry_metadata(socket, external_media_metadata \\ nil) do
-    socket
-    |> assign(:entry_autofill_values, %{})
-    |> assign(:entry_external_media_metadata, external_media_metadata)
-    |> assign(:entry_metadata_error, nil)
-    |> assign(:entry_metadata_loading?, false)
-    |> assign(:entry_metadata_request, nil)
+    assign(socket, :entry_form_media, EntryFormMedia.reset(external_media_metadata))
   end
 
   defp topic_form do
@@ -1275,10 +1242,6 @@ defmodule WikWeb.LibraryPrototypeLive do
   defp entry_modal_title(:type_picker, _type, _entry), do: "Add entry"
   defp entry_modal_title(:new, type, _entry), do: "Add #{type.name}"
 
-  defp entry_modal_title(:edit, type, entry),
-    do: "Edit entry \"#{EntryPresentation.title(type, entry)}\""
-
-  defp entry_modal_title(:detail, type, entry), do: EntryPresentation.title(type, entry)
   defp entry_modal_title(_mode, _type, _entry), do: nil
 
   defp filter_query(socket, topic_ids \\ nil, type_ids \\ nil) do

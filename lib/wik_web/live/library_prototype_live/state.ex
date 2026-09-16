@@ -1,6 +1,15 @@
 defmodule WikWeb.LibraryPrototypeLive.State do
   @moduledoc false
 
+  alias AshPhoenix.Form
+  alias Wik.Accounts.Membership
+  alias Wik.Library
+  alias Wik.Library.EntryType
+  alias Wik.Library.Field
+  alias Wik.Library.Settings
+  alias Wik.Library.TopicExclusion
+  alias Wik.Library.TopicRule
+  alias Wik.Tags
   alias WikWeb.LibraryPrototypeLive.Schema
 
   @default_topic_rule %{aliases: [], enabled?: true}
@@ -18,6 +27,8 @@ defmodule WikWeb.LibraryPrototypeLive.State do
       types: types
     }
   end
+
+  def new(scope), do: Wik.Library.snapshot(scope)
 
   def types_with_counts(state) do
     Enum.map(state.types, fn type ->
@@ -73,6 +84,73 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     Enum.count(state.entries, fn {_id, entry} -> entry.type_id == type_id end)
   end
 
+  def type_create_form(%{scope: scope} = state, draft) do
+    EntryType
+    |> Form.for_create(:create, as: "type", scope: scope)
+    |> Form.validate(type_create_params(state, draft), errors: false)
+  end
+
+  def validate_type_create_form(state, draft, form) do
+    Form.validate(form, type_create_params(state, draft))
+  end
+
+  def submit_type_create_form(state, draft, form) do
+    case Form.submit(form, params: type_create_params(state, draft)) do
+      {:ok, type} ->
+        case persist_new_fields(type, draft.fields, state.scope) do
+          :ok ->
+            state = reload(state)
+            {:ok, state, find_type_by_id(state, type.id)}
+
+          {:error, error} ->
+            {:error, error |> ash_error_messages() |> Enum.join(" · ")}
+        end
+
+      {:error, form} ->
+        {:error, form}
+    end
+  end
+
+  def type_update_form(%{scope: scope}, type) do
+    Form.for_update(type, :update, as: "type", scope: scope)
+  end
+
+  def validate_type_update_form(form, params), do: Form.validate(form, params)
+
+  def submit_type_update_form(state, type_id, form, params) do
+    case Form.submit(form, params: params) do
+      {:ok, _type} ->
+        state = reload(state)
+        {:ok, state, find_type_by_id(state, type_id)}
+
+      {:error, form} ->
+        {:error, form}
+    end
+  end
+
+  def create_type(%{scope: scope} = state, draft) do
+    with {:ok, attrs} <- Schema.type_attrs(stringify_keys(draft)),
+         {:ok, permission} <-
+           validate_entry_creation_permission(Map.get(draft, :entry_creation_permission)),
+         {:ok, type} <-
+           Ash.create(
+             EntryType,
+             Map.merge(attrs, %{
+               entry_creation_permission: permission,
+               slug: unique_slug(state, attrs.name)
+             }),
+             action: :create,
+             scope: scope
+           ),
+         :ok <- persist_new_fields(type, draft.fields, scope) do
+      state = reload(state)
+      {:ok, state, find_type_by_id(state, type.id)}
+    else
+      {:error, message} when is_binary(message) -> {:error, message}
+      {:error, error} -> {:error, error |> ash_error_messages() |> Enum.join(" · ")}
+    end
+  end
+
   def create_type(state, draft) do
     with {:ok, attrs} <- Schema.type_attrs(stringify_keys(draft)),
          {:ok, entry_creation_permission} <-
@@ -90,6 +168,19 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     end
   end
 
+  def update_type(%{scope: scope} = state, type_id, params) do
+    with {:ok, attrs} <- Schema.type_attrs(params),
+         %{} = type <- find_type_by_id(state, type_id),
+         {:ok, _type} <- Ash.update(type, attrs, action: :update, scope: scope) do
+      state = reload(state)
+      {:ok, state, find_type_by_id(state, type_id)}
+    else
+      nil -> {:error, "That type is no longer available."}
+      {:error, message} when is_binary(message) -> {:error, message}
+      {:error, error} -> {:error, Exception.message(error)}
+    end
+  end
+
   def update_type(state, type_id, params) do
     with {:ok, attrs} <- Schema.type_attrs(params),
          %{} = type <- find_type_by_id(state, type_id) do
@@ -101,19 +192,18 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     end
   end
 
-  def update_entry_creation_permission(state, type_id, permission)
-      when permission in ["members", "admins"] do
-    with %{} = type <- find_type_by_id(state, type_id) do
-      permission = if permission == "members", do: :members, else: :admins
-      type = %{type | entry_creation_permission: permission}
-      {:ok, put_type(state, type), type}
+  def delete_type(%{scope: scope} = state, type_id) do
+    with %{} = type <- find_type_by_id(state, type_id),
+         0 <- count_entries(state, type_id),
+         :ok <- Ash.destroy(type, action: :destroy, scope: scope) do
+      {:ok, reload(state), type}
     else
       nil -> {:error, "That type is no longer available."}
+      1 -> {:error, "This type is used by 1 entry."}
+      count when is_integer(count) -> {:error, "This type is used by #{count} entries."}
+      {:error, error} -> {:error, Exception.message(error)}
     end
   end
-
-  def update_entry_creation_permission(_state, _type_id, _permission),
-    do: {:error, "Choose who can add entries."}
 
   def delete_type(state, type_id) do
     with %{} = type <- find_type_by_id(state, type_id),
@@ -123,6 +213,28 @@ defmodule WikWeb.LibraryPrototypeLive.State do
       nil -> {:error, "That type is no longer available."}
       1 -> {:error, "This type is used by 1 entry."}
       count when is_integer(count) -> {:error, "This type is used by #{count} entries."}
+    end
+  end
+
+  def add_field(%{scope: scope} = state, type_id, params) do
+    with %{} = type <- find_type_by_id(state, type_id),
+         {:ok, field_attrs} <- Schema.field_attrs(params, type.fields),
+         {:ok, field} <-
+           Ash.create(
+             Field,
+             field_attrs
+             |> Map.drop([:id])
+             |> Map.put(:order_key, next_field_order_key(type.fields))
+             |> Map.put(:type_id, type.id),
+             action: :create,
+             scope: scope
+           ) do
+      state = reload(state)
+      {:ok, state, find_type_by_id(state, type.id), field}
+    else
+      nil -> {:error, "That type is no longer available."}
+      {:error, message} when is_binary(message) -> {:error, message}
+      {:error, error} -> {:error, Exception.message(error)}
     end
   end
 
@@ -137,6 +249,27 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     end
   end
 
+  def update_field(%{scope: scope} = state, type_id, field_id, params) do
+    with %{} = type <- find_type_by_id(state, type_id),
+         %{} = existing_field <- Enum.find(type.fields, &(&1.id == field_id)),
+         {:ok, field_attrs} <- Schema.field_attrs(params, type.fields, existing_field),
+         :ok <- validate_field_change(state, type, existing_field, field_attrs),
+         {:ok, field} <-
+           Ash.update(
+             existing_field,
+             Map.take(field_attrs, [:label, :options, :required?, :type]),
+             action: :update,
+             scope: scope
+           ) do
+      state = reload(state)
+      {:ok, state, find_type_by_id(state, type.id), field}
+    else
+      nil -> {:error, "That field is no longer available."}
+      {:error, message} when is_binary(message) -> {:error, message}
+      {:error, error} -> {:error, Exception.message(error)}
+    end
+  end
+
   def update_field(state, type_id, field_id, params) do
     with %{} = type <- find_type_by_id(state, type_id),
          %{} = existing_field <- Enum.find(type.fields, &(&1.id == field_id)),
@@ -148,6 +281,21 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     else
       nil -> {:error, "That field is no longer available."}
       {:error, message} -> {:error, message}
+    end
+  end
+
+  def delete_field(%{scope: scope} = state, type_id, field_id) do
+    with %{} = type <- find_type_by_id(state, type_id),
+         %{} = field <- Enum.find(type.fields, &(&1.id == field_id)),
+         false <- field.type == :title,
+         :ok <- Ash.destroy(field, action: :destroy, scope: scope),
+         :ok <- remove_field_values(state, type_id, field.key) do
+      state = reload(state)
+      {:ok, state, find_type_by_id(state, type.id)}
+    else
+      nil -> {:error, "That field is no longer available."}
+      true -> {:error, "The title field cannot be deleted."}
+      {:error, error} -> {:error, Exception.message(error)}
     end
   end
 
@@ -171,6 +319,21 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     else
       nil -> {:error, "That field is no longer available."}
       true -> {:error, "The title field cannot be deleted."}
+    end
+  end
+
+  def move_field(%{scope: scope} = state, type_id, field_id, direction)
+      when direction in [:up, :down] do
+    with %{} = type <- find_type_by_id(state, type_id),
+         index when is_integer(index) <- Enum.find_index(type.fields, &(&1.id == field_id)),
+         destination <- index + if(direction == :up, do: -1, else: 1),
+         %{} = sibling <- Enum.at(type.fields, destination),
+         field <- Enum.at(type.fields, index),
+         :ok <- swap_field_order(field, sibling, scope) do
+      state = reload(state)
+      {:ok, state, find_type_by_id(state, type.id)}
+    else
+      nil -> {:error, "That field is no longer available."}
     end
   end
 
@@ -203,7 +366,30 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     |> Enum.count(fn entry -> not Schema.blank_value?(Schema.field_value(entry, field)) end)
   end
 
-  def create_entry(state, type, creator_id, admin?, params, external_media_metadata \\ nil) do
+  def create_entry(state, type, creator_id, admin?, params, external_media_metadata \\ nil)
+
+  def create_entry(
+        %{scope: scope} = state,
+        type,
+        _creator_id,
+        _admin?,
+        params,
+        external_media_metadata
+      ) do
+    case Library.create_entry(type, params, external_media_metadata, scope: scope) do
+      {:ok, entry} ->
+        state = reload(state)
+        {:ok, state, find_entry(state, entry.id)}
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        {:error, :forbidden}
+
+      {:error, error} ->
+        {:error, ash_error_messages(error)}
+    end
+  end
+
+  def create_entry(state, type, creator_id, admin?, params, external_media_metadata) do
     with true <- can_create_entry?(type, admin?),
          {:ok, values} <- Schema.entry_values(type.fields, params) do
       entry = %{
@@ -230,6 +416,39 @@ defmodule WikWeb.LibraryPrototypeLive.State do
         admin?,
         params,
         external_media_metadata \\ nil
+      )
+
+  def update_entry(
+        %{scope: scope} = state,
+        type,
+        entry_id,
+        _actor_id,
+        _admin?,
+        params,
+        external_media_metadata
+      ) do
+    with %{} = entry <- find_entry(state, entry_id),
+         true <- entry.type_id == type.id,
+         {:ok, updated_entry} <-
+           Library.update_entry(entry, params, external_media_metadata, scope: scope) do
+      state = reload(state)
+      {:ok, state, find_entry(state, updated_entry.id)}
+    else
+      nil -> {:error, :not_found}
+      false -> {:error, :forbidden}
+      {:error, %Ash.Error.Forbidden{}} -> {:error, :forbidden}
+      {:error, error} -> {:error, ash_error_messages(error)}
+    end
+  end
+
+  def update_entry(
+        state,
+        type,
+        entry_id,
+        actor_id,
+        admin?,
+        params,
+        external_media_metadata
       ) do
     with %{} = entry <- find_entry(state, entry_id),
          true <- entry.type_id == type.id,
@@ -245,6 +464,34 @@ defmodule WikWeb.LibraryPrototypeLive.State do
       nil -> {:error, :not_found}
       false -> {:error, :forbidden}
       {:error, errors} -> {:error, errors}
+    end
+  end
+
+  def delete_entry(%{scope: scope} = state, type_id, entry_id, _actor_id, _admin?) do
+    with %{} = entry <- find_entry(state, entry_id),
+         true <- entry.type_id == type_id,
+         {:ok, 0} <- Library.entry_reference_count(entry.id, scope: scope),
+         :ok <- delete_entry_taggings(state, entry_id),
+         :ok <- Library.destroy_entry(entry, scope: scope) do
+      {:ok, reload(state), entry}
+    else
+      nil ->
+        {:error, :not_found}
+
+      false ->
+        {:error, :forbidden}
+
+      {:ok, 1} ->
+        {:error, "This entry is used by 1 block. Remove that block first."}
+
+      {:ok, count} when is_integer(count) ->
+        {:error, "This entry is used by #{count} blocks. Remove those blocks first."}
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        {:error, :forbidden}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -321,27 +568,56 @@ defmodule WikWeb.LibraryPrototypeLive.State do
 
   def upsert_topic_contribution(state, entry_id, membership_id, topic_id, relevancy)
       when is_binary(entry_id) and is_binary(membership_id) and is_binary(topic_id) do
-    with %{} <- find_entry(state, entry_id),
-         {:ok, relevancy} <- parse_relevancy(relevancy) do
-      key = {entry_id, membership_id, topic_id}
+    if Map.has_key?(state, :scope) do
+      with %{} = entry <- find_entry(state, entry_id),
+           {:ok, relevancy} <- parse_relevancy(relevancy),
+           {:ok, %Membership{} = membership} <-
+             Ash.get(Membership, membership_id, scope: state.scope),
+           {:ok, tagging} <-
+             Tags.upsert_tagging(
+               entry,
+               membership,
+               topic_id,
+               %{dimensions: %{"relevancy" => relevancy}},
+               scope: state.scope
+             ) do
+        contribution = %{
+          entry_id: entry_id,
+          membership_id: membership_id,
+          relevancy: relevancy,
+          tagging: tagging,
+          topic_id: topic_id
+        }
 
-      contribution = %{
-        entry_id: entry_id,
-        membership_id: membership_id,
-        relevancy: relevancy,
-        topic_id: topic_id
-      }
-
-      new_state = %{
-        state
-        | automatic_exclusions: MapSet.delete(state.automatic_exclusions, {entry_id, topic_id}),
-          topic_contributions: Map.put(state.topic_contributions, key, contribution)
-      }
-
-      {:ok, new_state, contribution}
+        {:ok, reload(state), contribution}
+      else
+        nil -> {:error, "That entry is no longer available."}
+        :error -> {:error, "Choose a topic and relevance from 1 to 10."}
+        {:error, error} -> {:error, error}
+      end
     else
-      nil -> {:error, "That entry is no longer available."}
-      :error -> {:error, "Choose a topic and relevance from 1 to 10."}
+      with %{} <- find_entry(state, entry_id),
+           {:ok, relevancy} <- parse_relevancy(relevancy) do
+        key = {entry_id, membership_id, topic_id}
+
+        contribution = %{
+          entry_id: entry_id,
+          membership_id: membership_id,
+          relevancy: relevancy,
+          topic_id: topic_id
+        }
+
+        new_state = %{
+          state
+          | automatic_exclusions: MapSet.delete(state.automatic_exclusions, {entry_id, topic_id}),
+            topic_contributions: Map.put(state.topic_contributions, key, contribution)
+        }
+
+        {:ok, new_state, contribution}
+      else
+        nil -> {:error, "That entry is no longer available."}
+        :error -> {:error, "Choose a topic and relevance from 1 to 10."}
+      end
     end
   end
 
@@ -351,15 +627,54 @@ defmodule WikWeb.LibraryPrototypeLive.State do
   def remove_topic_contribution(state, entry_id, membership_id, topic_id) do
     key = {entry_id, membership_id, topic_id}
 
-    if Map.has_key?(state.topic_contributions, key) do
-      {:ok, %{state | topic_contributions: Map.delete(state.topic_contributions, key)}}
+    if Map.has_key?(state, :scope) do
+      case Map.get(state.topic_contributions, key) do
+        %{tagging: tagging} ->
+          case Ash.destroy(tagging, scope: state.scope) do
+            :ok -> {:ok, reload(state)}
+            {:error, error} -> {:error, error}
+          end
+
+        nil ->
+          {:error, :not_found}
+      end
     else
-      {:error, :not_found}
+      if Map.has_key?(state.topic_contributions, key) do
+        {:ok, %{state | topic_contributions: Map.delete(state.topic_contributions, key)}}
+      else
+        {:error, :not_found}
+      end
+    end
+  end
+
+  def dismiss_automatic_topic(%{scope: scope} = state, entry_id, topic_id) do
+    case Ash.create(
+           TopicExclusion,
+           %{entry_id: entry_id, tag_id: topic_id},
+           action: :create,
+           scope: scope
+         ) do
+      {:ok, _exclusion} -> reload(state)
+      {:error, _error} -> state
     end
   end
 
   def dismiss_automatic_topic(state, entry_id, topic_id) do
     %{state | automatic_exclusions: MapSet.put(state.automatic_exclusions, {entry_id, topic_id})}
+  end
+
+  def toggle_automatic_topic_matching(%{scope: scope} = state) do
+    settings = Ash.read_one!(Settings, scope: scope)
+
+    case Ash.update(
+           settings,
+           %{automatic_topic_matching: not settings.automatic_topic_matching},
+           action: :update,
+           scope: scope
+         ) do
+      {:ok, _settings} -> reload(state)
+      {:error, _error} -> state
+    end
   end
 
   def toggle_automatic_topic_matching(state) do
@@ -368,9 +683,27 @@ defmodule WikWeb.LibraryPrototypeLive.State do
 
   def topic_rule(state, topic_id), do: Map.get(state.topic_rules, topic_id, @default_topic_rule)
 
+  def toggle_topic_rule(%{scope: _scope} = state, topic_id) do
+    rule = topic_rule(state, topic_id)
+    persist_topic_rule(state, topic_id, %{rule | enabled?: not rule.enabled?})
+  end
+
   def toggle_topic_rule(state, topic_id) do
     rule = topic_rule(state, topic_id)
     put_topic_rule(state, topic_id, %{rule | enabled?: not rule.enabled?})
+  end
+
+  def add_topic_alias(%{scope: _scope} = state, topic_id, value) do
+    value = String.trim(value)
+    rule = topic_rule(state, topic_id)
+    normalized_value = normalize(value)
+    duplicate? = Enum.any?(rule.aliases, &(normalize(&1) == normalized_value))
+
+    if normalized_value == "" or duplicate? do
+      state
+    else
+      persist_topic_rule(state, topic_id, %{rule | aliases: rule.aliases ++ [value]})
+    end
   end
 
   def add_topic_alias(state, topic_id, value) do
@@ -384,6 +717,15 @@ defmodule WikWeb.LibraryPrototypeLive.State do
     else
       put_topic_rule(state, topic_id, %{rule | aliases: rule.aliases ++ [value]})
     end
+  end
+
+  def remove_topic_alias(%{scope: _scope} = state, topic_id, value) do
+    rule = topic_rule(state, topic_id)
+
+    persist_topic_rule(state, topic_id, %{
+      rule
+      | aliases: Enum.reject(rule.aliases, &(&1 == value))
+    })
   end
 
   def remove_topic_alias(state, topic_id, value) do
@@ -562,11 +904,130 @@ defmodule WikWeb.LibraryPrototypeLive.State do
 
   defp stringify_keys(map), do: Map.new(map, fn {key, value} -> {to_string(key), value} end)
 
+  defp type_create_params(state, draft) do
+    %{
+      "description" => Map.get(draft, :description, ""),
+      "entry_creation_permission" => Map.get(draft, :entry_creation_permission),
+      "name" => Map.get(draft, :name, ""),
+      "slug" => unique_slug(state, Map.get(draft, :name, ""))
+    }
+  end
+
   defp validate_entry_creation_permission("members"), do: {:ok, :members}
   defp validate_entry_creation_permission("admins"), do: {:ok, :admins}
 
   defp validate_entry_creation_permission(_permission),
     do: {:error, "Choose who can add entries."}
+
+  defp ash_error_messages(error) do
+    error
+    |> Ash.Error.to_error_class()
+    |> Map.fetch!(:errors)
+    |> Enum.map(&ash_error_message/1)
+  end
+
+  defp ash_error_message(%Ash.Error.Changes.Required{field: field}) do
+    "#{field |> to_string() |> Phoenix.Naming.humanize()} is required."
+  end
+
+  defp ash_error_message(error), do: Exception.message(error)
+
+  defp delete_entry_taggings(state, entry_id) do
+    state.topic_contributions
+    |> Map.values()
+    |> Enum.filter(&(&1.entry_id == entry_id))
+    |> Enum.reduce_while(:ok, fn contribution, :ok ->
+      case Ash.destroy(contribution.tagging, scope: state.scope) do
+        :ok -> {:cont, :ok}
+        {:error, error} -> {:halt, {:error, error}}
+      end
+    end)
+  end
+
+  defp next_field_order_key(fields) do
+    fields
+    |> length()
+    |> Kernel.+(1)
+    |> Integer.to_string()
+    |> String.pad_leading(6, "0")
+  end
+
+  defp persist_new_fields(type, fields, scope) do
+    fields
+    |> Enum.with_index(1)
+    |> Enum.reduce_while(:ok, fn {field, index}, :ok ->
+      attrs =
+        field
+        |> Map.drop([:id])
+        |> Map.put(:order_key, String.pad_leading(Integer.to_string(index), 6, "0"))
+        |> Map.put(:type_id, type.id)
+
+      case Ash.create(Field, attrs, action: :create, scope: scope) do
+        {:ok, _field} -> {:cont, :ok}
+        {:error, error} -> {:halt, {:error, error}}
+      end
+    end)
+  end
+
+  defp persist_topic_rule(state, topic_id, rule) do
+    result =
+      case Map.get(rule, :record) do
+        nil ->
+          Ash.create(
+            TopicRule,
+            %{aliases: rule.aliases, enabled: rule.enabled?, tag_id: topic_id},
+            action: :create,
+            scope: state.scope
+          )
+
+        record ->
+          Ash.update(
+            record,
+            %{aliases: rule.aliases, enabled: rule.enabled?},
+            action: :update,
+            scope: state.scope
+          )
+      end
+
+    case result do
+      {:ok, _rule} -> reload(state)
+      {:error, _error} -> state
+    end
+  end
+
+  defp reload(%{scope: scope}), do: Library.snapshot(scope)
+
+  defp remove_field_values(state, type_id, field_key) do
+    state.entries
+    |> Map.values()
+    |> Enum.filter(&(&1.type_id == type_id))
+    |> Enum.reduce_while(:ok, fn entry, :ok ->
+      case Ash.update(
+             entry,
+             %{values: Map.delete(entry.values, field_key)},
+             action: :update,
+             scope: state.scope
+           ) do
+        {:ok, _entry} -> {:cont, :ok}
+        {:error, error} -> {:halt, {:error, error}}
+      end
+    end)
+  end
+
+  defp swap_field_order(field, sibling, scope) do
+    field_order = field.order_key
+    sibling_order = sibling.order_key
+    temporary_order = "moving-#{Ash.UUID.generate()}"
+
+    with {:ok, field} <-
+           Ash.update(field, %{order_key: temporary_order}, action: :update, scope: scope),
+         {:ok, _sibling} <-
+           Ash.update(sibling, %{order_key: field_order}, action: :update, scope: scope),
+         {:ok, _field} <-
+           Ash.update(field, %{order_key: sibling_order}, action: :update, scope: scope) do
+      :ok
+    end
+  end
 
   defp unique_id(prefix), do: "#{prefix}-#{System.unique_integer([:monotonic, :positive])}"
 

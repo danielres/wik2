@@ -133,7 +133,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryCard do
         data-testid={"entry-preview-#{@entry.id}"}
       >
         <div class={[
-          "aspect-video w-full",
+          "aspect-video",
           "items-center justify-center",
           "overflow-hidden",
           "rounded"

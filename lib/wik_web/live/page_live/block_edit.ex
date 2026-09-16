@@ -26,6 +26,13 @@ defmodule WikWeb.PageLive.BlockEdit do
     |> Locks.sync_presence()
   end
 
+  def start(socket, block, params) do
+    socket
+    |> assign(editing_block_id: block.id)
+    |> assign_form(block, params)
+    |> Locks.sync_presence()
+  end
+
   defp assign_form(socket, block, params \\ %{}) do
     page_tree = socket.assigns.page_tree
 

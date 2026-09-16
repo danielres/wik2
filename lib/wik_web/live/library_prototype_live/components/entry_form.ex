@@ -3,9 +3,27 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryForm do
 
   alias WikWeb.Components.LocationPicker
   alias WikWeb.Components.RichTextInput
+  alias WikWeb.Components.UI
+
+  attr :entry, :map, required: true
+
+  def button_entry_delete(assigns) do
+    ~H"""
+    <UI.action_button
+      data-tip="Delete"
+      icon="hero-trash-micro"
+      data-confirm="Delete this entry?"
+      data-testid={"entry-delete-#{@entry.id}"}
+      phx-click="entry:delete"
+      phx-value-entry_id={@entry.id}
+      variant="error"
+    />
+    """
+  end
 
   attr :cancel_event, :string, default: "modal:close"
   attr :change_event, :string, default: "entry:change"
+  attr :entry, :map, default: nil
   attr :form, :map, required: true
   attr :id, :string, default: "entry-form"
   attr :metadata_error, :string, default: nil
@@ -35,6 +53,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryForm do
       phx-change={@change_event}
       phx-submit={@resolved_submit_event}
     >
+      <div :if={@mode == :edit} role="alert" class="alert text-base-content/80">
+        <.icon name="hero-exclamation-triangle-micro" class="opacity-60 size-5" />
+        <span>Editing this entry updates it everywhere it appears.</span>
+      </div>
+
       <div :for={field <- @type.fields}>
         <RichTextInput.field
           :if={field.type == :rich_text}
@@ -75,8 +98,16 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryForm do
         </div>
       </div>
 
-      <div class="flex justify-between gap-2 ">
-        <button class="btn btn-ghost" phx-click={@cancel_event} type="button">Cancel</button>
+      <div class="flex justify-between gap-2">
+        <.button_entry_delete :if={@mode == :edit} entry={@entry} />
+        <button
+          :if={@mode == :new}
+          class="btn btn-ghost"
+          phx-click={@cancel_event}
+          type="button"
+        >
+          Cancel
+        </button>
         <button class="btn btn-accent" data-testid="entry-submit" type="submit">
           {@resolved_submit_label}
         </button>

@@ -76,6 +76,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
           data-testid="type-create-form"
           for={@form}
           id="type-create-form"
+          phx-change="type:validate"
           phx-submit="type:create"
         >
           <div class="grid gap-4 sm:grid-cols-2">
@@ -95,10 +96,10 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
           <.schema_summary fields={@draft.fields} />
 
           <TypePermissions.render
+            class="rounded-box border border-base-content/10 bg-base-200/35 p-5"
+            field={@form[:entry_creation_permission]}
             id="type-create-permissions"
-            name={@form[:entry_creation_permission].name}
             required
-            selected={@form[:entry_creation_permission].value}
           />
 
           <div class="flex justify-between gap-3">

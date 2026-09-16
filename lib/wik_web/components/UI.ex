@@ -10,7 +10,7 @@ defmodule WikWeb.Components.UI do
   attr :class, :string, default: ""
   attr :size_class, :string, default: "btn-xs"
   attr :variant, :string, default: "accent"
-  attr :rest, :global, include: ~w(popovertarget)
+  attr :rest, :global, include: ~w(navigate patch popovertarget)
 
   def action_button(assigns) do
     variant_class =
@@ -528,8 +528,8 @@ defmodule WikWeb.Components.UI do
     """
   end
 
-  attr :class, :string, default: ""
-  attr :rest, :global
+  attr :class, :any, default: ""
+  attr :rest, :global, include: ~w(for)
 
   def button_drawer(assigns) do
     ~H"""

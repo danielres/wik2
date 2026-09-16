@@ -14,6 +14,7 @@ defmodule Wik.Tags do
   alias Wik.Blocks.Block
   alias Wik.Events.ExternalCalendar.TopicMatching
   alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Library.Entry, as: LibraryEntry
   alias Wik.Wiki.PageTree.Wikilinks
   alias Wik.Tags.GraphQueries
   alias Wik.Tags.Tag
@@ -350,6 +351,9 @@ defmodule Wik.Tags do
 
   defp taggable_ref!(%Page{id: id, space_id: space_id}),
     do: %{id: id, space_id: space_id, type: "page"}
+
+  defp taggable_ref!(%LibraryEntry{id: id, space_id: space_id}),
+    do: %{id: id, space_id: space_id, type: "library_entry"}
 
   defp taggable_ref!(%ExternalCalendarSubscription{id: id, space_id: space_id}),
     do: %{id: id, space_id: space_id, type: "external_calendar_subscription"}

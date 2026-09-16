@@ -25,7 +25,7 @@ defmodule WikWeb.LibraryPrototypeLive.EntryPresentation do
 
     case media_embed(media_value) do
       %{kind: :playlist, provider: :youtube} ->
-        playlist_count_label(Map.get(entry, :external_media_metadata), media_value)
+        playlist_count_label(metadata(entry), media_value)
 
       _preview ->
         nil
@@ -45,7 +45,7 @@ defmodule WikWeb.LibraryPrototypeLive.EntryPresentation do
   end
 
   def preview(type, entry) do
-    external_media_metadata = Map.get(entry, :external_media_metadata)
+    external_media_metadata = metadata(entry)
 
     Enum.find_value(type.fields, fn field ->
       value = Schema.field_value(entry, field)
@@ -121,7 +121,7 @@ defmodule WikWeb.LibraryPrototypeLive.EntryPresentation do
   def playlist(type, entry) do
     media_value = entry_media_value(type, entry)
 
-    case {media_embed(media_value), Map.get(entry, :external_media_metadata)} do
+    case {media_embed(media_value), metadata(entry)} do
       {
         %{kind: :playlist, provider: :youtube},
         %{
@@ -157,6 +157,50 @@ defmodule WikWeb.LibraryPrototypeLive.EntryPresentation do
   end
 
   defp playlist_count_label(_metadata, _media_value), do: "Playlist"
+
+  defp metadata(entry) do
+    case Map.get(entry, :external_media_metadata) do
+      metadata when is_map(metadata) ->
+        %{
+          item_count: metadata_value(metadata, :item_count),
+          kind: metadata_value(metadata, :kind) |> metadata_atom([:playlist, :video]),
+          playlist_items:
+            metadata
+            |> metadata_value(:playlist_items)
+            |> normalize_playlist_items(),
+          provider: metadata_value(metadata, :provider) |> metadata_atom([:youtube, :soundcloud]),
+          source_url: metadata_value(metadata, :source_url),
+          thumbnail_url: metadata_value(metadata, :thumbnail_url)
+        }
+
+      _other ->
+        nil
+    end
+  end
+
+  defp metadata_value(metadata, key),
+    do: Map.get(metadata, key) || Map.get(metadata, Atom.to_string(key))
+
+  defp metadata_atom(value, allowed) when is_atom(value) do
+    if value in allowed, do: value
+  end
+
+  defp metadata_atom(value, allowed) when is_binary(value) do
+    Enum.find(allowed, &(Atom.to_string(&1) == value))
+  end
+
+  defp metadata_atom(_value, _allowed), do: nil
+
+  defp normalize_playlist_items(items) when is_list(items) do
+    Enum.map(items, fn item ->
+      %{
+        title: metadata_value(item, :title),
+        video_id: metadata_value(item, :video_id)
+      }
+    end)
+  end
+
+  defp normalize_playlist_items(_items), do: []
 
   defp soundcloud_embed(value) do
     case URI.parse(value) do

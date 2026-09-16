@@ -64,7 +64,7 @@ defmodule WikWeb.Layouts.Space do
       <div class={[
         "flex justify-end self-end gap-4",
         "mr-4 h-0 relative top-4",
-        @aside != [] && "sm:right-74"
+        @aside != [] && "md:right-74"
       ]}>
         <div class="space-y-2">
           <UI.button_drawer
@@ -111,7 +111,7 @@ defmodule WikWeb.Layouts.Space do
 
   def container_class, do: "px-2 sm:pl-6 sm:pr-4 lg:pl-8 "
 
-  attr :class, :string, default: ""
+  attr :class, :any, default: ""
   slot :inner_block, required: true
 
   def container(assigns) do

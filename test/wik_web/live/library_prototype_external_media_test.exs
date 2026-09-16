@@ -1,5 +1,5 @@
 defmodule WikWeb.LibraryPrototypeExternalMediaTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   import ExUnit.CaptureLog
 
@@ -262,7 +262,10 @@ defmodule WikWeb.LibraryPrototypeExternalMediaTest do
     log =
       capture_log(fn ->
         assert {:error, :unavailable} =
-                 ExternalMedia.resolve("https://youtu.be/BvlGs25tCxI", http_get: http_get)
+                 ExternalMedia.resolve("https://youtu.be/BvlGs25tCxI",
+                   http_get: http_get,
+                   youtube_api_key: nil
+                 )
       end)
 
     assert log =~

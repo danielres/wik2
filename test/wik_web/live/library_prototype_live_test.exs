@@ -7,6 +7,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
+  alias Wik.Library
   alias Wik.Scope
   alias Wik.Tags
   alias WikWeb.LibraryPrototypeLive.Components.EntryCard
@@ -42,11 +43,13 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     owner = generate(user())
     space = generate(space(author: owner))
     membership = add_membership(space, owner, :owner)
+    seeded_entries = seed_library_entries!(owner, space)
 
     %{
       conn: log_in(conn, owner),
       membership: membership,
       owner: owner,
+      seeded_entries: seeded_entries,
       space: space
     }
   end
@@ -54,6 +57,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
   test "shows every entry in one feed with compact topic and type filters", %{
     conn: conn,
     owner: owner,
+    seeded_entries: entries,
     space: space
   } do
     create_topic!(owner, space, "berlin", "Berlin")
@@ -91,58 +95,60 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
     assert has_element?(view, testid("topic-filter-berlin") <> " .badge", "4")
     refute has_element?(view, testid("topic-filter-unassigned"))
-    assert has_element?(view, testid("type-filter-place") <> " .hero-check-micro")
-    assert has_element?(view, testid("type-filter-external-media") <> " .hero-check-micro")
-    assert has_element?(view, testid("library-entry-entry-place"))
-    assert has_element?(view, testid("library-entry-entry-contact"))
-    assert has_element?(view, testid("library-entry-entry-video"))
-    assert has_element?(view, testid("library-entry-entry-music"))
-    assert has_element?(view, testid("entry-open-entry-video"))
+    assert has_element?(view, testid("type-filter-place") <> ".opacity-100")
+    assert has_element?(view, testid("type-filter-external-media") <> ".opacity-100")
+    assert has_element?(view, testid("library-entry-#{entries["entry-place"].id}"))
+    assert has_element?(view, testid("library-entry-#{entries["entry-contact"].id}"))
+    assert has_element?(view, testid("library-entry-#{entries["entry-video"].id}"))
+    assert has_element?(view, testid("library-entry-#{entries["entry-music"].id}"))
+    assert has_element?(view, testid("entry-open-#{entries["entry-video"].id}"))
 
     assert has_element?(
              view,
-             testid("library-entry-entry-video") <> ~s( img[src*="i.ytimg.com"])
+             testid("library-entry-#{entries["entry-video"].id}") <> ~s( img[src*="i.ytimg.com"])
            )
 
     assert has_element?(
              view,
-             testid("library-entry-entry-music") <> ~s( iframe[src*="w.soundcloud.com"])
+             testid("library-entry-#{entries["entry-music"].id}") <>
+               ~s( iframe[src*="w.soundcloud.com"])
            )
 
     assert has_element?(
              view,
-             testid("library-entry-entry-place") <>
+             testid("library-entry-#{entries["entry-place"].id}") <>
                ~s( iframe[src^="https://www.google.com/maps/embed/v1/place?"])
            )
 
     assert has_element?(
              view,
-             testid("library-entry-entry-place") <>
+             testid("library-entry-#{entries["entry-place"].id}") <>
                ~s( dt[title="Location"] .hero-map-pin-micro)
            )
 
     assert has_element?(
              view,
-             testid("library-entry-entry-contact") <>
-               ~s( dt[title="Organization"] .hero-home)
+             testid("library-entry-#{entries["entry-contact"].id}") <>
+               ~s( dt[title="Organization"] .hero-home-micro)
            )
 
     assert has_element?(
              view,
-             testid("library-entry-entry-contact") <>
-               ~s( dt[title="Role or title"] .hero-academic-cap)
+             testid("library-entry-#{entries["entry-contact"].id}") <>
+               ~s( dt[title="Role or title"] .hero-academic-cap-micro)
            )
 
     refute has_element?(view, ~s([data-testid^="collection-"]))
 
-    view |> element(testid("entry-open-entry-music")) |> render_click()
-    assert_patch(view, ~p"/#{space.slug}/libraries/entries/entry-music")
-    assert has_element?(view, testid("library-entry-detail-entry-music"))
+    view |> element(testid("entry-open-#{entries["entry-music"].id}")) |> render_click()
+    assert_patch(view, ~p"/#{space.slug}/libraries/entries/#{entries["entry-music"].id}")
+    assert has_element?(view, testid("library-entry-detail-#{entries["entry-music"].id}"))
   end
 
   test "combines OR topic filters with OR type filters across dimensions", %{
     conn: conn,
     owner: owner,
+    seeded_entries: entries,
     space: space
   } do
     berlin = create_topic!(owner, space, "berlin", "Berlin")
@@ -154,8 +160,8 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert_patch(view, ~p"/#{space.slug}/libraries?#{%{topics: berlin.slug}}")
     assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
     assert has_element?(view, testid("topic-filter-software") <> " .hero-check-micro.opacity-20")
-    assert has_element?(view, testid("entry-open-entry-place"))
-    refute has_element?(view, testid("entry-open-entry-video"))
+    assert has_element?(view, testid("entry-open-#{entries["entry-place"].id}"))
+    refute has_element?(view, testid("entry-open-#{entries["entry-video"].id}"))
 
     view |> element(testid("topic-filter-software")) |> render_click()
 
@@ -164,13 +170,13 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
       ~p"/#{space.slug}/libraries?#{%{topics: Enum.join([berlin.slug, software.slug], ",")}}"
     )
 
-    assert has_element?(view, testid("entry-open-entry-place"))
-    assert has_element?(view, testid("entry-open-entry-video"))
+    assert has_element?(view, testid("entry-open-#{entries["entry-place"].id}"))
+    assert has_element?(view, testid("entry-open-#{entries["entry-video"].id}"))
 
     view |> element(testid("type-filter-external-media")) |> render_click()
 
-    assert has_element?(view, testid("entry-open-entry-video"))
-    refute has_element?(view, testid("entry-open-entry-place"))
+    assert has_element?(view, testid("entry-open-#{entries["entry-video"].id}"))
+    refute has_element?(view, testid("entry-open-#{entries["entry-place"].id}"))
 
     view |> element(testid("active-topic-filters-clear")) |> render_click()
 
@@ -178,12 +184,17 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     refute has_element?(view, testid("active-topic-filters-clear"))
     assert has_element?(view, testid("topic-filter-berlin") <> " .hero-check-micro")
     assert has_element?(view, testid("topic-filter-software") <> " .hero-check-micro")
-    assert has_element?(view, testid("entry-open-entry-video"))
-    refute has_element?(view, testid("entry-open-entry-place"))
+    assert has_element?(view, testid("entry-open-#{entries["entry-video"].id}"))
+    refute has_element?(view, testid("entry-open-#{entries["entry-place"].id}"))
   end
 
-  test "embeds the location in place entry details", %{conn: conn, space: space} do
-    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/libraries/entries/entry-place")
+  test "embeds the location in place entry details", %{
+    conn: conn,
+    seeded_entries: entries,
+    space: space
+  } do
+    {:ok, view, _html} =
+      live(conn, ~p"/#{space.slug}/libraries/entries/#{entries["entry-place"].id}")
 
     assert has_element?(
              view,
@@ -192,14 +203,19 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
            )
   end
 
-  test "shows the seeded YouTube playlist result", %{conn: conn, space: space} do
-    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/libraries/entries/entry-playlist")
+  test "shows the seeded YouTube playlist result", %{
+    conn: conn,
+    seeded_entries: entries,
+    space: space
+  } do
+    playlist = entries["entry-playlist"]
+    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/libraries/entries/#{playlist.id}")
 
     assert has_element?(view, testid("entry-playlist-indicator"), "8 videos")
 
     assert has_element?(
              view,
-             testid("library-entry-entry-playlist") <>
+             testid("library-entry-#{playlist.id}") <>
                ~s( img[src="https://i.ytimg.com/vi/tbRdHktBv58/hqdefault.jpg"])
            )
 
@@ -298,14 +314,14 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     )
     |> render_submit()
 
-    assert has_element?(view, ~s([data-testid^="library-entry-detail-entry-"]))
+    assert has_element?(view, ~s([data-testid^="library-entry-detail-"]))
 
     view |> element(testid("library-modal-close")) |> render_click()
     assert_patch(view, ~p"/#{space.slug}/libraries")
 
     assert has_element?(
              view,
-             ~s(#library-entries [data-testid^="library-entry-entry-"] .badge-outline)
+             ~s(#library-entries [data-testid^="library-entry-"] .badge-outline)
            )
   end
 
@@ -380,7 +396,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
 
     assert has_element?(
              view,
-             ~s([data-testid^="library-entry-detail-entry-"] iframe[src*="listType=playlist"])
+             ~s([data-testid^="library-entry-detail-"] iframe[src*="listType=playlist"])
            )
 
     assert has_element?(view, testid("entry-playlist-items"))
@@ -410,13 +426,13 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
 
     assert has_element?(
              view,
-             ~s([data-testid^="entry-playlist-indicator-entry-"]),
+             ~s([data-testid^="entry-playlist-indicator-"]),
              "24 videos"
            )
 
     assert has_element?(
              view,
-             ~s([data-testid^="entry-preview-entry-"] img[src="https://example.test/playlist.jpg"])
+             ~s([data-testid^="entry-preview-"] img[src="https://example.test/playlist.jpg"])
            )
   end
 
@@ -492,11 +508,13 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
   test "members can dismiss an automatic topic and add their own relevance", %{
     conn: conn,
     owner: owner,
+    seeded_entries: entries,
     space: space
   } do
     community = create_topic!(owner, space, "community", "Community")
 
-    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/libraries/entries/entry-place")
+    {:ok, view, _html} =
+      live(conn, ~p"/#{space.slug}/libraries/entries/#{entries["entry-place"].id}")
 
     assert has_element?(view, testid("entry-topic-detail-#{community.id}"))
     assert has_element?(view, testid("entry-topic-dismiss-#{community.id}"))
@@ -519,6 +537,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
   test "admins tune automatic matching with aliases and per-topic switches", %{
     conn: conn,
     owner: owner,
+    seeded_entries: entries,
     space: space
   } do
     local = create_topic!(owner, space, "local-community", "Local community")
@@ -539,7 +558,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert has_element?(view, testid("topic-matching-alias-local-community"))
 
     render_patch(view, ~p"/#{space.slug}/libraries")
-    assert has_element?(view, testid("entry-topic-entry-video-#{local.id}"))
+    assert has_element?(view, testid("entry-topic-#{entries["entry-video"].id}-#{local.id}"))
 
     render_patch(view, ~p"/#{space.slug}/libraries/topic-matching")
 
@@ -555,6 +574,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
 
   test "owners create a type, configure fields, and cannot delete a used type", %{
     conn: conn,
+    owner: owner,
     space: space
   } do
     {:ok, view, _html} = live(conn, ~p"/#{space.slug}/libraries/types/new")
@@ -574,6 +594,40 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     assert_patch(view, ~p"/#{space.slug}/libraries/types/useful-people/settings")
 
     view
+    |> form(testid("type-settings-form"), type: %{description: "", name: ""})
+    |> render_submit()
+
+    refute has_element?(view, "#flash-error")
+    assert has_element?(view, ".fieldset:has(#type_name) > p", "is required")
+
+    view
+    |> form(testid("type-settings-form"),
+      type: %{
+        description: "People worth calling",
+        entry_creation_permission: "admins",
+        name: "Useful people"
+      }
+    )
+    |> render_submit()
+
+    assert has_element?(
+             view,
+             testid("entry-creation-permission-admins") <> "[checked]"
+           )
+
+    assert {:ok, updated_type} =
+             Library.get_entry_type_by_slug("useful-people", scope: scope(owner, space))
+
+    assert updated_type.entry_creation_permission == :admins
+
+    view
+    |> form(testid("field-form"), field: %{label: "", required: "false", type: "text"})
+    |> render_submit()
+
+    refute has_element?(view, "#flash-error")
+    assert has_element?(view, ".fieldset:has(#field-label) > p", "is required")
+
+    view
     |> form(testid("field-form"),
       field: %{label: "Role", required: "false", type: "text"}
     )
@@ -591,6 +645,26 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
 
     assert has_element?(used_view, testid("type-delete-blocked"))
     assert has_element?(used_view, testid("type-delete") <> "[disabled]")
+  end
+
+  test "type validation errors remain renderable", %{conn: conn, space: space} do
+    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/libraries/types/new")
+
+    view |> element(testid("template-select-custom")) |> render_click()
+
+    view
+    |> form(testid("type-create-form"),
+      type: %{
+        description: "",
+        entry_creation_permission: "members",
+        name: "Custom"
+      }
+    )
+    |> render_submit()
+
+    refute has_element?(view, "#flash-error")
+    assert has_element?(view, ".fieldset:has(#type_description) > p", "is required")
+    assert has_element?(view, testid("type-create-form"))
   end
 
   test "type schemas remain portable", %{conn: conn, space: space} do
@@ -654,6 +728,34 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
   defp create_topic!(owner, space, slug, name) do
     {:ok, topic} = Tags.create_tag(slug, name, scope: scope(owner, space))
     topic
+  end
+
+  defp seed_library_entries!(owner, space) do
+    library_scope = scope(owner, space)
+    :ok = Library.Provisioning.ensure_default_types(library_scope)
+    {:ok, types} = Library.list_entry_types(scope: library_scope)
+
+    persisted_types =
+      Map.new(types, &{&1.slug, Library.get_entry_type(&1.id, scope: library_scope) |> elem(1)})
+
+    fixture_state = State.new()
+
+    fixture_state
+    |> State.list_entries()
+    |> Map.new(fn fixture ->
+      fixture_type = State.find_type_by_id(fixture_state, fixture.type_id)
+      type = Map.fetch!(persisted_types, fixture_type.slug)
+
+      {:ok, entry} =
+        Library.create_entry(
+          type,
+          fixture.values,
+          fixture.external_media_metadata,
+          scope: library_scope
+        )
+
+      {fixture.id, entry}
+    end)
   end
 
   defp external_media_get("https://www.googleapis.com/youtube/v3/videos", opts) do

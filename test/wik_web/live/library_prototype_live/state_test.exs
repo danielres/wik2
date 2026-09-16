@@ -56,8 +56,7 @@ defmodule WikWeb.LibraryPrototypeLive.StateTest do
 
     assert State.can_create_entry?(type, false)
 
-    assert {:ok, state, type} =
-             State.update_entry_creation_permission(state, type.id, "admins")
+    type = %{type | entry_creation_permission: :admins}
 
     refute State.can_create_entry?(type, false)
     assert State.can_create_entry?(type, true)

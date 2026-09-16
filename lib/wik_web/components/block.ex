@@ -33,6 +33,7 @@ defmodule WikWeb.Components.Block do
   attr :placement, :map, required: true
   attr :editing?, :boolean, default: false
   attr :editing_block_id, :string, default: nil
+  attr :library_state, :map, default: nil
   attr :node, :map, default: nil
   attr :page_tree, :map, default: nil
   attr :path, :string, default: nil
@@ -111,6 +112,7 @@ defmodule WikWeb.Components.Block do
         ]}>
           <.dispatch_render
             block={@placement.block}
+            library_state={@library_state}
             node={@node}
             page_tree={@page_tree}
             path={@path}

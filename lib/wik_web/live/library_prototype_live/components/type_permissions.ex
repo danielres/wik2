@@ -3,16 +3,15 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypePermissions do
 
   alias WikWeb.Components.UI
 
-  attr :event, :string, default: nil
+  attr :class, :any, default: nil
+  attr :field, Phoenix.HTML.FormField, required: true
   attr :id, :string, required: true
-  attr :name, :string, required: true
   attr :required, :boolean, default: false
-  attr :selected, :any, default: nil
 
   def render(assigns) do
     ~H"""
     <section
-      class="rounded-box border border-base-content/10 bg-base-200/35 p-5"
+      class={@class}
       data-testid="type-permissions"
       id={@id}
     >
@@ -24,19 +23,17 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypePermissions do
         <legend class="sr-only">Who can add entries?</legend>
         <label class={[
           "flex cursor-pointer items-center gap-3 rounded-box border p-3 transition-colors",
-          if(to_string(@selected) == "members",
+          if(to_string(@field.value) == "members",
             do: "border-accent/40 bg-accent/5",
             else: "border-base-content/10 hover:bg-base-200"
           )
         ]}>
           <input
-            checked={to_string(@selected) == "members"}
+            checked={to_string(@field.value) == "members"}
             class="radio radio-sm radio-accent"
             data-testid="entry-creation-permission-members"
             id={"#{@id}-members"}
-            name={@name}
-            phx-click={@event}
-            phx-value-permission="members"
+            name={@field.name}
             required={@required}
             type="radio"
             value="members"
@@ -46,25 +43,24 @@ defmodule WikWeb.LibraryPrototypeLive.Components.TypePermissions do
 
         <label class={[
           "flex cursor-pointer items-center gap-3 rounded-box border p-3 transition-colors",
-          if(to_string(@selected) == "admins",
+          if(to_string(@field.value) == "admins",
             do: "border-accent/40 bg-accent/5",
             else: "border-base-content/10 hover:bg-base-200"
           )
         ]}>
           <input
-            checked={to_string(@selected) == "admins"}
+            checked={to_string(@field.value) == "admins"}
             class="radio radio-sm radio-accent"
             data-testid="entry-creation-permission-admins"
             id={"#{@id}-admins"}
-            name={@name}
-            phx-click={@event}
-            phx-value-permission="admins"
+            name={@field.name}
             type="radio"
             value="admins"
           />
           <span class="font-medium">Owner and admins</span>
         </label>
       </fieldset>
+      <.error :for={message <- field_errors(@field)}>{message}</.error>
     </section>
     """
   end

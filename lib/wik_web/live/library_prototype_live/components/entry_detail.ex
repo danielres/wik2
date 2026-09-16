@@ -19,29 +19,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
     """
   end
 
-  attr :entry, :map, required: true
-
-  def button_entry_delete(assigns) do
-    ~H"""
-    <UI.action_button
-      data-tip="Delete"
-      icon="hero-trash-micro"
-      data-confirm="Delete this entry?"
-      data-testid={"entry-delete-#{@entry.id}"}
-      phx-click="entry:delete"
-      phx-value-entry_id={@entry.id}
-      variant="error"
-    />
-    """
-  end
-
   attr :type, :map, required: true
   attr :entry, :map, required: true
   attr :manageable?, :boolean, required: true
   attr :playlist_label, :string, required: false
-  attr :playlist_play_event, :string, default: "playlist:play"
   attr :selected_playlist_video_id, :string, default: nil
-  attr :show_topics?, :boolean, default: true
   attr :topic_form, :map, default: nil
   attr :topic_options, :list, required: true
   attr :topic_summaries, :list, required: true
@@ -93,7 +75,6 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
         :if={@manageable?}
         class="relative flex justify-end top-3 items-center gap-4"
       >
-        <.button_entry_delete entry={@entry} />
         <.button_entry_edit entry={@entry} />
       </div>
 
@@ -131,7 +112,7 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
                 ]}
                 data-testid={"entry-playlist-item-#{index}"}
                 id={"entry-playlist-item-#{@entry.id}-#{index}"}
-                phx-click={@playlist_play_event}
+                phx-click="playlist:play"
                 phx-value-video_id={item.video_id}
                 type="button"
               >
@@ -178,7 +159,6 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
       </div>
 
       <section
-        :if={@show_topics?}
         class="space-y-3 border-t border-base-content/10 pt-4"
         data-testid="entry-topics"
       >
@@ -253,7 +233,12 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
             type="number"
           />
           <div class="flex gap-1">
-            <button class="btn btn-sm btn-ghost" phx-click="topic:cancel" type="button">
+            <button
+              class="btn btn-sm btn-ghost"
+              data-testid="entry-topic-cancel"
+              phx-click="topic:cancel"
+              type="button"
+            >
               Cancel
             </button>
             <button

@@ -2,6 +2,7 @@ defmodule WikWeb.PageTreeLive do
   use WikWeb, :live_view
   use WikWeb.Presence.Handlers
 
+  alias Wik.Wiki.PageTree
   alias WikWeb.PageTreeLive.PageTreeEditor
   alias WikWeb.Components.UI
 
@@ -12,7 +13,9 @@ defmodule WikWeb.PageTreeLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     page_tree = Wik.Wiki.load_page_tree(scope)
-    editable? = page_tree.id != nil and Ash.can?({page_tree, :manage_tree}, scope)
+
+    editable? =
+      page_tree.id != nil and PageTree.can_manage_tree?(scope.actor, page_tree, scope: scope)
 
     {:ok, socket |> assign(page_tree: page_tree, editable?: editable?, editing?: false)}
   end

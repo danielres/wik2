@@ -18,8 +18,8 @@ defmodule Wik.Wiki.Page do
     define :get_by_id, action: :read, get_by: [:id]
     define :create, action: :create, args: []
 
-    # Used for authorization semantics with Ash.can?(), not for mutating data
-    define :manage_page, action: :manage_page, args: []
+    # Used for authorization semantics, not for mutating data
+    define :manage_page, action: :manage_page, args: [], functions: [:can, :can?]
   end
 
   actions do

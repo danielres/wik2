@@ -1,12 +1,9 @@
 defmodule WikWeb.PageTreeLive.PageTreeEditor.FormAddChild do
-  import WikWeb.CoreComponents
-
   use WikWeb, :live_component
-  use Phoenix.Component
 
   alias Utils.Log
   alias Wik.Wiki.PageTree
-  alias WikWeb.Components.UI
+  alias WikWeb.Components.Page
   alias WikWeb.PageTreeLive.PageTreeEditor
   alias WikWeb.PageTreeLive.PageTreeEditor.FlowAddChild
 
@@ -33,9 +30,14 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormAddChild do
         </span>
       </h3>
 
-      <.add_child_form
+      <Page.node_title_form
+        action_label="Add"
+        event_submit="add_child"
+        event_validate="add_child_validate"
         form={@flow.form}
+        include_parent_id?
         parent_id={@flow.parent_id}
+        testid_prefix="add-child"
         target={@myself}
       />
     </div>
@@ -74,72 +76,6 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormAddChild do
      socket
      |> assign(flow: socket.assigns.flow |> FlowAddChild.validate(params))}
   end
-
-  attr(:form, :any, required: true)
-  attr(:parent_id, :map, default: nil)
-  attr(:target, :any, required: true)
-
-  defp add_child_form(assigns) do
-    title_value = Phoenix.HTML.Form.input_value(assigns.form, :title) || ""
-    auto_slug = Utils.Slugify.generate(title_value)
-
-    assigns =
-      assigns
-      |> assign(title_value: title_value)
-      |> assign(auto_slug: auto_slug)
-      |> assign(form_errors: AshPhoenix.Form.errors(assigns.form))
-
-    ~H"""
-    <.form
-      autocomplete="off"
-      data-testid="add-child-form"
-      for={@form}
-      phx-change="add_child_validate"
-      phx-submit="add_child"
-      phx-target={@target}
-    >
-      <div class="card bg-base-100">
-        <div class="card-body [&_input]:bg-base-200">
-          <.input
-            data-testid="add-child-parent-id"
-            field={@form[:parent_id]}
-            type="hidden"
-            value={@parent_id}
-          />
-
-          <.input
-            data-testid="add-child-title"
-            field={@form[:title]}
-            label="title"
-            phx-hook="CapitalizeFirstLetter"
-          />
-
-          <.input hidden field={@form[:slug]} value={@auto_slug} />
-
-          <UI.Forms.autoslug_preview
-            source_value={@title_value}
-            data-testid={data_auto_slug_testid(@auto_slug)}
-          />
-
-          <div :for={{:nodes, msg} <- @form_errors} data-testid="add-child-error-nodes">
-            <.error>{msg}</.error>
-          </div>
-
-          <.button
-            class="btn btn-primary"
-            data-testid="add-child-submit"
-            type="submit"
-          >
-            Add
-          </.button>
-        </div>
-      </div>
-    </.form>
-    """
-  end
-
-  defp data_auto_slug_testid(""), do: "add-child-auto-slug-empty"
-  defp data_auto_slug_testid(auto_slug), do: "add-child-auto-slug-#{auto_slug}"
 
   defp parent_slug(_nodes, nil), do: "top"
 

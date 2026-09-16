@@ -149,22 +149,16 @@ defmodule Wik.Events.Feeds.Token do
   defp revoke_tokens_for_subject_and_purpose(subject, purpose) do
     StoredToken
     |> Ash.Query.filter(expr(subject == ^subject and purpose == ^purpose))
-    |> Ash.read(authorize?: false)
+    |> Ash.bulk_update(:revoke_custom_token, %{},
+      authorize?: false,
+      return_errors?: true,
+      stop_on_error?: true,
+      strategy: [:atomic, :stream],
+      transaction: :all
+    )
     |> case do
-      {:ok, stored_tokens} ->
-        stored_tokens
-        |> Enum.reduce_while(:ok, fn stored_token, :ok ->
-          case Ash.update(stored_token, %{},
-                 action: :revoke_custom_token,
-                 authorize?: false
-               ) do
-            {:ok, _stored_token} -> {:cont, :ok}
-            {:error, error} -> {:halt, {:error, error}}
-          end
-        end)
-
-      {:error, error} ->
-        {:error, error}
+      %Ash.BulkResult{status: :success} -> :ok
+      %Ash.BulkResult{errors: [error | _errors]} -> {:error, error}
     end
   end
 end

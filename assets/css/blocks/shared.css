@@ -18,7 +18,7 @@
   }
 
   a[href^="http"] {
-    @apply inline-block text-balance;
+    @apply  text-balance;
 
     &::after {
       content: "";

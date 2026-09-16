@@ -4,6 +4,7 @@ defmodule WikWeb.PageLive.PageState do
   import Phoenix.Component, only: [assign: 2]
 
   alias Wik.Wiki
+  alias Wik.Wiki.Page
   alias Wik.Wiki.PageTree
   alias Wik.Wiki.PageTree.Node
   alias WikWeb.PageLive.BlockEdit
@@ -26,7 +27,7 @@ defmodule WikWeb.PageLive.PageState do
   def load_path(socket, path, opts \\ []) do
     scope = socket.assigns.current_scope
     %{node: node, page: page, page_tree: page_tree} = scope |> ensure_by_path(path, opts)
-    can_manage_page? = page != nil and Ash.can?({page, :manage_page}, scope)
+    can_manage_page? = page != nil and Page.can_manage_page?(scope.actor, page, scope: scope)
 
     socket
     |> sync_page_placement_subscription(page)
@@ -99,7 +100,7 @@ defmodule WikWeb.PageLive.PageState do
   def reload(socket) do
     scope = socket.assigns.current_scope
     %{node: node, page: page, page_tree: page_tree} = scope |> load_by_path(socket.assigns.path)
-    can_manage_page? = page != nil and Ash.can?({page, :manage_page}, scope)
+    can_manage_page? = page != nil and Page.can_manage_page?(scope.actor, page, scope: scope)
 
     socket
     |> sync_page_placement_subscription(page)

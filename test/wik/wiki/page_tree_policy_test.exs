@@ -8,6 +8,15 @@ defmodule Wik.Wiki.PageTreePolicyTest do
   alias Wik.Wiki.PageTree
 
   describe "page tree access" do
+    test "management code interface only exposes authorization helpers" do
+      function_names = PageTree.__info__(:functions) |> Enum.map(&elem(&1, 0))
+
+      assert :can_manage_tree in function_names
+      assert :can_manage_tree? in function_names
+      refute :manage_tree in function_names
+      refute :manage_tree! in function_names
+    end
+
     test "superadmin can read and manage any page tree" do
       %{space: space, page_tree: page_tree, superadmin: superadmin} = access_fixture()
 
@@ -47,7 +56,13 @@ defmodule Wik.Wiki.PageTreePolicyTest do
       other_page_tree = generate(page_tree(space: other_space, nodes: base_nodes()))
 
       refute Ash.can?({other_page_tree, :read}, scope(admin, member_space))
-      refute Ash.can?({other_page_tree, :manage_tree}, scope(admin, member_space))
+
+      refute PageTree.can_manage_tree?(
+               admin,
+               other_page_tree,
+               scope: scope(admin, member_space)
+             )
+
       refute Ash.can?({other_page_tree, :add_child}, scope(admin, member_space))
       refute Ash.can?({other_page_tree, :move_node}, scope(admin, member_space))
       refute Ash.can?({other_page_tree, :destroy_node}, scope(admin, member_space))
@@ -61,7 +76,7 @@ defmodule Wik.Wiki.PageTreePolicyTest do
     assert Ash.can?({page_tree, :read}, scope(actor, space))
     assert Ash.can?({PageTree, :create}, scope(actor, space))
     assert Ash.can?({PageTree, :ensure}, scope(actor, space))
-    assert Ash.can?({page_tree, :manage_tree}, scope(actor, space))
+    assert PageTree.can_manage_tree?(actor, page_tree, scope: scope(actor, space))
     assert Ash.can?({page_tree, :add_child}, scope(actor, space))
     assert Ash.can?({page_tree, :move_node}, scope(actor, space))
     assert Ash.can?({page_tree, :destroy_node}, scope(actor, space))
@@ -89,7 +104,7 @@ defmodule Wik.Wiki.PageTreePolicyTest do
   end
 
   defp assert_denied_management(actor, space, page_tree) do
-    refute Ash.can?({page_tree, :manage_tree}, scope(actor, space))
+    refute PageTree.can_manage_tree?(actor, page_tree, scope: scope(actor, space))
     refute Ash.can?({page_tree, :add_child}, scope(actor, space))
     refute Ash.can?({page_tree, :move_node}, scope(actor, space))
     refute Ash.can?({page_tree, :destroy_node}, scope(actor, space))

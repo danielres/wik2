@@ -132,7 +132,6 @@ defmodule WikWeb.Layouts.Space do
     <div class={[
       "grid",
       "grid-cols-[minmax(0,1fr)]",
-      "Xmax-sm:[&>a]:px-4",
       @editing? and "[&>a]:opacity-0 [&>a]:pointer-events-none"
     ]}>
       <div class={[

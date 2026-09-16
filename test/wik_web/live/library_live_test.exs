@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLiveTest do
+defmodule WikWeb.LibraryLiveTest do
   use WikWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
@@ -10,18 +10,18 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
   alias Wik.Library
   alias Wik.Scope
   alias Wik.Tags
-  alias WikWeb.LibraryPrototypeLive.Components.EntryCard
-  alias WikWeb.LibraryPrototypeLive.ExternalMedia
-  alias WikWeb.LibraryPrototypeLive.Schema
-  alias WikWeb.LibraryPrototypeLive.State
+  alias WikWeb.LibraryLive.Components.EntryCard
+  alias WikWeb.LibraryLive.ExternalMedia
+  alias WikWeb.LibraryLive.Schema
+  alias WikWeb.LibraryLive.State
 
   setup %{conn: conn} do
     previous_google_maps_config =
-      Application.get_env(:wik, WikWeb.LibraryPrototypeLive.Components, [])
+      Application.get_env(:wik, WikWeb.LibraryLive.Components, [])
 
     previous_external_media_config = Application.get_env(:wik, ExternalMedia, [])
 
-    Application.put_env(:wik, WikWeb.LibraryPrototypeLive.Components,
+    Application.put_env(:wik, WikWeb.LibraryLive.Components,
       google_maps_api_key: "test-api-key"
     )
 
@@ -33,7 +33,7 @@ defmodule WikWeb.LibraryPrototypeLiveTest do
     on_exit(fn ->
       Application.put_env(
         :wik,
-        WikWeb.LibraryPrototypeLive.Components,
+        WikWeb.LibraryLive.Components,
         previous_google_maps_config
       )
 

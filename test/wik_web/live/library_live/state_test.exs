@@ -1,7 +1,7 @@
-defmodule WikWeb.LibraryPrototypeLive.StateTest do
+defmodule WikWeb.LibraryLive.StateTest do
   use ExUnit.Case, async: true
 
-  alias WikWeb.LibraryPrototypeLive.State
+  alias WikWeb.LibraryLive.State
 
   test "members can update and delete only entries they created while admins can manage all" do
     state = State.new()

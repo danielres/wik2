@@ -13,7 +13,7 @@ defmodule Wik.Library do
   alias Wik.Library.TopicExclusion
   alias Wik.Library.TopicRule
   alias Wik.Tags.Tagging
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Schema
 
   require Ash.Query
 

@@ -1,7 +1,7 @@
 defmodule Wik.Library.Provisioning do
   alias Wik.Library.EntryType
   alias Wik.Library.Field
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Schema
 
   def ensure_default_types(scope) do
     case Wik.Library.list_entry_types(scope: scope) do

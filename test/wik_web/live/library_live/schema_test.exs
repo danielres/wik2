@@ -1,7 +1,7 @@
-defmodule WikWeb.LibraryPrototypeLive.SchemaTest do
+defmodule WikWeb.LibraryLive.SchemaTest do
   use ExUnit.Case, async: true
 
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Schema
 
   test "built-in templates are ordinary schemas and custom can reproduce them" do
     templates = Schema.built_in_templates()

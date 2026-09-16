@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive do
+defmodule WikWeb.LibraryLive do
   use WikWeb, :live_view
 
   alias Wik.Locations
@@ -6,7 +6,7 @@ defmodule WikWeb.LibraryPrototypeLive do
   alias WikWeb.Components.Modal
   alias WikWeb.Components.UI
 
-  alias WikWeb.LibraryPrototypeLive.Components.{
+  alias WikWeb.LibraryLive.Components.{
     EntryCard,
     EntryForm,
     EntryModal,
@@ -19,11 +19,11 @@ defmodule WikWeb.LibraryPrototypeLive do
     TypeWizard
   }
 
-  alias WikWeb.LibraryPrototypeLive.EntryFormMedia
-  alias WikWeb.LibraryPrototypeLive.EntryPresentation
-  alias WikWeb.LibraryPrototypeLive.ExternalMedia
-  alias WikWeb.LibraryPrototypeLive.Schema
-  alias WikWeb.LibraryPrototypeLive.State
+  alias WikWeb.LibraryLive.EntryFormMedia
+  alias WikWeb.LibraryLive.EntryPresentation
+  alias WikWeb.LibraryLive.ExternalMedia
+  alias WikWeb.LibraryLive.Schema
+  alias WikWeb.LibraryLive.State
   alias WikWeb.TenantContext
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
 
@@ -50,7 +50,7 @@ defmodule WikWeb.LibraryPrototypeLive do
      |> assign(:field_form, field_form(nil))
      |> assign(:field_usage_counts, %{})
      |> assign(:import_form, to_form(%{"json" => ""}, as: :schema))
-     |> assign(:prototype_state, state)
+     |> assign(:library_state, state)
      |> assign(:selected_entry, nil)
      |> assign(:selected_playlist_video_id, nil)
      |> assign(:topic_form, nil)
@@ -62,7 +62,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   @impl true
   def handle_params(params, _url, socket) do
-    state = socket.assigns.prototype_state
+    state = socket.assigns.library_state
     filter_topics = State.assigned_topics(state, socket.assigns.topics)
     active_topic_ids = filter_ids(params["topics"], filter_topics)
     active_type_ids = filter_ids(params["types"], state.types)
@@ -118,7 +118,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   @impl true
   def render(assigns) do
-    state = assigns.prototype_state
+    state = assigns.library_state
     types = State.types_with_counts(state)
     filter_topics = State.assigned_topics_with_counts(state, assigns.topics)
     current_membership_id = current_membership_id(assigns)
@@ -322,7 +322,7 @@ defmodule WikWeb.LibraryPrototypeLive do
   defp render_content(%{live_action: :topic_matching} = assigns) do
     ~H"""
     <TopicMatching.render
-      automatic_topic_matching?={@prototype_state.automatic_topic_matching?}
+      automatic_topic_matching?={@library_state.automatic_topic_matching?}
       expanded_topic_id={@expanded_topic_id}
       space_slug={@current_scope.tenant.slug}
       topic_views={@topic_views}
@@ -394,7 +394,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     type = socket.assigns.current_type
 
     case State.create_entry(
-           socket.assigns.prototype_state,
+           socket.assigns.library_state,
            type,
            socket.assigns.current_scope.actor.id,
            socket.assigns.can_manage_types?,
@@ -404,7 +404,7 @@ defmodule WikWeb.LibraryPrototypeLive do
       {:ok, state, entry} ->
         {:noreply,
          socket
-         |> assign(:prototype_state, state)
+         |> assign(:library_state, state)
          |> refresh_entries()
          |> push_patch(to: entry_path(socket, entry.id))}
 
@@ -435,7 +435,7 @@ defmodule WikWeb.LibraryPrototypeLive do
   end
 
   def handle_event("entry:edit", %{"entry_id" => entry_id}, socket) do
-    entry = State.find_entry(socket.assigns.prototype_state, entry_id)
+    entry = State.find_entry(socket.assigns.library_state, entry_id)
 
     if can_manage_entry?(
          socket.assigns.current_scope.actor.id,
@@ -453,7 +453,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     type = socket.assigns.current_type
 
     case State.update_entry(
-           socket.assigns.prototype_state,
+           socket.assigns.library_state,
            type,
            entry && entry.id,
            socket.assigns.current_scope.actor.id,
@@ -464,7 +464,7 @@ defmodule WikWeb.LibraryPrototypeLive do
       {:ok, state, entry} ->
         {:noreply,
          socket
-         |> assign(:prototype_state, state)
+         |> assign(:library_state, state)
          |> refresh_entries()
          |> push_patch(to: entry_path(socket, entry.id))}
 
@@ -486,7 +486,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     type = socket.assigns.current_type
 
     case State.delete_entry(
-           socket.assigns.prototype_state,
+           socket.assigns.library_state,
            type.id,
            entry_id,
            socket.assigns.current_scope.actor.id,
@@ -495,7 +495,7 @@ defmodule WikWeb.LibraryPrototypeLive do
       {:ok, state, _entry} ->
         {:noreply,
          socket
-         |> assign(:prototype_state, state)
+         |> assign(:library_state, state)
          |> refresh_entries()
          |> push_patch(to: library_path(socket))}
 
@@ -527,7 +527,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     result =
       if entry && membership_id && topic do
         State.upsert_topic_contribution(
-          socket.assigns.prototype_state,
+          socket.assigns.library_state,
           entry.id,
           membership_id,
           topic_id,
@@ -541,7 +541,7 @@ defmodule WikWeb.LibraryPrototypeLive do
       {:ok, state, _contribution} ->
         {:noreply,
          socket
-         |> assign(:prototype_state, state)
+         |> assign(:library_state, state)
          |> assign(:topic_form, nil)
          |> refresh_entries()}
 
@@ -555,13 +555,13 @@ defmodule WikWeb.LibraryPrototypeLive do
     membership_id = current_membership_id(socket.assigns)
 
     case State.remove_topic_contribution(
-           socket.assigns.prototype_state,
+           socket.assigns.library_state,
            entry.id,
            membership_id,
            topic_id
          ) do
       {:ok, state} ->
-        {:noreply, socket |> assign(:prototype_state, state) |> refresh_entries()}
+        {:noreply, socket |> assign(:library_state, state) |> refresh_entries()}
 
       {:error, :not_found} ->
         {:noreply, socket}
@@ -571,12 +571,12 @@ defmodule WikWeb.LibraryPrototypeLive do
   def handle_event("topic:dismiss", %{"topic_id" => topic_id}, socket) do
     state =
       State.dismiss_automatic_topic(
-        socket.assigns.prototype_state,
+        socket.assigns.library_state,
         socket.assigns.selected_entry.id,
         topic_id
       )
 
-    {:noreply, socket |> assign(:prototype_state, state) |> refresh_entries()}
+    {:noreply, socket |> assign(:library_state, state) |> refresh_entries()}
   end
 
   def handle_event("matching:toggle", _params, socket) do
@@ -619,7 +619,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
           {:noreply,
            socket
-           |> assign(:type_form, type_create_form(socket.assigns.prototype_state, draft))
+           |> assign(:type_form, type_create_form(socket.assigns.library_state, draft))
            |> assign(:wizard_draft, draft)}
       end
     else
@@ -641,7 +641,7 @@ defmodule WikWeb.LibraryPrototypeLive do
           {:noreply,
            socket
            |> assign(:import_form, to_form(%{"json" => json}, as: :schema))
-           |> assign(:type_form, type_create_form(socket.assigns.prototype_state, draft))
+           |> assign(:type_form, type_create_form(socket.assigns.library_state, draft))
            |> assign(:wizard_draft, draft)}
 
         {:error, message} ->
@@ -660,14 +660,14 @@ defmodule WikWeb.LibraryPrototypeLive do
       draft = update_type_draft(socket.assigns.wizard_draft, params)
 
       case State.submit_type_create_form(
-             socket.assigns.prototype_state,
+             socket.assigns.library_state,
              draft,
              socket.assigns.type_form
            ) do
         {:ok, state, type} ->
           {:noreply,
            socket
-           |> assign(:prototype_state, state)
+           |> assign(:library_state, state)
            |> assign(:wizard_draft, nil)
            |> push_patch(to: type_settings_path(socket, type))}
 
@@ -688,7 +688,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
       form =
         State.validate_type_create_form(
-          socket.assigns.prototype_state,
+          socket.assigns.library_state,
           draft,
           socket.assigns.type_form
         )
@@ -707,7 +707,7 @@ defmodule WikWeb.LibraryPrototypeLive do
          type when not is_nil(type) <- socket.assigns.current_type,
          {:ok, state, type} <-
            State.submit_type_update_form(
-             socket.assigns.prototype_state,
+             socket.assigns.library_state,
              type.id,
              socket.assigns.type_form,
              params
@@ -715,7 +715,7 @@ defmodule WikWeb.LibraryPrototypeLive do
       {:noreply,
        socket
        |> assign(:current_type, type)
-       |> assign(:prototype_state, state)
+       |> assign(:library_state, state)
        |> assign(:type_form, type_update_form(state, type))}
     else
       {:error, %Phoenix.HTML.Form{} = form} ->
@@ -737,11 +737,11 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   def handle_event("type:delete", _params, socket) do
     if socket.assigns.can_manage_types? do
-      case State.delete_type(socket.assigns.prototype_state, socket.assigns.current_type.id) do
+      case State.delete_type(socket.assigns.library_state, socket.assigns.current_type.id) do
         {:ok, state, _type} ->
           {:noreply,
            socket
-           |> assign(:prototype_state, state)
+           |> assign(:library_state, state)
            |> push_patch(to: types_path(socket))}
 
         {:error, message} ->
@@ -756,13 +756,13 @@ defmodule WikWeb.LibraryPrototypeLive do
     if socket.assigns.can_manage_types? do
       type = socket.assigns.current_type
 
-      case State.add_field(socket.assigns.prototype_state, type.id, params) do
+      case State.add_field(socket.assigns.library_state, type.id, params) do
         {:ok, state, type, _field} ->
           {:noreply,
            socket
            |> assign(:current_type, type)
            |> assign(:field_form, field_form(nil))
-           |> assign(:prototype_state, state)
+           |> assign(:library_state, state)
            |> assign_field_usage_counts()}
 
         {:error, message} ->
@@ -801,14 +801,14 @@ defmodule WikWeb.LibraryPrototypeLive do
       type = socket.assigns.current_type
       field = socket.assigns.editing_field
 
-      case State.update_field(socket.assigns.prototype_state, type.id, field.id, params) do
+      case State.update_field(socket.assigns.library_state, type.id, field.id, params) do
         {:ok, state, type, _field} ->
           {:noreply,
            socket
            |> assign(:current_type, type)
            |> assign(:editing_field, nil)
            |> assign(:field_form, field_form(nil))
-           |> assign(:prototype_state, state)
+           |> assign(:library_state, state)
            |> assign_field_usage_counts()}
 
         {:error, message} ->
@@ -830,12 +830,12 @@ defmodule WikWeb.LibraryPrototypeLive do
     if socket.assigns.can_manage_types? do
       type = socket.assigns.current_type
 
-      case State.delete_field(socket.assigns.prototype_state, type.id, field_id) do
+      case State.delete_field(socket.assigns.library_state, type.id, field_id) do
         {:ok, state, type} ->
           {:noreply,
            socket
            |> assign(:current_type, type)
-           |> assign(:prototype_state, state)
+           |> assign(:library_state, state)
            |> assign_field_usage_counts()}
 
         {:error, message} ->
@@ -855,12 +855,12 @@ defmodule WikWeb.LibraryPrototypeLive do
       type = socket.assigns.current_type
       direction = if direction == "up", do: :up, else: :down
 
-      case State.move_field(socket.assigns.prototype_state, type.id, field_id, direction) do
+      case State.move_field(socket.assigns.library_state, type.id, field_id, direction) do
         {:ok, state, type} ->
           {:noreply,
            socket
            |> assign(:current_type, type)
-           |> assign(:prototype_state, state)
+           |> assign(:library_state, state)
            |> assign_field_usage_counts()}
 
         {:error, message} ->
@@ -908,7 +908,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     if socket.assigns.can_manage_types? do
       {:noreply,
        socket
-       |> assign(:prototype_state, update_state.(socket.assigns.prototype_state))
+       |> assign(:library_state, update_state.(socket.assigns.library_state))
        |> refresh_entries()}
     else
       forbidden(socket)
@@ -921,7 +921,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     |> assign(:field_form, field_form(nil))
     |> assign(
       :type_form,
-      type_update_form(socket.assigns.prototype_state, socket.assigns.current_type)
+      type_update_form(socket.assigns.library_state, socket.assigns.current_type)
     )
     |> assign(:wizard_draft, nil)
     |> assign_field_usage_counts()
@@ -956,7 +956,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     do: assign(socket, :field_usage_counts, %{})
 
   defp assign_field_usage_counts(socket) do
-    state = socket.assigns.prototype_state
+    state = socket.assigns.library_state
     type = socket.assigns.current_type
 
     counts =
@@ -968,7 +968,7 @@ defmodule WikWeb.LibraryPrototypeLive do
   end
 
   defp refresh_entries(socket) do
-    state = socket.assigns.prototype_state
+    state = socket.assigns.library_state
     current_membership_id = current_membership_id(socket.assigns)
 
     items =
@@ -1013,7 +1013,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   defp entry_list_signature(socket) do
     {
-      socket.assigns.prototype_state,
+      socket.assigns.library_state,
       socket.assigns.active_topic_ids,
       socket.assigns.active_type_ids,
       socket.assigns.live_action in [:index, :entry_new, :entry_show, :entry_edit]
@@ -1065,7 +1065,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   defp selected_entry_topic_summaries(assigns, membership_id) do
     State.topic_summaries(
-      assigns.prototype_state,
+      assigns.library_state,
       assigns.selected_entry,
       assigns.current_type,
       assigns.topics,
@@ -1086,7 +1086,7 @@ defmodule WikWeb.LibraryPrototypeLive do
 
   defp available_types(assigns) do
     Enum.filter(
-      assigns.prototype_state.types,
+      assigns.library_state.types,
       &State.can_create_entry?(&1, assigns.can_manage_types?)
     )
   end
@@ -1252,7 +1252,7 @@ defmodule WikWeb.LibraryPrototypeLive do
     |> maybe_put_filter("topics", selected_slugs(socket.assigns.topics, topic_ids))
     |> maybe_put_filter(
       "types",
-      selected_slugs(socket.assigns.prototype_state.types, type_ids)
+      selected_slugs(socket.assigns.library_state.types, type_ids)
     )
   end
 

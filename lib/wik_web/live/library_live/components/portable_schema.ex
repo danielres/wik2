@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.PortableSchema do
+defmodule WikWeb.LibraryLive.Components.PortableSchema do
   use WikWeb, :html
 
   alias WikWeb.Components.UI

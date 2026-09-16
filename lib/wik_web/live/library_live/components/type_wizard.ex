@@ -1,10 +1,10 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.TypeWizard do
+defmodule WikWeb.LibraryLive.Components.TypeWizard do
   use WikWeb, :html
 
   alias WikWeb.Components.UI
-  alias WikWeb.LibraryPrototypeLive.Components.TypePermissions
-  alias WikWeb.LibraryPrototypeLive.FieldPresentation
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Components.TypePermissions
+  alias WikWeb.LibraryLive.FieldPresentation
+  alias WikWeb.LibraryLive.Schema
 
   attr :draft, :map, default: nil
   attr :form, :map, required: true

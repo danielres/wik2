@@ -1,7 +1,7 @@
-defmodule WikWeb.LibraryPrototypeLive.EntryPresentation do
+defmodule WikWeb.LibraryLive.EntryPresentation do
   alias Wik.Blocks.Types.SoundCloud
   alias Wik.Blocks.Types.YouTube
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Schema
 
   def title(type, entry) do
     title_field = Enum.find(type.fields, &(&1.type == :title))
@@ -92,7 +92,7 @@ defmodule WikWeb.LibraryPrototypeLive.EntryPresentation do
   defp google_maps_embed_url(location) when is_binary(location) do
     api_key =
       :wik
-      |> Application.get_env(WikWeb.LibraryPrototypeLive.Components, [])
+      |> Application.get_env(WikWeb.LibraryLive.Components, [])
       |> Keyword.get(:google_maps_api_key)
 
     if is_binary(api_key) and api_key != "" do

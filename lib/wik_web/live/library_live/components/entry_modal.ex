@@ -1,8 +1,8 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.EntryModal do
+defmodule WikWeb.LibraryLive.Components.EntryModal do
   use WikWeb, :html
 
   alias WikWeb.Components.Modal
-  alias WikWeb.LibraryPrototypeLive.Components.{EntryDetail, EntryForm}
+  alias WikWeb.LibraryLive.Components.{EntryDetail, EntryForm}
 
   attr :entry, :map, required: true
   attr :error, :string, default: nil
@@ -75,11 +75,11 @@ defmodule WikWeb.LibraryPrototypeLive.Components.EntryModal do
   end
 
   defp modal_title(:detail, type, entry) do
-    WikWeb.LibraryPrototypeLive.EntryPresentation.title(type, entry)
+    WikWeb.LibraryLive.EntryPresentation.title(type, entry)
   end
 
   defp modal_title(:edit, type, entry) do
-    title = WikWeb.LibraryPrototypeLive.EntryPresentation.title(type, entry)
+    title = WikWeb.LibraryLive.EntryPresentation.title(type, entry)
     "Edit entry \"#{title}\""
   end
 end

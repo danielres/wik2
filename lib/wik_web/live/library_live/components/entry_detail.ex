@@ -1,9 +1,9 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.EntryDetail do
+defmodule WikWeb.LibraryLive.Components.EntryDetail do
   use WikWeb, :html
 
   alias WikWeb.Components.UI
-  alias WikWeb.LibraryPrototypeLive.EntryPresentation
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.EntryPresentation
+  alias WikWeb.LibraryLive.Schema
 
   attr :entry, :map, required: true
 

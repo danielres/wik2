@@ -24,10 +24,10 @@ config :wik, WikWeb.Endpoint, http: [port: String.to_integer(System.get_env("POR
 
 config :wik, Wik.Locations, api_url: System.get_env("LOCATION_API_URL")
 
-config :wik, WikWeb.LibraryPrototypeLive.Components,
+config :wik, WikWeb.LibraryLive.Components,
   google_maps_api_key: System.get_env("GOOGLE_MAPS_API_KEY")
 
-config :wik, WikWeb.LibraryPrototypeLive.ExternalMedia,
+config :wik, WikWeb.LibraryLive.ExternalMedia,
   youtube_api_key: System.get_env("YOUTUBE_DATA_API_KEY")
 
 config :wik,

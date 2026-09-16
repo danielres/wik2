@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.State do
+defmodule WikWeb.LibraryLive.State do
   @moduledoc false
 
   alias AshPhoenix.Form
@@ -10,7 +10,7 @@ defmodule WikWeb.LibraryPrototypeLive.State do
   alias Wik.Library.TopicExclusion
   alias Wik.Library.TopicRule
   alias Wik.Tags
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Schema
 
   @default_topic_rule %{aliases: [], enabled?: true}
   @matchable_field_types [:title, :text, :rich_text, :select, :location]

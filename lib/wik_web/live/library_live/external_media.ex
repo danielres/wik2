@@ -1,10 +1,10 @@
-defmodule WikWeb.LibraryPrototypeLive.ExternalMedia do
+defmodule WikWeb.LibraryLive.ExternalMedia do
   @moduledoc false
 
   require Logger
 
-  alias WikWeb.LibraryPrototypeLive.ExternalMedia.SoundCloud
-  alias WikWeb.LibraryPrototypeLive.ExternalMedia.YouTube
+  alias WikWeb.LibraryLive.ExternalMedia.SoundCloud
+  alias WikWeb.LibraryLive.ExternalMedia.YouTube
 
   def resolve(url, opts \\ [])
 

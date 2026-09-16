@@ -4,7 +4,7 @@ defmodule Wik.Library.Entry.Changes.NormalizeValues do
   alias Ash.Changeset
   alias Ash.Query
   alias Wik.Library.EntryType
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Schema
 
   require Ash.Query
 

@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.TypePicker do
+defmodule WikWeb.LibraryLive.Components.TypePicker do
   use WikWeb, :html
 
   attr :types, :list, required: true

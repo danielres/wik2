@@ -1,7 +1,7 @@
-defmodule WikWeb.LibraryPrototypeLive.EntryFormMedia do
+defmodule WikWeb.LibraryLive.EntryFormMedia do
   @moduledoc false
 
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Schema
 
   defstruct autofill_values: %{},
             error: nil,

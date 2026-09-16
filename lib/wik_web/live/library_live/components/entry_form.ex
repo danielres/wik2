@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.EntryForm do
+defmodule WikWeb.LibraryLive.Components.EntryForm do
   use WikWeb, :html
 
   alias WikWeb.Components.LocationPicker

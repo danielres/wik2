@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Schema do
+defmodule WikWeb.LibraryLive.Schema do
   @moduledoc false
 
   @format "wik-library-type"

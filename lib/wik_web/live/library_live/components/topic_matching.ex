@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.TopicMatching do
+defmodule WikWeb.LibraryLive.Components.TopicMatching do
   use WikWeb, :html
 
   alias WikWeb.Components.UI

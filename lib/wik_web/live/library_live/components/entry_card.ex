@@ -1,9 +1,9 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.EntryCard do
+defmodule WikWeb.LibraryLive.Components.EntryCard do
   use WikWeb, :html
 
-  alias WikWeb.LibraryPrototypeLive.EntryPresentation
-  alias WikWeb.LibraryPrototypeLive.FieldPresentation
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.EntryPresentation
+  alias WikWeb.LibraryLive.FieldPresentation
+  alias WikWeb.LibraryLive.Schema
 
   attr :click_event, :string, default: nil
   attr :click_label, :string, default: nil

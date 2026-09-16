@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.TypePermissions do
+defmodule WikWeb.LibraryLive.Components.TypePermissions do
   use WikWeb, :html
 
   alias WikWeb.Components.UI

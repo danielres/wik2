@@ -2,10 +2,10 @@ defmodule WikWeb.PageLive.Components.LibraryEntries do
   use WikWeb, :html
 
   alias WikWeb.Components.Modal
-  alias WikWeb.LibraryPrototypeLive.Components.{EntryForm, EntryModal}
-  alias WikWeb.LibraryPrototypeLive.Components.EntryCard
-  alias WikWeb.LibraryPrototypeLive.EntryPresentation
-  alias WikWeb.LibraryPrototypeLive.State
+  alias WikWeb.LibraryLive.Components.{EntryForm, EntryModal}
+  alias WikWeb.LibraryLive.Components.EntryCard
+  alias WikWeb.LibraryLive.EntryPresentation
+  alias WikWeb.LibraryLive.State
 
   attr :actor_id, :string, required: true
   attr :admin?, :boolean, required: true

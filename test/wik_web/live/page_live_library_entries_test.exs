@@ -8,8 +8,8 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
   alias Wik.Library
-  alias WikWeb.LibraryPrototypeLive.ExternalMedia
-  alias WikWeb.LibraryPrototypeLive.State
+  alias WikWeb.LibraryLive.ExternalMedia
+  alias WikWeb.LibraryLive.State
 
   setup %{conn: conn} do
     previous_external_media_config = Application.get_env(:wik, ExternalMedia, [])

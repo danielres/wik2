@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.FieldPresentation do
+defmodule WikWeb.LibraryLive.FieldPresentation do
   def entry_icon(%{key: "organization"}), do: "hero-home-micro"
   def entry_icon(%{key: "role"}), do: "hero-academic-cap-micro"
   def entry_icon(%{key: "duration"}), do: "hero-clock-micro"

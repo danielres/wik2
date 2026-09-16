@@ -2,7 +2,7 @@ defmodule WikWeb.Components.Block.Types.LibraryEntry do
   use WikWeb, :html
 
   alias Wik.Library
-  alias WikWeb.LibraryPrototypeLive.Components.EntryCard
+  alias WikWeb.LibraryLive.Components.EntryCard
 
   attr :block, :map, required: true
   attr :library_state, :map, default: nil
@@ -48,6 +48,6 @@ defmodule WikWeb.Components.Block.Types.LibraryEntry do
   defp current_entry(reference, nil), do: reference.entry
 
   defp current_entry(reference, state) do
-    WikWeb.LibraryPrototypeLive.State.find_entry(state, reference.entry_id) || reference.entry
+    WikWeb.LibraryLive.State.find_entry(state, reference.entry_id) || reference.entry
   end
 end

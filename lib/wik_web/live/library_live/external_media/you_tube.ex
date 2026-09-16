@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.ExternalMedia.YouTube do
+defmodule WikWeb.LibraryLive.ExternalMedia.YouTube do
   @moduledoc false
 
   require Logger

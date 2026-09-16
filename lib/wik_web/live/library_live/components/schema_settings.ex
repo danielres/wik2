@@ -1,10 +1,10 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.SchemaSettings do
+defmodule WikWeb.LibraryLive.Components.SchemaSettings do
   use WikWeb, :html
 
   alias WikWeb.Components.UI
-  alias WikWeb.LibraryPrototypeLive.Components.TypePermissions
-  alias WikWeb.LibraryPrototypeLive.FieldPresentation
-  alias WikWeb.LibraryPrototypeLive.Schema
+  alias WikWeb.LibraryLive.Components.TypePermissions
+  alias WikWeb.LibraryLive.FieldPresentation
+  alias WikWeb.LibraryLive.Schema
 
   attr :type, :map, required: true
   attr :type_form, :map, required: true

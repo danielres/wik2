@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.TypeList do
+defmodule WikWeb.LibraryLive.Components.TypeList do
   use WikWeb, :html
 
   alias WikWeb.Components.UI

@@ -6,10 +6,10 @@ defmodule WikWeb.PageLive.LibraryEntries do
 
   alias Wik.Library
   alias Wik.Tags
-  alias WikWeb.LibraryPrototypeLive.EntryFormMedia
-  alias WikWeb.LibraryPrototypeLive.EntryPresentation
-  alias WikWeb.LibraryPrototypeLive.ExternalMedia
-  alias WikWeb.LibraryPrototypeLive.State
+  alias WikWeb.LibraryLive.EntryFormMedia
+  alias WikWeb.LibraryLive.EntryPresentation
+  alias WikWeb.LibraryLive.ExternalMedia
+  alias WikWeb.LibraryLive.State
   alias WikWeb.PageLive.PageState
   alias WikWeb.TenantContext
 

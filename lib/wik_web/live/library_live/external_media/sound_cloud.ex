@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.ExternalMedia.SoundCloud do
+defmodule WikWeb.LibraryLive.ExternalMedia.SoundCloud do
   @moduledoc false
 
   @endpoint "https://soundcloud.com/oembed"

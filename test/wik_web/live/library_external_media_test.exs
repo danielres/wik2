@@ -1,12 +1,12 @@
-defmodule WikWeb.LibraryPrototypeExternalMediaTest do
+defmodule WikWeb.LibraryExternalMediaTest do
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureLog
 
-  alias WikWeb.LibraryPrototypeLive.EntryPresentation
-  alias WikWeb.LibraryPrototypeLive.ExternalMedia
-  alias WikWeb.LibraryPrototypeLive.Schema
-  alias WikWeb.LibraryPrototypeLive.State
+  alias WikWeb.LibraryLive.EntryPresentation
+  alias WikWeb.LibraryLive.ExternalMedia
+  alias WikWeb.LibraryLive.Schema
+  alias WikWeb.LibraryLive.State
 
   test "resolves YouTube metadata through the fixed Data API endpoint" do
     http_get = fn url, opts ->

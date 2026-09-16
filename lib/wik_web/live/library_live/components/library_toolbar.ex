@@ -1,4 +1,4 @@
-defmodule WikWeb.LibraryPrototypeLive.Components.LibraryToolbar do
+defmodule WikWeb.LibraryLive.Components.LibraryToolbar do
   use WikWeb, :html
 
   alias WikWeb.Components.UI

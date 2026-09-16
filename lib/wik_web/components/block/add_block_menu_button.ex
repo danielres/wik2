@@ -62,87 +62,95 @@ defmodule WikWeb.Components.Block.AddBlockMenuButton do
           <section>
             <UI.panel_title>Regular content</UI.panel_title>
 
-            <.button_special_block
-              label={Markdown.label()}
-              phx-click="block:add"
-              phx-value-type="markdown"
-            />
+            <div class="flex flex-wrap gap-1">
+              <.button_special_block
+                label={Markdown.label()}
+                phx-click="block:add"
+                phx-value-type="markdown"
+              />
+            </div>
           </section>
 
           <section :if={@library_types != []}>
             <UI.panel_title>From library</UI.panel_title>
 
-            <.button_special_block
-              :for={type <- @library_types}
-              data-testid={"library-type-#{type.slug}"}
-              id={"library-type-button-#{type.id}"}
-              label={type.name}
-              phx-click="block:add_library_entry"
-              phx-value-type_id={type.id}
-            />
+            <div class="flex flex-wrap gap-1">
+              <.button_special_block
+                :for={type <- @library_types}
+                data-testid={"library-type-#{type.slug}"}
+                id={"library-type-button-#{type.id}"}
+                label={type.name}
+                phx-click="block:add_library_entry"
+                phx-value-type_id={type.id}
+              />
+            </div>
           </section>
 
           <section>
             <UI.panel_title>Embeds</UI.panel_title>
 
-            <.button_special_block
-              label={YouTube.label()}
-              phx-click="block:add"
-              phx-value-type="youtube"
-            />
+            <div class="flex flex-wrap gap-1">
+              <.button_special_block
+                label={YouTube.label()}
+                phx-click="block:add"
+                phx-value-type="youtube"
+              />
 
-            <.button_special_block
-              label={SoundCloud.label()}
-              phx-click="block:add"
-              phx-value-type="soundcloud"
-            />
+              <.button_special_block
+                label={SoundCloud.label()}
+                phx-click="block:add"
+                phx-value-type="soundcloud"
+              />
 
-            <.button_special_block
-              label={GoogleCalendar.label()}
-              phx-click="block:add"
-              phx-value-type="google_calendar"
-            />
+              <.button_special_block
+                label={GoogleCalendar.label()}
+                phx-click="block:add"
+                phx-value-type="google_calendar"
+              />
 
-            <.button_special_block
-              label={GoogleMaps.label()}
-              phx-click="block:add"
-              phx-value-type="google_maps"
-            />
+              <.button_special_block
+                label={GoogleMaps.label()}
+                phx-click="block:add"
+                phx-value-type="google_maps"
+              />
+            </div>
           </section>
 
           <section>
             <UI.panel_title>Special blocks</UI.panel_title>
 
-            <.button_special_block
-              label={Pages.label()}
-              phx-click="block:add"
-              phx-value-type="pages"
-            />
+            <div class="flex flex-wrap gap-1">
+              <.button_special_block
+                label={Pages.label()}
+                phx-click="block:add"
+                phx-value-type="pages"
+              />
 
-            <.button_special_block
-              label={Backlinks.label()}
-              phx-click="block:add"
-              phx-value-type="backlinks"
-            />
+              <.button_special_block
+                label={Backlinks.label()}
+                phx-click="block:add"
+                phx-value-type="backlinks"
+              />
 
-            <.button_special_block
-              label={Members.label()}
-              phx-click="block:add"
-              phx-value-type="members"
-            />
+              <.button_special_block
+                label={Members.label()}
+                phx-click="block:add"
+                phx-value-type="members"
+              />
 
-            <.button_special_block
-              label="Linked copy"
-              phx-click="block:add"
-              phx-value-type="linked_copy"
-            />
+              <.button_special_block
+                label="Linked copy"
+                phx-click="block:add"
+                phx-value-type="linked_copy"
+              />
 
-            <.button_special_block
-              :if={@child_pages_available?}
-              label={ChildPages.label()}
-              phx-click="block:add"
-              phx-value-type="child_pages"
-            />
+              <.button_special_block
+                :if={@child_pages_available?}
+                label={ChildPages.label()}
+                phx-click="block:add"
+                phx-value-type="child_pages"
+              />
+            </div>
           </section>
         </div>
       </div>

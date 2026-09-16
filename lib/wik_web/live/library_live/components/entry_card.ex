@@ -27,11 +27,11 @@ defmodule WikWeb.LibraryLive.Components.EntryCard do
       class={[
         "relative grid grid-rows-subgrid text-left group row-span-3",
         "rounded-box overflow-hidden",
-        "bg-base-300/60 hover:bg-base-300 hover:scale-103",
-        "border border-base-content/10 hover:border-base-content/20",
-        "shadow hover:shadow-xl",
+        "bg-base-300/50 hover:bg-base-300/80",
+        "hover:scale-103",
         "opacity-90 hover:opacity-100",
-        "transition"
+        "transition",
+        "group"
       ]}
       data-testid={@testid}
       id={@dom_id}
@@ -83,7 +83,10 @@ defmodule WikWeb.LibraryLive.Components.EntryCard do
     ]}>
       <div class={[
         "px-2 py-1",
-        "text-[11px] uppercase tracking-wider text-base-content/28 whitespace-nowrap",
+        "text-[11px] uppercase tracking-wider",
+        "text-base-content/60",
+        "opacity-50 group-hover:opacity-100 transition",
+        "whitespace-nowrap",
         "font-semibold",
         "absolute right-0 top-0"
       ]}>

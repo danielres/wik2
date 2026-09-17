@@ -21,9 +21,7 @@ defmodule WikWeb.LibraryLiveTest do
 
     previous_external_media_config = Application.get_env(:wik, ExternalMedia, [])
 
-    Application.put_env(:wik, WikWeb.LibraryLive.Components,
-      google_maps_api_key: "test-api-key"
-    )
+    Application.put_env(:wik, WikWeb.LibraryLive.Components, google_maps_api_key: "test-api-key")
 
     Application.put_env(:wik, ExternalMedia,
       http_get: &external_media_get/2,

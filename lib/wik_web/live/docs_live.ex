@@ -63,7 +63,6 @@ defmodule WikWeb.DocsLive do
       </div>
     </div>
 
-
     <UI.drawer id="docs-drawer">
       <:aside>
         <ul class="menu bg-base-200 min-h-full w-fit p-4 pr-8">

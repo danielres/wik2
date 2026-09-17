@@ -217,6 +217,9 @@ defmodule WikWeb.PageLive.BlockActions do
 
   defp open_library_entry(socket, block) do
     case Wik.Library.get_block_reference(block.id, scope: socket.assigns.current_scope) do
+      {:ok, nil} ->
+        Phoenix.LiveView.put_flash(socket, :error, "That Library entry is no longer available")
+
       {:ok, reference} ->
         LibraryEntries.open_for_edit(socket, reference.entry_id)
 

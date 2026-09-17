@@ -7,7 +7,9 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Wik.Accounts.Membership
+  alias Wik.Blocks
   alias Wik.Library
+  alias Wik.Wiki
   alias WikWeb.LibraryLive.ExternalMedia
   alias WikWeb.LibraryLive.State
 
@@ -196,6 +198,33 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
              ~s([data-testid^="library-entry-card-"] h3),
              "Updated shared contact"
            ) == 2
+  end
+
+  test "reports a missing reference when editing an orphaned Library block", %{
+    conn: conn,
+    owner: owner,
+    space: space
+  } do
+    scope = scope(owner, space)
+    {:ok, _node, page} = Wiki.ensure_page_and_node_at_path("home", scope: scope)
+
+    assert {:ok, block} =
+             Blocks.create_space_owned_block_on_page(
+               space,
+               page,
+               %{type: :library_entry},
+               scope: scope
+             )
+
+    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/wiki/home")
+    enter_edit_mode(view)
+
+    view
+    |> element("#block-#{block.id} .BLOCK")
+    |> render_click()
+
+    assert has_element?(view, "#flash-error", "That Library entry is no longer available")
+    refute has_element?(view, testid("library-entry-dialog") <> ".modal-open")
   end
 
   test "uses the shared external media form behavior from a wiki entry modal", %{

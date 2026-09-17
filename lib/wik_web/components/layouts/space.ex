@@ -25,7 +25,6 @@ defmodule WikWeb.Layouts.Space do
       :if={@show_presences? && @presences |> length() > 1}
       class={[
         "py-0",
-        "-mt-2",
         "group",
         "bg-base-300"
       ]}
@@ -51,16 +50,34 @@ defmodule WikWeb.Layouts.Space do
     </div>
 
     <div class={[
-      "sticky top-0 z-30",
-      "bg-base-300",
-      "border-y border-base-content/20 shadow-lg"
+      "sticky top-0 z-30"
     ]}>
-      <.container>
-        <.space_menu {assigns} />
-      </.container>
+      <div class={[
+        "bg-base-300",
+        "border-y border-base-content/20 shadow"
+      ]}>
+        <.container>
+          <.space_menu {assigns} />
+        </.container>
+      </div>
+
+      <div class={[
+        "flex justify-end self-end gap-4",
+        "mr-4 h-0 relative top-4",
+        @aside != [] && "md:right-74"
+      ]}>
+        <div class="space-y-2">
+          <UI.button_drawer
+            :if={@aside != [] && !@editing?}
+            for="layout-space-drawer"
+            class={["md:hidden"]}
+          />
+          <div :if={@actions != []}>{render_slot(@actions)}</div>
+        </div>
+      </div>
     </div>
 
-    <UI.drawer>
+    <UI.drawer id="layout-space-drawer">
       <:aside :if={@aside != []}>
         <div class={[
           "min-h-full",
@@ -82,7 +99,10 @@ defmodule WikWeb.Layouts.Space do
         </div>
       </:aside>
 
-      <.container class="my-8 z-0">
+      <.container class={[
+        "my-8 z-0",
+        @actions != [] && "pt-6"
+      ]}>
         {render_slot(@inner_block)}
       </.container>
     </UI.drawer>
@@ -91,7 +111,7 @@ defmodule WikWeb.Layouts.Space do
 
   def container_class, do: "px-2 sm:pl-6 sm:pr-4 lg:pl-8 "
 
-  attr :class, :string, default: ""
+  attr :class, :any, default: ""
   slot :inner_block, required: true
 
   def container(assigns) do
@@ -111,66 +131,67 @@ defmodule WikWeb.Layouts.Space do
     ~H"""
     <div class={[
       "grid",
-      "grid-cols-[1fr_1fr_1fr_1fr_auto]",
-      "items-center",
-      "[&>a]:justify-center",
-      "[&>*]:min-h-10",
-      "[&>a]:border-r",
-      "[&>a:first-child]:border-l",
-      "[&>*]:py-2",
-      "[&>a]:text-center",
-      "[&>a]:border-base-content/15",
-      "[&>a]:text-xs",
-      "sm:[&>a]:text-sm",
-      "[&>a]:sm:flex",
-      "[&>a]:sm:gap-2",
-      "[&>a]:sm:items-center",
-      "[&>a>div]:opacity-50",
-      "[&>a.active>div]:opacity-70",
-      "[&>a:hover>div]:opacity-70",
-      "[&>a>.icon]:opacity-20",
-      "[&>a:hover>.icon]:opacity-100",
-      "[&>a.active>.icon]:opacity-100",
-      "max-sm:[&>a]:px-4",
+      "grid-cols-[minmax(0,1fr)]",
       @editing? and "[&>a]:opacity-0 [&>a]:pointer-events-none"
     ]}>
-      <.space_menu_link
-        icon="hero-book-open-micro"
-        item="wiki/home"
-        label="Wiki"
-        scope={@scope}
-        view={@view}
-      />
-
-      <.space_menu_link
-        icon="hero-tag-micro"
-        item="topics"
-        label="Topics"
-        scope={@scope}
-        view={@view}
-      />
-
-      <.space_menu_link
-        icon="hero-calendar-micro"
-        item="events"
-        label="Events"
-        scope={@scope}
-        view={@view}
-      />
-
-      <.space_menu_link
-        icon="hero-user-micro"
-        item="members"
-        label="Members"
-        scope={@scope}
-        view={@view}
-      />
-
       <div class={[
-        "min-w-10 flex justify-end gap-3",
-        @actions == [] && "opacity-0 pointer-events-none"
+        "grid min-w-0 w-full",
+        "grid-flow-col auto-cols-[minmax(3rem,1fr)]",
+        "overflow-x-auto overflow-y-hidden",
+        "[&>a]:flex",
+        "[&>a]:gap-x-2",
+        "[&>a]:justify-center",
+        "[&>a]:max-sm:flex-col",
+        "[&>a]:items-center",
+        "[&>a]:py-2",
+        "[&>a]:text-base-content/30",
+        "[&>a]:transition",
+        "[&>a:hover]:text-base-content",
+        "[&>a_.icon]:text-base-content/30",
+        "[&>a.active_.icon]:text-base-content/80",
+        "[&>a.active]:text-base-content",
+        "[&>a]:text-xs",
+        "rounded"
       ]}>
-        {render_slot(@actions)}
+        <.space_menu_link
+          icon="hero-book-open-micro"
+          item="wiki/home"
+          label="Wiki"
+          scope={@scope}
+          view={@view}
+        />
+
+        <.space_menu_link
+          icon="hero-tag-micro"
+          item="topics"
+          label="Topics"
+          scope={@scope}
+          view={@view}
+        />
+
+        <.space_menu_link
+          icon="hero-calendar-days-micro"
+          item="events"
+          label="Events"
+          scope={@scope}
+          view={@view}
+        />
+
+        <.space_menu_link
+          icon="hero-rectangle-stack-micro"
+          item="libraries"
+          label="Library"
+          scope={@scope}
+          view={@view}
+        />
+
+        <.space_menu_link
+          icon="hero-user-micro"
+          item="members"
+          label="Members"
+          scope={@scope}
+          view={@view}
+        />
       </div>
     </div>
     """

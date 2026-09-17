@@ -7,6 +7,8 @@ defmodule Wik.BlocksTest do
   alias Wik.Blocks
   alias Wik.Blocks.Block
   alias Wik.Blocks.BlockPlacement
+  alias Wik.Library
+  alias Wik.Library.BlockReference
   alias Wik.Scope
   alias Wik.Wiki.Page
 
@@ -429,6 +431,32 @@ defmodule Wik.BlocksTest do
 
       assert Enum.map(orphan_blocks, & &1.id) == [orphan_block.id]
       refute Enum.any?(orphan_blocks, &(&1.id == placed_block.id))
+    end
+
+    test "preloads the Library reference and entry used by block previews" do
+      actor = generate(user())
+      space = generate(space(author: actor))
+      add_membership(space, actor, :owner)
+      scope = scope(actor, space)
+      :ok = Library.Provisioning.ensure_default_types(scope)
+      {:ok, type} = Library.get_entry_type_by_slug("contact", scope: scope)
+      {:ok, entry} = Library.create_entry(type, %{"name" => "Orphan contact"}, nil, scope: scope)
+
+      {:ok, block} =
+        Blocks.create_space_owned_block(space, %{type: :library_entry}, scope: scope)
+
+      {:ok, _reference} =
+        Ash.create(
+          BlockReference,
+          %{block_id: block.id, entry_id: entry.id},
+          action: :create,
+          scope: scope
+        )
+
+      [loaded_block] = Blocks.list_orphan_space_owned_blocks(space, scope: scope)
+
+      assert loaded_block.library_entry_reference.entry_id == entry.id
+      assert loaded_block.library_entry_reference.entry.id == entry.id
     end
   end
 

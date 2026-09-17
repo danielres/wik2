@@ -50,7 +50,7 @@ defmodule WikWeb.MembersLive do
           <% end %>
         </:actions>
 
-        <div class="max-w-[80ch]">
+        <div class="max-w-[80ch] mx-auto">
           <Components.Block.Types.Members.render
             event_membership_type_change_start="membership_type_change_start"
             event_transfer_ownership_start="transfer_ownership_start"

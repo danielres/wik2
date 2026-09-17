@@ -24,28 +24,46 @@ defmodule WikWeb.DocsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <header class={[
-      "bg-base-300 sticky top-0 z-40",
-      "flex justify-between gap-2 items-center py-2",
-      "px-4"
+    <div class={[
+      "sticky top-0 z-30"
     ]}>
-      <h1 class="flex items-center gap-2">
-        <span class="flex items-end">
-          <.link navigate={~p"/"} class="opacity-50 hover:opacity-100 transition" aria-label="Home">
-            <.icon name="hero-home-micro" />
+      <div class={[
+        "bg-base-300",
+        "border-y border-base-content/20 shadow",
+        "flex justify-between gap-2 items-center py-2",
+        "px-4"
+      ]}>
+        <h1 class="flex items-center gap-2">
+          <span class="flex items-end">
+            <.link navigate={~p"/"} class="opacity-50 hover:opacity-100 transition" aria-label="Home">
+              <.icon name="hero-home-micro" />
+            </.link>
+
+            <.icon name="hero-chevron-right-micro" class="opacity-20 mb-1" />
+          </span>
+
+          <.link patch={~p"/docs"} class="text-xl">
+            Wik docs
           </.link>
+        </h1>
+        <div class="w-26"><WikWeb.Layouts.theme_toggle /></div>
+      </div>
 
-          <.icon name="hero-chevron-right-micro" class="opacity-20 mb-1" />
-        </span>
+      <div class={[
+        "flex justify-end self-end gap-4",
+        "mr-4 h-0 relative top-4",
+        "md:right-74"
+      ]}>
+        <div class="space-y-2">
+          <UI.button_drawer
+            for="docs-drawer"
+            class={["md:hidden"]}
+          />
+        </div>
+      </div>
+    </div>
 
-        <.link patch={~p"/docs"} class="text-xl">
-          Wik docs
-        </.link>
-      </h1>
-      <div class="w-26"><WikWeb.Layouts.theme_toggle /></div>
-    </header>
-
-    <UI.drawer>
+    <UI.drawer id="docs-drawer">
       <:aside>
         <ul class="menu bg-base-200 min-h-full w-fit p-4 pr-8">
           <!-- Sidebar content here -->

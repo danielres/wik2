@@ -1,12 +1,13 @@
 defmodule WikWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
   use WikWeb, :live_component
 
+  alias Utils.Log
   alias Wik.Wiki.PageTree
+  alias WikWeb.Components.UI
   alias WikWeb.PageTreeLive.Components
   alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
   alias WikWeb.PageTreeLive.PageTreeEditor
   alias WikWeb.PageTreeLive.PageTreeEditor.FlowMoveNode
-  alias Utils.Log
 
   @impl true
   def update(assigns, socket) do
@@ -55,7 +56,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
         </div>
 
         <ActionButtons.wrapper :if={@can_move_to_top?}>
-          <ActionButtons.button
+          <UI.action_button
             data-tip="move to top"
             data-testid="move-node-to-top"
             icon="hero-arrow-turn-down-right-mini"
@@ -139,7 +140,7 @@ defmodule WikWeb.PageTreeLive.PageTreeEditor.FormMoveNode do
 
     ~H"""
     <ActionButtons.wrapper>
-      <ActionButtons.button
+      <UI.action_button
         :if={@candidate?}
         data-tip={~s(Move under "#{@node.title}")}
         data-testid={"move-node-to-parent-#{@node.id}"}

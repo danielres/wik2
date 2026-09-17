@@ -5,6 +5,7 @@ defmodule WikWeb.PageLive.BlockActions do
 
   alias Wik.Blocks
   alias WikWeb.PageLive.BlockEdit
+  alias WikWeb.PageLive.LibraryEntries
   alias WikWeb.PageLive.PageState
 
   def add(socket, type_param) do
@@ -144,20 +145,15 @@ defmodule WikWeb.PageLive.BlockActions do
   end
 
   def start_edit(socket, block_id) do
-    locks = socket.assigns.locks
+    case socket.assigns.page |> PageState.get_block(block_id) do
+      {:ok, %{type: :library_entry} = block} ->
+        open_library_entry(socket, block)
 
-    case Map.get(locks, block_id) do
-      nil ->
-        case socket.assigns.page |> PageState.get_block(block_id) do
-          {:ok, block} ->
-            socket |> BlockEdit.start(block)
+      {:ok, block} ->
+        start_standard_edit(socket, block)
 
-          {:error, :not_found} ->
-            socket |> stale_block_flash()
-        end
-
-      %{user: user} ->
-        socket |> Phoenix.LiveView.put_flash(:error, "#{user} is already editing this block")
+      {:error, :not_found} ->
+        stale_block_flash(socket)
     end
   end
 
@@ -189,7 +185,7 @@ defmodule WikWeb.PageLive.BlockActions do
            scope: scope
          ) do
       {:ok, block} ->
-        socket |> BlockEdit.start(block)
+        BlockEdit.start(socket, block)
 
       {:error, error} ->
         Utils.Log.scoped_error(scope, error, "create_space_owned_block_on_page failed")
@@ -217,6 +213,35 @@ defmodule WikWeb.PageLive.BlockActions do
   defp find_type(type_param) do
     Blocks.types_available()
     |> Enum.find_value(&if("#{&1.type}" == type_param, do: &1.type))
+  end
+
+  defp open_library_entry(socket, block) do
+    case Wik.Library.get_block_reference(block.id, scope: socket.assigns.current_scope) do
+      {:ok, nil} ->
+        Phoenix.LiveView.put_flash(socket, :error, "That Library entry is no longer available")
+
+      {:ok, reference} ->
+        LibraryEntries.open_for_edit(socket, reference.entry_id)
+
+      {:error, error} ->
+        Utils.Log.scoped_error(
+          socket.assigns.current_scope,
+          error,
+          "load Library block reference failed"
+        )
+
+        Phoenix.LiveView.put_flash(socket, :error, "That Library entry is no longer available")
+    end
+  end
+
+  defp start_standard_edit(socket, block) do
+    case Map.get(socket.assigns.locks, block.id) do
+      nil ->
+        BlockEdit.start(socket, block)
+
+      %{user: user} ->
+        Phoenix.LiveView.put_flash(socket, :error, "#{user} is already editing this block")
+    end
   end
 
   defp stale_block_flash(socket) do

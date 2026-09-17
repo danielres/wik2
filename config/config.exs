@@ -72,6 +72,7 @@ config :wik,
     Wik.Blocks,
     Wik.Blog,
     Wik.Events,
+    Wik.Library,
     Wik.Tags,
     Wik.Tickets,
     Wik.Wiki

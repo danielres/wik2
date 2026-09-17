@@ -15,6 +15,7 @@ defmodule WikWeb.PageLive.Components.Area do
   attr :editing_block_id, :string, required: true
   attr :form_edit_block, :any, required: true
   attr :locks, :map, required: true
+  attr :library_state, :map, required: true
   attr :node, :map, required: true
   attr :page, :map, required: true
   attr :page_tree, :map, required: true
@@ -53,6 +54,7 @@ defmodule WikWeb.PageLive.Components.Area do
               editing_block_id={@editing_block_id}
               editing?={@editing?}
               lock={@locks[placement.block.id]}
+              library_state={@library_state}
               placement={placement}
               node={@node}
               page_tree={@page_tree}

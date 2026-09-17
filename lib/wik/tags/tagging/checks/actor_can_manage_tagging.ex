@@ -5,6 +5,7 @@ defmodule Wik.Tags.Tagging.Checks.ActorCanManageTagging do
   alias Wik.Accounts.Membership
   alias Wik.Events
   alias Wik.Events.ExternalCalendarSubscription
+  alias Wik.Library.Entry, as: LibraryEntry
   alias Wik.Scope
   alias Wik.Wiki.Page
 
@@ -53,6 +54,17 @@ defmodule Wik.Tags.Tagging.Checks.ActorCanManageTagging do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp actor_can_manage_target?(scope, space_id, "library_entry", entry_id, _author_id) do
+    LibraryEntry
+    |> Ash.Query.filter(space_id == ^space_id and id == ^entry_id)
+    |> Ash.read_one(scope: scope)
+    |> case do
+      {:ok, %LibraryEntry{}} -> {:ok, true}
+      {:ok, nil} -> {:ok, false}
+      {:error, error} -> {:error, error}
     end
   end
 

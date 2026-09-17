@@ -241,7 +241,10 @@ defmodule Wik.Blocks do
 
     Block
     |> Ash.Query.filter(owner_space_id == ^space_id)
-    |> Ash.read!(scope: scope, load: [:placements])
+    |> Ash.read!(
+      scope: scope,
+      load: [:placements, library_entry_reference: [entry: Wik.Library.entry_load()]]
+    )
     |> Enum.filter(&(Enum.empty?(&1.placements) and not MapSet.member?(primary_block_ids, &1.id)))
   end
 

@@ -3,6 +3,43 @@ defmodule WikWeb.Components.UI do
 
   use WikWeb, :html
 
+  alias WikWeb.CoreComponents
+
+  attr :"data-tip", :string, required: true
+  attr :icon, :string, required: true
+  attr :class, :string, default: ""
+  attr :size_class, :string, default: "btn-xs"
+  attr :variant, :string, default: "accent"
+  attr :rest, :global
+
+  def action_button(assigns) do
+    variant_class =
+      case assigns.variant do
+        "error" -> "hover:btn-error tooltip-error"
+        _ -> "hover:btn-accent tooltip-accent"
+      end
+
+    assigns = assigns |> assign(variant_class: variant_class)
+
+    ~H"""
+    <CoreComponents.button
+      class={[
+        "btn btn-circle btn-soft btn-accent",
+        "tooltip tooltip-left tooltip-delayed",
+        "[--tt-delay:400ms]",
+        @size_class,
+        @variant_class,
+        @class
+      ]}
+      data-tip={assigns[:"data-tip"]}
+      {@rest}
+    >
+      <.icon name={@icon} class="size-4" />
+      <span class="sr-only">{assigns[:"data-tip"]}</span>
+    </CoreComponents.button>
+    """
+  end
+
   attr :class, :string, default: ""
   attr :editing?, :boolean, required: true
   attr :in_place?, :boolean, default: false
@@ -84,21 +121,21 @@ defmodule WikWeb.Components.UI do
     <div class="drawer drawer-end md:drawer-open md:z-20">
       <input id={@id} type="checkbox" class="drawer-toggle" phx-update="ignore" />
       <div class="drawer-content">
-        <WikWeb.Layouts.container>
-          <div class="flex justify-end pt-2 h-0">
-            <label
-              :if={@aside != []}
-              for={@id}
-              class={[
-                "btn btn-square ",
-                "opacity-80 hover:opacity-100",
-                "md:hidden"
-              ]}
-            >
-              <.icon name="hero-bars-3" />
-            </label>
-          </div>
-        </WikWeb.Layouts.container>
+        <%!-- <WikWeb.Layouts.container> --%>
+        <%!--   <div class="flex justify-end pt-2 h-0"> --%>
+        <%!--     <label --%>
+        <%!--       :if={@aside != []} --%>
+        <%!--       for={@id} --%>
+        <%!--       class={[ --%>
+        <%!--         "btn btn-square ", --%>
+        <%!--         "opacity-80 hover:opacity-100", --%>
+        <%!--         "md:hidden" --%>
+        <%!--       ]} --%>
+        <%!--     > --%>
+        <%!--       <.icon name="hero-bars-3" /> --%>
+        <%!--     </label> --%>
+        <%!--   </div> --%>
+        <%!-- </WikWeb.Layouts.container> --%>
         {render_slot(@inner_block)}
       </div>
 
@@ -351,16 +388,25 @@ defmodule WikWeb.Components.UI do
   end
 
   attr :class, :string, default: ""
+  attr :icon, :string, default: ""
   slot :inner_block, required: true
+  slot :subtitle, required: false
 
   def page_title(assigns) do
     ~H"""
     <h1 class={[
       "text-2xl",
-      "flex items-center gap-2",
+      "flex items-baseline gap-2",
       @class
     ]}>
-      {render_slot(@inner_block)}
+      <.icon :if={@icon != ""} name={@icon} class="opacity-60" />
+      <div>{render_slot(@inner_block)}</div>
+      <div
+        :if={@subtitle != []}
+        class="small-caps text-sm opacity-60 ml-auto"
+      >
+        {render_slot(@subtitle)}
+      </div>
     </h1>
     """
   end
@@ -498,8 +544,28 @@ defmodule WikWeb.Components.UI do
       class="btn btn-xs btn-circle btn-accent"
       {@rest}
     >
-      <.icon name="hero-lock-open-micro" class="size-3.5" />
+      <.icon name="hero-check-micro" class="size-3.5" />
     </button>
+    """
+  end
+
+  attr :class, :any, default: ""
+  attr :rest, :global, include: ~w(for)
+
+  def button_drawer(assigns) do
+    ~H"""
+    <label
+      class={[
+        "btn btn-xs btn-circle bg-base-200",
+        "text-base-content/50",
+        "hover:text-base-content",
+        "transition",
+        @class
+      ]}
+      {@rest}
+    >
+      <.icon name="hero-chevron-left-micro" />
+    </label>
     """
   end
 
@@ -509,13 +575,13 @@ defmodule WikWeb.Components.UI do
     ~H"""
     <button
       class={[
-        "btn btn-xs btn-circle btn-accent",
+        "btn btn-xs btn-circle btn-accent btn-soft",
         "hover:text-base-content",
-        "opacity-60 hover:opacity-100"
+        "backdrop-blur"
       ]}
       {@rest}
     >
-      <.icon name="hero-lock-closed-micro" class="size-3.5" />
+      <.icon name="hero-pencil-micro" />
     </button>
     """
   end

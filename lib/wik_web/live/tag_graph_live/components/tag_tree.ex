@@ -277,7 +277,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
         </UI.modal>
 
         <ActionButtons.wrapper :if={@editing?}>
-          <ActionButtons.button
+          <UI.action_button
             :if={@node.parent}
             data-tip="detach"
             data-testid={"tag-detach-#{@node.dom_id}"}
@@ -288,7 +288,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             variant="error"
           />
 
-          <ActionButtons.button
+          <UI.action_button
             data-tip="add child"
             data-testid={"tag-add-child-#{@node.dom_id}"}
             icon="hero-plus-mini"
@@ -296,7 +296,7 @@ defmodule WikWeb.TagGraphLive.Components.TagTree do
             phx-value-parent_tag_id={@node.tag.id}
           />
 
-          <ActionButtons.button
+          <UI.action_button
             data-tip="edit"
             data-testid={"tag-edit-#{@node.dom_id}"}
             icon="hero-pencil-mini"

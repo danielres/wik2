@@ -2,8 +2,10 @@ defmodule WikWeb.PageLive do
   use WikWeb, :live_view
   use WikWeb.Presence.Handlers
 
+  alias Wik.Locations
   alias WikWeb.Components
   alias WikWeb.Components.UI
+  alias WikWeb.LibraryLive.Components.EntryForm
   alias WikWeb.PageLive
   alias WikWeb.PageLive.BlockActions
   alias WikWeb.PageLive.BlockEdit
@@ -11,6 +13,7 @@ defmodule WikWeb.PageLive do
   alias WikWeb.PageLive.BlockInfo
   alias WikWeb.PageLive.EditMode
   alias WikWeb.PageLive.Locks
+  alias WikWeb.PageLive.LibraryEntries
   alias WikWeb.PageLive.MissingWikilinks
   alias WikWeb.PageLive.PageAuthor
   alias WikWeb.PageLive.PageRename
@@ -48,6 +51,7 @@ defmodule WikWeb.PageLive do
       |> PageRename.assign_defaults()
       |> PageTopics.assign_defaults()
       |> Locks.assign_locks()
+      |> LibraryEntries.assign_defaults()
 
     {:ok, socket}
   end
@@ -70,6 +74,7 @@ defmodule WikWeb.PageLive do
     socket =
       socket
       |> PageState.load_path(path, title_path: title_path)
+      |> LibraryEntries.sync_page()
       |> PageTopics.sync_subscription()
       |> PageTopics.assign_topics()
       # |> PageTopics.open_form()
@@ -92,6 +97,28 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_info(%{topic: "block_placement:page:" <> _page_id}, socket),
     do: {:noreply, socket |> PageState.reload() |> PageTopics.assign_topics()}
+
+  @impl true
+  def handle_info(%{topic: "library_entry:space:" <> _space_id}, socket),
+    do: {:noreply, LibraryEntries.refresh(socket)}
+
+  @impl true
+  def handle_info(%{topic: "library_entry_type:space:" <> _space_id}, socket),
+    do: {:noreply, LibraryEntries.refresh(socket)}
+
+  @impl true
+  def handle_info(%{topic: "library_field:type:" <> _type_id}, socket),
+    do: {:noreply, LibraryEntries.refresh(socket)}
+
+  @impl true
+  def handle_info({EntryForm, {:created, state, entry}}, socket),
+    do: {:noreply, LibraryEntries.entry_created(socket, state, entry)}
+
+  def handle_info({EntryForm, {:updated, state, entry}}, socket),
+    do: {:noreply, LibraryEntries.entry_updated(socket, state, entry)}
+
+  def handle_info({EntryForm, :cancelled}, socket),
+    do: {:noreply, LibraryEntries.cancel_create(socket)}
 
   @impl true
   def handle_info(%{topic: topic}, socket),
@@ -170,16 +197,20 @@ defmodule WikWeb.PageLive do
   # block ----------------------------------------------------------------------
 
   @impl true
-  def handle_event("block:edit_start", %{"block_id" => block_id}, socket),
-    do: {:noreply, BlockActions.start_edit(socket, block_id)}
+  def handle_event("block:edit_start", %{"block_id" => block_id}, socket) do
+    {:noreply, BlockActions.start_edit(socket, block_id)}
+  end
 
   @impl true
   def handle_event("block:edit_cancel", %{"block_id" => block_id}, socket) do
-    if socket.assigns.editing_block_id == block_id do
-      {:noreply, socket |> BlockEdit.clear()}
-    else
-      {:noreply, socket}
-    end
+    socket =
+      if socket.assigns.editing_block_id == block_id do
+        BlockEdit.clear(socket)
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -188,16 +219,21 @@ defmodule WikWeb.PageLive do
         %{"block" => params, "block_id" => block_id},
         socket
       ),
-      do: {:noreply, socket |> BlockActions.save_edit(block_id, params)}
+      do: {:noreply, BlockActions.save_edit(socket, block_id, params)}
 
   @impl true
   def handle_event("block:add", %{"type" => type_param}, socket),
     do: {:noreply, socket |> BlockActions.add(type_param)}
 
   @impl true
+  def handle_event("block:add_library_entry", %{"type_id" => type_id}, socket),
+    do:
+      {:noreply, LibraryEntries.start_insert(socket, type_id, socket.assigns.add_block_position)}
+
+  @impl true
   def handle_event("block:add_start", %{"position" => position}, socket)
       when position in ["top", "bottom"],
-      do: {:noreply, socket |> assign(add_block_modal_open?: true, add_block_position: position)}
+      do: {:noreply, assign(socket, add_block_modal_open?: true, add_block_position: position)}
 
   @impl true
   def handle_event("block:add_cancel", _params, socket),
@@ -218,6 +254,80 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_event("block:toggle_aside", %{"placement_id" => placement_id}, socket),
     do: {:noreply, socket |> BlockActions.toggle_aside(placement_id)}
+
+  # library entries ------------------------------------------------------------
+
+  @impl true
+  def handle_event("library_entry:close_modal", _params, socket),
+    do: {:noreply, LibraryEntries.close_modal(socket)}
+
+  @impl true
+  def handle_event(
+        "library_entry:picker_search",
+        %{"library_search" => %{"query" => query}},
+        socket
+      ),
+      do: {:noreply, LibraryEntries.search_picker(socket, query)}
+
+  @impl true
+  def handle_event("library_entry:picker_select", %{"entry_id" => entry_id}, socket),
+    do: {:noreply, LibraryEntries.select_picker_entry(socket, entry_id)}
+
+  @impl true
+  def handle_event("library_entry:picker_create", _params, socket),
+    do: {:noreply, LibraryEntries.start_picker_create(socket)}
+
+  @impl true
+  def handle_event("library_entry:show", %{"entry_id" => entry_id}, socket),
+    do: {:noreply, LibraryEntries.show(socket, entry_id)}
+
+  @impl true
+  def handle_event("modal:close", _params, socket),
+    do: {:noreply, LibraryEntries.close_modal(socket)}
+
+  @impl true
+  def handle_event("playlist:play", %{"video_id" => video_id}, socket),
+    do: {:noreply, LibraryEntries.play_video(socket, video_id)}
+
+  @impl true
+  def handle_event("entry:edit", %{"entry_id" => entry_id}, socket),
+    do: {:noreply, LibraryEntries.start_edit(socket, entry_id)}
+
+  @impl true
+  def handle_event("entry:delete", %{"entry_id" => entry_id}, socket),
+    do: {:noreply, LibraryEntries.delete(socket, entry_id)}
+
+  @impl true
+  def handle_event("topic:add", _params, socket),
+    do: {:noreply, LibraryEntries.open_topic_form(socket)}
+
+  @impl true
+  def handle_event("topic:cancel", _params, socket),
+    do: {:noreply, LibraryEntries.close_topic_form(socket)}
+
+  @impl true
+  def handle_event(
+        "topic:save",
+        %{"entry_topic" => %{"relevancy" => relevancy, "topic_id" => topic_id}},
+        socket
+      ),
+      do: {:noreply, LibraryEntries.save_topic(socket, topic_id, relevancy)}
+
+  @impl true
+  def handle_event("topic:remove", %{"topic_id" => topic_id}, socket),
+    do: {:noreply, LibraryEntries.remove_topic(socket, topic_id)}
+
+  @impl true
+  def handle_event("topic:dismiss", %{"topic_id" => topic_id}, socket),
+    do: {:noreply, LibraryEntries.dismiss_topic(socket, topic_id)}
+
+  @impl true
+  def handle_event("location_search", %{"q" => query}, socket) do
+    case Locations.search(query) do
+      {:ok, options} -> {:reply, %{options: options}, socket}
+      {:error, _error} -> {:reply, %{options: []}, socket}
+    end
+  end
 
   # linked_copy ----------------------------------------------------------------
 

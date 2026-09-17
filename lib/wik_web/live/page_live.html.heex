@@ -126,6 +126,7 @@
               editing_block_id={@editing_block_id}
               form_edit_block={@form_edit_block}
               locks={@locks}
+              library_state={@library_state}
               node={@node}
               page={@page}
               page_tree={@page_tree}
@@ -157,6 +158,7 @@
             editing_block_id={@editing_block_id}
             form_edit_block={@form_edit_block}
             locks={@locks}
+            library_state={@library_state}
             node={@node}
             page={@page}
             page_tree={@page_tree}
@@ -196,10 +198,27 @@
   />
 
   <Components.Block.AddBlockMenuButton.modal_special_blocks
-    scope={@current_scope}
     event_cancel="block:add_cancel"
     id="add-block-dialog"
+    library_types={@library_state.types}
     open?={@add_block_modal_open?}
+    scope={@current_scope}
+  />
+
+  <PageLive.Components.LibraryEntries.modal
+    actor_id={@current_scope.actor.id}
+    admin?={@library_can_manage_types?}
+    edit_error={@library_edit_error}
+    membership_id={@tenant_context.current_membership && @tenant_context.current_membership.id}
+    mode={@library_modal_mode}
+    picker_entries={@streams.library_picker_entries}
+    picker_form={@library_picker_form}
+    selected_entry_id={@library_selected_entry_id}
+    selected_playlist_video_id={@library_selected_playlist_video_id}
+    selected_type_id={@library_selected_type_id}
+    state={@library_state}
+    topic_form={@library_topic_form}
+    topics={@library_topics}
   />
 
   <Components.Modal.render

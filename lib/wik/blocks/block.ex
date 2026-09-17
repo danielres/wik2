@@ -124,5 +124,10 @@ defmodule Wik.Blocks.Block do
       destination_attribute :block_id
       default_sort revision: :desc
     end
+
+    has_one :library_entry_reference, Wik.Library.BlockReference do
+      destination_attribute :block_id
+      domain Wik.Library
+    end
   end
 end

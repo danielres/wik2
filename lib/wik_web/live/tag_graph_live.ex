@@ -12,7 +12,6 @@ defmodule WikWeb.TagGraphLive do
   alias WikWeb.Components.Tag, as: TagComponents
   alias WikWeb.Components.UI
   alias WikWeb.TagGraphLive.Components.TagTree
-  alias WikWeb.PageTreeLive.Components.PageTree.ActionButtons
 
   on_mount {WikWeb.LiveUserAuth, :live_scope_required}
   on_mount {WikWeb.LiveUserAuth, :subscribe_presence}
@@ -50,26 +49,28 @@ defmodule WikWeb.TagGraphLive do
     >
       <Layouts.space editing?={@editing?} presences={@presences} scope={@current_scope} view="topics">
         <:actions :if={@editable?}>
-          <%= if @editing? do %>
-            <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
-          <% else %>
-            <UI.button_unlock
-              phx-click="toggle_edit_mode"
-              data-testid="tag-edit-mode-toggle"
-            />
-          <% end %>
-        </:actions>
-
-        <div class="space-y-4 pt-8" data-testid="tag-graph-page">
-          <section class="space-y-4 relative max-w-[80ch]">
-            <div :if={@editable? and @editing?} class="absolute right-0 -top-9">
-              <ActionButtons.button
+          <div class="flex gap-4">
+            <div :if={@editable? and @editing?} class="">
+              <UI.action_button
                 data-tip="add root topic"
                 icon="hero-plus-mini"
                 data-testid="tag-add-root"
                 phx-click="create_root_start"
               />
             </div>
+            <%= if @editing? do %>
+              <UI.button_ok phx-click="toggle_edit_mode" data-testid="tag-edit-mode-ok" />
+            <% else %>
+              <UI.button_unlock
+                phx-click="toggle_edit_mode"
+                data-testid="tag-edit-mode-toggle"
+              />
+            <% end %>
+          </div>
+        </:actions>
+
+        <div class="space-y-4 " data-testid="tag-graph-page">
+          <section class="space-y-4 relative max-w-[80ch] mx-auto">
             <TagTree.render
               editing?={@editing?}
               space_slug={@space.slug}

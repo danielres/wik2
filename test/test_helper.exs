@@ -5,5 +5,5 @@ formatters =
     _ -> [ExUnit.CLIFormatter]
   end
 
-ExUnit.start(formatters: formatters)
+ExUnit.start(formatters: formatters, max_cases: 5)
 Ecto.Adapters.SQL.Sandbox.mode(Wik.Repo, :manual)

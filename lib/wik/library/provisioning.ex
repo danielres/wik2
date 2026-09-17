@@ -1,6 +1,7 @@
 defmodule Wik.Library.Provisioning do
   alias Wik.Library.EntryType
   alias Wik.Library.Field
+  alias Wik.Repo
   alias WikWeb.LibraryLive.Schema
 
   def ensure_default_types(scope) do
@@ -24,7 +25,8 @@ defmodule Wik.Library.Provisioning do
     end)
   end
 
-  defp create_type(template, scope) do
+  @doc false
+  def create_type(template, scope) do
     attrs = %{
       description: template.description,
       entry_creation_permission: :members,
@@ -32,21 +34,34 @@ defmodule Wik.Library.Provisioning do
       slug: template.id
     }
 
-    case Ash.create(EntryType, attrs,
-           action: :create,
-           actor: scope.actor,
-           authorize?: false,
-           tenant: scope.tenant
-         ) do
-      {:ok, type} -> create_fields(type, template.fields, scope)
-      {:error, error} -> {:error, error}
+    case Repo.transaction(fn ->
+           with {:ok, type, type_notifications} <-
+                  Ash.create(EntryType, attrs,
+                    action: :create,
+                    actor: scope.actor,
+                    authorize?: false,
+                    return_notifications?: true,
+                    tenant: scope.tenant
+                  ),
+                {:ok, field_notifications} <- create_fields(type, template.fields, scope) do
+             type_notifications ++ field_notifications
+           else
+             {:error, error} -> Repo.rollback(error)
+           end
+         end) do
+      {:ok, notifications} ->
+        Ash.Notifier.notify(notifications)
+        :ok
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
   defp create_fields(type, fields, scope) do
     fields
     |> Enum.with_index(1)
-    |> Enum.reduce_while(:ok, fn {field, index}, :ok ->
+    |> Enum.reduce_while({:ok, []}, fn {field, index}, {:ok, notifications} ->
       attrs = %{
         key: field.key,
         label: field.label,
@@ -61,10 +76,14 @@ defmodule Wik.Library.Provisioning do
              action: :create,
              actor: scope.actor,
              authorize?: false,
+             return_notifications?: true,
              tenant: scope.tenant
            ) do
-        {:ok, _field} -> {:cont, :ok}
-        {:error, error} -> {:halt, {:error, error}}
+        {:ok, _field, field_notifications} ->
+          {:cont, {:ok, notifications ++ field_notifications}}
+
+        {:error, error} ->
+          {:halt, {:error, error}}
       end
     end)
   end

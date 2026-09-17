@@ -1,15 +1,13 @@
 defmodule WikWeb.Components.Block.Types.LibraryEntry do
   use WikWeb, :html
 
-  alias Wik.Library
   alias WikWeb.LibraryLive.Components.EntryCard
 
   attr :block, :map, required: true
   attr :library_state, :map, default: nil
-  attr :scope, :map, required: true
 
   def render(assigns) do
-    reference = load_reference(assigns.block, assigns.scope)
+    reference = assigns.block.library_entry_reference
     entry = current_entry(reference, assigns.library_state)
 
     assigns = assign(assigns, :entry, entry)
@@ -35,13 +33,6 @@ defmodule WikWeb.Components.Block.Types.LibraryEntry do
       </div>
     </div>
     """
-  end
-
-  defp load_reference(block, scope) do
-    case Library.get_block_reference(block.id, scope: scope) do
-      {:ok, reference} -> reference
-      _error -> nil
-    end
   end
 
   defp current_entry(nil, _state), do: nil

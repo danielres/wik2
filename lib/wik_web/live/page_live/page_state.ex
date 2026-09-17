@@ -9,7 +9,12 @@ defmodule WikWeb.PageLive.PageState do
   alias Wik.Wiki.PageTree.Node
   alias WikWeb.PageLive.BlockEdit
 
-  @page_load [:author, block_placements: [block: :author]]
+  @page_load [
+    :author,
+    block_placements: [
+      block: [:author, library_entry_reference: [entry: [:creator, type: :fields]]]
+    ]
+  ]
 
   def load_by_path(scope, path) do
     page_tree = scope |> Wiki.load_page_tree()

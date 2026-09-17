@@ -100,6 +100,9 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
     [placement] = view_page(view).block_placements
     assert placement.block.type == :library_entry
 
+    assert placement.block.library_entry_reference.entry_id == entry.id
+    assert placement.block.library_entry_reference.entry.id == entry.id
+
     assert {:ok, %{entry_id: entry_id}} =
              Library.get_block_reference(placement.block.id, scope: scope(owner, space))
 
@@ -139,7 +142,40 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
 
     assert eventually_count(view, ~s([data-testid^="library-entry-card-"])) == 2
 
+    assert Enum.all?(view_page(view).block_placements, fn placement ->
+             placement.block.library_entry_reference.entry_id == entry.id
+           end)
+
     [placement | _rest] = view_page(view).block_placements
+
+    telemetry_handler_id =
+      "library-block-render-#{System.unique_integer([:positive, :monotonic])}"
+
+    :ok =
+      :telemetry.attach(
+        telemetry_handler_id,
+        Wik.Repo.config()[:telemetry_prefix] ++ [:query],
+        fn _event, _measurements, metadata, test_pid ->
+          if metadata.source == "library_block_references" do
+            send(test_pid, :library_block_reference_query)
+          end
+        end,
+        self()
+      )
+
+    on_exit(fn -> :telemetry.detach(telemetry_handler_id) end)
+
+    assert {:ok, _reference} =
+             Library.get_block_reference(placement.block.id, scope: scope)
+
+    assert_received :library_block_reference_query
+
+    render_component(&WikWeb.Components.Block.Types.LibraryEntry.render/1, %{
+      block: placement.block,
+      library_state: :sys.get_state(view.pid).socket.assigns.library_state
+    })
+
+    refute_received :library_block_reference_query
 
     enter_edit_mode(view)
 
@@ -217,6 +253,9 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
              )
 
     {:ok, view, _html} = live(conn, ~p"/#{space.slug}/wiki/home")
+
+    assert has_element?(view, testid("library-entry-missing"))
+
     enter_edit_mode(view)
 
     view

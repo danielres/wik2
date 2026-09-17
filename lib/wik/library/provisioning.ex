@@ -65,12 +65,20 @@ defmodule Wik.Library.Provisioning do
 
   defp type_already_exists?(%Ash.Error.Invalid{errors: errors}) do
     Enum.any?(errors, fn
-      %Ash.Error.Changes.InvalidChanges{fields: fields} -> :slug in fields
+      %Ash.Error.Changes.InvalidChanges{fields: fields} = error ->
+        :slug in fields and duplicate_error?(error)
+
       _ -> false
     end)
   end
 
   defp type_already_exists?(_), do: false
+
+  defp duplicate_error?(error) do
+    message = Exception.message(error)
+    String.contains?(message, "has already been taken") or
+      String.contains?(message, "already exists")
+  end
 
   defp create_fields(type, fields, scope) do
     fields

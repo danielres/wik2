@@ -270,8 +270,8 @@ defmodule Wik.Library do
 
   defp settings_already_exist?(%Ash.Error.Invalid{errors: errors}) do
     Enum.any?(errors, fn
-      %Ash.Error.Changes.InvalidChanges{fields: fields} ->
-        Enum.any?(fields, &(&1 in [:space, :space_id]))
+      %Ash.Error.Changes.InvalidChanges{fields: fields} = error ->
+        Enum.any?(fields, &(&1 in [:space, :space_id])) and duplicate_error?(error)
 
       _ ->
         false
@@ -279,4 +279,10 @@ defmodule Wik.Library do
   end
 
   defp settings_already_exist?(_), do: false
+
+  defp duplicate_error?(error) do
+    message = Exception.message(error)
+    String.contains?(message, "has already been taken") or
+      String.contains?(message, "already exists")
+  end
 end

@@ -11,7 +11,7 @@ defmodule Wik.Blocks.Types.LibraryEntry do
   def block_to_form_params(_block, _params, _page_tree), do: %{}
   def update_block(_block, _params, _opts), do: {:error, :unsupported}
 
-  def validate_data(%{}), do: :ok
+  def validate_data(data) when map_size(data) == 0, do: :ok
 
   def validate_data(_data),
     do: {:error, field: :data, message: "library entry blocks use a reference"}

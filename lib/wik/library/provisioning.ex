@@ -20,7 +20,12 @@ defmodule Wik.Library.Provisioning do
     |> Enum.reduce_while(:ok, fn template, :ok ->
       case create_type(template, scope) do
         :ok -> {:cont, :ok}
-        {:error, error} -> {:halt, {:error, error}}
+        {:error, error} ->
+          if type_already_exists?(error) do
+            {:cont, :ok}
+          else
+            {:halt, {:error, error}}
+          end
       end
     end)
   end
@@ -57,6 +62,15 @@ defmodule Wik.Library.Provisioning do
         {:error, error}
     end
   end
+
+  defp type_already_exists?(%Ash.Error.Invalid{errors: errors}) do
+    Enum.any?(errors, fn
+      %Ash.Error.Changes.InvalidChanges{fields: fields} -> :slug in fields
+      _ -> false
+    end)
+  end
+
+  defp type_already_exists?(_), do: false
 
   defp create_fields(type, fields, scope) do
     fields

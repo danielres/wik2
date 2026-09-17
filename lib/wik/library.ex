@@ -231,15 +231,52 @@ defmodule Wik.Library do
   defp load_or_create_settings(scope) do
     case Ash.read_one(Settings, scope: scope) do
       {:ok, nil} ->
-        Ash.create!(Settings, %{},
-          action: :create,
-          actor: scope.actor,
-          authorize?: false,
-          tenant: scope.tenant
-        )
+        create_settings(scope)
 
       {:ok, settings} ->
         settings
+
+      {:error, error} ->
+        raise error
     end
   end
+
+  defp create_settings(scope) do
+    case Ash.create(Settings, %{},
+           action: :create,
+           actor: scope.actor,
+           authorize?: false,
+           tenant: scope.tenant
+         ) do
+      {:ok, settings} ->
+        settings
+
+      {:error, error} ->
+        if settings_already_exist?(error) do
+          load_existing_settings!(scope, error)
+        else
+          raise error
+        end
+    end
+  end
+
+  defp load_existing_settings!(scope, error) do
+    case Ash.read_one(Settings, scope: scope) do
+      {:ok, %Settings{} = settings} -> settings
+      {:ok, nil} -> raise error
+      {:error, read_error} -> raise read_error
+    end
+  end
+
+  defp settings_already_exist?(%Ash.Error.Invalid{errors: errors}) do
+    Enum.any?(errors, fn
+      %Ash.Error.Changes.InvalidChanges{fields: fields} ->
+        Enum.any?(fields, &(&1 in [:space, :space_id]))
+
+      _ ->
+        false
+    end)
+  end
+
+  defp settings_already_exist?(_), do: false
 end

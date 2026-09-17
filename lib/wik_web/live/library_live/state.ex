@@ -325,13 +325,24 @@ defmodule WikWeb.LibraryLive.State do
   def move_field(%{scope: scope} = state, type_id, field_id, direction)
       when direction in [:up, :down] do
     with %{} = type <- find_type_by_id(state, type_id),
-         index when is_integer(index) <- Enum.find_index(type.fields, &(&1.id == field_id)),
-         destination <- index + if(direction == :up, do: -1, else: 1),
-         %{} = sibling <- Enum.at(type.fields, destination),
-         field <- Enum.at(type.fields, index),
-         :ok <- swap_field_order(field, sibling, scope) do
-      state = reload(state)
-      {:ok, state, find_type_by_id(state, type.id)}
+         index when is_integer(index) <- Enum.find_index(type.fields, &(&1.id == field_id)) do
+      destination = index + if(direction == :up, do: -1, else: 1)
+
+      if destination in 0..(length(type.fields) - 1) do
+        sibling = Enum.at(type.fields, destination)
+        field = Enum.at(type.fields, index)
+
+        case swap_field_order(field, sibling, scope) do
+          :ok ->
+            state = reload(state)
+            {:ok, state, find_type_by_id(state, type.id)}
+
+          {:error, error} ->
+            {:error, error |> ash_error_messages() |> Enum.join(" · ")}
+        end
+      else
+        {:ok, state, type}
+      end
     else
       nil -> {:error, "That field is no longer available."}
     end

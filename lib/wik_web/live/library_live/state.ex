@@ -624,6 +624,14 @@ defmodule WikWeb.LibraryLive.State do
   def upsert_topic_contribution(_state, _entry_id, _membership_id, _topic_id, _relevancy),
     do: {:error, "Choose a topic and relevance from 1 to 10."}
 
+  def error_message(message) when is_binary(message), do: message
+
+  def error_message(error) do
+    error
+    |> ash_error_messages()
+    |> Enum.join(" · ")
+  end
+
   def remove_topic_contribution(state, entry_id, membership_id, topic_id) do
     key = {entry_id, membership_id, topic_id}
 

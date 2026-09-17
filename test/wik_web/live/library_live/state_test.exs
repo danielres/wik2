@@ -3,6 +3,15 @@ defmodule WikWeb.LibraryLive.StateTest do
 
   alias WikWeb.LibraryLive.State
 
+  test "formats topic contribution errors for display" do
+    error = %Ash.Error.Changes.Required{field: :topic_id}
+
+    assert State.error_message(error) == "Topic is required."
+
+    assert State.error_message("That entry is no longer available.") ==
+             "That entry is no longer available."
+  end
+
   test "members can update and delete only entries they created while admins can manage all" do
     state = State.new()
     type = State.find_type(state, "place")

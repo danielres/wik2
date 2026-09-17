@@ -269,8 +269,8 @@ defmodule WikWeb.PageLive.LibraryEntries do
       {:ok, state, _contribution} ->
         assign(socket, library_state: state, library_topic_form: nil)
 
-      {:error, message} ->
-        put_error(socket, message)
+      {:error, error} ->
+        put_error(socket, State.error_message(error))
     end
   end
 

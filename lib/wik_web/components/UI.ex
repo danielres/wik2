@@ -34,7 +34,7 @@ defmodule WikWeb.Components.UI do
       data-tip={assigns[:"data-tip"]}
       {@rest}
     >
-      <CoreComponents.icon name={@icon} class="size-4" />
+      <.icon name={@icon} class="size-4" />
       <span class="sr-only">{assigns[:"data-tip"]}</span>
     </CoreComponents.button>
     """

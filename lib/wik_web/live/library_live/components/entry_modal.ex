@@ -2,14 +2,11 @@ defmodule WikWeb.LibraryLive.Components.EntryModal do
   use WikWeb, :html
 
   alias WikWeb.Components.Modal
-  alias WikWeb.LibraryLive.Components.{EntryDetail, EntryForm}
+  alias WikWeb.LibraryLive.Components.EntryDetail
 
   attr :entry, :map, required: true
   attr :error, :string, default: nil
-  attr :form, :map, default: nil
   attr :manageable?, :boolean, required: true
-  attr :metadata_error, :string, default: nil
-  attr :metadata_loading?, :boolean, default: false
   attr :mode, :atom, required: true, values: [:detail, :edit]
   attr :playlist_label, :string, default: nil
   attr :selected_playlist_video_id, :string, default: nil
@@ -17,6 +14,7 @@ defmodule WikWeb.LibraryLive.Components.EntryModal do
   attr :topic_options, :list, required: true
   attr :topic_summaries, :list, required: true
   attr :type, :map, required: true
+  slot :edit_form
 
   def render(assigns) do
     ~H"""
@@ -61,15 +59,7 @@ defmodule WikWeb.LibraryLive.Components.EntryModal do
         type={@type}
       />
 
-      <EntryForm.render
-        :if={@mode == :edit}
-        entry={@entry}
-        form={@form}
-        metadata_error={@metadata_error}
-        metadata_loading?={@metadata_loading?}
-        mode={:edit}
-        type={@type}
-      />
+      <div :if={@mode == :edit}>{render_slot(@edit_form)}</div>
     </Modal.render>
     """
   end

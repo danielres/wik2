@@ -5,6 +5,7 @@ defmodule WikWeb.PageLive do
   alias Wik.Locations
   alias WikWeb.Components
   alias WikWeb.Components.UI
+  alias WikWeb.LibraryLive.Components.EntryForm
   alias WikWeb.PageLive
   alias WikWeb.PageLive.BlockActions
   alias WikWeb.PageLive.BlockEdit
@@ -110,17 +111,18 @@ defmodule WikWeb.PageLive do
     do: {:noreply, LibraryEntries.refresh(socket)}
 
   @impl true
-  def handle_info(%{topic: topic}, socket),
-    do: {:noreply, PageTopics.refresh_if_watched(socket, topic)}
+  def handle_info({EntryForm, {:created, state, entry}}, socket),
+    do: {:noreply, LibraryEntries.entry_created(socket, state, entry)}
+
+  def handle_info({EntryForm, {:updated, state, entry}}, socket),
+    do: {:noreply, LibraryEntries.entry_updated(socket, state, entry)}
+
+  def handle_info({EntryForm, :cancelled}, socket),
+    do: {:noreply, LibraryEntries.cancel_create(socket)}
 
   @impl true
-  def handle_async({:library_entry_external_media, request_id}, {:ok, result}, socket) do
-    {:noreply, LibraryEntries.handle_external_media_result(socket, request_id, result)}
-  end
-
-  def handle_async({:library_entry_external_media, request_id}, {:exit, _reason}, socket) do
-    {:noreply, LibraryEntries.handle_external_media_exit(socket, request_id)}
-  end
+  def handle_info(%{topic: topic}, socket),
+    do: {:noreply, PageTopics.refresh_if_watched(socket, topic)}
 
   # ============================================================================
   # EVENTS
@@ -260,14 +262,6 @@ defmodule WikWeb.PageLive do
     do: {:noreply, LibraryEntries.close_modal(socket)}
 
   @impl true
-  def handle_event("library_entry:change_create", %{"entry" => params}, socket),
-    do: {:noreply, LibraryEntries.change_create(socket, params)}
-
-  @impl true
-  def handle_event("library_entry:create", %{"entry" => params}, socket),
-    do: {:noreply, LibraryEntries.create(socket, params)}
-
-  @impl true
   def handle_event(
         "library_entry:picker_search",
         %{"library_search" => %{"query" => query}},
@@ -284,10 +278,6 @@ defmodule WikWeb.PageLive do
     do: {:noreply, LibraryEntries.start_picker_create(socket)}
 
   @impl true
-  def handle_event("library_entry:cancel_create", _params, socket),
-    do: {:noreply, LibraryEntries.cancel_create(socket)}
-
-  @impl true
   def handle_event("library_entry:show", %{"entry_id" => entry_id}, socket),
     do: {:noreply, LibraryEntries.show(socket, entry_id)}
 
@@ -302,14 +292,6 @@ defmodule WikWeb.PageLive do
   @impl true
   def handle_event("entry:edit", %{"entry_id" => entry_id}, socket),
     do: {:noreply, LibraryEntries.start_edit(socket, entry_id)}
-
-  @impl true
-  def handle_event("entry:change", %{"entry" => params} = event, socket),
-    do: {:noreply, LibraryEntries.change_edit(socket, params, event)}
-
-  @impl true
-  def handle_event("entry:update", %{"entry" => params}, socket),
-    do: {:noreply, LibraryEntries.save_edit(socket, params)}
 
   @impl true
   def handle_event("entry:delete", %{"entry_id" => entry_id}, socket),

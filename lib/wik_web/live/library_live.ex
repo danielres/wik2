@@ -19,9 +19,7 @@ defmodule WikWeb.LibraryLive do
     TypeWizard
   }
 
-  alias WikWeb.LibraryLive.EntryFormMedia
   alias WikWeb.LibraryLive.EntryPresentation
-  alias WikWeb.LibraryLive.ExternalMedia
   alias WikWeb.LibraryLive.Schema
   alias WikWeb.LibraryLive.State
   alias WikWeb.TenantContext
@@ -41,8 +39,6 @@ defmodule WikWeb.LibraryLive do
      |> assign(:can_manage_types?, space_admin?(socket))
      |> assign(:current_type, nil)
      |> assign(:editing_field, nil)
-     |> assign(:entry_form, entry_form(nil))
-     |> assign(:entry_form_media, EntryFormMedia.reset())
      |> assign(:entry_error, nil)
      |> assign(:entry_list_signature, nil)
      |> assign(:entry_mode, nil)
@@ -109,11 +105,31 @@ defmodule WikWeb.LibraryLive do
           |> assign(:selected_playlist_video_id, nil)
           |> assign(:topic_form, nil)
           |> assign_route_forms()
-          |> assign_route_entry_form()
           |> refresh_entries_if_changed()
 
         {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_info({EntryForm, {:created, state, entry}}, socket) do
+    {:noreply,
+     socket
+     |> assign(:library_state, state)
+     |> refresh_entries()
+     |> push_patch(to: entry_path(socket, entry.id))}
+  end
+
+  def handle_info({EntryForm, {:updated, state, entry}}, socket) do
+    {:noreply,
+     socket
+     |> assign(:library_state, state)
+     |> refresh_entries()
+     |> push_patch(to: entry_path(socket, entry.id))}
+  end
+
+  def handle_info({EntryForm, :cancelled}, socket) do
+    {:noreply, push_patch(socket, to: library_path(socket))}
   end
 
   @impl true
@@ -184,12 +200,18 @@ defmodule WikWeb.LibraryLive do
 
       <TypePicker.render :if={@entry_mode == :type_picker} types={@available_types} />
 
-      <EntryForm.render
+      <.live_component
         :if={@entry_mode == :new}
-        form={@entry_form}
-        metadata_error={@entry_form_media.error}
-        metadata_loading?={@entry_form_media.loading?}
+        actor_id={@current_scope.actor.id}
+        admin?={@can_manage_types?}
+        entry={nil}
+        form_id="entry-form"
+        id="library-entry-form-component"
+        library_state={@library_state}
         mode={@entry_mode}
+        module={EntryForm}
+        submit_label="Add entry"
+        testid="entry-form"
         type={@current_type}
       />
     </Modal.render>
@@ -198,10 +220,7 @@ defmodule WikWeb.LibraryLive do
       :if={@entry_mode in [:detail, :edit] && @selected_entry && @current_type}
       entry={@selected_entry}
       error={@entry_error}
-      form={@entry_form}
       manageable?={can_manage_entry?(@current_scope.actor.id, @selected_entry, @can_manage_types?)}
-      metadata_error={@entry_form_media.error}
-      metadata_loading?={@entry_form_media.loading?}
       mode={@entry_mode}
       playlist_label={@playlist_label}
       selected_playlist_video_id={@selected_playlist_video_id}
@@ -209,7 +228,23 @@ defmodule WikWeb.LibraryLive do
       topic_options={@topics}
       topic_summaries={@topic_summaries}
       type={@current_type}
-    />
+    >
+      <:edit_form>
+        <.live_component
+          actor_id={@current_scope.actor.id}
+          admin?={@can_manage_types?}
+          entry={@selected_entry}
+          form_id="entry-form"
+          id="library-entry-form-component"
+          library_state={@library_state}
+          mode={:edit}
+          module={EntryForm}
+          submit_label="Save entry"
+          testid="entry-form"
+          type={@current_type}
+        />
+      </:edit_form>
+    </EntryModal.render>
     """
   end
 
@@ -362,60 +397,7 @@ defmodule WikWeb.LibraryLive do
         {:noreply,
          socket
          |> assign(:current_type, type)
-         |> assign(:entry_form, entry_form(nil))
-         |> assign(:entry_mode, :new)
-         |> reset_entry_metadata()}
-    end
-  end
-
-  def handle_event("entry:change", %{"entry" => params} = event, socket) do
-    target = get_in(event, ["_target", Access.at(1)])
-
-    case EntryFormMedia.change(
-           socket.assigns.entry_form_media,
-           socket.assigns.entry_form.params,
-           params,
-           target,
-           socket.assigns.current_type
-         ) do
-      {:ok, params, media_state} ->
-        {:noreply,
-         socket |> assign(:entry_error, nil) |> assign_entry_form_media(params, media_state)}
-
-      {:resolve, params, media, media_state} ->
-        {:noreply,
-         socket
-         |> assign(:entry_error, nil)
-         |> resolve_external_media(params, media, media_state)}
-    end
-  end
-
-  def handle_event("entry:create", %{"entry" => params}, socket) do
-    type = socket.assigns.current_type
-
-    case State.create_entry(
-           socket.assigns.library_state,
-           type,
-           socket.assigns.current_scope.actor.id,
-           socket.assigns.can_manage_types?,
-           params,
-           socket.assigns.entry_form_media.external_metadata
-         ) do
-      {:ok, state, entry} ->
-        {:noreply,
-         socket
-         |> assign(:library_state, state)
-         |> refresh_entries()
-         |> push_patch(to: entry_path(socket, entry.id))}
-
-      {:error, :forbidden} ->
-        forbidden_entry_creation(socket)
-
-      {:error, errors} ->
-        {:noreply,
-         socket
-         |> assign(:entry_form, to_form(params, as: :entry))
-         |> put_flash(:error, Enum.join(errors, " · "))}
+         |> assign(:entry_mode, :new)}
     end
   end
 
@@ -445,40 +427,6 @@ defmodule WikWeb.LibraryLive do
       {:noreply, push_patch(socket, to: entry_edit_path(socket, entry_id))}
     else
       forbidden_entry(socket)
-    end
-  end
-
-  def handle_event("entry:update", %{"entry" => params}, socket) do
-    entry = socket.assigns.selected_entry
-    type = socket.assigns.current_type
-
-    case State.update_entry(
-           socket.assigns.library_state,
-           type,
-           entry && entry.id,
-           socket.assigns.current_scope.actor.id,
-           socket.assigns.can_manage_types?,
-           params,
-           socket.assigns.entry_form_media.external_metadata
-         ) do
-      {:ok, state, entry} ->
-        {:noreply,
-         socket
-         |> assign(:library_state, state)
-         |> refresh_entries()
-         |> push_patch(to: entry_path(socket, entry.id))}
-
-      {:error, errors} when is_list(errors) ->
-        {:noreply,
-         socket
-         |> assign(:entry_form, to_form(params, as: :entry))
-         |> assign(:entry_error, Enum.join(errors, " · "))}
-
-      {:error, reason} when is_binary(reason) ->
-        {:noreply, assign(socket, :entry_error, reason)}
-
-      {:error, _reason} ->
-        forbidden_entry(socket)
     end
   end
 
@@ -882,28 +830,6 @@ defmodule WikWeb.LibraryLive do
     end
   end
 
-  @impl true
-  def handle_async({:external_media, request_id}, {:ok, result}, socket) do
-    if EntryFormMedia.matching_request?(
-         socket.assigns.entry_form_media,
-         request_id,
-         socket.assigns.entry_form.params
-       ) do
-      {:noreply, apply_external_media_result(socket, result)}
-    else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_async({:external_media, request_id}, {:exit, _reason}, socket) do
-    if EntryFormMedia.request_id(socket.assigns.entry_form_media) == request_id do
-      {:noreply,
-       assign(socket, :entry_form_media, EntryFormMedia.fail(socket.assigns.entry_form_media))}
-    else
-      {:noreply, socket}
-    end
-  end
-
   defp update_matching(socket, update_state) do
     if socket.assigns.can_manage_types? do
       {:noreply,
@@ -937,20 +863,6 @@ defmodule WikWeb.LibraryLive do
     |> assign(:type_form, type_form(nil))
     |> assign(:wizard_draft, nil)
   end
-
-  defp assign_route_entry_form(%{assigns: %{entry_mode: :edit, selected_entry: entry}} = socket) do
-    socket
-    |> assign(:entry_form, entry_form(entry))
-    |> reset_entry_metadata(Map.get(entry, :external_media_metadata))
-  end
-
-  defp assign_route_entry_form(%{assigns: %{entry_mode: :new}} = socket) do
-    socket
-    |> assign(:entry_form, entry_form(nil))
-    |> reset_entry_metadata()
-  end
-
-  defp assign_route_entry_form(socket), do: reset_entry_metadata(socket)
 
   defp assign_field_usage_counts(%{assigns: %{current_type: nil}} = socket),
     do: assign(socket, :field_usage_counts, %{})
@@ -1182,39 +1094,6 @@ defmodule WikWeb.LibraryLive do
     do: {:options, "cannot remove an option that is still in use"}
 
   defp field_error(_message), do: nil
-
-  defp entry_form(nil), do: to_form(%{}, as: :entry)
-  defp entry_form(entry), do: to_form(entry.values, as: :entry)
-
-  defp resolve_external_media(socket, params, media, media_state) do
-    request_id = System.unique_integer([:monotonic, :positive])
-    media_state = EntryFormMedia.begin_resolution(media_state, media, request_id)
-
-    socket
-    |> assign_entry_form_media(params, media_state)
-    |> start_async({:external_media, request_id}, fn -> ExternalMedia.resolve(media) end)
-  end
-
-  defp apply_external_media_result(socket, result) do
-    {params, media_state} =
-      EntryFormMedia.apply_result(
-        socket.assigns.entry_form_media,
-        socket.assigns.entry_form.params,
-        result
-      )
-
-    assign_entry_form_media(socket, params, media_state)
-  end
-
-  defp assign_entry_form_media(socket, params, media_state) do
-    socket
-    |> assign(:entry_form, to_form(params, as: :entry))
-    |> assign(:entry_form_media, media_state)
-  end
-
-  defp reset_entry_metadata(socket, external_media_metadata \\ nil) do
-    assign(socket, :entry_form_media, EntryFormMedia.reset(external_media_metadata))
-  end
 
   defp topic_form do
     to_form(%{"relevancy" => "5", "topic_id" => ""}, as: :entry_topic)

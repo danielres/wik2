@@ -74,6 +74,14 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
     assert has_element?(view, testid("library-entry-create-form"))
 
     view
+    |> form(testid("library-entry-create-form"), entry: %{name: ""})
+    |> render_submit()
+
+    assert has_element?(view, testid("entry-form-error"))
+    assert {:ok, []} = Library.list_entries(scope: scope(owner, space))
+    assert view_page(view).block_placements == []
+
+    view
     |> form(testid("library-entry-create-form"),
       entry: %{
         email: "hello@example.test",
@@ -320,6 +328,135 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
     assert has_element?(view, "#entry-notes-textarea", "Fetched video description")
   end
 
+  test "autofills YouTube details before creating an entry and its page block", %{
+    conn: conn,
+    owner: owner,
+    space: space
+  } do
+    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/wiki/home")
+    open_library_create(view, "external-media", "top")
+
+    view
+    |> form(testid("library-entry-create-form"),
+      entry: %{
+        creator: "",
+        duration: "",
+        media: "https://www.youtube.com/watch?v=BvlGs25tCxI",
+        notes: "",
+        title: ""
+      }
+    )
+    |> render_change()
+
+    assert view_page(view).block_placements == []
+    assert {:ok, []} = Library.list_entries(scope: scope(owner, space))
+
+    render_async(view)
+
+    assert has_element?(view, testid("entry-field-title") <> ~s([value="Fetched title"]))
+    assert has_element?(view, testid("entry-field-creator") <> ~s([value="Fetched channel"]))
+    assert has_element?(view, testid("entry-field-duration") <> ~s([value="1:02:03"]))
+    assert has_element?(view, "#entry-notes-textarea", "Fetched video description")
+
+    view |> form(testid("library-entry-create-form")) |> render_submit()
+
+    assert {:ok, [entry]} = Library.list_entries(scope: scope(owner, space))
+    assert entry.values["title"] == "Fetched title"
+    assert eventually_count(view, ~s([data-testid^="library-entry-card-"])) == 1
+    assert [_placement] = view_page(view).block_placements
+  end
+
+  test "persists playlist metadata and renders playlist details for a page-created entry", %{
+    conn: conn,
+    owner: owner,
+    space: space
+  } do
+    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/wiki/home")
+    open_library_create(view, "external-media", "top")
+
+    view
+    |> form(testid("library-entry-create-form"),
+      entry: %{
+        creator: "",
+        duration: "",
+        media: "https://youtube.com/playlist?list=PL-ZQIvQFPv4LYaNhtbleNaepGSGsuzQyp",
+        notes: "",
+        title: ""
+      }
+    )
+    |> render_change()
+
+    render_async(view)
+    view |> form(testid("library-entry-create-form")) |> render_submit()
+
+    assert {:ok, [entry]} = Library.list_entries(scope: scope(owner, space))
+    assert entry.external_media_metadata["kind"] == "playlist"
+    assert entry.external_media_metadata["item_count"] == 24
+    assert Enum.count(entry.external_media_metadata["playlist_items"]) == 2
+
+    [placement] = view_page(view).block_placements
+
+    view
+    |> element(testid("library-entry-open-#{placement.block.id}"))
+    |> render_click()
+
+    assert has_element?(view, testid("entry-playlist-indicator"), "24 videos")
+    assert has_element?(view, testid("entry-playlist-items"))
+    assert has_element?(view, testid("entry-playlist-item-1"), "First playlist video")
+    assert has_element?(view, testid("entry-playlist-item-2"), "Second playlist video")
+  end
+
+  test "shows media loading and errors and cancels creation without persistence", %{
+    conn: conn,
+    owner: owner,
+    space: space
+  } do
+    test_pid = self()
+
+    Application.put_env(:wik, ExternalMedia,
+      http_get: fn _endpoint, _opts ->
+        send(test_pid, {:external_media_request, self()})
+
+        receive do
+          :fail -> {:error, :unavailable}
+        end
+      end,
+      youtube_api_key: "test-youtube-api-key"
+    )
+
+    {:ok, view, _html} = live(conn, ~p"/#{space.slug}/wiki/home")
+    open_library_create(view, "external-media", "top")
+
+    view
+    |> form(testid("library-entry-create-form"),
+      entry: %{
+        creator: "",
+        duration: "",
+        media: "https://www.youtube.com/watch?v=BvlGs25tCxI",
+        notes: "",
+        title: ""
+      }
+    )
+    |> render_change()
+
+    assert has_element?(view, testid("entry-media-status") <> " .loading")
+    assert_receive {:external_media_request, resolver_pid}
+    send(resolver_pid, :fail)
+    render_async(view)
+
+    assert has_element?(view, testid("entry-media-status"), "Details couldn't be loaded")
+    assert view_page(view).block_placements == []
+
+    view
+    |> element(testid("library-entry-create-form") <> ~s( button[phx-click="cancel"]))
+    |> render_click()
+
+    assert has_element?(view, testid("library-entry-picker-results"))
+    refute has_element?(view, testid("library-entry-create-form"))
+    assert {:ok, []} = Library.list_entries(scope: scope(owner, space))
+    assert view_page(view).block_placements == []
+  end
+
   defp add_library_block(view, entry, position, type_slug \\ "contact") do
     enter_edit_mode(view)
     open_add_block(view, position)
@@ -328,6 +465,13 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
     view
     |> element(testid("library-entry-picker-select-#{entry.id}"))
     |> render_click()
+  end
+
+  defp open_library_create(view, type_slug, position) do
+    enter_edit_mode(view)
+    open_add_block(view, position)
+    view |> element(testid("library-type-#{type_slug}")) |> render_click()
+    view |> element(testid("library-entry-picker-create")) |> render_click()
   end
 
   defp enter_edit_mode(view) do
@@ -375,6 +519,51 @@ defmodule WikWeb.PageLiveLibraryEntriesTest do
                "description" => "Fetched video description",
                "thumbnails" => %{"high" => %{"url" => "https://example.test/cover.jpg"}},
                "title" => "Fetched title"
+             }
+           }
+         ]
+       }
+     }}
+  end
+
+  defp external_media_get("https://www.googleapis.com/youtube/v3/playlists", _opts) do
+    {:ok,
+     %Req.Response{
+       status: 200,
+       body: %{
+         "items" => [
+           %{
+             "contentDetails" => %{"itemCount" => 24},
+             "snippet" => %{
+               "channelTitle" => "Fetched playlist channel",
+               "description" => "Fetched playlist description",
+               "thumbnails" => %{
+                 "high" => %{"url" => "https://example.test/playlist.jpg"}
+               },
+               "title" => "Fetched playlist"
+             }
+           }
+         ]
+       }
+     }}
+  end
+
+  defp external_media_get("https://www.googleapis.com/youtube/v3/playlistItems", _opts) do
+    {:ok,
+     %Req.Response{
+       status: 200,
+       body: %{
+         "items" => [
+           %{
+             "snippet" => %{
+               "resourceId" => %{"videoId" => "playlist-video-one"},
+               "title" => "First playlist video"
+             }
+           },
+           %{
+             "snippet" => %{
+               "resourceId" => %{"videoId" => "playlist-video-two"},
+               "title" => "Second playlist video"
              }
            }
          ]

@@ -10,10 +10,6 @@ defmodule WikWeb.PageLive.Components.LibraryEntries do
   attr :actor_id, :string, required: true
   attr :admin?, :boolean, required: true
   attr :edit_error, :string, default: nil
-  attr :edit_form, :map, default: nil
-  attr :entry_error, :string, default: nil
-  attr :entry_form, :map, default: nil
-  attr :entry_form_media, :map, required: true
   attr :membership_id, :string, default: nil
   attr :mode, :atom, default: nil
   attr :picker_entries, :any, required: true
@@ -56,17 +52,15 @@ defmodule WikWeb.PageLive.Components.LibraryEntries do
       <:title>{@title}</:title>
 
       <div :if={@mode == :new && @selected_type} data-testid="library-entry-create">
-        <p :if={@entry_error} class="mb-3 text-sm text-error" data-testid="library-entry-error">
-          {@entry_error}
-        </p>
-
-        <EntryForm.render
-          cancel_event="library_entry:cancel_create"
-          change_event="library_entry:change_create"
-          form={@entry_form}
-          id="library-entry-create-form"
+        <.live_component
+          actor_id={@actor_id}
+          admin?={@admin?}
+          entry={nil}
+          form_id="library-entry-create-form"
+          id="page-library-entry-form-component"
+          library_state={@state}
           mode={:new}
-          submit_event="library_entry:create"
+          module={EntryForm}
           submit_label="Create and add"
           testid="library-entry-create-form"
           type={@selected_type}
@@ -134,10 +128,7 @@ defmodule WikWeb.PageLive.Components.LibraryEntries do
       :if={@mode in [:detail, :edit] && @selected_entry && @selected_type}
       entry={@selected_entry}
       error={@edit_error}
-      form={@edit_form}
       manageable?={@manageable?}
-      metadata_error={@entry_form_media.error}
-      metadata_loading?={@entry_form_media.loading?}
       mode={@mode}
       playlist_label={EntryPresentation.playlist_label(@selected_type, @selected_entry)}
       selected_playlist_video_id={@selected_playlist_video_id}
@@ -145,7 +136,23 @@ defmodule WikWeb.PageLive.Components.LibraryEntries do
       topic_options={@topics}
       topic_summaries={@topic_summaries}
       type={@selected_type}
-    />
+    >
+      <:edit_form>
+        <.live_component
+          actor_id={@actor_id}
+          admin?={@admin?}
+          entry={@selected_entry}
+          form_id="entry-form"
+          id="page-library-entry-form-component"
+          library_state={@state}
+          mode={:edit}
+          module={EntryForm}
+          submit_label="Save entry"
+          testid="entry-form"
+          type={@selected_type}
+        />
+      </:edit_form>
+    </EntryModal.render>
     """
   end
 

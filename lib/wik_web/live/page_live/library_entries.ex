@@ -2,13 +2,11 @@ defmodule WikWeb.PageLive.LibraryEntries do
   @moduledoc false
 
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
-  import Phoenix.LiveView, only: [start_async: 3, stream: 4]
+  import Phoenix.LiveView, only: [stream: 4]
 
   alias Wik.Library
   alias Wik.Tags
-  alias WikWeb.LibraryLive.EntryFormMedia
   alias WikWeb.LibraryLive.EntryPresentation
-  alias WikWeb.LibraryLive.ExternalMedia
   alias WikWeb.LibraryLive.State
   alias WikWeb.PageLive.PageState
   alias WikWeb.TenantContext
@@ -21,10 +19,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
       library_can_manage_types?:
         TenantContext.space_admin?(socket.assigns.current_scope, socket.assigns.tenant_context),
       library_edit_error: nil,
-      library_edit_form: nil,
-      library_entry_form_media: EntryFormMedia.reset(),
-      library_entry_error: nil,
-      library_entry_form: nil,
       library_insert_position: nil,
       library_modal_mode: nil,
       library_picker_form: picker_form(),
@@ -77,10 +71,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
     socket
     |> assign(
       library_edit_error: nil,
-      library_edit_form: nil,
-      library_entry_form_media: EntryFormMedia.reset(),
-      library_entry_error: nil,
-      library_entry_form: nil,
       library_insert_position: nil,
       library_modal_mode: nil,
       library_picker_form: picker_form(),
@@ -106,8 +96,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
       type ->
         if State.can_create_entry?(type, socket.assigns.library_can_manage_types?) do
           assign(socket,
-            library_entry_error: nil,
-            library_entry_form: entry_form(nil),
             library_modal_mode: :new,
             library_selected_type_id: type.id
           )
@@ -128,7 +116,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
       type ->
         socket
         |> assign(
-          library_entry_error: nil,
           library_modal_mode: :picker,
           library_picker_form: picker_form(),
           library_selected_type_id: type.id
@@ -153,34 +140,19 @@ defmodule WikWeb.PageLive.LibraryEntries do
     end
   end
 
-  def change_create(socket, params), do: assign(socket, :library_entry_form, entry_form(params))
+  def entry_created(socket, state, entry) do
+    socket
+    |> assign(:library_state, state)
+    |> insert_entry_block(entry)
+  end
 
-  def create(socket, params) do
-    type = selected_type(socket)
-    actor_id = socket.assigns.current_scope.actor.id
-
-    case type &&
-           State.create_entry(
-             socket.assigns.library_state,
-             type,
-             actor_id,
-             socket.assigns.library_can_manage_types?,
-             params
-           ) do
-      {:ok, state, entry} ->
-        socket
-        |> assign(:library_state, state)
-        |> insert_entry_block(entry)
-
-      {:error, errors} when is_list(errors) ->
-        assign(socket,
-          library_entry_error: Enum.join(errors, " · "),
-          library_entry_form: entry_form(params)
-        )
-
-      _error ->
-        put_error(socket, "You cannot add entries to that Library type.")
-    end
+  def entry_updated(socket, state, entry) do
+    assign(socket,
+      library_edit_error: nil,
+      library_modal_mode: :detail,
+      library_selected_entry_id: entry.id,
+      library_state: state
+    )
   end
 
   def show(socket, entry_id) do
@@ -191,7 +163,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
       entry ->
         assign(socket,
           library_edit_error: nil,
-          library_entry_form_media: EntryFormMedia.reset(),
           library_modal_mode: :detail,
           library_selected_entry_id: entry.id,
           library_selected_playlist_video_id: nil,
@@ -230,8 +201,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
     if entry && manageable?(socket, entry) do
       assign(socket,
         library_edit_error: nil,
-        library_edit_form: entry_form(entry.values),
-        library_entry_form_media: EntryFormMedia.reset(entry.external_media_metadata),
         library_modal_mode: :edit,
         library_selected_entry_id: entry.id,
         library_selected_playlist_video_id: nil,
@@ -242,64 +211,9 @@ defmodule WikWeb.PageLive.LibraryEntries do
     end
   end
 
-  def change_edit(socket, params, event) do
-    target = get_in(event, ["_target", Access.at(1)])
-
-    case EntryFormMedia.change(
-           socket.assigns.library_entry_form_media,
-           socket.assigns.library_edit_form.params,
-           params,
-           target,
-           selected_type(socket)
-         ) do
-      {:ok, params, media_state} ->
-        assign_entry_form_media(socket, params, media_state)
-
-      {:resolve, params, media, media_state} ->
-        resolve_external_media(socket, params, media, media_state)
-    end
-  end
-
-  def save_edit(socket, params) do
-    entry = selected_entry(socket)
-    type = selected_type(socket)
-
-    case entry && type &&
-           State.update_entry(
-             socket.assigns.library_state,
-             type,
-             entry.id,
-             socket.assigns.current_scope.actor.id,
-             socket.assigns.library_can_manage_types?,
-             params,
-             socket.assigns.library_entry_form_media.external_metadata
-           ) do
-      {:ok, state, entry} ->
-        assign(socket,
-          library_edit_error: nil,
-          library_edit_form: nil,
-          library_entry_form_media: EntryFormMedia.reset(),
-          library_modal_mode: :detail,
-          library_selected_entry_id: entry.id,
-          library_state: state
-        )
-
-      {:error, errors} when is_list(errors) ->
-        assign(socket,
-          library_edit_error: Enum.join(errors, " · "),
-          library_edit_form: entry_form(params)
-        )
-
-      _error ->
-        put_error(socket, "You cannot edit that Library entry.")
-    end
-  end
-
   def cancel_create(socket) do
     open_picker(socket, socket.assigns.library_selected_type_id)
   end
-
-  def cancel_edit(socket), do: close_modal(socket)
 
   def delete(socket, entry_id) do
     entry = State.find_entry(socket.assigns.library_state, entry_id)
@@ -384,40 +298,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
     )
   end
 
-  def handle_external_media_result(socket, request_id, result) do
-    form = socket.assigns.library_edit_form
-
-    if form &&
-         EntryFormMedia.matching_request?(
-           socket.assigns.library_entry_form_media,
-           request_id,
-           form.params
-         ) do
-      {params, media_state} =
-        EntryFormMedia.apply_result(
-          socket.assigns.library_entry_form_media,
-          form.params,
-          result
-        )
-
-      assign_entry_form_media(socket, params, media_state)
-    else
-      socket
-    end
-  end
-
-  def handle_external_media_exit(socket, request_id) do
-    if EntryFormMedia.request_id(socket.assigns.library_entry_form_media) == request_id do
-      assign(
-        socket,
-        :library_entry_form_media,
-        EntryFormMedia.fail(socket.assigns.library_entry_form_media)
-      )
-    else
-      socket
-    end
-  end
-
   defp insert_entry_block(socket, entry) do
     position = position_to_atom(socket.assigns.library_insert_position)
 
@@ -454,23 +334,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
       socket.assigns.current_scope.actor.id,
       socket.assigns.library_can_manage_types?
     )
-  end
-
-  defp resolve_external_media(socket, params, media, media_state) do
-    request_id = System.unique_integer([:monotonic, :positive])
-    media_state = EntryFormMedia.begin_resolution(media_state, media, request_id)
-
-    socket
-    |> assign_entry_form_media(params, media_state)
-    |> start_async({:library_entry_external_media, request_id}, fn ->
-      ExternalMedia.resolve(media)
-    end)
-  end
-
-  defp assign_entry_form_media(socket, params, media_state) do
-    socket
-    |> assign(:library_edit_form, entry_form(params))
-    |> assign(:library_entry_form_media, media_state)
   end
 
   defp current_membership_id(socket) do
@@ -543,7 +406,6 @@ defmodule WikWeb.PageLive.LibraryEntries do
   defp picker_form(query \\ ""),
     do: to_form(%{"query" => query}, as: :library_search)
 
-  defp entry_form(params), do: to_form(params || %{}, as: :entry)
   defp topic_form, do: to_form(%{"relevancy" => "5", "topic_id" => ""}, as: :entry_topic)
 
   defp load_topics(scope) do
